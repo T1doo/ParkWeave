@@ -185,7 +185,13 @@ class LocalDemoCatalog:
 
     @contextmanager
     def connection(self):
-        with self.store.connect() as c:
+        from .ordinary_plan_sources import selected
+        from .case_step_assignments import local_demo_pair
+        service=selected(self.store)
+        if service is not None and not local_demo_pair(service,self.store,service.local_synthetic_demo):
+            raise Denied('local demo reads require their exact ordinary transaction pair')
+        transaction=service._connection(self.store) if service is not None else self.store.connect()
+        with transaction as c:
             self.validate(c)
             yield c
             self.validate(c)

@@ -18,6 +18,7 @@ from .store import Store, Denied, Conflict, digest
 CONTRACT = 'ISOLATED_CASE_STEP_ASSIGNMENT_V1'
 ORDINARY_CONTRACT = 'CASE_STEP_ASSIGNMENT_V1'
 ORDINARY_MODE = 'CURRENT_PREPARATION'
+LOCAL_DEMO_MODE = 'LOCAL_DEMO_CURRENT_PREPARATION'
 TITLE = '合成人工办理回执'
 MARKER = 'case_step_assignment'
 
@@ -87,8 +88,12 @@ class _CaseStepTransactions:
                 '_isolated_local_execution','_isolated_execution_preview',
                 '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
                 '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview',
-                '_isolated_service_capability_catalog','_local_synthetic_demo_catalog')):
+                '_isolated_service_capability_catalog')):
             raise Denied('CaseStep dependency cannot mix with other access or execution providers')
+        if (getattr(self.store,'_local_synthetic_demo_catalog',None) is not None
+                or getattr(self,'local_synthetic_demo',None) is not None):
+            if not local_demo_pair(self,self.store,getattr(self,'local_synthetic_demo',None)):
+                raise Denied('CaseStep dependency requires its exact explicit local demo pair')
 
     def _database(self, c):
         from . import case_fact_clarifications as facts
@@ -627,9 +632,19 @@ class OrdinaryCaseStepAssignments:
     contract=ORDINARY_CONTRACT
     contract_id=None
 
-    def __init__(self,store):
+    def __init__(self,store,*,local_synthetic_demo=None):
         if type(store) is not Store or store.mode!='LOCAL':raise Denied('ordinary LOCAL CaseStep store required')
         self.store=store
+        self.local_synthetic_demo=local_synthetic_demo
+        if local_synthetic_demo is not None:
+            from .local_synthetic_demo import LocalSyntheticDemo,LocalDemoCatalog,LocalDemoSelector
+            if (type(local_synthetic_demo) is not LocalSyntheticDemo
+                    or type(local_synthetic_demo.catalog) is not LocalDemoCatalog
+                    or type(local_synthetic_demo.selector) is not LocalDemoSelector
+                    or local_synthetic_demo.catalog.store is not store
+                    or getattr(store,'_local_synthetic_demo_catalog',None) not in (None,local_synthetic_demo.catalog)):
+                raise Denied('exact same-Store local demo CaseStep pair required')
+            store._local_synthetic_demo_catalog=local_synthetic_demo.catalog
         self._checks={}
         _CaseStepTransactions._surfaces(self)
         self.validate(store)
@@ -647,21 +662,33 @@ class OrdinaryCaseStepAssignments:
             c.execute("SET LOCAL lock_timeout='3s'")
             if c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] not in (32,33):
                 raise Denied('preinstalled ordinary CaseStep business schema required')
+            if self.local_synthetic_demo is not None:self.local_synthetic_demo.catalog.validate(c)
             self._checks[c]=[]
             try:
                 yield c
                 for check in self._checks[c]:check()
+                if self.local_synthetic_demo is not None:self.local_synthetic_demo.catalog.validate(c)
                 _CaseStepTransactions._unmixed(self)
             finally:self._checks.pop(c,None)
 
     def _context(self,c,id,executor=None,*,catalog=False):
         parent=c.execute('SELECT * FROM preparations WHERE id=%s',(id,)).fetchone()
         if not parent:raise Denied('CaseStep unavailable')
+        demo_executor=None
+        if self.local_synthetic_demo is not None:
+            value=self.local_synthetic_demo.catalog.validate(c,parent)
+            demo_executor=value['roles']['service_executor']
+            if c in self._checks:
+                self._checks[c].append(lambda:self.local_synthetic_demo.catalog.validate(c,parent))
         if catalog:
             executors=[r['id'] for r in c.execute("SELECT p.id FROM principals p JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.capability='READ' AND g.active WHERE p.park_id=%s AND p.org_id=%s AND p.role='service_executor' AND p.active ORDER BY p.id LIMIT 100",(parent['park_id'],parent['org_id']))]
         elif executor is not None:executors=[executor]
         else:
             executors=[r['executor_id'] for r in c.execute('SELECT o.executor_id FROM service_dispatch_offers o JOIN service_dispatches d ON d.id=o.dispatch_id WHERE d.preparation_id=%s',(id,))]
+        if demo_executor is not None:
+            if catalog:executors=[id for id in executors if id==demo_executor]
+            elif any(id!=demo_executor for id in executors):
+                raise Denied('existing exact local demo executor mapping required')
         return _OrdinaryCaseStep(self,parent,executors)
 
     def _call(self,method,store,token,id,*args):
@@ -738,9 +765,29 @@ def validate_dependency(service,store):
     service.validate(store)
 
 
+def local_demo_pair(service,store,demo):
+    """An exact routing composition, never an admission or authority proof."""
+    from .local_synthetic_demo import LocalSyntheticDemo,LocalDemoCatalog,LocalDemoSelector
+    return (type(service) is OrdinaryCaseStepAssignments and service.store is store
+        and demo is not None and getattr(service,'local_synthetic_demo',None) is demo
+        and type(demo) is LocalSyntheticDemo and type(demo.catalog) is LocalDemoCatalog
+        and type(demo.selector) is LocalDemoSelector and demo.catalog.store is store
+        and getattr(store,'_local_synthetic_demo_catalog',None) is demo.catalog)
+
+
 def from_environment(store,environment):
     mode=environment.get('PARKWEAVE_CASE_STEP_MODE')
     if mode is None:return None
+    if mode==LOCAL_DEMO_MODE:
+        if any(environment.get(k) is not None for k in (
+                'PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG',
+                'PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG')):
+            raise Denied('independent local demo ordinary CaseStep mode required; no fallback')
+        from .local_synthetic_demo import configure,PROFILE
+        if environment.get('PARKWEAVE_SERVICE_PROFILE')!=PROFILE or environment.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG') is None:
+            raise Denied('explicit existing local demo inputs required')
+        demo=configure(store,PROFILE,environment['PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'])
+        return OrdinaryCaseStepAssignments(store,local_synthetic_demo=demo)
     if mode!=ORDINARY_MODE or any(environment.get(k) is not None for k in (
             'PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG',
             'PARKWEAVE_SERVICE_PROFILE','PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG',

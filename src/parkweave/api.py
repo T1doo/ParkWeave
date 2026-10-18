@@ -14,9 +14,12 @@ from .native_run_access import RunCommand as NativeRunCommand
 
 def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None) -> FastAPI:
     if case_step_assignments is not None:
-        from .case_step_assignments import validate_dependency
+        from .case_step_assignments import validate_dependency,local_demo_pair
         validate_dependency(case_step_assignments,store)
-        if any(x is not None for x in (local_synthetic_demo,resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
+        if ((local_synthetic_demo is not None or getattr(case_step_assignments,'local_synthetic_demo',None) is not None)
+                and not local_demo_pair(case_step_assignments,store,local_synthetic_demo)):
+            raise Denied('CaseStep application requires its exact explicit local demo pair')
+        if any(x is not None for x in (resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
             raise Denied('CaseStep application cannot mix providers')
     from . import formal_preparation_entry as formal_entry
     formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
@@ -1148,7 +1151,9 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     from .resource_approval_host_read import configure as configure_approval
     resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
     from .local_synthetic_demo import configure as configure_demo
-    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+    demo=getattr(case_steps,'local_synthetic_demo',None)
+    if demo is None:
+        demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
         formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
         formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier,

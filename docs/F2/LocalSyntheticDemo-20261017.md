@@ -1,5 +1,7 @@
 # LOCAL_SYNTHETIC_DEMO 普通启动最小切片
 
+2026-10-18 后续：已有目录选择可通过新增显式 `LOCAL_DEMO_CURRENT_PREPARATION` 接普通 CaseStep 与冷恢复，见[组合合同](LocalDemoCaseStepChainContract-20261018.md)。该模式不需要也不接受 Run assignment；下文保留原切片验证历史，其中原全链的单行测试分派不用于新组合模式。原单独 demo 与 CURRENT_PREPARATION 入口语义均保留。
+
 已接入默认关闭的 `LOCAL_SYNTHETIC_DEMO`，在普通 `configured_app` 上读取已存在的、精确绑定的合成输入和当前授权，复用原 V4 选择算法、原显式 ADOPT 与 P1–P5。没有真实模型、权限补建或正式批准。
 
 代码冻结：`8ae2892fe56465fbf53e23ae2010258ce7881b47`。基础：`e7cf6cabea6174a672667d7ae8af6a5238589791`，其原始祖先含 `db1084100a2477bbff3da8b49287c755dbc83c1b`。本轮 source 4 个提交（实现、EOF 规范化、两处旧 DOM 测试夹具补 `classList`）。后续交付只增加说明和证据。

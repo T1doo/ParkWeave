@@ -47,10 +47,11 @@ def demo_state(tmp_path):
 
 
 @contextmanager
-def server(p,directory,selected_port=None):
+def server(p,directory,selected_port=None,*,local_demo_config=None):
     directory.mkdir();selected_port=selected_port or port()
     with (directory/'serve.stdout').open('w') as out,(directory/'serve.stderr').open('w') as err:
-        child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port)),cwd=ROOT,env=environment(),stdout=out,stderr=err)
+        extra=['--local-demo-config',str(local_demo_config)] if local_demo_config is not None else []
+        child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port),*extra),cwd=ROOT,env=environment(),stdout=out,stderr=err)
         try:
             deadline=time.monotonic()+30;ready=None
             while time.monotonic()<deadline:
@@ -58,7 +59,8 @@ def server(p,directory,selected_port=None):
                 rows=[json.loads(line) for line in (directory/'serve.stdout').read_text().splitlines() if line.startswith('{')]
                 if rows:ready=rows[-1];break
                 time.sleep(.05)
-            assert ready and ready['mode']=='CURRENT_PREPARATION' and ready['models']=='DISABLED'
+            expected_mode='LOCAL_DEMO_CURRENT_PREPARATION' if local_demo_config is not None else 'CURRENT_PREPARATION'
+            assert ready and ready['mode']==expected_mode and ready['models']=='DISABLED'
             # Bounded test evidence only: no Authorization header or body text.
             def trace(kind,request,status=None):
                 payload=json.loads(request.content) if request.content else {}

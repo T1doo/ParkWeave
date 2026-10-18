@@ -14,6 +14,7 @@ from pathlib import Path
 import secrets
 import signal
 import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -199,7 +200,21 @@ def check_port(port):
     with socket.socket() as probe:probe.bind(('127.0.0.1',port))
 
 
-def serve(value,port):
+def existing_local_demo_config(value):
+    """Read an existing bounded config; never create or repair its inputs."""
+    path=Path(value)
+    if not path.is_absolute():raise Denied('existing absolute local demo config required')
+    fd=os.open(path,os.O_RDONLY|getattr(os,'O_NOFOLLOW',0)|getattr(os,'O_NONBLOCK',0))
+    with os.fdopen(fd,'rb') as stream:
+        info=os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or not 1<=info.st_size<=16384:
+            raise Denied('bounded regular local demo config required')
+        raw=stream.read(16385)
+    if not 1<=len(raw)<=16384:raise Denied('bounded local demo config required')
+    return raw.decode('utf-8')
+
+
+def serve(value,port,local_demo_config=None):
     global _last_owned_state
     check_port(port)
     with locked(value) as p:
@@ -222,6 +237,12 @@ def serve(value,port):
             env=minimal_environment(os.environ,PYTHONPATH=str(ROOT/'src'),PYTHONDONTWRITEBYTECODE='1',
                 PARKWEAVE_DSN=lifecycle.dsn(p,application=True),PARKWEAVE_MODE='LOCAL',
                 PARKWEAVE_CASE_STEP_MODE='CURRENT_PREPARATION')
+            if local_demo_config is not None:
+                from parkweave.case_step_assignments import LOCAL_DEMO_MODE,from_environment
+                from parkweave.local_synthetic_demo import PROFILE
+                env.update(PARKWEAVE_CASE_STEP_MODE=LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=PROFILE,
+                    PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=existing_local_demo_config(local_demo_config))
+                from_environment(Store(env['PARKWEAVE_DSN']),env)  # Read-only preflight before either child starts.
             children=[]
             with (p/'logs/application.log').open('a') as log:
                 try:
@@ -238,7 +259,7 @@ def serve(value,port):
                     else:raise RuntimeError('owned ordinary API readiness timeout')
                     print(json.dumps(dict(url=f'http://127.0.0.1:{port}',api_pid=children[0].pid,worker_pid=children[1].pid,
                         postgres_pid=pg.pid,state_dir=str(p),sessions_file=str(p/'sessions.json'),scope='ORDINARY_SYNTHETIC',
-                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False,
+                        mode=env['PARKWEAVE_CASE_STEP_MODE'],models='DISABLED',run_assignment_created=False,
                         available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()])),flush=True)
                     while all(child.poll() is None for child in children):time.sleep(.25)
                     raise RuntimeError('owned API/worker exited')
@@ -253,12 +274,14 @@ def main():
     os.umask(0o077)
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=('setup','serve'));parser.add_argument('--state-dir');parser.add_argument('--port',type=int,default=8765)
+    parser.add_argument('--local-demo-config',help='serve only: existing absolute hash-pinned SYNTHETIC input config')
     args=parser.parse_args()
     if (args.command=='serve')!=bool(args.state_dir):parser.error('serve requires existing --state-dir; setup creates only a fresh private directory')
+    if args.command!='serve' and args.local_demo_config is not None:parser.error('local demo inputs are read only by serve')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     try:
         if args.command=='setup':print(json.dumps(dict(state_dir=str(setup()),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED')),flush=True)
-        else:serve(args.state_dir,args.port)
+        else:serve(args.state_dir,args.port,args.local_demo_config)
     except KeyboardInterrupt:return 130 if args.command=='setup' else 0
     except Exception as error:
         if _last_owned_state is not None:
