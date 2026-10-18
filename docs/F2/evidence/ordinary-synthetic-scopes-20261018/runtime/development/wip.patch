@@ -1,0 +1,230 @@
+diff --git a/README.md b/README.md
+index 2c5b6e6f..3741081b 100644
+--- a/README.md
++++ b/README.md
+@@ -148,3 +148,5 @@ python -m parkweave.cli prepare-access --config existing-preparation.json
+ 只有经过独立授权的管理员才能选择直连数据库及相关表 owner 的连接，并明确执行 `python -m parkweave.cli prepare-access --config existing-preparation.json --apply --expected-plan-sha256 <刚核对的计划SHA>`。本会话只在拥有的合成数据库测试该代码，未执行真实授权。普通应用连接不能应用；主体、READ/EXECUTE、目录等缺失或已有准备权限 inactive/错 scope 均阻断，不自动修复。两项准备权限沿用原主体/园区/企业范围，不是目录专属权限；新插入与审计原子提交，当前状态改变须重新预检。命令异常可能结果未知，先核对新预检，不自动重放。配置不创建身份、凭据、能力、目录、材料、分派或 Run 权限，不能代替批准；生产安装、其余管理初始化和 Windows/正式 AT35 仍未完成。
+ 
+ 要从空业务库体验普通P1–P5，使用[普通合成演示操作说明](docs/demo/OrdinarySyntheticDemo.md)：已有Linux/Python依赖下先运行 `.venv/bin/python -B -m scripts.ordinary_synthetic_demo setup`，再以输出的私有目录运行 `serve --state-dir 路径 --port 8765`。初始化仅发生于全新独立合成集群，日常启动不补权限；普通API/worker从用户新输入建单，可保留同一库停止、重启和另建第二事项。不需手工准备pack/journal或Run assignment；原确定性规划、明确采纳与办理算法复用。V4/demo provider组合、Native/正式来源、生产安装与Windows正式AT仍保持原边界。会话只在私有目录本机查看，勿放入聊天、URL或仓库。
++
++普通合成入口现提供同一新库内的两企业、两园区独立范围。按[操作说明](docs/demo/OrdinarySyntheticDemo.md)选择第一组或`second_*`会话，从各自目录以新材料办理；重启不复制Case、授权或证明。旧一范围状态保留，不自动迁移或补权。此项仍限已有依赖Linux合成演示，不等于安装器、Windows或正式AT35验收。
+diff --git a/docs/demo/OrdinarySyntheticDemo.md b/docs/demo/OrdinarySyntheticDemo.md
+index b331c636..8597b65e 100644
+--- a/docs/demo/OrdinarySyntheticDemo.md
++++ b/docs/demo/OrdinarySyntheticDemo.md
+@@ -1,6 +1,6 @@
+ # 从空业务库办理的普通合成演示
+ 
+-本入口新建独立Linux合成数据库，准备三种演示身份、资料目录和两项资源；随后使用原页面、普通API与普通worker。无需手改SQL、Grant、目录、pack或journal。它不是生产安装、真实园区接入或正式批准，也不是V4服务选择/模型演示。
++本入口新建一个独立Linux合成数据库，在同一库内准备两个明确隔离的合成企业/园区。每套各有企业经办人、资料专员、执行者三种身份、自己的资料目录和两项资源；随后使用原页面、普通API与普通worker。无需手改SQL、Grant、目录、pack或journal。它不是生产安装、真实园区接入或正式批准，也不是V4服务选择/模型演示。
+ 
+ 需已有非root Linux、Python3.12和本仓库依赖（包括`pgserver==0.1.4`）。从完整源码根目录运行；不要求`.git`存在。新机器需先按`pyproject.toml`准备Python环境和依赖，本启动器不下载或安装依赖。Windows原生、WSL和其他环境未在本片验收，不能用此入口替代Windows正式AT。
+ 
+@@ -19,9 +19,16 @@
+ 
+ 看到含`url`、API/worker/PostgreSQL PID的就绪JSON后，打开该127.0.0.1地址。端口被占用时改用另一个1024–65535端口；程序不会停止原监听器。启动器只连接本目录的私有Unix socket，不读取外部DSN或继承Native/demo/模型配置。
+ 
+-状态目录0700、文件私有。只在本机打开其中`sessions.json`，将对应值复制到原页面会话输入框：`enterprise`是企业经办人，`specialist`是资料专员，`executor`是步骤执行者。不要把会话发到聊天、截图、URL或仓库。三种身份各做自己的动作，切换后重新打开同一资料事项。测试会话无自动过期；停服务、关网页或重开不撤销会话。
++状态目录0700、文件私有。只在本机打开其中`sessions.json`，按下表选择一个范围内的角色，把对应值复制到原页面会话输入框。就绪JSON的`available_scopes`也列出角色键，不含会话值；`state.json`的`scopes`列出本次固定配置。
+ 
+-从第一份新输入开始：
++| 合成范围 | 企业经办人键 | 资料专员键 | 执行者键 |
++| --- | --- | --- | --- |
++| 第一企业 / 第一园区（primary） | `enterprise` | `specialist` | `executor` |
++| 第二企业 / 第二园区（secondary） | `second_enterprise` | `second_specialist` | `second_executor` |
++
++六个会话各自独立。不要把会话发到聊天、截图、URL或仓库。三种身份各做自己的动作，切换后重新打开同一资料事项；第二企业必须从自己的“开始资料准备”新建，不能填第一企业的资料编号接着办。界面目录、可选专员/执行者和资源按当前身份读取，不能通过改角色或猜ID越界。测试会话无自动过期；停服务、关网页或重开不撤销会话。
++
++先选第一企业的三个角色，从第一份新输入开始；第二企业随后使用自己的三角色重复这些原有步骤：
+ 
+ 1. 企业身份点击“查看可选服务与专员”，填写“A设备维护”的全新合成诉求，选择演示专员，点击“开始资料准备”。普通worker创建新的Run/Case，再进入新资料事项。记录资料事项编号。
+ 2. 在“本次诉求与必需目标”分别点击“本地材料准备”“此Case资源关联”“已有授权本人接单”“合成回执核对”“本地记录重验”，保存诉求与必需目标。依次追加“诉求摘要”和“材料目录”两槽的新文本，明确其合成来源。不要勾选另一个合成协作目标来代替这五项目标。
+@@ -32,8 +39,10 @@
+ 
+ 首次分派后的原步骤窗口最多300秒，不会因刷新或重启延长。材料与资源准备完成后再分派，并及时完成接单、回执和核验；超时准确拒绝，历史保留。资源占位也有独立期限，未确认就可能过期。关闭记录不自动释放资源；后续资源须按原授权从原入口独立取消。
+ 
+-在启动终端按Ctrl+C，只停止这次实际创建的API、worker和PostgreSQL子进程，状态、会话、日志与下载保留。用相同`serve --state-dir`重新启动，企业按原编号打开A事项并重新下载核对TXT。随后从“开始资料准备”提交“B员工培训”的不同诉求与两槽材料，另选可用区间，重复完整办理；B应有新的Run、Case、资料、计划和分派编号。A的内容、截止和历史保留，不能复制A的Case专属证明给B。
++在启动终端按Ctrl+C，只停止这次实际创建的API、worker和PostgreSQL子进程，状态、会话、日志与下载保留。用相同`serve --state-dir`重新启动，企业按原编号打开A事项并重新下载核对TXT。随后切换到`second_enterprise`冷会话，先查看第二范围目录，使用第二专员和第二执行者，从“开始资料准备”提交“B员工培训”的全新诉求与两槽材料，选择第二园区的两项资源，重复完整办理。可使用与第一园区相同的未来UTC时段，各有独立容量；第二企业第一次列表应为空。B应有新的Run、Case、资料、材料evidence、计划、分派和回执编号。A的内容、截止和历史保留，不能复制A的材料、Case或专属证明给B。两范围不得互读或互用Run、资料、目标结果、占用、组合、接单和回执；拒绝不自动补权。
+ 
+ serve只校验既有源码内容、集群/库、权限/目录/资源及实际app SQL ACL，不迁移、不seed、不重发创建票据、不修复撤权或会话。源码、会话或权限改变、未知postmaster标记、锁占用或停止不确认时拒绝并保留现场。查看该目录私有`failure.log`和`logs/`定位；不要反复setup掩盖失败，也不要删除未知锁或进程。新建失败的目录同样保留。
+ 
+ 此入口不覆盖旧material-only演示的特定一次setup授权或旧库，也不替换`LOCAL_SYNTHETIC_DEMO` profile。Native permit/writer、正式来源、资源批准provider和V4组合均保持原关闭/互斥边界。数据位于`/tmp`，操作系统或平台清理仍可能丢失，不能称永久保存；保留、撤销及清理须另行明确处理。
++
++当前版本的新setup生成state schema `/2` 和两套固定范围；不升级已有`/1`状态、不向旧库补第二套资料。旧状态保留，应使用原受测`5b36291a22aae8dd74346ae9f2b54c148a4b1ef0`源码启动。新版本遇到旧状态或范围绑定缺失/改变，在启动PostgreSQL前拒绝。两套园区/企业配对并不代表所有园区×企业交叉组合、跨园区迁移或正式模板发布已验收。
+diff --git a/scripts/ordinary_synthetic_demo.py b/scripts/ordinary_synthetic_demo.py
+index 446fd89b..d03fc446 100644
+--- a/scripts/ordinary_synthetic_demo.py
++++ b/scripts/ordinary_synthetic_demo.py
+@@ -33,9 +33,22 @@ from parkweave.process_env import minimal_environment
+ from parkweave import resource_holds as resources,resource_combinations as combinations
+ 
+ PREFIX='parkweave-ordinary-demo-'
+-SCHEMA='parkweave-ordinary-synthetic-demo/1'
++SCHEMA='parkweave-ordinary-synthetic-demo/2'
+ IDS=dict(enterprise='ordinary-demo-enterprise',specialist='ordinary-demo-specialist',executor='ordinary-demo-executor')
+ PARK='synthetic-ordinary-park';ORG='synthetic-ordinary-org'
++# Fixed demo configuration only; these are not production grants or logins.
++SCOPES={
++    'primary':dict(label='第一合成企业 / 第一合成园区',park_id=PARK,org_id=ORG,ids=IDS,
++        sessions={actor:actor for actor in IDS},source_id='ORDINARY_LOCAL_DEMO_V1',
++        resources=[dict(id=str(resources.RESOURCE_ID),name='合成协作空间'),
++                   dict(id=str(combinations.SECOND_RESOURCE_ID),name='合成研讨设备')]),
++    'secondary':dict(label='第二合成企业 / 第二合成园区',park_id='synthetic-ordinary-second-park',
++        org_id='synthetic-ordinary-second-org',
++        ids={actor:'ordinary-demo-second-'+actor for actor in IDS},
++        sessions={actor:'second_'+actor for actor in IDS},source_id='ORDINARY_LOCAL_DEMO_SECOND_SCOPE_V1',
++        resources=[dict(id='e6120954-2e0b-4ad3-857f-ed6cc7501651',name='第二园区合成协作空间'),
++                   dict(id='34ed95d8-1f15-4a47-9118-eb21c7ae5610',name='第二园区合成研讨设备')]),
++}
+ _last_owned_state=None
+ SQL_RIGHTS={
+     **lifecycle.SQL_RIGHTS,
+@@ -120,18 +133,21 @@ def initialize(owner,tokens):
+         raise Denied('live owned synthetic creation receipt required before demo initialization')
+     with owner.connect() as c:
+         receipt.authorize_migration(c)
+-        for actor,role,caps in (('enterprise','enterprise_operator',('READ','EXECUTE')),
+-                ('specialist','park_specialist',('READ',)),('executor','service_executor',('READ',))):
+-            c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',(IDS[actor],digest(tokens[actor]),PARK,ORG,role))
+-            for cap in caps:c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',(IDS[actor],cap,PARK,ORG))
+-        c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)",(IDS['enterprise'],PARK,ORG))
+-        for actor,cap in (('enterprise','PREPARE'),('specialist','REVIEW_ASSIGNED')):
+-            c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',(IDS[actor],PARK,ORG,cap))
+-        source=dict(kind='SYNTHETIC',id='ORDINARY_LOCAL_DEMO_V1',revision='1',statement='合成演示配置；不是正式目录、批准或外部履约。')
+-        c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,'普通办理资料服务（合成）',%s,'SYNTHETIC','NOT_EVALUATED')",(PARK,Jsonb(source)))
+-        for id,name in ((resources.RESOURCE_ID,'合成协作空间'),(combinations.SECOND_RESOURCE_ID,'合成研讨设备')):
+-            c.execute("INSERT INTO synthetic_resources VALUES(%s,%s,%s,1,2,300,clock_timestamp()-interval '1 day',clock_timestamp()+interval '30 days',true,'UTC','SYNTHETIC','LOCAL_AUTHORITY',%s)",(id,PARK,name,Jsonb(source)))
+-            for cap in ('READ','HOLD'):c.execute('INSERT INTO synthetic_resource_grants VALUES(%s,%s,%s,%s,%s,true)',(IDS['enterprise'],id,PARK,ORG,cap))
++        for scope in SCOPES.values():
++            ids=scope['ids'];park=scope['park_id'];org=scope['org_id']
++            for actor,role,caps in (('enterprise','enterprise_operator',('READ','EXECUTE')),
++                    ('specialist','park_specialist',('READ',)),('executor','service_executor',('READ',))):
++                session=tokens[scope['sessions'][actor]]
++                c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',(ids[actor],digest(session),park,org,role))
++                for cap in caps:c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',(ids[actor],cap,park,org))
++            c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)",(ids['enterprise'],park,org))
++            for actor,cap in (('enterprise','PREPARE'),('specialist','REVIEW_ASSIGNED')):
++                c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',(ids[actor],park,org,cap))
++            source=dict(kind='SYNTHETIC',id=scope['source_id'],revision='1',statement=scope['label']+'；合成演示配置，不是正式目录、批准或外部履约。')
++            c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,%s,%s,'SYNTHETIC','NOT_EVALUATED')",(park,scope['label']+'普通资料服务（合成）',Jsonb(source)))
++            for resource in scope['resources']:
++                c.execute("INSERT INTO synthetic_resources VALUES(%s,%s,%s,1,2,300,clock_timestamp()-interval '1 day',clock_timestamp()+interval '30 days',true,'UTC','SYNTHETIC','LOCAL_AUTHORITY',%s)",(resource['id'],park,resource['name'],Jsonb(source)))
++                for cap in ('READ','HOLD'):c.execute('INSERT INTO synthetic_resource_grants VALUES(%s,%s,%s,%s,%s,true)',(ids['enterprise'],resource['id'],park,org,cap))
+         c.execute('REVOKE ALL ON DATABASE parkweave FROM PUBLIC')
+         c.execute('REVOKE ALL ON SCHEMA public FROM PUBLIC')
+         c.execute('GRANT CONNECT ON DATABASE parkweave TO parkweave_app')
+@@ -161,20 +177,20 @@ def setup():
+         owner._case_fact_fixture_receipt=receipt
+         lifecycle.dump(p/'creation-observation.json',asdict(receipt))
+         owner.migrate()
+-        tokens={actor:secrets.token_urlsafe(32) for actor in IDS}
++        tokens={key:secrets.token_urlsafe(32) for scope in SCOPES.values() for key in scope['sessions'].values()}
+         initialize(owner,tokens)
+         with owner.connect() as c:
+             identity=c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
+             oid=c.execute('SELECT oid::bigint FROM pg_database WHERE datname=current_database()').fetchone()['oid']
+             snapshot=authority(c)
+-            assert snapshot['counts']==dict(principals=3,capability_grants=4,action_grants=1,
+-                preparation_grants=2,preparation_catalog=1,run_assignments=0,field_grants=0,
+-                synthetic_resources=2,synthetic_resource_grants=4)
++            assert snapshot['counts']==dict(principals=6,capability_grants=8,action_grants=2,
++                preparation_grants=4,preparation_catalog=2,run_assignments=0,field_grants=0,
++                synthetic_resources=4,synthetic_resource_grants=8)
+             assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                 ('runs','cases','preparations','synthetic_resource_holds','service_dispatches','service_receipt_steps','case_local_events'))
+         lifecycle.dump(p/'sessions.json',tokens)
+         lifecycle.dump(p/'state.json',dict(schema=SCHEMA,source=source_binding(),system_identifier=identity['system_identifier'],
+-            database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
++            database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,scopes=SCOPES,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
+     return p
+ 
+ 
+@@ -190,7 +206,8 @@ def serve(value,port):
+         _last_owned_state=p
+         if (p/'stop-unconfirmed').exists():raise Denied('previous owned stop unconfirmed; state retained')
+         marker=json.loads((p/'state.json').read_text())
+-        if (marker['schema']!=SCHEMA or marker['source']!=source_binding() or marker['ids']!=IDS or
++        if (marker.get('schema')!=SCHEMA or marker.get('source')!=source_binding() or marker.get('ids')!=IDS or
++                marker.get('scopes')!=SCOPES or
+                 marker['sessions_sha256']!=sha256((p/'sessions.json').read_bytes()).hexdigest()):
+             raise Denied('ordinary demo source/state binding changed')
+         with lifecycle.postgres(p) as pg:
+@@ -221,7 +238,8 @@ def serve(value,port):
+                     else:raise RuntimeError('owned ordinary API readiness timeout')
+                     print(json.dumps(dict(url=f'http://127.0.0.1:{port}',api_pid=children[0].pid,worker_pid=children[1].pid,
+                         postgres_pid=pg.pid,state_dir=str(p),sessions_file=str(p/'sessions.json'),scope='ORDINARY_SYNTHETIC',
+-                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False)),flush=True)
++                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False,
++                        available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()])),flush=True)
+                     while all(child.poll() is None for child in children):time.sleep(.25)
+                     raise RuntimeError('owned API/worker exited')
+                 finally:
+diff --git a/tests/test_ordinary_synthetic_demo.py b/tests/test_ordinary_synthetic_demo.py
+index 101941cb..c4ac0745 100644
+--- a/tests/test_ordinary_synthetic_demo.py
++++ b/tests/test_ordinary_synthetic_demo.py
+@@ -79,7 +79,8 @@ def call(api,tokens,path,body=None,actor='enterprise',expected=200):
+     return r.json()
+ 
+ 
+-def new_case(api,tokens,label):
++def prepare_case(api,tokens,label,scope=None):
++    scope=scope or demo.SCOPES['primary']
+     run=call(api,tokens,'/api/runs',dict(goal='SYNTHETIC '+label+' wholly new request'),expected=202)['run_id']
+     deadline=time.monotonic()+20
+     while time.monotonic()<deadline:
+@@ -88,7 +89,7 @@ def new_case(api,tokens,label):
+         assert row['state'] in ('QUEUED','RUNNING'),row
+         time.sleep(.05)
+     else:pytest.fail('ordinary worker did not finish new local Case')
+-    p=call(api,tokens,'/api/preparations',dict(run_id=run,service_id='synthetic-material-preparation',service_version=1,reviewer_id=demo.IDS['specialist']),expected=201)
++    p=call(api,tokens,'/api/preparations',dict(run_id=run,service_id='synthetic-material-preparation',service_version=1,reviewer_id=scope['ids']['specialist']),expected=201)
+     base='/api/preparations/'+p['preparation_id']
+     p=call(api,tokens,base+'/request-intent',dict(expected_preparation_revision=p['revision'],request_text='SYNTHETIC new '+label+' request and explicit five goals',required_goals=GOALS))
+     request_revision=p['request_intent']['revision']
+@@ -96,6 +97,11 @@ def new_case(api,tokens,label):
+         p=call(api,tokens,base+'/commands',dict(action='ADD_EVIDENCE',expected_revision=p['revision'],slot=slot,text='SYNTHETIC '+label+' '+slot+' independently entered',source_kind='USER_STATEMENT',source_label='SYNTHETIC explicit '+label))
+     for actor,action in (('specialist','REVIEW'),('enterprise','CONFIRM')):
+         p=call(api,tokens,base+'/commands',dict(action=action,expected_revision=p['revision'],reason='SYNTHETIC user '+action),actor=actor)
++    return p,request_revision
++
++
++def adopt_case(api,tokens,p,request_revision):
++    base='/api/preparations/'+p['preparation_id']
+     planning=call(api,tokens,base+'/planning-preview')['current']
+     assert planning['required_goals']==GOALS
+     plan=call(api,tokens,base+'/service-case-plan',dict(expected_preparation_revision=p['revision'],expected_request_revision=request_revision,expected_source_sha256=planning['source_sha256'],expected_plan_revision=0,required_goals=GOALS,reason='SYNTHETIC explicit user ADOPT'),expected=201)
+@@ -103,6 +109,11 @@ def new_case(api,tokens,label):
+     return p
+ 
+ 
++def new_case(api,tokens,label,scope=None):
++    p,request_revision=prepare_case(api,tokens,label,scope)
++    return adopt_case(api,tokens,p,request_revision)
++
++
+ def verify(api,tokens,p,adapter):
+     base='/api/preparations/'+p['preparation_id']+'/service-case-plan';row=call(api,tokens,base)
+     step=next(s for s in row['steps'] if s['adapter_id']==adapter)
+@@ -110,15 +121,17 @@ def verify(api,tokens,p,adapter):
+     assert next(s for s in row['steps'] if s['adapter_id']==adapter)['state']=='VERIFIED'
+ 
+ 
+-def complete(api,tokens,p,label):
+-    base='/api/preparations/'+p['preparation_id'];verify(api,tokens,p,'P1')
++def complete(api,tokens,p,label,scope=None,p1_verified=False):
++    scope=scope or demo.SCOPES['primary']
++    base='/api/preparations/'+p['preparation_id']
++    if not p1_verified:verify(api,tokens,p,'P1')
+     now=datetime.now(timezone.utc);holds=[]
+-    for resource in (demo.resources.RESOURCE_ID,demo.combinations.SECOND_RESOURCE_ID):
++    for resource in (row['id'] for row in scope['resources']):
+         holds.append(call(api,tokens,'/api/synthetic-resources/'+str(resource)+'/holds',dict(starts_at=(now+timedelta(hours=1)).isoformat(),ends_at=(now+timedelta(hours=2)).isoformat(),quantity=1,expected_revision=1,ttl_seconds=120,purpose='SYNTHETIC '+label),expected=201)['hold'])
+     group=call(api,tokens,'/api/resource-combinations',dict(members=[dict(hold_id=h['id'],expected_revision=h['resource_revision']) for h in holds]),expected=201)['combination']
+     call(api,tokens,base+'/resource-link',dict(combination_id=group['id'],expected_preparation_revision=p['revision'],expected_link_revision=0,reason='SYNTHETIC original combination association'),expected=201)
+     verify(api,tokens,p,'P2')
+-    d=call(api,tokens,base+'/dispatch',dict(expected_preparation_revision=p['revision'],expected_dispatch_revision=0,executor_id=demo.IDS['executor'],reason='SYNTHETIC explicit reviewer OFFER'),actor='specialist',expected=201)
++    d=call(api,tokens,base+'/dispatch',dict(expected_preparation_revision=p['revision'],expected_dispatch_revision=0,executor_id=scope['ids']['executor'],reason='SYNTHETIC explicit reviewer OFFER'),actor='specialist',expected=201)
+     d=call(api,tokens,'/api/service-dispatches/'+d['dispatch_id']+'/commands',dict(action='ACCEPT',expected_revision=d['revision'],reason='SYNTHETIC executor accepts own step'),actor='executor')
+     verify(api,tokens,p,'P3')
+     receipt='/api/executor-receipts/'+d['receipt_step_id'];r=call(api,tokens,receipt,actor='executor')

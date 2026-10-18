@@ -1,0 +1,22 @@
+{
+  "kind": "READ_ONLY_FIRST_FAILURE_SUPPLEMENT",
+  "at_utc": "2026-10-18T21:00:24.779031+00:00",
+  "prior_report": "wip-static-first-failure-review.json",
+  "prior_report_sha256": "661ea88873b31621683d2c011e78cde10c7605c72c874a48e86f5a4a9d83e17c",
+  "parent_read_only_evidence": {
+    "relative_path": "../development/read-only-after-timeout.json",
+    "sha256": "e04eede46c58cce5330e756b460b5fe8d1db26654f9861c62df18b18f2b456ab"
+  },
+  "parent_reported_observations": [
+    "Two Runs SUCCEEDED and authority unchanged.",
+    "First scope lifecycle CLOSED revision2 with REVALIDATE and CLOSE_LOCAL_RECORD events.",
+    "Second scope lifecycle READY revision1 with REVALIDATE only; no CLOSE_LOCAL_RECORD observed.",
+    "No POST replay; parent stopped the owned read-only inspection PG and reports no marker."
+  ],
+  "inference_boundary": "The second REVALIDATE is proven committed and CLOSE was not observed at that inspection. The original timeout may still be either a committed REVALIDATE without observed HTTP response or a later CLOSE; its action/key were not captured. Do not assert the latter as fact.",
+  "instrumentation_assessment": "Capturing request action/key/path/start/end and one bounded read-only activity/blocker sample after a timeout is evidence gathering. It must preserve20s HTTP/3s SQL/300s original offer windows, not retry unknown POST, and not record Authorization or credential/body. No product algorithm change justified by current evidence.",
+  "confirmed_new_P1": [],
+  "confirmed_new_P2": [],
+  "reviewer_business_or_DB_executions": 0,
+  "state": "WAITING_FOR_SOURCE_FREEZE; root development FAIL remains unresolved"
+}

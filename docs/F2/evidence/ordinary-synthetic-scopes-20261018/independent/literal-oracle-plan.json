@@ -1,0 +1,218 @@
+{
+  "kind": "SOURCE_BLIND_LITERAL_ORACLE",
+  "frozen_at_utc": "2026-10-18T20:49:16.570058+00:00",
+  "baseline": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+  "contract_commit": "03685a1af1ff83f591353eb3d5cd8c95163c1afe",
+  "contract_path": "docs/F2/OrdinarySyntheticScopesContract-20261018.md",
+  "contract_sha256": "b15f6e8c0dde080ca310ef1d2f27725d9f220b4a8c37b5ec65e6ea6f87ceca00",
+  "baseline_inputs_sha256": "88968fd3b97e1d5b71eb83c9f089672e71f6228b6a9e1c3a4d0f27b560720d80",
+  "literal_originals": [
+    {
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "line": 53,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "| F1-T03 | 身份与企业隔离 | 园区、企业、用户、运行身份、字段/Case授权；至少两个企业和两个园区配置 | AT-04、AT-19 |"
+    },
+    {
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "line": 89,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "| F2-T06 | 办理模板与新输入 | 审核后参数化服务包模板；新企业冷会话与新材料运行，不复制旧数据/身份 | AT-08、AT-35 |"
+    },
+    {
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "line": 276,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "| AT-04 | 跨企业/园区隔离 | 猜测另一企业ID访问资料、Case、结果和匿名占用记录 | 后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权 | F1 |"
+    },
+    {
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "line": 280,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "| AT-08 | 模板新输入与冷会话 | 应用参数化模板并运行有效新输入及错误输入 | 产生新Case和结果；不复制旧材料/授权；错误明确处理 | F2 |"
+    },
+    {
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "line": 307,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "| AT-35 | 首个完整办理和重新使用 | 规划→确认→本地办理→补件/接单→回执→确认；再次运行 | 关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆 | F2 |"
+    },
+    {
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "line": 89,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "界面面向企业经办人、园区服务专员、资源管理员、服务执行者四类角色；提供桌面网页和基本窄屏适配，不另开发小程序或原生手机应用。服务方仅见被分配步骤的必要信息，运营人员也不默认拥有全部企业原始材料。"
+    },
+    {
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "line": 339,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "首版至少测试两个企业、两个园区配置和多种角色。有效权限为当前用户授权、Case范围、服务发布所需能力、运行身份与当前Grant的交集。企业ID由后端会话/授权确定，不能相信请求体自行指定。"
+    },
+    {
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "line": 341,
+      "revision": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+      "text": "企业事实、资源占用、搜索、导出、缓存与模型上下文都进行后端隔离。资源可用性查询可显示匿名占用，不泄露其他企业名称或用途；服务方只获取办理所需字段。运营汇总也需独立授权，小样本数据不默认公开。"
+    }
+  ],
+  "fixed_AT_cases": {
+    "AT-04": {
+      "id": "AT-04",
+      "scenario": "跨企业/园区隔离",
+      "steps": "猜测另一企业ID访问资料、Case、结果和匿名占用记录",
+      "oracle": "后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    "AT-08": {
+      "id": "AT-08",
+      "scenario": "模板新输入与冷会话",
+      "steps": "应用参数化模板并运行有效新输入及错误输入",
+      "oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    "AT-35": {
+      "id": "AT-35",
+      "scenario": "首个完整办理和重新使用",
+      "steps": "规划→确认→本地办理→补件/接单→回执→确认；再次运行",
+      "oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    }
+  },
+  "rows": [
+    {
+      "id": "OSCOPE-01",
+      "source": [
+        "F1-T03",
+        "contract:5,7"
+      ],
+      "given": "A fresh owned setup, never an imported or prior one-scope state.",
+      "must_change": "Exactly two distinct park/org pairs, six different actor identities and six independently generated sessions; each pair has owner/reviewer/executor, its own SYNTHETIC catalog and two resources.",
+      "must_preserve": "Zero Run/Case/preparation/plan/dispatch/receipt/Run-assignment/business approval initial state. Same role/capability kinds and least app SQL privilege as baseline.",
+      "negative": "No new production authority, no copied old actor or Case marker, no implicit setup/migration/seed during serve."
+    },
+    {
+      "id": "OSCOPE-02",
+      "source": [
+        "product:339,341",
+        "contract:5,7"
+      ],
+      "given": "Select each scope using private explicit enterprise/specialist/executor and second_* session keys.",
+      "must_change": "The ordinary current-session catalog resolves only the matching scope actors/services/resources; second credentials/IDs differ.",
+      "must_preserve": "The backend determines park/org from current authorization, never a client role/org choice; token/DSN absent from stdout, URL and public evidence.",
+      "negative": "A foreign token plus guessed ID does not reveal another scope identity, title, material, goal or purpose."
+    },
+    {
+      "id": "OSCOPE-03",
+      "source": [
+        "AT-35",
+        "contract:7,9,13",
+        "baseline ordinary demo:15,17"
+      ],
+      "given": "Normal configured API and real ordinary worker started from the same retained fresh cluster.",
+      "must_change": "Only the second scope configuration/metadata and documented session selection are added.",
+      "must_preserve": "LOCAL + CURRENT_PREPARATION and original planner/P1-P5 algorithms/explicit REVIEW CONFIRM ADOPT VERIFY; no Store.finish/assign_status/fixture approval during user operations. Native/formal/V4 and old isolated fallback stay rejected.",
+      "negative": "Presence of the second scope cannot grant whole-Run access to an executor or manufacture approval."
+    },
+    {
+      "id": "OSCOPE-04",
+      "source": [
+        "contract:7",
+        "baseline ordinary demo:13"
+      ],
+      "given": "The new retained state requires both fixed scope bindings.",
+      "must_change": "Both bindings are authenticated to the actual owned catalog/authority/resource state by the retained state/source fence.",
+      "must_preserve": "Missing, swapped, foreign or edited scope metadata is refused before PostgreSQL launch; source/ACL/session drift remains refusal without repair.",
+      "negative": "Old one-scope state is not accepted, migrated, or silently seeded by the new launcher; unknown state/PID/lock remains untouched."
+    },
+    {
+      "id": "OSCOPE-05",
+      "source": [
+        "F2-T06",
+        "AT-08",
+        "AT-35",
+        "contract:9"
+      ],
+      "given": "First pair makes one isolation-control Case; the cluster is physically stopped and restarted; second pair first uses a cold session.",
+      "must_change": "Different new goal and two materials create new Run, Case, preparation, plan, dispatch and receipt/evidence identities, using second actors/catalog/resources.",
+      "must_preserve": "Actual user-authorized HTTP/original page and worker chain reaches explicitly observed P1-P5 and current downloadable result; no runtime database edits to drive the positive chain.",
+      "negative": "Cannot count old Case outputs, a copied input/marker, or repeated same-enterprise A/B as the second-enterprise first case."
+    },
+    {
+      "id": "OSCOPE-06",
+      "source": [
+        "AT-04",
+        "product:339,341",
+        "contract:9"
+      ],
+      "given": "Each pair guesses the other pair known Run/Case/preparation/plan/result/receipt ID.",
+      "must_change": "Both directions exercise actual backend denial at the selected original read/navigation/download boundaries.",
+      "must_preserve": "Deny before returning foreign business/identity fields and preserve the owner current result/history.",
+      "negative": "A filtered list alone is not proof that direct ID, cold GET or download is protected; record tested surfaces precisely."
+    },
+    {
+      "id": "OSCOPE-07",
+      "source": [
+        "AT-04",
+        "AT-08",
+        "contract:9"
+      ],
+      "given": "A foreign scope tries creating preparation on the old Run, selecting foreign specialist/executor, or submitting another scope old source proof.",
+      "must_change": "Actual original write endpoints reject cross-parent IDs and otherwise internally consistent foreign source/revision proof.",
+      "must_preserve": "No new foreign business record, state transition or altered current adoption; audit denial rows may occur and must be measured separately.",
+      "negative": "Do not replace 403/409/422 with successful no-op; exact expected code follows each already-frozen endpoint contract."
+    },
+    {
+      "id": "OSCOPE-08",
+      "source": [
+        "AT-04",
+        "product:341",
+        "contract:5,9"
+      ],
+      "given": "Both scopes use their own distinct two-resource combinations in overlapping time intervals in the same cluster.",
+      "must_change": "Each sees/holds/links only its own authorized resource IDs; foreign hold/combination/link attempts deny in both directions.",
+      "must_preserve": "No foreign occupation owner/purpose or resource grants are revealed; original capacity/atomicity rules and existing resource occupancy remain.",
+      "negative": "Independent resource sets do not demonstrate shared-resource capacity contention or a full Cartesian park/org isolation matrix."
+    },
+    {
+      "id": "OSCOPE-09",
+      "source": [
+        "AT-35",
+        "contract:9,13",
+        "baseline ordinary demo:17"
+      ],
+      "given": "Physical same-cluster restart between scope Cases, then cold reads of the first case while using the second.",
+      "must_change": "Independent second records appear while original first Case/history/TXT remain byte/semantic stable under the original canonical download rule.",
+      "must_preserve": "First OFFER/deadline/generations/resource expiry and capability intersections persist; serve does not renew/reissue grants or markers.",
+      "negative": "Restart/second session cannot revive a first-scope expired/revoked action; a cold read is not new verification."
+    },
+    {
+      "id": "OSCOPE-10",
+      "source": [
+        "AT-04",
+        "AT-08",
+        "AT-35",
+        "contract:11,13"
+      ],
+      "given": "Finite fixed-SHA verification after source freeze.",
+      "must_change": "Record actual phase/nodeids, commands, independent probes, source hash/import origins and PRE/POST shared/mirror hashes.",
+      "must_preserve": "Keep all failures and actual lifecycle/children proofs; source scripts included in import audit, own secrets excluded from publication with raw/public paired hashes.",
+      "negative": "No counting prior14/current same-scope A/B reruns; no claim full template release, formal AT35, real browser/Windows/native install/model/external production/business completion."
+    }
+  ],
+  "read_boundary": "Only baseline Git blobs/original plans/fixed AT and the committed new contract read. No new implementation WIP read. No DB/process/test/network/permission operation.",
+  "write_boundary": "Only this new reviewer-owned runtime directory.",
+  "execution_status": "NOT_RUN_WAITING_FOR_FINAL_SOURCE_SHA"
+}

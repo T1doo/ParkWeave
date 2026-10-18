@@ -1,0 +1,78 @@
+{
+  "kind": "WIP_STATIC_REVIEW_NO_BUSINESS_EXECUTION",
+  "at_utc": "2026-10-18T20:59:40.115079+00:00",
+  "baseline": "a396f63eed027d4ccf8dc1ed6f591766915449ae",
+  "contract": "03685a1af1ff83f591353eb3d5cd8c95163c1afe",
+  "oracle_unchanged_sha256": "47be183682aba5a4b015141308e276f6f1c045370cbc6887d9110b75a29d902c",
+  "development_input_maps_equal": true,
+  "input_map_sha256": "6463a550bf5e39ed251f547f12a5b93fcb4d72bb13e4b6d4efe8784a4e0d8759",
+  "current_src_vs_baseline": {
+    "files": 186,
+    "drift": []
+  },
+  "read_source_sha256": {
+    "scripts/ordinary_synthetic_demo.py": "a4cf27bbc1c95eb99292019142a06f870e50028378198d77c5d3f6bb2a2113dd",
+    "tests/test_ordinary_synthetic_scopes.py": "ff3f08d45d8bf534f6c491c3cfc2509abce0dbcfa3203c8b99e5247304a49e0d",
+    "tests/test_ordinary_synthetic_demo.py": "6ed324e2ba3d52a7612dcac58c9f19e921005a004733cc39264e1bef39893bf2",
+    "docs/demo/OrdinarySyntheticDemo.md": "1943fc31ecd1a5f2305fdb8c0d3b3a10dacca1a35aba4fc1534d0531788045ca",
+    "src/parkweave/case_lifecycle.py": "0e91d8fa5c1e953cb221b21f3c75d28157c3cbac7854839d5b4d825ef5b278a4",
+    "src/parkweave/case_step_assignments.py": "4557497f83e7c2241d42ad26c9aee1adf8ee5b99df403109ddf2595fb9d83590",
+    "src/parkweave/ordinary_plan_sources.py": "3c662a8ea13da8c41221ca9703c2fdfa6035216e899950af4e7ecd5c49a3d6c3",
+    "src/parkweave/dispatch_notices.py": "dc24cb1e9fcfef7cb348cab90928c5eae8299938a4fc36f81674a9eb2eaee21f",
+    "src/parkweave/executor_receipts.py": "902df736e63f5ab4516e7322988cc6845e3bf091ea7484c90c8bdd56b6b92c1b",
+    "src/parkweave/worker.py": "2bbcc26a87886a94c21f66a56292f72daa7b83d682c331512bdc71338746711d",
+    "src/parkweave/store.py": "432d6993f834390088d719eae11b7a6a68f7f160bebc3d66332841bb7a24fdf1",
+    "src/parkweave/api.py": "8c2fd0c0371afeb1263b49289d7301caeed51fe8f83c8e356c41c857b9513f3e"
+  },
+  "parent_owned_evidence_sha256": {
+    "development/input-before.json": "6463a550bf5e39ed251f547f12a5b93fcb4d72bb13e4b6d4efe8784a4e0d8759",
+    "development/input-after.json": "6463a550bf5e39ed251f547f12a5b93fcb4d72bb13e4b6d4efe8784a4e0d8759",
+    "development/first.log": "0fd44d02a46a41d4feb36a723cc62668044d971b3bde2fd01ada8ed239bace92",
+    "development/first.xml": "602bc822efdcb215200347c76b3dd49796c538d797db2d82f065e7368134cbe0",
+    "development/owned-states/parkweave-ordinary-demo-605nnt7l/logs/postgres.log": "dd76f15a20256a8b7591e6f460c1d78f931afc72cb949cd569ace21d0ad6a820",
+    "development/owned-states/parkweave-ordinary-demo-605nnt7l/logs/application.log": "4298c6a63ecac3bfc2b4177f26d78119105f6474a6dab02de3b84a21881840ed"
+  },
+  "observed_parent_development_cases": [
+    {
+      "classname": "tests.test_ordinary_synthetic_scopes",
+      "name": "test_second_enterprise_first_cold_case_after_restart_and_bidirectional_isolation",
+      "time": "81.680",
+      "outcome": "FAIL",
+      "failure_message": "httpx.ReadTimeout: timed out"
+    },
+    {
+      "classname": "tests.test_ordinary_synthetic_scopes",
+      "name": "test_scope_binding_missing_or_changed_refuses_before_postgres",
+      "time": "85.389",
+      "outcome": "PASS",
+      "failure_message": null
+    }
+  ],
+  "finding": {
+    "classification": "UNRESOLVED_OBSERVATION_NOT_YET_PRODUCT_OR_FIXTURE_ATTRIBUTION",
+    "certain": [
+      "Second scope complete reached original local-case/commands POST at tests/test_ordinary_synthetic_demo.py:143; client ReadTimeout is 20 seconds (server helper:62).",
+      "No recorded action value, exact request key, HTTP response, or server/DB waiting query at the failing instant in available trace. REVALIDATE versus CLOSE and commit result cannot be inferred.",
+      "The PG preparations FOR SHARE lock timeouts occur in both first completed and second failing Case phases. Original worker notice consumer has 50ms candidate lock timeout at dispatch_notices:182 and read parent locks case_step_assignments:158/193. This is compatible with concurrent business parent writes but does not identify the stalled POST blocker.",
+      "Original lifecycle sets 3-second lock timeout and bounded converts LockNotAvailable to Conflict/409. Absence of a response for20s alone does not establish a held DB row lock as cause.",
+      "New initializer uses separate actor/park/org/catalog-source/resource IDs in the same database; no new src algorithm diff and no static foreign-scope lock key collision identified.",
+      "Unchanged default/Native guards and positive helper retain original explicit human decisions. No new test grants/roles/schema/conftest changes found in the specified diff."
+    ],
+    "unknown": [
+      "Actual timed-out command action/key and DB/backend or application stack at timeout.",
+      "Whether this original POST committed and whether a final callback, commit, query, or scheduling delay blocked it.",
+      "Any causal role of second-scope configuration versus existing ordinary path."
+    ],
+    "safe_next_evidence": [
+      "Read only original second Case ledger/local_events action/revision/created_at; do not resubmit unknown POST.",
+      "If a later expressly authorized finite rerun is required, capture command action plus exact request key and request/response timestamps before sending, and actual active backend wait/stack, preserving20s timeout/300s deadline/SQL permissions. This is instrumentation, not a presumed fix."
+    ]
+  },
+  "confirmed_new_P1": [],
+  "confirmed_new_P2": [],
+  "limits": [
+    "This static review is not a PASS for either the new positive chain or full AT.",
+    "Known root development FAIL and all raw remain; no automatic retry or scope/guard relaxation.",
+    "No DB/service/process/permission operation or business test performed by reviewer. Git/file reads and private report creation only."
+  ]
+}

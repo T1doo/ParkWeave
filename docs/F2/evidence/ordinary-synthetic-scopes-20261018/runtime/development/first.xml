@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="168.798" timestamp="2026-10-18T20:52:24.269298+00:00" hostname="9eff6a810039"><testcase classname="tests.test_ordinary_synthetic_scopes" name="test_second_enterprise_first_cold_case_after_restart_and_bidirectional_isolation" time="81.680"><failure message="httpx.ReadTimeout: timed out">@contextlib.contextmanager
+    def map_httpcore_exceptions() -&gt; typing.Iterator[None]:
+        global HTTPCORE_EXC_MAP
+        if len(HTTPCORE_EXC_MAP) == 0:
+            HTTPCORE_EXC_MAP = _load_httpcore_exceptions()
+        try:
+&gt;           yield
+
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:250: in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py:256: in handle_request
+    raise exc from None
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection_pool.py:236: in handle_request
+    response = connection.handle_request(
+.venv/lib/python3.12/site-packages/httpcore/_sync/connection.py:103: in handle_request
+    return self._connection.handle_request(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:136: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:106: in handle_request
+    ) = self._receive_response_headers(**kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:177: in _receive_response_headers
+    event = self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpcore/_sync/http11.py:217: in _receive_event
+    data = self._network_stream.read(
+.venv/lib/python3.12/site-packages/httpcore/_backends/sync.py:126: in read
+    with map_exceptions(exc_map):
+         ^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+map = {&lt;class 'TimeoutError'&gt;: &lt;class 'httpcore.ReadTimeout'&gt;, &lt;class 'OSError'&gt;: &lt;class 'httpcore.ReadError'&gt;}
+
+    @contextlib.contextmanager
+    def map_exceptions(map: ExceptionMapping) -&gt; typing.Iterator[None]:
+        try:
+            yield
+        except Exception as exc:  # noqa: PIE786
+            for from_exc, to_exc in map.items():
+                if isinstance(exc, from_exc):
+&gt;                   raise to_exc(exc) from exc
+E                   httpcore.ReadTimeout: timed out
+
+.venv/lib/python3.12/site-packages/httpcore/_exceptions.py:14: ReadTimeout
+
+The above exception was the direct cause of the following exception:
+
+demo_state = (PosixPath('/tmp/parkweave-ordinary-demo-605nnt7l'), {'schema': 'parkweave-ordinary-synthetic-demo/2', 'source': {'sha...78b621c', ...}}, 'system_identifier': '7698113607662930334', 'database_oid': 16384, ...}, &lt;private synthetic sessions&gt;)
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-14/test_second_enterprise_first_c0')
+
+    def test_second_enterprise_first_cold_case_after_restart_and_bidirectional_isolation(demo_state,tmp_path):
+        state,marker,tokens=demo_state;primary=demo.SCOPES['primary'];secondary=demo.SCOPES['secondary']
+        assert len(tokens)==6 and len(set(tokens.values()))==6
+        assert marker['scopes']==demo.SCOPES
+        assert primary['park_id']!=secondary['park_id'] and primary['org_id']!=secondary['org_id']
+        assert set(primary['ids'].values()).isdisjoint(secondary['ids'].values())
+        first_tokens=sessions(tokens,primary);second_tokens=sessions(tokens,secondary)
+        original_marker=(state/'state.json').read_bytes();starts=[];refusals=[]
+        with server(state,tmp_path/'first-scope') as (api,ready):
+            starts.append(ready);assert len(ready['available_scopes'])==2
+            catalog(api,first_tokens,primary);catalog(api,second_tokens,secondary)
+            with Store(demo.lifecycle.dsn(state)).connect() as c:
+                c.execute('SET TRANSACTION READ ONLY')
+                assert marker['authority']['counts']==dict(principals=6,capability_grants=8,action_grants=2,
+                    preparation_grants=4,preparation_catalog=2,run_assignments=0,field_grants=0,
+                    synthetic_resources=4,synthetic_resource_grants=8)
+                assert all(not c.execute('SELECT 1 FROM '+t+' LIMIT 1').fetchone() for t in TABLES)
+            first,first_request_revision=prepare_case(api,first_tokens,'第一企业独立设备维护',primary)
+            first_preview=call(api,first_tokens,'/api/preparations/'+first['preparation_id']+'/planning-preview')['current']
+            adopt_case(api,first_tokens,first,first_request_revision)
+            first_dispatch,first_results=complete(api,first_tokens,first,'第一企业',primary)
+            link=call(api,first_tokens,'/api/preparations/'+first['preparation_id']+'/resource-link')
+            first_group=link['current']['combination']
+            first_pack=pack(api,first_tokens,tmp_path/'first-html',first,first_results)
+            before=business(state)
+            foreign_reads(api,second_tokens,first,first_dispatch,first_group,refusals)
+            assert call(api,second_tokens,'/api/preparations')['items']==[]
+            assert call(api,second_tokens,'/api/cases/worklist')['items']==[]
+            denied(api,second_tokens,'/api/preparations',refusals,dict(run_id=first['run_id'],
+                service_id='synthetic-material-preparation',service_version=1,reviewer_id=secondary['ids']['specialist']))
+            assert business(state)==before
+        assert not (state/'data/postmaster.pid').exists()
+        with server(state,tmp_path/'second-scope-cold') as (api,ready):
+            starts.append(ready)
+            assert all(ready[k]!=starts[0][k] for k in ('api_pid','worker_pid','postgres_pid'))
+            assert call(api,second_tokens,'/api/cases/worklist')['items']==[]
+            assert call(api,second_tokens,'/api/preparations')['items']==[]
+            assert call(api,first_tokens,'/api/preparations/'+first['preparation_id']+'/goal-results')==first_results
+            cold_pack=pack(api,first_tokens,tmp_path/'first-cold-html',first,first_results)
+            assert (tmp_path/'first-html/download.txt').read_bytes()==(tmp_path/'first-cold-html/download.txt').read_bytes()
+            second,request_revision=prepare_case(api,second_tokens,'第二企业首次新员工培训',secondary)
+            base='/api/preparations/'+second['preparation_id']
+            own_preview=call(api,second_tokens,base+'/planning-preview')['current']
+            assert own_preview['source_sha256']!=first_preview['source_sha256']
+            before=business(state)
+            denied(api,second_tokens,base+'/service-case-plan',refusals,dict(
+                expected_preparation_revision=second['revision'],expected_request_revision=request_revision,
+                expected_source_sha256=first_preview['source_sha256'],expected_plan_revision=0,
+                required_goals=GOALS,reason='SYNTHETIC forbidden old enterprise proof'),status=409)
+            denied(api,second_tokens,'/api/preparations',refusals,dict(run_id=second['run_id'],
+                service_id='synthetic-material-preparation',service_version=1,reviewer_id=primary['ids']['specialist']))
+            assert business(state)==before
+            adopt_case(api,second_tokens,second,request_revision);verify(api,second_tokens,second,'P1')
+            before=business(state)
+            denied(api,second_tokens,base+'/resource-link',refusals,dict(combination_id=first_group['id'],
+                expected_preparation_revision=second['revision'],expected_link_revision=0,reason='SYNTHETIC cross enterprise combination'))
+            now=datetime.now(timezone.utc)
+            denied(api,second_tokens,'/api/synthetic-resources/'+primary['resources'][0]['id']+'/holds',refusals,
+                dict(starts_at=(now+timedelta(hours=1)).isoformat(),ends_at=(now+timedelta(hours=2)).isoformat(),
+                    quantity=1,expected_revision=1,ttl_seconds=120,purpose='SYNTHETIC denied cross park'))
+            denied(api,second_tokens,base+'/dispatch',refusals,dict(expected_preparation_revision=second['revision'],
+                expected_dispatch_revision=0,executor_id=primary['ids']['executor'],reason='SYNTHETIC foreign executor'),actor='specialist')
+            assert business(state)==before
+&gt;           second_dispatch,second_results=complete(api,second_tokens,second,'第二企业',secondary,p1_verified=True)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_synthetic_scopes.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_ordinary_synthetic_demo.py:143: in complete
+    call(api,tokens,base+'/local-case/commands',dict(action=action,expected_revision=row['revision'],expected_cycle=row['cycle'],expected_snapshot_sha256=row['current_snapshot_sha256'],reason='SYNTHETIC explicit '+action))
+tests/test_ordinary_synthetic_demo.py:77: in call
+    headers['Idempotency-Key']=uuid4().hex;r=api.post(path,headers=headers,json=body)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:249: in handle_request
+    with map_httpcore_exceptions():
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:158: in __exit__
+    self.gen.throw(value)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    @contextlib.contextmanager
+    def map_httpcore_exceptions() -&gt; typing.Iterator[None]:
+        global HTTPCORE_EXC_MAP
+        if len(HTTPCORE_EXC_MAP) == 0:
+            HTTPCORE_EXC_MAP = _load_httpcore_exceptions()
+        try:
+            yield
+        except Exception as exc:
+            mapped_exc = None
+    
+            for from_exc, to_exc in HTTPCORE_EXC_MAP.items():
+                if not isinstance(exc, from_exc):
+                    continue
+                # We want to map to the most specific exception we can find.
+                # Eg if `exc` is an `httpcore.ReadTimeout`, we want to map to
+                # `httpx.ReadTimeout`, not just `httpx.TimeoutException`.
+                if mapped_exc is None or issubclass(to_exc, mapped_exc):
+                    mapped_exc = to_exc
+    
+            if mapped_exc is None:  # pragma: no cover
+                raise
+    
+            message = str(exc)
+&gt;           raise mapped_exc(message) from exc
+E           httpx.ReadTimeout: timed out
+
+.venv/lib/python3.12/site-packages/httpx/_transports/default.py:118: ReadTimeout</failure></testcase><testcase classname="tests.test_ordinary_synthetic_scopes" name="test_scope_binding_missing_or_changed_refuses_before_postgres" time="85.389" /></testsuite></testsuites>
