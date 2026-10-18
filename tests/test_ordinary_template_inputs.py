@@ -171,3 +171,54 @@ def test_default_current_process_has_no_template_source_or_fixture_fallback(temp
         assert api.get('/api/template-consumer/creation-recovery',params=dict(request_key='absent',expected_fingerprint_sha256='0'*64),headers=headers(f)).status_code==404
         result=html(f,tmp_path,str(api.base_url).rstrip('/'),'default')
     assert result['checks']>0 and products(f['owner'])==initial and grant_snapshot(f['owner'])==authority
+
+
+# Regression for the independent frozen-b6977186 journal-wait finding.
+def test_actual_journal_wait_must_recheck_catalog_before_preparation_send(template_consumption,tmp_path,monkeypatch):
+ import sqlite3,sys,time
+ from pathlib import Path
+ f=template_consumption;data=pinned(f)[2];row=consume(f,key='independent-before-journal-wait',data=data).json()
+ worker_once((f['store'],),tmp_path/'worker')
+ assert f['client'].get('/api/template-consumer/instances/'+row['instance_id'],headers=headers(f)).json()['run_state']=='SUCCEEDED'
+ before=products(f['owner']);authority=grant_snapshot(f['owner'])
+ ready=threading.Event();proceed=threading.Event();counter=[0];worker_ident=[None];responses=[];errors=[];original=f['consumer']._available
+ def observed(*args,**kwargs):
+  result=original(*args,**kwargs);counter[0]+=1
+  # Resume entry, confirmed CREATE_RUN, then first CREATE_PREPARATION.
+  if counter[0]==3:
+   worker_ident[0]=threading.get_ident();ready.set();assert proceed.wait(3),'observer did not release pin-check gate'
+  return result
+ def request():
+  try:
+   t=time.monotonic();r=resume(f,row,key='independent-explicit-materials');responses.append(dict(status=r.status_code,response=r.json(),start_monotonic=t,end_monotonic=time.monotonic()))
+  except BaseException as e:errors.append(dict(type=type(e).__name__,message=str(e)))
+ holder=sqlite3.connect(f['repository'].path,timeout=3);thread=threading.Thread(target=request);wait_frame=None;source_after=None
+ with monkeypatch.context() as patch:
+  patch.setattr(f['consumer'],'_available',observed)
+  thread.start()
+  try:
+   assert ready.wait(3),'original preparation stage pin check not reached'
+   holder.execute('BEGIN IMMEDIATE');proceed.set();deadline=time.monotonic()+2
+   while time.monotonic()<deadline:
+    frame=sys._current_frames().get(worker_ident[0])
+    while frame:
+     if frame.f_code.co_filename.endswith('template_consumer.py') and frame.f_code.co_name=='connect':
+      lines=Path(frame.f_code.co_filename).read_text().splitlines();source=lines[frame.f_lineno-1]
+      if 'BEGIN IMMEDIATE' in source:
+       wait_frame=dict(function='connect',line=frame.f_lineno,source=source.strip(),observed_monotonic=time.monotonic());break
+     frame=frame.f_back
+    if wait_frame:break
+    time.sleep(.01)
+   assert wait_frame,'actual original SQLite BEGIN IMMEDIATE wait was not observed'
+   with f['owner'].connect() as c:
+    source=c.execute('SELECT source FROM preparation_catalog WHERE park_id=%s',(PARK,)).fetchone()['source']
+    source_after={**source,'revision':'2','statement':'SYNTHETIC independent current directory advanced during original journal lock wait'}
+    c.execute('UPDATE preparation_catalog SET source=%s WHERE park_id=%s',(Jsonb(source_after),PARK))
+  finally:
+   holder.commit();holder.close();proceed.set();thread.join(10)
+ assert not thread.is_alive() and not errors,errors
+ after=products(f['owner']);assert grant_snapshot(f['owner'])==authority
+ proof=dict(wait_frame=wait_frame,actual_sqlite_journal_wait=True,catalog_source_after=source_after,responses=responses,errors=errors,available_check_count=counter[0],before_counts={k:len(v) for k,v in before.items()},after_counts={k:len(v) for k,v in after.items()},authority_unchanged=True,original_deadlines_or_timeouts_modified=False,original_human_resume=True,source_pin=data['expected_catalog_sha256'])
+ (tmp_path/'journal-wait.json').write_text(json.dumps(proof,indent=2)+'\n')
+ assert responses[0]['status'] in (403,409),responses
+ assert after==before,'a newly stale catalog pin was used to send a preparation stage after actual journal wait'
