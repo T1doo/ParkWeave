@@ -1,0 +1,219 @@
+{
+  "baseline_git_blob_sha256": {
+    "docs/F2/CaseStepAssignmentContract-20261018.md": "f1680c20fdc720a703a81ec3c8bd8c366b8795aa2ef95ea35b3b5f753e3f20b9",
+    "docs/sources/V1/分阶段开发计划 (2).md": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+    "docs/sources/V1/平台产品设计 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "src/parkweave/api.py": "851eb9c6392b3be28b4bbb94be1afcad97af0d5c48d8647adc5491e94633df5f",
+    "src/parkweave/case_step_assignments.py": "de669932813156b94dc7c9631c41df54e3d7ad257dd99fc20c9f9c2090a21448",
+    "src/parkweave/dispatch_notices.py": "e0d2365a1da07cc494a9168662f59ca4b17bcced73529ff171b2569cfea92a33",
+    "src/parkweave/executor_receipts.py": "902df736e63f5ab4516e7322988cc6845e3bf091ea7484c90c8bdd56b6b92c1b",
+    "src/parkweave/service_dispatches.py": "f237feccf5994b313fbfb478457f39d75ecaecdf6849b7c58bd3b5e607a412d9",
+    "src/parkweave/web.html": "9f524503a77d968bb71bb57bd56053deeee4ecbb7126d1c9cc4190c62f161949",
+    "src/parkweave/worker.py": "46352aaf786bc2f4b6db19503b62935ec6e4f49aca67e4b53f7d5749ebaf8290"
+  },
+  "baseline_sha": "06186eef397a26bcf8ed8b6b3f07d6b1e9aa5cc5",
+  "design_risks_reported": [
+    "Queue classification must use whole marked dispatch lineage; subsequent events lack marker.",
+    "New projected actionable must not reuse original same-offer-only flag for accepted/expired/terminal/stale history.",
+    "Explicit cursor must bind provider identity/mode, including direct-call Store cache.",
+    "Trusted consumer has principal row, no token; reuse exact principal/scope kernel without reading or generating credentials.",
+    "Delivery requires complete original candidate event proof and final post-wait check, distinct from intentional suppression of proven own revoked/expired recipient."
+  ],
+  "literal_oracles": [
+    {
+      "expect": {
+        "classification": "whole dispatch/preparation marker lineage, including malformed marker; not candidate payload only",
+        "inbox_inserted_by_default": 0,
+        "new_scope_outbox_state": "PENDING unchanged by default consumer",
+        "source_guard_fallback": false
+      },
+      "given": "ordinary default/CLI consumer and source dispatch has any marker key on original OFFER, while candidate itself may be markerless ACCEPT/DECLINE/WITHDRAW",
+      "id": "CN01"
+    },
+    {
+      "expect": {
+        "current_original_proof_required": true,
+        "ordinary_Run_access": "DENIED",
+        "provider_discovery_or_cold_authority_inheritance": false,
+        "unmarked_or_foreign_issuer_intent_consumed_by_explicit_provider": false,
+        "wrong_dependency_access": "DENIED"
+      },
+      "given": "explicit exact original CaseStep provider versus object/wrong Store/foreign proof/provider or ordinary app on same Store",
+      "id": "CN02"
+    },
+    {
+      "expect": {
+        "OFFER_outbox_recipient_set": [
+          "original_owner",
+          "offered_executor"
+        ],
+        "READ_alone_sets_OPEN_or_READ_timestamp": false,
+        "author_actor_notice": false,
+        "case_goal_completed": false,
+        "delivered_inbox_at_most_once_per_event_recipient": true,
+        "external_send": false
+      },
+      "given": "original responsible reviewer explicitly OFFER to configured existing executor; trusted explicit consumer drains owned scope",
+      "id": "CN03"
+    },
+    {
+      "expect": {
+        "ACCEPT_or_DECLINE_outbox_recipients": [
+          "original_owner",
+          "responsible_reviewer"
+        ],
+        "WITHDRAW_executor_new_delivery": "not authorized; same-own verified terminal intent may be SUPPRESSED by explicit consumer only",
+        "WITHDRAW_outbox_recipients": [
+          "original_owner",
+          "original_executor"
+        ],
+        "executor_after_WITHDRAW_or_DECLINE_read_or_command": "DENIED",
+        "owner_reviewer_minimal_history": "current own Case scope, within original provider window"
+      },
+      "given": "source actions ACCEPT/DECLINE by executor or WITHDRAW by reviewer in the same issued scope",
+      "id": "CN04"
+    },
+    {
+      "expect": {
+        "MARK_READ_after_OPEN": "read_at set once; delivered_at and seen_at preserved",
+        "MARK_READ_before_OPEN": "CONFLICT with no writes",
+        "OPEN": "seen_at set once; read_at unchanged",
+        "READ": "no timestamp writes",
+        "delivery_OPEN_READ_and_fulfillment_are_distinct": true,
+        "repeated_OPEN_MARK_READ": "original timestamps retained; no duplicate event/inbox rows"
+      },
+      "given": "valid own notice read then explicit OPEN, explicit MARK_READ, repeats, or MARK_READ before OPEN",
+      "id": "CN05"
+    },
+    {
+      "expect": {
+        "OPEN_auto_ACCEPT_SUBMIT_ACK_VERIFY": false,
+        "actionable": "only currently live own OFFERED business scope; historical readability never grants business action",
+        "executor_expired_or_terminal_history": "DENIED",
+        "owner_reviewer_historical_OPEN_MARK_READ": "minimal historical only while currently authorized and provider live"
+      },
+      "given": "same original offer now ACCEPTED, expired, WITHDRAWN, source-stale, or permission-generation-stale; original OFFER notice is historical",
+      "id": "CN06"
+    },
+    {
+      "expect": {
+        "OPEN_navigation": "separate GET of current original step; no original private goal/material/body",
+        "notice_expected_revision": "exact original source event revision, not current root revision",
+        "wrong_notice_revision": "CONFLICT with no timestamp writes"
+      },
+      "given": "own notice immutable event revision differs from current dispatch root revision after later valid business event",
+      "id": "CN07"
+    },
+    {
+      "expect": {
+        "current_recipient_auth_always_rechecked": true,
+        "executor_old_marker_revives_on_same_value_ABA": false,
+        "owner_reviewer_hist_requires_beneficiary_old_READ": false,
+        "unauthorized_list_or_GET_or_OPEN_MARK_READ": "DENIED or filtered, no stale private output or timestamp writes"
+      },
+      "given": "READ/PREPARE/REVIEW_ASSIGNED/current exact role/tenant changes, beneficiary revocation then restoration, or material/catalog generation changes after delivery",
+      "id": "CN08"
+    },
+    {
+      "expect": {
+        "physical_COMMIT_instant_atomic_expiry_claim": false,
+        "post_wait_current_scope_and_DB_clock_recheck": true,
+        "temporary_busy_or_fault": "transaction rollback retains pending intent",
+        "unauthorized_DELIVERED_OPEN_MARK_READ_delta": 0,
+        "unverified_or_foreign_marker": "retain PENDING, no legacy suppression/fallback"
+      },
+      "given": "supported owned outbox/inbox/parent lock wait crosses first-offer or outer-provider deadline before final admission",
+      "id": "CN09"
+    },
+    {
+      "expect": {
+        "ACCEPT_requires_original_receipt_CREATE": true,
+        "complete_original_event_and_marker_proof_required": true,
+        "hash_alone_is_authority": false,
+        "read_write_delivery": "DENIED or explicit CONFLICT, never broad fallback",
+        "unknown_intent_erased_or_SUPPRESSED_by_default_consumer": false
+      },
+      "given": "corrupt or self-consistent partial OFFER/ACCEPT/DECLINE/WITHDRAW event columns/payload/typed revision/hash/recipient, invalid marker or mixed legacy journal",
+      "id": "CN10"
+    },
+    {
+      "expect": {
+        "Run_assignment_or_Native_failure_fallback": false,
+        "cross_scope_private_values_exposed": false,
+        "new_authority_rows": 0,
+        "notice_access_or_timestamp_write": "DENIED"
+      },
+      "given": "other recipient, another executor/Case/Run/preparation/tenant, or relevant active/inactive Run assignment/Native history",
+      "id": "CN11"
+    },
+    {
+      "expect": {
+        "binding": "scope mode + exact provider contract_id + original actor/token/domain; cache never authority",
+        "cursor_raw_source_keys_or_credentials": false,
+        "page_limit": 20,
+        "same_snapshot_high_water_and_progress": "no authorized row skipped because earlier filtered rows consumed scan budget",
+        "scan_limit": 100,
+        "wrong_context_or_dead_cursor": "DENIED refresh required"
+      },
+      "given": "list pagination using opaque cursor across default/explicit app, another provider issuer, actor/token, expiry/restart/eviction, or current revocation between pages",
+      "id": "CN12"
+    },
+    {
+      "expect": {
+        "HTTP_source": "actual owned ASGI/PG, original shipped page; no replacement product shell",
+        "current_403": "clear private views, no automatic POST retry",
+        "explicit_actions_only": true,
+        "late_callback_after_context_change": "ignored; cannot render stale private notice or clear replacement context",
+        "private_goal_material_facts_other_executor_or_credentials": "absent from notice responses/storage/trace"
+      },
+      "given": "original full HTML list button -> actual notice -> explicit OPEN -> original current CaseStep -> separately explicit MARK_READ",
+      "id": "CN13"
+    },
+    {
+      "expect": {
+        "fault": "rollback insertion and outbox update together",
+        "inbox_rows_per_event_recipient": 1,
+        "source_outbox_intent_loss": false,
+        "unknown_process_or_lock_manipulation": false,
+        "worker_CLI_provider_activation_or_discovery": false
+      },
+      "given": "two explicit trusted consume calls race or transaction fails after inbox insertion before outbox acknowledgement",
+      "id": "CN14"
+    },
+    {
+      "expect": {
+        "default_consumer_marker_pending_preserved": true,
+        "new_identity_Grant_assignment_catalog_approval_credentials": false,
+        "provider_end_READ_OPEN_MARK_READ_consume": "DENIED before new mutations",
+        "rebind": "original scoped read semantics only, no real durable cross-process authority claim"
+      },
+      "given": "same exact issued provider rebound explicitly to same Store within original window versus no provider or outer dependency expiry",
+      "id": "CN15"
+    },
+    {
+      "expect": {
+        "browser_Windows_formal_AT_real_business_claim": false,
+        "normal_business_authority_table_delta": 0,
+        "notification_side_effects": "only original outbox/inbox plus explicit OPEN/READ timestamps; actual business actions separate",
+        "old129_full_matrix_rerun_for_counts": false,
+        "ordinary_case_step_and_Run_guards": "preserved with explicit marker isolation additions"
+      },
+      "given": "complete new scoped notice slice and targeted later test window",
+      "id": "CN16"
+    }
+  ],
+  "method": "Literal state/access expectations from original product section5.5/F2-T04 and parent selected design. Only baseline source/docs read, no new implementation used to generate expected answers. No project imports/tests/PG/network/business writes.",
+  "private_artifact_only": true,
+  "scope": "INDEPENDENT_CASE_STEP_NOTICES_LITERAL_DESIGN_BEFORE_NEW_IMPLEMENTATION",
+  "source_requirement_lines": {
+    "docs/sources/V1/分阶段开发计划 (2).md": [
+      87
+    ],
+    "docs/sources/V1/平台产品设计 (2).md": [
+      173,
+      228
+    ]
+  },
+  "test_execution_status": "NOT_RUN_AWAITING_CONTRACT_AND_FROZEN_SOURCE_SHA",
+  "tracked_or_git_mutations": false
+}
