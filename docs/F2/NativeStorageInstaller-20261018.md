@@ -14,7 +14,7 @@
 
 `install(controller, connection, plan, authorization)` 默认拒绝；只有显式固定批准路径、受支持 Linux/root、原 UTC 区间、原受保护身份/源码/依赖观察及精确 HMAC 批准全部通过，才能建立一次 O_EXCL、NOFOLLOW、0600 的 install-claim。原安装收据字节 SHA 须预先与 layout 相符。既有 claim、收据或未知文件不采纳、不覆盖、不删除。
 
-执行在 READ COMMITTED 事务中，设置本事务搜索路径及 5 秒 statement/1 秒 lock timeout，核实际 installer/物理库，取得计划相关 advisory 锁及原 14 表 ACCESS EXCLUSIVE 锁，然后重读目录并重建完整计划；与已批计划不同则在任何 DDL/GRANT 前回滚。逐项执行期间与提交前均核原 policy 截止；提交前再检查原存储和 runtime 全部权限合同。提交确认后才用既有 root key 生成并发布原 host 已支持的安装收据；没有自动启动、绑定更新、API 重建、激活或模型调用。
+执行在 READ COMMITTED 事务中，设置本事务搜索路径及 5 秒 statement/1 秒 lock timeout，核实际 installer/物理库，取得计划相关 advisory 锁及原 14 表 ACCESS EXCLUSIVE 锁，然后重读目录并重建完整计划；与已批计划不同则在任何 DDL/GRANT 前回滚。逐项执行期间与提交前均核原 policy 截止；提交前再检查原存储和 runtime 全部权限合同。授权时用既有 root key 私下预构造并核摘要的原 host 安装收据，仅在提交确认后才发布；没有自动启动、绑定更新、API 重建、激活或模型调用。
 
 ## 支持范围与失败边界
 
