@@ -1,0 +1,143 @@
+test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) ... 
+  test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) (change={'owner': 1}) ... ERROR
+  test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) (change={'seals': 0}) ... ERROR
+test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) ... ERROR
+test_changed_protected_bytes_and_expired_policy_refuse_without_renewal (__main__.InstalledLaunchTests.test_changed_protected_bytes_and_expired_policy_refuse_without_renewal) ... ok
+test_default_start_and_unissued_objects_refuse_before_private_reads (__main__.InstalledLaunchTests.test_default_start_and_unissued_objects_refuse_before_private_reads) ... ok
+test_existing_outputs_are_not_adopted_overwritten_or_retried (__main__.InstalledLaunchTests.test_existing_outputs_are_not_adopted_overwritten_or_retried) ... ok
+test_fresh_trial_receipt_cannot_replace_installed_receipt (__main__.InstalledLaunchTests.test_fresh_trial_receipt_cannot_replace_installed_receipt) ... ok
+test_installed_contract_requires_local_exact_installation_and_source_refs (__main__.InstalledLaunchTests.test_installed_contract_requires_local_exact_installation_and_source_refs) ... ok
+test_issued_descriptor_cannot_be_reused_for_foreign_spec_boot_key_or_callback (__main__.InstalledLaunchTests.test_issued_descriptor_cannot_be_reused_for_foreign_spec_boot_key_or_callback) ... ERROR
+test_layout_is_separate_strict_schema_and_roundtrips_aliases (__main__.InstalledLaunchTests.test_layout_is_separate_strict_schema_and_roundtrips_aliases) ... ok
+test_metadata_refusal_precedes_engine_and_spawn (__main__.InstalledLaunchTests.test_metadata_refusal_precedes_engine_and_spawn) ... ok
+test_protected_approval_checks_exact_installation_receipt_and_metadata (__main__.InstalledLaunchTests.test_protected_approval_checks_exact_installation_receipt_and_metadata) ... ok
+test_publication_failure_stops_only_the_owned_child_and_preserves_error (__main__.InstalledLaunchTests.test_publication_failure_stops_only_the_owned_child_and_preserves_error) ... ERROR
+test_pure_private_validation_does_not_create_ordinary_engine_authority (__main__.InstalledLaunchTests.test_pure_private_validation_does_not_create_ordinary_engine_authority) ... ok
+test_restart_request_uses_new_root_boot_pin_but_keeps_original_policy_key_deadline (__main__.InstalledLaunchTests.test_restart_request_uses_new_root_boot_pin_but_keeps_original_policy_key_deadline) ... ERROR
+test_sealed_descriptor_route_constructs_exact_engine_without_connection (__main__.InstalledLaunchTests.test_sealed_descriptor_route_constructs_exact_engine_without_connection) ... ERROR
+test_signed_installation_record_still_is_data_without_live_issuance (__main__.InstalledLaunchTests.test_signed_installation_record_still_is_data_without_live_issuance) ... ok
+test_start_reuses_protected_host_and_keeps_private_values_out_of_argv (__main__.InstalledLaunchTests.test_start_reuses_protected_host_and_keeps_private_values_out_of_argv) ... ERROR
+test_trial_and_installed_targets_cannot_be_interchanged (__main__.InstalledLaunchTests.test_trial_and_installed_targets_cannot_be_interchanged) ... ok
+test_wrong_signed_receipt_target_source_code_bootstrap_or_identity_refuses (__main__.InstalledLaunchTests.test_wrong_signed_receipt_target_source_code_bootstrap_or_identity_refuses) ... ok
+test_original_expired_mac_only_verify (__main__.LegacyChecks.test_original_expired_mac_only_verify) ... ok
+test_original_fake_guard_and_instance_override (__main__.LegacyChecks.test_original_fake_guard_and_instance_override) ... ok
+test_original_launch_arguments (__main__.LegacyChecks.test_original_launch_arguments) ... ok
+test_original_pin_observations (__main__.LegacyChecks.test_original_pin_observations) ... ok
+test_original_unissued_backend_and_store (__main__.LegacyChecks.test_original_unissued_backend_and_store) ... ok
+test_original_unknown_child_refusal (__main__.LegacyChecks.test_original_unknown_child_refusal) ... ok
+
+======================================================================
+ERROR: test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) (change={'owner': 1})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 233, in test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority
+    with self.subTest(change=change),h.descriptor_observations(h.ticket(),**change),self.assertRaises(Denied):host.load_host_ticket(91)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 119, in descriptor_observations
+    required=host.fcntl.F_SEAL_SEAL|host.fcntl.F_SEAL_WRITE|host.fcntl.F_SEAL_GROW|host.fcntl.F_SEAL_SHRINK
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_SEAL_SEAL'
+
+======================================================================
+ERROR: test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority) (change={'seals': 0})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 233, in test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority
+    with self.subTest(change=change),h.descriptor_observations(h.ticket(),**change),self.assertRaises(Denied):host.load_host_ticket(91)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 119, in descriptor_observations
+    required=host.fcntl.F_SEAL_SEAL|host.fcntl.F_SEAL_WRITE|host.fcntl.F_SEAL_GROW|host.fcntl.F_SEAL_SHRINK
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_SEAL_SEAL'
+
+======================================================================
+ERROR: test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority (__main__.InstalledLaunchTests.test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 235, in test_bad_descriptor_owner_seals_profile_and_fields_are_not_authority
+    with h.descriptor_observations(h.ticket(mutate)),self.assertRaises((Denied,ValueError)):host.load_host_ticket(91)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 119, in descriptor_observations
+    required=host.fcntl.F_SEAL_SEAL|host.fcntl.F_SEAL_WRITE|host.fcntl.F_SEAL_GROW|host.fcntl.F_SEAL_SHRINK
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_SEAL_SEAL'
+
+======================================================================
+ERROR: test_issued_descriptor_cannot_be_reused_for_foreign_spec_boot_key_or_callback (__main__.InstalledLaunchTests.test_issued_descriptor_cannot_be_reused_for_foreign_spec_boot_key_or_callback)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 238, in test_issued_descriptor_cannot_be_reused_for_foreign_spec_boot_key_or_callback
+    with h.descriptor_observations(h.ticket()):_,authority=host.load_host_ticket(91)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 119, in descriptor_observations
+    required=host.fcntl.F_SEAL_SEAL|host.fcntl.F_SEAL_WRITE|host.fcntl.F_SEAL_GROW|host.fcntl.F_SEAL_SHRINK
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_SEAL_SEAL'
+
+======================================================================
+ERROR: test_publication_failure_stops_only_the_owned_child_and_preserves_error (__main__.InstalledLaunchTests.test_publication_failure_stops_only_the_owned_child_and_preserves_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 264, in test_publication_failure_stops_only_the_owned_child_and_preserves_error
+    with h.start_observations(),patch.object(host.LinuxHost,'_publish',side_effect=RuntimeError('DI publication failed')),self.assertRaisesRegex(RuntimeError,'DI publication failed'):h.controller.start(h.controller.layout.approval_path)
+                                                                                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/native_run_access_restricted_host.py", line 466, in start
+    fcntl.fcntl(fd,fcntl.F_ADD_SEALS,fcntl.F_SEAL_SEAL|fcntl.F_SEAL_WRITE|fcntl.F_SEAL_GROW|fcntl.F_SEAL_SHRINK)
+                   ^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_ADD_SEALS'
+
+======================================================================
+ERROR: test_restart_request_uses_new_root_boot_pin_but_keeps_original_policy_key_deadline (__main__.InstalledLaunchTests.test_restart_request_uses_new_root_boot_pin_but_keeps_original_policy_key_deadline)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 270, in test_restart_request_uses_new_root_boot_pin_but_keeps_original_policy_key_deadline
+    with first.start_observations():old_child,old=first.controller.start(first.controller.layout.approval_path)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/native_run_access_restricted_host.py", line 466, in start
+    fcntl.fcntl(fd,fcntl.F_ADD_SEALS,fcntl.F_SEAL_SEAL|fcntl.F_SEAL_WRITE|fcntl.F_SEAL_GROW|fcntl.F_SEAL_SHRINK)
+                   ^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_ADD_SEALS'
+
+======================================================================
+ERROR: test_sealed_descriptor_route_constructs_exact_engine_without_connection (__main__.InstalledLaunchTests.test_sealed_descriptor_route_constructs_exact_engine_without_connection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 225, in test_sealed_descriptor_route_constructs_exact_engine_without_connection
+    with h.descriptor_observations(h.ticket()):engine,authority=host.load_host_ticket(91)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 119, in descriptor_observations
+    required=host.fcntl.F_SEAL_SEAL|host.fcntl.F_SEAL_WRITE|host.fcntl.F_SEAL_GROW|host.fcntl.F_SEAL_SHRINK
+             ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_SEAL_SEAL'
+
+======================================================================
+ERROR: test_start_reuses_protected_host_and_keeps_private_values_out_of_argv (__main__.InstalledLaunchTests.test_start_reuses_protected_host_and_keeps_private_values_out_of_argv)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_installed_writer_launch.py", line 248, in test_start_reuses_protected_host_and_keeps_private_values_out_of_argv
+    with h.start_observations():child,pin=h.controller.start(h.controller.layout.approval_path)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/native_run_access_restricted_host.py", line 466, in start
+    fcntl.fcntl(fd,fcntl.F_ADD_SEALS,fcntl.F_SEAL_SEAL|fcntl.F_SEAL_WRITE|fcntl.F_SEAL_GROW|fcntl.F_SEAL_SHRINK)
+                   ^^^^^^^^^^^^^^^^^
+AttributeError: module 'fcntl' has no attribute 'F_ADD_SEALS'
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.239s
+
+FAILED (errors=8)

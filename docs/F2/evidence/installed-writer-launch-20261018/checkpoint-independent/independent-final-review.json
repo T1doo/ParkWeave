@@ -1,0 +1,169 @@
+{
+  "source_sha": "5683796d3976c7664dae1c57fd19008ea4172e54",
+  "src_tree": "dee1663b89477d98a2dd329f5b1b4a4c7b1f7b5f",
+  "tests_tree": "cc568d3bc6f403bf5aeaded0ba45036715fa30a3",
+  "passed": 50,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "exit_codes": {
+    "installed": 0,
+    "ordinary": 0
+  },
+  "blockers": 0,
+  "p1": 0,
+  "p2": 0,
+  "test_methods_unique": 50,
+  "actual_ids_equal_expected": true,
+  "installed_methods": 26,
+  "installed_new_methods": 19,
+  "installed_legacy_wrappers": 7,
+  "parameter_negatives_not_added": true,
+  "ordinary_methods": 24,
+  "test_executions": {
+    "installed": 1,
+    "ordinary": 1
+  },
+  "automatic_retries": 0,
+  "outer_elapsed_seconds": 5.947668452998187,
+  "per_script": [
+    {
+      "label": "installed",
+      "source_sha": "5683796d3976c7664dae1c57fd19008ea4172e54",
+      "exit_code": 0,
+      "outer_elapsed_seconds": 2.0690456519987492,
+      "reported_count": 26,
+      "unittest_elapsed_seconds": 0.507,
+      "actual_count": 26,
+      "passed": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "actual_ids_equal_expected": true,
+      "child_reaped": true
+    },
+    {
+      "label": "ordinary",
+      "source_sha": "5683796d3976c7664dae1c57fd19008ea4172e54",
+      "exit_code": 0,
+      "outer_elapsed_seconds": 3.8169505149999168,
+      "reported_count": 24,
+      "unittest_elapsed_seconds": 1.9,
+      "actual_count": 24,
+      "passed": 24,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "actual_ids_equal_expected": true,
+      "child_reaped": true
+    }
+  ],
+  "input_verification": {
+    "inputs": 186,
+    "src_files": 179,
+    "shared_pre_drift": 0,
+    "mirror_pre_drift": 0,
+    "shared_post_drift": 0,
+    "mirror_post_drift": 0,
+    "shared_head_pre": "5683796d3976c7664dae1c57fd19008ea4172e54",
+    "shared_head_after_pre": "5683796d3976c7664dae1c57fd19008ea4172e54",
+    "shared_head_post": "5683796d3976c7664dae1c57fd19008ea4172e54",
+    "contract_sha256": "2f46c2a9270fbe33e98067487e12392e0c6647f3176437efdc68a8a8b8dafc42",
+    "archive_sha256": "fa7d0a22d2cd9159aa8b5dc30922800060e3f048610d15db7b5203c27825d0c2"
+  },
+  "static_review": {
+    "open_p1": 0,
+    "open_p2": 0,
+    "contract_scope_consistent": true,
+    "findings": [
+      "Ordinary installed layout/receipt and trial creation contract remain separate and exact.",
+      "Parent private input validation creates no engine, store or authority.",
+      "Ordinary engine needs original issued sealed-FD authorization, class-dispatch permit and exact spec/private/boot binding.",
+      "Original RuntimeGuard, restricted connection, writer business authority and default-closed listener checks remain.",
+      "Missing host capability accurately refuses; positive seal/FD/root/process observations are DI only."
+    ],
+    "lower_priority_coverage_note": {
+      "status": "NON_BLOCKING_SCOPE_LIMIT",
+      "test": "InstalledLaunchTests.test_changed_protected_bytes_and_expired_policy_refuse_without_renewal",
+      "detail": "Expired-policy subcase does not enter seal-capability DI. On this environment where actual _supported_linux_runtime is false, its Denied reaches the capability guard before the UTC check. This subcase PASS alone does not prove UTC-branch execution. The unchanged _approve UTC predicate was statically reviewed; real supported runtime and expired startup remain NOT_RUN. No product defect found and no additional test was run."
+    }
+  },
+  "capability_observation": {
+    "os_name": "posix",
+    "sys_platform": "linux",
+    "memfd_create": true,
+    "SO_PEERCRED": true,
+    "fcntl_constants_present": {
+      "F_ADD_SEALS": false,
+      "F_GET_SEALS": false,
+      "F_SEAL_SEAL": false,
+      "F_SEAL_WRITE": false,
+      "F_SEAL_GROW": false,
+      "F_SEAL_SHRINK": false
+    },
+    "observation": "Attribute existence only; no FD, socket, OS identity, permissions or database action.",
+    "supported_by_product_predicate": false
+  },
+  "overlap": {
+    "same_frozen_two_scripts_expected_50": true,
+    "actual_parent_raw_ids": "CONFIRMED from frozen-installed.stderr(26)+frozen-factory.stderr(24), equal frozen-result and own actual IDs",
+    "all_50_overlap": true,
+    "intersection": 50,
+    "missing_from_main": [],
+    "extra_to_main": [],
+    "counts_not_added": true,
+    "validation_path": "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/actual-overlap-validation.json"
+  },
+  "module_source_scope": "Direct scripts run from exact archive mirror with PYTHONPATH=mirror/src and -B. No extra import probe or test-process module-origin instrumentation was added. Ordinary raw stderr also identifies mirror source warning paths.",
+  "scope": [
+    "26 direct unittest methods: 19 installed-profile methods plus seven wrappers invoking original assertions, with one wrapper containing two parameter negatives counted once.",
+    "24 direct unittest methods: original ordinary write wiring using MemoryConnection and protected binder/RPC DI.",
+    "Root/FD/fcntl/Popen/socket/metadata positive observations are explicit DI. Original host control flow and strict payload/type checks execute.",
+    "Installed test globally blocks real database, OS child, socket, memfd and permission operations.",
+    "No shared source/tests/docs/Git writes; only private mirror/evidence output."
+  ],
+  "not_run": [
+    "pytest runner/conftest/PG fixtures",
+    "real DB or SQL engine",
+    "real IPC/Popen child service/OS identity",
+    "browser/real model/network",
+    "installation/storage migration/ACL change",
+    "real policy/key/Grant/assignment/approval issuance or activation",
+    "actual ordinary installation restart/rebind or physical recovery",
+    "Windows/formal AT35/full F2"
+  ],
+  "owned_children": {
+    "direct_unittest_children_reaped": true,
+    "real_host_children_started": 0,
+    "services_started": 0,
+    "other_test_windows": 0
+  },
+  "evidence_directory": "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj",
+  "mirror": "/tmp/pw-ind-installed-5683796-dTYYpj/mirror",
+  "raw_evidence_paths": [
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/preparation.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/frozen-inputs.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/shared-pre.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/shared-post.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/mirror-pre.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/mirror-post.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/versions.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/capability-observation.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/expected-test-ids.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/actual-test-ids.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/installed-invocation.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/installed.stdout.txt",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/installed.stderr.txt",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/installed-result.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/ordinary-invocation.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/ordinary.stdout.txt",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/ordinary.stderr.txt",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/ordinary-result.json",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/prepare-and-run.py",
+    "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/actual-overlap-validation.json"
+  ],
+  "prior_pending_report": {
+    "path": "/workspace/ParkWeave/.runtime/installed-writer-launch-20261018/independent/pw-ind-installed-5683796-dTYYpj/independent-final-review-before-overlap.json",
+    "sha256": "d9e6fb7727f77fe1415af51e9fbe25bbe3944a72a99cb27a7434ddbad1b68e1b"
+  }
+}
