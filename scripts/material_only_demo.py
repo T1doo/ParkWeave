@@ -206,7 +206,9 @@ def serve(value, port):
     global _last_owned_state
     if not 1024 <= port <= 65535:
         raise Denied('unprivileged port required')
+    _last_owned_state = private_state(value)
     with socket.socket() as probe:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         probe.bind(('127.0.0.1', port))
     with locked(value) as p:
         _last_owned_state = p
