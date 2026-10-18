@@ -8,6 +8,7 @@ if(start<0||end<0||!html.includes('id="notice-next" class="secondary" hidden dis
 function originalBlock(a,b){const at=html.indexOf(a),end=html.indexOf(b,at+1);if(at<0||end<=at)throw Error('Missing original helper '+a);return html.slice(at,end);}
 function originalLine(marker){const line=html.split('\n').find(s=>s.startsWith(marker));if(!line)throw Error('Missing original helper '+marker);return line+'\n';}
 const dependencies=originalLine('const deniedOperationReferences=')+originalLine('const entryWriteRequests=')+
+ originalLine('const entryFailureFlows=')+originalLine('function failEntryFlow(')+
  (html.includes('const capturedCancelFrontierRequests=')?originalLine('const capturedCancelFrontierRequests='):'')+
  originalLine('function clearEntryWriteRequests(')+originalLine('function failCurrentEntryRead(')+
  originalLine('let receiptHistoryGeneration=')+originalLine('function clearReceiptHistory(')+
