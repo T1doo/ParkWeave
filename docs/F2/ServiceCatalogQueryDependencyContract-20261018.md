@@ -6,6 +6,8 @@
 
 读取沿原 `case_opportunities.sources` 查询范围与SYNTHETIC/NOT_EVALUATED/source.kind筛选，版本排序，最多32原行，第33行检测溢出。每个当前版本指纹含原service/version/name/source摘要及原 `catalog_publication.proof` 已校验的独立当前head（存在时）；从而未选中版本的插入、移出、来源修订或原撤回也改变查询指纹。查询不跨服务、园区或新主体范围，不借本片创建目录、记录或授权。损坏原发布证明准确拒绝；溢出UNKNOWN，不能返回伪完整集合。
 
+SQL仅返回原目录六字段、park_id与可选发布journal/head九字段，避免把同row无关candidate/capability大JSON带回应用。可选列通过to_jsonb(row)取出以兼容旧schema；PostgreSQL仍会构造整行，不宣称数据库内部未读其它列或严格行字节上界。
+
 原注册依赖声明升级为version2，在P1登记 `SERVICE_CATALOG_QUERY_COLLECTION`，`service_catalog` 集合根为P1。新初次ADOPT自然保存该集合stamp，当前变化依原closure影响P1及实际下游，旧核验不沿用；企业必须原入口明确local ADOPT再逐项VERIFY。集合stamp只存known/count/hash，不倒填历史原行或冒充资格规则真实性。typed/unified图仅增加这一实际集合的观察来源，保持原影响结果及原页面显示；不另建图内核或同义预览。
 
 旧version1声明及历史按其原字节验证和呈现，不将今日集合补进旧事件。旧计划缺该集合证据时当前影响为THIS_CASE/UNKNOWN，要求原已有明确local ADOPT登记当前已知集合并全Case重验；不得静默称旧全集已知，也不得改写既往VERIFY/批准/业务产物。兼容不等于旧检查继续有效。所有原请求键、计划/步骤ID、旧事件前缀、人工说明与历史产物保持；受影响锁必须原UNLOCK，拒绝不补权。

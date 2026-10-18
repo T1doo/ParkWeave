@@ -13,8 +13,14 @@ def collection(c, parent):
     # Same park/service/order/33rd-row guard and eligibility filter as the
     # original opportunity query. Original publication proof adds withdrawal
     # currentness even when that version is not the Case's selected version.
-    rows = c.execute('SELECT * FROM preparation_catalog WHERE park_id=%s '
-                     'AND service_id=%s ORDER BY version LIMIT 33',
+    # Optional journal columns remain compatible with the original schema.
+    # to_jsonb(r) constructs a row inside PostgreSQL; this narrows returned
+    # columns, not database internals or an asserted per-row byte bound.
+    rows = c.execute('SELECT r.park_id,r.service_id,r.version,r.name,r.source,r.namespace,r.qualification,'
+                     "to_jsonb(r)->'candidate_catalog_revisions' AS candidate_catalog_revisions,"
+                     "to_jsonb(r)->'candidate_catalog_head' AS candidate_catalog_head "
+                     'FROM preparation_catalog r WHERE r.park_id=%s '
+                     'AND r.service_id=%s ORDER BY version LIMIT 33',
                      (parent['park_id'], parent['service_id'])).fetchall()
     values = []
     for row in rows:
