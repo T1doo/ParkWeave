@@ -47,6 +47,8 @@ SQL_RIGHTS = {
                              'deliveries', 'preparations'),
     'SELECT,INSERT': ('cases', 'preparation_evidence', 'preparation_events'),
     'INSERT': ('authorization_audit',),
+    # Original material invalidation SELECTs this empty table FOR UPDATE.
+    'UPDATE(invalidated_from,invalidated_at)': ('controlled_plans',),
 }
 
 
@@ -254,7 +256,11 @@ def serve(value, port):
                     raise RuntimeError('owned API/worker exited')
                 finally:
                     from scripts.linux_fixture_server import stop_children
-                    stop_children(children)
+                    try:
+                        stop_children(children)
+                    except BaseException:
+                        (p / 'stop-unconfirmed').touch(exist_ok=True)
+                        raise
 
 
 def main():
@@ -273,7 +279,7 @@ def main():
         else:
             serve(args.state_dir,args.port)
     except KeyboardInterrupt:
-        return 0
+        return 130 if args.command=='setup' else 0
     except Exception as error:
         if _last_owned_state is not None:
             import traceback
