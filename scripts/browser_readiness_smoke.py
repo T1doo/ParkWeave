@@ -19,14 +19,14 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BRANCH = "refs/heads/dev/f3-record-directory-errors-20261019"
+BRANCH = "refs/heads/dev/f3-record-directory-feedback-20261019"
 NOT_RUN = ["database", "Case", "worker", "P1-P5", "TXT_download", "business_cold_recovery", "Windows_AT"]
 
 
 def require_hosted_once(environment):
     expected = {
         "SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": BRANCH,
-        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "3",
+        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "4",
         "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
     }
     if any(environment.get(k) != v for k, v in expected.items()):
@@ -198,7 +198,7 @@ def directory_error_fixture_smoke(browser, base, report):
     violations = []
     empty = {"scope": "CURRENT_OWNER_LOCAL_CASE_RECORDS", "read_only": True,
              "automatically_replayed": False, "items": [], "next_after": None}
-    for mode in ["403-json", "403-html", "401-html", "502-html", "late-identity", "late-navigation"]:
+    for mode in ["403-json", "403-html", "401-html", "502-html", "late-identity", "late-navigation", "other-feedback-during-retry"]:
         context = browser.new_context(service_workers="block", viewport={"width": 390, "height": 900})
         state = {"reads": 0, "held": None}
 
@@ -213,12 +213,15 @@ def directory_error_fixture_smoke(browser, base, report):
                 route.continue_()
             elif url.path == "/api/run-access/status" and not url.query:
                 route.fulfill(status=401, json={"detail": "synthetic client fixture has no authority"})
+            elif url.path == "/api/runs/" and not url.query and mode == "other-feedback-during-retry":
+                route.fulfill(status=502, json={"detail": "synthetic unrelated read failure"})
             elif url.path == "/api/runs" and url.query == "limit=20":
                 state["reads"] += 1
-                if mode.startswith("late-") and state["reads"] == 1:
+                if (mode.startswith("late-") and state["reads"] == 1
+                        or mode == "other-feedback-during-retry" and state["reads"] == 2):
                     state["held"] = route
                 elif state["reads"] == 1:
-                    status = int(mode[:3])
+                    status = 403 if mode == "other-feedback-during-retry" else int(mode[:3])
                     if mode.endswith("html"):
                         route.fulfill(status=status, content_type="text/html", body="<h1>SYNTHETIC non-JSON error</h1>")
                     else:
@@ -239,7 +242,22 @@ def directory_error_fixture_smoke(browser, base, report):
         page.locator("#token").fill("SYNTHETIC_CLIENT_FIXTURE_A")
         page.locator("#record-directory-read").click()
         status = page.locator("#record-directory-status")
-        if mode.startswith("late-"):
+        if mode == "other-feedback-during-retry":
+            expect(status).to_have_text("当前记录不可读或权限已撤回，请核对本人会话。")
+            page.locator("#record-directory-read").focus()
+            page.keyboard.press("Enter")
+            deadline = time.monotonic() + 5
+            while state["held"] is None and time.monotonic() < deadline:
+                page.wait_for_timeout(10)
+            if state["held"] is None:
+                raise RuntimeError("synthetic retry response was not captured")
+            # A different original read, not direct DOM/show manipulation.
+            page.locator("#refresh").click()
+            expect(page.locator("#page-feedback")).to_have_text("请求未完成")
+            state["held"].fulfill(status=200, json=empty)
+            expect(status).to_have_text("当前没有可读的本地建单记录。")
+            expect(page.locator("#page-feedback")).to_have_text("请求未完成")
+        elif mode.startswith("late-"):
             deadline = time.monotonic() + 5
             while state["held"] is None and time.monotonic() < deadline:
                 page.wait_for_timeout(10)
@@ -274,6 +292,7 @@ def directory_error_fixture_smoke(browser, base, report):
             page.locator("#record-directory-read").focus()
             page.keyboard.press("Enter")
             expect(status).to_have_text("当前没有可读的本地建单记录。")
+            expect(page.locator("#page-feedback")).to_have_text("")
         expect(page.locator("#record-directory-items button")).to_have_count(0)
         expect(page.locator("#record-directory-next")).to_be_hidden()
         expect(page.locator("#record-directory-read")).to_be_enabled()

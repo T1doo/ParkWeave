@@ -16,11 +16,11 @@ def test_readonly_harness_original_page_authentication_and_write_guard():
         smoke.require_hosted_once({})
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     hosted = {"SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": smoke.BRANCH,
-              "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "3",
+              "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "4",
               "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
               "SMOKE_SHA": sha}
     assert smoke.require_hosted_once(hosted) == sha
-    for wrong_scope in [{"SMOKE_NUMBER": "2"}, {"SMOKE_NUMBER": "4"}, {"SMOKE_ATTEMPT": "2"}]:
+    for wrong_scope in [{"SMOKE_NUMBER": "3"}, {"SMOKE_NUMBER": "5"}, {"SMOKE_ATTEMPT": "2"}]:
         with pytest.raises(RuntimeError, match="authorized public dedicated hosted Linux push"):
             smoke.require_hosted_once(hosted | wrong_scope)
     with smoke.readonly_application() as (app, evidence), TestClient(app) as client:

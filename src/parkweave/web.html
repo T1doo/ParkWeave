@@ -171,22 +171,27 @@ function clearDeniedPrivateViews(){tiClear();coldClear();mgClear();
 }
 function pageAccessDenied(c){requirePage(c);clearDeniedPrivateViews();const e=Error('当前访问权限已失效');e.status=403;e.pageContext=c;e.accessDeniedHandled=true;return e;}
 async function apiCall(path,method='GET',body,key){const c={generation:++pageGeneration,token:$('token').value,run:$('run').value};const headers={'Authorization':'Bearer '+c.token};if(body)headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;let r,x;try{r=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});if(r.status===403)throw pageAccessDenied(c);x=await r.json();}catch(e){if(e.accessDeniedHandled)throw e;requirePage(c);e.status=r?.status;e.pageContext=c;throw e;}requirePage(c);if(!r.ok){const e=Error('请求未完成');e.status=r.status;e.pageContext=c;throw e;}pageResponses.set(x,c);show(x);return x;}
-let recordDirectoryGeneration=0,recordDirectoryAfter=null;
-function clearRecordDirectory(){clearCaseWorklist();recordDirectoryGeneration++;recordDirectoryAfter=null;$('record-directory-items').replaceChildren();$('record-directory-status').textContent='';$('record-directory-read').disabled=false;$('record-directory-next').disabled=false;$('record-directory-next').hidden=true;}
+let recordDirectoryGeneration=0,recordDirectoryAfter=null,recordDirectoryFeedback=null;
+function clearRecordDirectory(){clearCaseWorklist();recordDirectoryGeneration++;recordDirectoryAfter=null;recordDirectoryFeedback=null;$('record-directory-items').replaceChildren();$('record-directory-status').textContent='';$('record-directory-read').disabled=false;$('record-directory-next').disabled=false;$('record-directory-next').hidden=true;}
 async function loadRecordDirectory(after=null){
+  const previousFeedback=recordDirectoryFeedback;
   clearRecordDirectory();const c={generation:recordDirectoryGeneration,token:$('token').value};
+  // Only an explicit adjacent read can inherit this directory's old feedback.
+  const target=$('page-feedback'),feedback=previousFeedback&&previousFeedback.generation===c.generation-1&&previousFeedback.token===c.token&&target.firstChild===previousFeedback.node&&target.textContent===previousFeedback.text&&target.dataset.tone===previousFeedback.tone?{...previousFeedback,generation:c.generation}:null;
+  recordDirectoryFeedback=feedback;
   const current=()=>c.generation===recordDirectoryGeneration&&c.token===$('token').value;
   if(!c.token){$('record-directory-status').textContent='请重新输入本人原合成会话后读取。';return;}
   $('record-directory-read').disabled=true;$('record-directory-status').textContent='正在只读查找当前有权记录…';
   try{
     const response=await entryFetch('/api/runs?limit=20'+(after?'&after='+encodeURIComponent(after):''),{headers:{Authorization:'Bearer '+c.token}});
     if(!current())return;
-    if(response.status===401||response.status===403){const message=response.status===401?'会话已失效，请重新输入本人已有会话后读取。':'当前记录不可读或权限已撤回，请核对本人会话。';clearGeneric();show({error:message});$('record-directory-status').textContent=message;return;}
+    if(response.status===401||response.status===403){const message=response.status===401?'会话已失效，请重新输入本人已有会话后读取。':'当前记录不可读或权限已撤回，请核对本人会话。';clearGeneric();show({error:message});const target=$('page-feedback');recordDirectoryFeedback={generation:recordDirectoryGeneration,token:c.token,node:target.firstChild,text:target.textContent,tone:target.dataset.tone};$('record-directory-status').textContent=message;return;}
     if(!response.ok)throw Error('记录暂时无法读取，请稍后重新核对。');
     const x=await response.json();if(!current())return;
     const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
     if(x.scope!=='CURRENT_OWNER_LOCAL_CASE_RECORDS'||x.read_only!==true||x.automatically_replayed!==false||!Array.isArray(x.items)||x.items.length>20||!(x.next_after===null||typeof x.next_after==='string'&&uuid.test(x.next_after))||x.items.some(r=>typeof r.run_id!=='string'||!uuid.test(r.run_id)||typeof r.state!=='string'||r.namespace!=='SYNTHETIC'||!Number.isInteger(r.revision)||r.revision<1))throw Error('记录响应无法核对，请重新读取。');
     for(const r of x.items){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='只读核对 '+r.state+' · '+r.run_id;button.onclick=()=>{if(!current())return;$('run').value=r.run_id;$('run').oninput();apiCall('/api/runs/'+encodeURIComponent(r.run_id)).catch(pageError);};$('record-directory-items').append(button);}
+    if(feedback&&recordDirectoryFeedback===feedback){const target=$('page-feedback');if(target.firstChild===feedback.node&&target.textContent===feedback.text&&target.dataset.tone===feedback.tone){target.textContent='';delete target.dataset.tone;}recordDirectoryFeedback=null;}
     recordDirectoryAfter=x.next_after;$('record-directory-next').hidden=recordDirectoryAfter===null;$('record-directory-status').textContent=x.items.length?'已找到当前可读记录；选择一项只读核对。':'当前没有可读的本地建单记录。';
   }catch(e){if(current()){$('record-directory-items').replaceChildren();$('record-directory-status').textContent=e.message;}}
   finally{if(current()){$('record-directory-read').disabled=false;$('record-directory-next').disabled=false;}}
