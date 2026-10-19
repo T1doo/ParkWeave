@@ -1,0 +1,66 @@
+name: ParkWeave unauthenticated browser smoke once
+
+on:
+  push:
+    branches: [dev/f2-readonly-browser-smoke-20261019]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-readonly-browser-smoke-20261019
+  cancel-in-progress: false
+
+jobs:
+  readonly-browser:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-readonly-browser-smoke-20261019' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install pinned Python dependencies using existing Python
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set -eu
+          /usr/bin/python3.12 -m venv .runtime/readonly-browser-venv
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+            PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 \
+            .runtime/readonly-browser-venv/bin/python -m pip install \
+            --no-cache-dir --retries 0 --timeout 20 -r requirements-browser-smoke.txt
+      - name: Check read-only harness contract without launching a browser
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 \
+            .runtime/readonly-browser-venv/bin/python -m pytest -q -p no:cacheprovider \
+            tests/test_browser_readiness_smoke.py
+      - name: Run one sandboxed real Chrome read-only smoke
+        timeout-minutes: 1
+        shell: bash
+        env:
+          SMOKE_SHA: ${{ github.sha }}
+          SMOKE_REPOSITORY: ${{ github.repository }}
+          SMOKE_REF: ${{ github.ref }}
+          SMOKE_EVENT: ${{ github.event_name }}
+          SMOKE_ATTEMPT: ${{ github.run_attempt }}
+          SMOKE_NUMBER: ${{ github.run_number }}
+          SMOKE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 \
+            SMOKE_SHA="$SMOKE_SHA" SMOKE_REPOSITORY="$SMOKE_REPOSITORY" SMOKE_REF="$SMOKE_REF" \
+            SMOKE_EVENT="$SMOKE_EVENT" SMOKE_ATTEMPT="$SMOKE_ATTEMPT" SMOKE_NUMBER="$SMOKE_NUMBER" \
+            SMOKE_PUBLIC="$SMOKE_PUBLIC" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+            .runtime/readonly-browser-venv/bin/python scripts/browser_readiness_smoke.py
