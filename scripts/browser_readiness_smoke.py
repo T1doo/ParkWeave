@@ -19,14 +19,14 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BRANCH = "refs/heads/dev/f3-record-directory-feedback-20261019"
+BRANCH = "refs/heads/dev/f2-personal-task-pagination-20261019"
 NOT_RUN = ["database", "Case", "worker", "P1-P5", "TXT_download", "business_cold_recovery", "Windows_AT"]
 
 
 def require_hosted_once(environment):
     expected = {
         "SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": BRANCH,
-        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "4",
+        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "5",
         "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
     }
     if any(environment.get(k) != v for k, v in expected.items()):
@@ -181,6 +181,7 @@ def browser_smoke(report):
                     raise RuntimeError("empty-session UI made an entry request")
                 context.close()
                 directory_error_fixture_smoke(browser, base, report)
+                personal_task_fixture_smoke(browser, base, report)
     report["checks"] = ["original_page_bytes", "title_and_heading", "three_workspace_clicks",
                         "invalid_id_feedback", "existing_entry_empty_session", "formal_entry_empty_session",
                         "two_original_401_GETs", "TXT_disabled", "zero_DB", "namespace_seccomp_sandbox"]
@@ -270,9 +271,13 @@ def directory_error_fixture_smoke(browser, base, report):
                 page.locator('[data-tab="collaboration"]').click()
             page.locator("#record-directory-read").click()
             expect(status).to_have_text("当前没有可读的本地建单记录。")
-            with page.expect_response(lambda reply: reply.url == base + "/api/runs?limit=20" and reply.status == 403) as delayed_response:
+            # 1.62 Response.finished() leaves a target-close task behind after
+            # success. Wait for this exact held request's completion instead.
+            held_request = state["held"].request
+            with page.expect_request_finished(lambda request: request == held_request, timeout=5000) as finished_request:
                 state["held"].fulfill(status=403, content_type="text/html", body="<h1>SYNTHETIC late denial</h1>")
-            delayed_response.value.finished()
+            if finished_request.value.response().status != 403:
+                raise RuntimeError("delayed denial did not finish with expected status")
             page.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))")
             expect(status).to_have_text("当前没有可读的本地建单记录。")
             expect(page.locator("#page-feedback")).to_have_text("")
@@ -304,8 +309,143 @@ def directory_error_fixture_smoke(browser, base, report):
         raise RuntimeError("synthetic browser fixture boundary violated")
 
 
+def personal_task_fixture_smoke(browser, base, report):
+    """Real original task-list clicks; all API replies are client-only fixtures."""
+    from playwright.sync_api import expect
+    fixture = {"scope": "SYNTHETIC_CLIENT_RESPONSE_FIXTURES_ONLY", "cases": [], "requests": [], "page_errors": []}
+    report["personal_task_pagination_fixture"] = fixture
+    violations = []
+    cursor_a = "11111111-1111-4111-8111-111111111111"
+    cursor_b = "22222222-2222-4222-8222-222222222222"
+    path = "/api/preparation-tasks"
+    first_task = {"id": "33333333-3333-4333-8333-333333333333", "case_id": "44444444-4444-4444-8444-444444444444",
+                  "goal": "SYNTHETIC 分页待办", "kind": "SUPPLY_MATERIALS", "state": "IN_PREPARATION",
+                  "revision": 1, "missing_slots": ["material_outline"]}
+
+    def task_page(cursor, items=None):
+        return {"scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY", "read_only": True, "recorded_states_only": True,
+                "role": "enterprise_operator", "check_limit": 100, "checked_count": 100,
+                "items": [] if items is None else items, "next_before": cursor, "has_older_records": cursor is not None}
+
+    for mode in ["502-json", "502-html", "network", "first-page", "401", "403",
+                 "late-identity", "late-navigation"]:
+        context = browser.new_context(service_workers="block", viewport={"width": 390, "height": 900})
+        state = {"reads": [], "held": None}
+
+        def route_fixture(route):
+            request = route.request
+            url = urlsplit(request.url)
+            fixture["requests"].append({"case": mode, "method": request.method, "path": url.path, "query": url.query})
+            if not request.url.startswith(base + "/") or request.method not in {"GET", "HEAD"}:
+                violations.append("nonlocal or write request")
+                route.abort()
+            elif url.path in {"/", "/favicon.ico"} and not url.query:
+                route.continue_()
+            elif url.path == "/api/run-access/status" and not url.query:
+                route.fulfill(status=401, json={"detail": "synthetic client fixture has no authority"})
+            elif url.path == path and url.query in {"", "before=" + cursor_a, "before=" + cursor_b}:
+                state["reads"].append(url.path + ("?" + url.query if url.query else ""))
+                n = len(state["reads"])
+                if mode.startswith("late-") and n == 2:
+                    state["held"] = route
+                elif n == 1 and mode != "first-page":
+                    route.fulfill(status=200, json=task_page(cursor_a, [first_task]))
+                elif n == (1 if mode == "first-page" else 2):
+                    if mode == "network":
+                        route.abort("failed")
+                    elif mode == "502-html":
+                        route.fulfill(status=502, content_type="text/html", body="<h1>SYNTHETIC upstream unavailable</h1>")
+                    else:
+                        route.fulfill(status=int(mode) if mode in {"401", "403"} else 502,
+                                      json={"detail": "SYNTHETIC failed task page"})
+                else:
+                    end = url.query == "before=" + cursor_b or mode in {"401", "403"}
+                    route.fulfill(status=200, json=task_page(None if end else cursor_b))
+            else:
+                violations.append("unexpected application request")
+                route.abort()
+
+        context.route("**/*", route_fixture)
+        page = context.new_page()
+        page.on("pageerror", lambda error: fixture["page_errors"].append(str(error)))
+        response = page.goto(base + "/", wait_until="load", timeout=10000)
+        if response is None or response.body() != (ROOT / "src/parkweave/web.html").read_bytes():
+            raise RuntimeError("task fixture must use exact original page bytes")
+        page.locator('[data-tab="collaboration"]').click()
+        page.locator("#token").fill("SYNTHETIC_CLIENT_FIXTURE_A")
+        read, next_page, status = (page.locator(selector) for selector in ["#prep-tasks", "#prep-tasks-next", "#prep-task-status"])
+        read.click()
+        if mode != "first-page":
+            expect(status).to_contain_text("本页检查100件事项")
+            expect(page.locator("#prep-task-items article")).to_have_count(1)
+            next_page.click()
+        if mode.startswith("late-"):
+            deadline = time.monotonic() + 5
+            while state["held"] is None and time.monotonic() < deadline:
+                page.wait_for_timeout(10)
+            if state["held"] is None:
+                raise RuntimeError("synthetic task page was not captured")
+            expect(status).to_have_text("正在读取本页资料准备待办…")
+            if mode == "late-identity":
+                page.locator("#token").fill("SYNTHETIC_CLIENT_FIXTURE_B")
+            elif mode == "late-navigation":
+                page.locator('[data-tab="service"]').click()
+                page.locator('[data-tab="collaboration"]').click()
+            expect(status).to_have_text("")
+            expect(next_page).to_be_hidden()
+            read.click()
+            expect(status).to_contain_text("本页检查100件事项")
+            held_request = state["held"].request
+            delayed_status = 403
+            with page.expect_request_finished(lambda request: request == held_request, timeout=5000) as finished_request:
+                state["held"].fulfill(status=delayed_status, json=task_page(None))
+            if finished_request.value.response().status != delayed_status:
+                raise RuntimeError("delayed task response did not finish with expected status")
+            page.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))")
+            expect(status).to_contain_text("本页检查100件事项")
+            expect(page.locator("#page-feedback")).to_have_text("")
+            expect(next_page).to_have_text("检查更早的待办事项")
+            next_page.click()
+            expected_paths = [path, path + "?before=" + cursor_a, path, path + "?before=" + cursor_b]
+        elif mode in {"401", "403"}:
+            expect(status).to_contain_text("会话已失效" if mode == "401" else "当前身份无此事项或操作权限")
+            expect(next_page).to_be_hidden()
+            expect(page.locator("#prep-task-items article")).to_have_count(0)
+            expect(page.locator("#prep-detail")).to_be_hidden()
+            expect(page.locator("#page-feedback")).to_have_text("")
+            expect(read).to_be_enabled()
+            read.click()
+            expected_paths = [path, path + "?before=" + cursor_a, path]
+        else:
+            expect(status).to_contain_text("本页资料准备待办读取失败")
+            expect(status).to_be_visible()
+            expect(status).to_have_attribute("role", "status")
+            expect(status).to_have_attribute("aria-live", "polite")
+            expect(page.locator("#prep-task-items article")).to_have_count(0)
+            expect(page.locator("#page-feedback")).to_have_text("")
+            expect(next_page).to_have_text("重试本页待办")
+            expect(next_page).to_be_enabled()
+            next_page.focus()
+            page.keyboard.press("Enter")
+            expect(status).to_contain_text("本页检查100件事项")
+            expect(next_page).to_have_text("检查更早的待办事项")
+            next_page.click()
+            failed_path = path if mode == "first-page" else path + "?before=" + cursor_a
+            expected_paths = ([] if mode == "first-page" else [path]) + [failed_path, failed_path, path + "?before=" + cursor_b]
+        expect(status).to_contain_text("本页检查100件事项")
+        expect(next_page).to_be_hidden()
+        expect(read).to_be_enabled()
+        expect(page.locator("#page-feedback")).to_have_text("")
+        if state["reads"] != expected_paths:
+            raise RuntimeError("task fixture requires exact explicit GET/cursor sequence, no automatic retries")
+        fixture["cases"].append({"mode": mode, "status": "PASS", "task_GET_paths": state["reads"]})
+        context.close()
+    if violations or fixture["page_errors"]:
+        raise RuntimeError("synthetic task browser fixture boundary violated")
+
+
 def main():
-    report = {"status": "FAIL", "scope": "real Chrome read-only page smoke and synthetic client directory error fixtures", "NOT_RUN": NOT_RUN}
+    report = {"status": "FAIL", "scope": "real Chrome read-only page smoke and synthetic client directory/task pagination fixtures", "NOT_RUN": NOT_RUN}
     try:
         report["source_sha"] = require_hosted_once(os.environ)
         report["runner"] = {k: os.environ.get(k) for k in ["RUNNER_ENVIRONMENT", "RUNNER_OS", "ImageOS", "ImageVersion"]}

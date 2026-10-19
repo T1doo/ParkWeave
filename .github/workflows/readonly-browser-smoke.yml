@@ -2,7 +2,7 @@ name: ParkWeave unauthenticated browser smoke once
 
 on:
   push:
-    branches: [dev/f3-record-directory-feedback-20261019]
+    branches: [dev/f2-personal-task-pagination-20261019]
 
 permissions:
   contents: read
@@ -16,9 +16,9 @@ jobs:
     if: >-
       github.repository == 'T1doo/ParkWeave' &&
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/dev/f3-record-directory-feedback-20261019' &&
+      github.ref == 'refs/heads/dev/f2-personal-task-pagination-20261019' &&
       github.event.repository.private == false &&
-      github.run_attempt == 1 && github.run_number == 4
+      github.run_attempt == 1 && github.run_number == 5
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
@@ -44,7 +44,7 @@ jobs:
           set -eu
           env -i PATH="$PATH" LANG=C.UTF-8 PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 \
             .runtime/readonly-browser-venv/bin/python -m pytest -q -p no:cacheprovider \
-            tests/test_browser_readiness_smoke.py tests/test_record_directory_error_ui.py
+            tests/test_browser_readiness_smoke.py tests/test_record_directory_error_ui.py tests/test_personal_task_pagination_ui.py
       - name: Run one sandboxed real Chrome read-only smoke
         timeout-minutes: 1
         shell: bash
