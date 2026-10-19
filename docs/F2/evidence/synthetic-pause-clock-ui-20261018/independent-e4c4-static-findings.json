@@ -1,0 +1,23 @@
+{
+  "source_sha": "e4c4f1a289668f711e0974948475726a91e96843",
+  "mode": "STATIC_ONLY",
+  "file_writes": 0,
+  "product_imports": 0,
+  "dynamic_executions": 0,
+  "open_P2": 2,
+  "findings": [
+    {
+      "id": "UI-UNKNOWN-COMMITTED",
+      "problem": "read-only original-key recovery incorrectly required current computable projection, so verified COMMITTED history with current UNKNOWN could not release exact original handle",
+      "fix_scope": "separate existing history verification from current write projection; UNKNOWN still no command; no backend/coverage condition changes"
+    },
+    {
+      "id": "UI-COLD-ENTRY",
+      "problem": "new shared stored-write gate blocked actual existing-record form; original test used direct loadPreparation rather than user form",
+      "fix_scope": "allow only exact stored pause handle ID to bypass that one pause-stored gate for original authenticated entry GET; retain busy/other gates; use real form in test"
+    }
+  ],
+  "other_oracles": "no other definite P1/P2; 01/02/03/04/08/10 satisfied statically",
+  "core_protection": "only clock.read AST changed; other backend/calculation/source/authority/schema/spec unchanged",
+  "old_52_PASS_retained_not_defect_free": true
+}

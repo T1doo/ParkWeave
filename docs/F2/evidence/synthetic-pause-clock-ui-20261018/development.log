@@ -1,0 +1,58 @@
+F
+=================================== FAILURES ===================================
+_ test_original_page_existing_fixture_pause_end_history_and_original_key_recovery[chain] _
+
+deadline_http = ((<parkweave.store.Store object at 0x7fcaa430e720>, <parkweave.store.Store object at 0x7fcaa430e7e0>, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...71c7b1f111c/commands'}, {'method': 'POST', 'path': '/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_original_page_existing_fi0')
+mode = 'chain'
+
+    @pytest.mark.parametrize('mode',['chain','no-cap','lost-cold','not-observed','late-success','late-denied',
+                                     'missing-calendar','wrong-case','wrong-revision','wrong-actor'])
+    def test_original_page_existing_fixture_pause_end_history_and_original_key_recovery(deadline_http,tmp_path,mode):
+        f,_=deadline_http
+        if mode=='no-cap':
+            p=filled(f);attach(f,p);service=None
+        else:p,service,_=setup(f,tmp_path)
+        before=snapshot(f)
+        config=dict(base=str(f[3].base_url),id=p['preparation_id'],reviewer=f[2]['prep-specialist-fixture-a'],owner=f[2]['fixture-a'],mode=mode)
+        result=subprocess.run(['node','tests/synthetic_pause_clock_ui_real_html.js'],input=json.dumps(config)+'\n',
+                              capture_output=True,text=True,timeout=45)
+        out=Path('.runtime/synthetic-pause-clock-ui-20261018/development-ui')/mode;out.mkdir(parents=True,exist_ok=True)
+        (out/'html.stdout').write_text(result.stdout);(out/'html.stderr').write_text(result.stderr)
+>       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/handling-deadline","status":200,"response_scope":"SYNTHETIC_HANDLING_DEADLINE_READ_ONLY"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":200,"response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"}}
+E         {"trace":{"method":"POST","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":201,"body":{"action":"PAUSE","reason":"AWAITING_SYNTHETIC_INPUT","note":"SYNTHETIC UI <img src=x onerror=bad> explicit wait","expected_revision":0,"expected_definition_sha256":"547aa5f496d17f5e430601feda0cfda32112a74df2b3cf017c109bd1bc31ad64"},"request_key":"10be6a3e-1cd2-47ad-8dfa-2d0b87f27ef0","response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"}}
+E         {"trace":{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":200,"request_key":"10be6a3e-1cd2-47ad-8dfa-2d0b87f27ef0","response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"}}
+E         {"error":"AssertionError [ERR_ASSERTION]: explicit pause is read back\n    at check (eval at <anonymous> (/workspace/ParkWeave/tests/synthetic_pause_clock_ui_real_html.js:65:1), <anonymous>:12:51)\n    at eval (eval at <anonymous> (/workspace/ParkWeave/tests/synthetic_pause_clock_ui_real_html.js:65:1), <anonymous>:140:46)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/handling-deadline","status":200,"response_scope":"SYNTHETIC_HANDLING_DEADLINE_READ_ONLY"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":200,"response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"},{"method":"POST","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":201,"body":{"action":"PAUSE","reason":"AWAITING_SYNTHETIC_INPUT","note":"SYNTHETIC UI <img src=x onerror=bad> explicit wait","expected_revision":0,"expected_definition_sha256":"547aa5f496d17f5e430601feda0cfda32112a74df2b3cf017c109bd1bc31ad64"},"request_key":"10be6a3e-1cd2-47ad-8dfa-2d0b87f27ef0","response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"},{"method":"GET","path":"/api/preparations/f260e512-040c-4612-a15d-471c7b1f111c/synthetic-pause-clock","status":200,"request_key":"10be6a3e-1cd2-47ad-8dfa-2d0b87f27ef0","response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"}]}}
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/synthetic_pause_clock_ui_real_html.js'], returncode=1, stdout='{"trace":{"method...status":200,"request_key":"10be6a3e-1cd2-47ad-8dfa-2d0b87f27ef0","response_scope":"LOCAL_SYNTHETIC_PAUSE_CLOCK"}]}}\n').returncode
+
+tests/test_synthetic_pause_clock_ui.py:25: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_synthetic_pause_clock_ui.py::test_original_page_existing_fixture_pause_end_history_and_original_key_recovery[chain]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_synthetic_pause_clock_ui.py::test_original_page_existing_fixture_pause_end_history_and_original_key_recovery[chain]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_synthetic_pause_clock_ui.py::test_original_page_existing_fixture_pause_end_history_and_original_key_recovery[chain]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_synthetic_pause_clock_ui.py::test_original_page_existing_fixture_pause_end_history_and_original_key_recovery[chain]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 warnings in 5.19s
