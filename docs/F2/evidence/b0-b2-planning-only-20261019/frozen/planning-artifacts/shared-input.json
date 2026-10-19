@@ -1,0 +1,1594 @@
+{
+  "kind": "OWNED_SYNTHETIC_V4_PLANNING_REPLAY",
+  "source_commit": "b111d7292258faf0fff1db55f1699fabcbefe312",
+  "as_of": "2026-10-19T00:48:50.035153+00:00",
+  "catalog": {
+    "scope": "ISOLATED_SERVICE_CAPABILITIES_V1",
+    "revision": 3,
+    "sha256": "39232c204b4ef729e07b5cb38a27edb29fe91c9e0a212e2db49831162209b0a3",
+    "releases": [
+      {
+        "schema_version": 1,
+        "service_id": "synthetic-material-preparation",
+        "release_id": "1a1ddb0c-46cc-5cd0-a6af-16479bb03524",
+        "revision": 1,
+        "owner_org_id": "org-a",
+        "title": "New enterprise material template",
+        "supported_goals": [
+          "LOCAL_MATERIAL_PREPARATION"
+        ],
+        "steps": [
+          {
+            "id": "P1",
+            "adapter": "preparation",
+            "revision": 1,
+            "depends_on": [],
+            "responsibility": "企业经办人补件、获派专员人工核对、企业确认",
+            "preconditions": "有来源的诉求摘要和材料目录；当前专员核对权",
+            "output": "当前版本的本地确认资料包",
+            "acceptance": "企业明确核对当前材料版本"
+          }
+        ],
+        "role_keys": [
+          "enterprise_operator",
+          "park_specialist"
+        ],
+        "resource_keys": [],
+        "field_keys": [
+          "need_summary",
+          "material_outline"
+        ],
+        "material_requirements": [
+          {
+            "field_key": "need_summary",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          },
+          {
+            "field_key": "material_outline",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          }
+        ],
+        "resource_requirements": [],
+        "completion_checks": [
+          "MATERIAL_REVIEW"
+        ],
+        "validity": {
+          "valid_from": "2020-01-01T00:00:00+00:00",
+          "valid_until": "2099-01-01T00:00:00+00:00",
+          "timezone": "UTC"
+        },
+        "source_review": {
+          "template_release_id": "4e05e8ef-cdf8-42ba-984d-f9eee37b3dde",
+          "template_release_sha256": "948ce35561774421d29ff0411f3f7ae9a351287315761c45700a7ef86855ae64",
+          "definition_sha256": "994f2b193dc2aadcda5adc75397b028d9025507351b4b20aed5c8f52ecb42203",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "review_revision": 3,
+          "review_action": "REVIEW",
+          "source_id": "ENG098-template-source",
+          "source_revision": "1",
+          "source_sha256": "921f5b4e97cf099154095c9f8e79959cb5c53f1e4a454293583214997ea3b01d",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "business_publication": false,
+        "release_sha256": "8c7af20b586339cac20b1467c7be8b55e16edf4609eaea7d05bf7129e8ec42a1"
+      },
+      {
+        "schema_version": 1,
+        "service_id": "synthetic-resource-coordination",
+        "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+        "revision": 1,
+        "owner_org_id": "org-a",
+        "title": "New enterprise material template",
+        "supported_goals": [
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_SYNTHETIC_COORDINATION_RECORDS"
+        ],
+        "steps": [
+          {
+            "id": "P1",
+            "adapter": "preparation",
+            "revision": 1,
+            "depends_on": [],
+            "responsibility": "企业经办人补件、获派专员人工核对、企业确认",
+            "preconditions": "有来源的诉求摘要和材料目录；当前专员核对权",
+            "output": "当前版本的本地确认资料包",
+            "acceptance": "企业明确核对当前材料版本"
+          },
+          {
+            "id": "P2",
+            "adapter": "case-resources",
+            "revision": 1,
+            "depends_on": [
+              "P1"
+            ],
+            "responsibility": "企业经办人",
+            "preconditions": "P1核对有效；本人两资源组合有效且明确关联此Case",
+            "output": "此Case的两资源组合关联记录",
+            "acceptance": "核对时段、规则与当前材料绑定"
+          },
+          {
+            "id": "P3",
+            "adapter": "dispatch",
+            "revision": 1,
+            "depends_on": [
+              "P2"
+            ],
+            "responsibility": "获派专员分派、已有合法Run访问的执行者本人接单",
+            "preconditions": "P2核对有效；已有运行访问；当前材料对应的本人接单",
+            "output": "当前内部接单及回执事项",
+            "acceptance": "核对本人接受记录及当前运行访问"
+          },
+          {
+            "id": "P4",
+            "adapter": "executor-receipts",
+            "revision": 1,
+            "depends_on": [
+              "P3"
+            ],
+            "responsibility": "获派执行者提交、企业经办人核对",
+            "preconditions": "P3核对有效；当前材料绑定的合成回执",
+            "output": "企业已核对的合成回执记录",
+            "acceptance": "明确核对来源和当前回执版本；仍不证明外部履约"
+          }
+        ],
+        "role_keys": [
+          "enterprise_operator",
+          "park_specialist",
+          "service_executor"
+        ],
+        "resource_keys": [
+          "primary",
+          "secondary"
+        ],
+        "field_keys": [
+          "need_summary",
+          "material_outline"
+        ],
+        "material_requirements": [
+          {
+            "field_key": "need_summary",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          },
+          {
+            "field_key": "material_outline",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          }
+        ],
+        "resource_requirements": [
+          {
+            "resource_key": "primary",
+            "required": true
+          },
+          {
+            "resource_key": "secondary",
+            "required": true
+          }
+        ],
+        "completion_checks": [
+          "MATERIAL_REVIEW",
+          "RESOURCE_RECHECK",
+          "ACCEPTANCE_RECHECK",
+          "RECEIPT_RECHECK"
+        ],
+        "validity": {
+          "valid_from": "2020-01-01T00:00:00+00:00",
+          "valid_until": "2099-01-01T00:00:00+00:00",
+          "timezone": "UTC"
+        },
+        "source_review": {
+          "template_release_id": "4e05e8ef-cdf8-42ba-984d-f9eee37b3dde",
+          "template_release_sha256": "948ce35561774421d29ff0411f3f7ae9a351287315761c45700a7ef86855ae64",
+          "definition_sha256": "994f2b193dc2aadcda5adc75397b028d9025507351b4b20aed5c8f52ecb42203",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "review_revision": 3,
+          "review_action": "REVIEW",
+          "source_id": "ENG098-template-source",
+          "source_revision": "1",
+          "source_sha256": "921f5b4e97cf099154095c9f8e79959cb5c53f1e4a454293583214997ea3b01d",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "business_publication": false,
+        "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de"
+      },
+      {
+        "schema_version": 1,
+        "service_id": "synthetic-local-record-recheck",
+        "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+        "revision": 1,
+        "owner_org_id": "org-a",
+        "title": "New enterprise material template",
+        "supported_goals": [
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "steps": [
+          {
+            "id": "P1",
+            "adapter": "preparation",
+            "revision": 1,
+            "depends_on": [],
+            "responsibility": "企业经办人补件、获派专员人工核对、企业确认",
+            "preconditions": "有来源的诉求摘要和材料目录；当前专员核对权",
+            "output": "当前版本的本地确认资料包",
+            "acceptance": "企业明确核对当前材料版本"
+          },
+          {
+            "id": "P2",
+            "adapter": "case-resources",
+            "revision": 1,
+            "depends_on": [
+              "P1"
+            ],
+            "responsibility": "企业经办人",
+            "preconditions": "P1核对有效；本人两资源组合有效且明确关联此Case",
+            "output": "此Case的两资源组合关联记录",
+            "acceptance": "核对时段、规则与当前材料绑定"
+          },
+          {
+            "id": "P3",
+            "adapter": "dispatch",
+            "revision": 1,
+            "depends_on": [
+              "P2"
+            ],
+            "responsibility": "获派专员分派、已有合法Run访问的执行者本人接单",
+            "preconditions": "P2核对有效；已有运行访问；当前材料对应的本人接单",
+            "output": "当前内部接单及回执事项",
+            "acceptance": "核对本人接受记录及当前运行访问"
+          },
+          {
+            "id": "P4",
+            "adapter": "executor-receipts",
+            "revision": 1,
+            "depends_on": [
+              "P3"
+            ],
+            "responsibility": "获派执行者提交、企业经办人核对",
+            "preconditions": "P3核对有效；当前材料绑定的合成回执",
+            "output": "企业已核对的合成回执记录",
+            "acceptance": "明确核对来源和当前回执版本；仍不证明外部履约"
+          },
+          {
+            "id": "P5",
+            "adapter": "case-lifecycle",
+            "revision": 1,
+            "depends_on": [
+              "P4"
+            ],
+            "responsibility": "企业经办人",
+            "preconditions": "当前材料、资源、本人接单与回执核对均有效",
+            "output": "此Case本地记录重新校验",
+            "acceptance": "原入口明确重新校验，真实目标与履约仍未验证"
+          }
+        ],
+        "role_keys": [
+          "enterprise_operator",
+          "park_specialist",
+          "service_executor"
+        ],
+        "resource_keys": [
+          "primary",
+          "secondary"
+        ],
+        "field_keys": [
+          "need_summary",
+          "material_outline"
+        ],
+        "material_requirements": [
+          {
+            "field_key": "need_summary",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          },
+          {
+            "field_key": "material_outline",
+            "purpose": "CURRENT_CASE_MATERIAL_PREPARATION"
+          }
+        ],
+        "resource_requirements": [
+          {
+            "resource_key": "primary",
+            "required": true
+          },
+          {
+            "resource_key": "secondary",
+            "required": true
+          }
+        ],
+        "completion_checks": [
+          "MATERIAL_REVIEW",
+          "RESOURCE_RECHECK",
+          "ACCEPTANCE_RECHECK",
+          "RECEIPT_RECHECK",
+          "LOCAL_RECORD_RECHECK"
+        ],
+        "validity": {
+          "valid_from": "2020-01-01T00:00:00+00:00",
+          "valid_until": "2099-01-01T00:00:00+00:00",
+          "timezone": "UTC"
+        },
+        "source_review": {
+          "template_release_id": "4e05e8ef-cdf8-42ba-984d-f9eee37b3dde",
+          "template_release_sha256": "948ce35561774421d29ff0411f3f7ae9a351287315761c45700a7ef86855ae64",
+          "definition_sha256": "994f2b193dc2aadcda5adc75397b028d9025507351b4b20aed5c8f52ecb42203",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "review_revision": 3,
+          "review_action": "REVIEW",
+          "source_id": "ENG098-template-source",
+          "source_revision": "1",
+          "source_sha256": "921f5b4e97cf099154095c9f8e79959cb5c53f1e4a454293583214997ea3b01d",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "business_publication": false,
+        "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828"
+      }
+    ],
+    "instances": [
+      {
+        "schema_version": 1,
+        "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+        "park_id": "park-b",
+        "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+        "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+        "config_revision": 1,
+        "roles": {
+          "park_specialist": "prep-specialist-fixture-c",
+          "service_executor": "executor-c",
+          "enterprise_operator": "fixture-c"
+        },
+        "resources": {
+          "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+          "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+        },
+        "fields": {
+          "need_summary": {
+            "slot": "need_summary",
+            "input_field": "park-b-fresh-need_summary"
+          },
+          "material_outline": {
+            "slot": "material_outline",
+            "input_field": "park-b-fresh-material_outline"
+          }
+        },
+        "source": {
+          "kind": "SYNTHETIC",
+          "id": "park-b-independent-config-source",
+          "revision": "1",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "new_grants": false,
+        "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9"
+      },
+      {
+        "schema_version": 1,
+        "instance_id": "park-b-synthetic-material-preparation-full-chain-instance",
+        "park_id": "park-b",
+        "release_id": "1a1ddb0c-46cc-5cd0-a6af-16479bb03524",
+        "release_sha256": "8c7af20b586339cac20b1467c7be8b55e16edf4609eaea7d05bf7129e8ec42a1",
+        "config_revision": 1,
+        "roles": {
+          "park_specialist": "prep-specialist-fixture-c",
+          "enterprise_operator": "fixture-c"
+        },
+        "resources": {},
+        "fields": {
+          "need_summary": {
+            "slot": "need_summary",
+            "input_field": "park-b-fresh-need_summary"
+          },
+          "material_outline": {
+            "slot": "material_outline",
+            "input_field": "park-b-fresh-material_outline"
+          }
+        },
+        "source": {
+          "kind": "SYNTHETIC",
+          "id": "park-b-independent-config-source",
+          "revision": "1",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "new_grants": false,
+        "config_sha256": "2704d3d587059e53abbed0021bce4bd872a92ee7c91d50d5545a19bf88d73d9c"
+      },
+      {
+        "schema_version": 1,
+        "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+        "park_id": "park-b",
+        "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+        "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+        "config_revision": 1,
+        "roles": {
+          "park_specialist": "prep-specialist-fixture-c",
+          "service_executor": "executor-c",
+          "enterprise_operator": "fixture-c"
+        },
+        "resources": {
+          "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+          "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+        },
+        "fields": {
+          "need_summary": {
+            "slot": "need_summary",
+            "input_field": "park-b-fresh-need_summary"
+          },
+          "material_outline": {
+            "slot": "material_outline",
+            "input_field": "park-b-fresh-material_outline"
+          }
+        },
+        "source": {
+          "kind": "SYNTHETIC",
+          "id": "park-b-independent-config-source",
+          "revision": "1",
+          "validity": {
+            "valid_from": "2020-01-01T00:00:00+00:00",
+            "valid_until": "2099-01-01T00:00:00+00:00",
+            "timezone": "UTC"
+          }
+        },
+        "new_grants": false,
+        "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124"
+      }
+    ],
+    "mapping_states": {
+      "principals": {
+        "prep-specialist-fixture-c": "TRUE",
+        "fixture-c": "TRUE",
+        "executor-c": "TRUE"
+      },
+      "resources": {
+        "6064f697-1ee5-4879-8a59-65624142831d": "TRUE",
+        "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca": "TRUE"
+      },
+      "fields": {
+        "park-b-fresh-need_summary": "TRUE",
+        "park-b-fresh-material_outline": "TRUE"
+      }
+    },
+    "unknowns": [],
+    "business_publication": false,
+    "new_grants": false
+  },
+  "request": {
+    "park_id": "park-b",
+    "required_goals": [
+      "LOCAL_MATERIAL_PREPARATION",
+      "LOCAL_CASE_RESOURCE_ASSOCIATION",
+      "LOCAL_INTERNAL_ACCEPTANCE",
+      "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+      "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+      "LOCAL_CASE_RECORD_RECHECK"
+    ],
+    "planning_constraints": {
+      "excluded_roles": [],
+      "additional_requirements": []
+    },
+    "mapping_states": {
+      "principals": {
+        "prep-specialist-fixture-c": "TRUE",
+        "fixture-c": "TRUE",
+        "executor-c": "TRUE"
+      },
+      "resources": {
+        "6064f697-1ee5-4879-8a59-65624142831d": "TRUE",
+        "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca": "TRUE"
+      },
+      "fields": {
+        "park-b-fresh-need_summary": "TRUE",
+        "park-b-fresh-material_outline": "TRUE"
+      }
+    }
+  },
+  "context": {
+    "binding": {
+      "preparation_id": "e25c949e-7e6f-4953-84a5-aeab0676dec1",
+      "case_id": "076a8a35-0c1a-4ee8-87a6-2603aefe07aa",
+      "run_id": "957dc012-1ada-4c56-9161-eafac095bfb2",
+      "preparation_revision": 6,
+      "request_revision": 2,
+      "source_sha256": "6201d435fe5713775c440a1b3b361c2539ee6258f9d767d10776b508e4d36973",
+      "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+      "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+      "capability_catalog_sha256": "ea56e0d71f5c1fded138d20831cf1b39813661b75f6b074d415e1eb9e38201cb"
+    },
+    "required_goals": [
+      "LOCAL_MATERIAL_PREPARATION",
+      "LOCAL_CASE_RESOURCE_ASSOCIATION",
+      "LOCAL_INTERNAL_ACCEPTANCE",
+      "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+      "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+      "LOCAL_CASE_RECORD_RECHECK"
+    ],
+    "planning_constraints": {
+      "excluded_roles": [],
+      "additional_requirements": []
+    },
+    "available_services": [
+      {
+        "ref": {
+          "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+          "revision": 1,
+          "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+          "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+          "config_revision": 1,
+          "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9"
+        },
+        "service_id": "synthetic-local-record-recheck",
+        "supported_goals": [
+          "LOCAL_CASE_RECORD_RECHECK"
+        ]
+      },
+      {
+        "ref": {
+          "release_id": "1a1ddb0c-46cc-5cd0-a6af-16479bb03524",
+          "revision": 1,
+          "release_sha256": "8c7af20b586339cac20b1467c7be8b55e16edf4609eaea7d05bf7129e8ec42a1",
+          "instance_id": "park-b-synthetic-material-preparation-full-chain-instance",
+          "config_revision": 1,
+          "config_sha256": "2704d3d587059e53abbed0021bce4bd872a92ee7c91d50d5545a19bf88d73d9c"
+        },
+        "service_id": "synthetic-material-preparation",
+        "supported_goals": [
+          "LOCAL_MATERIAL_PREPARATION"
+        ]
+      },
+      {
+        "ref": {
+          "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+          "revision": 1,
+          "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+          "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+          "config_revision": 1,
+          "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124"
+        },
+        "service_id": "synthetic-resource-coordination",
+        "supported_goals": [
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_SYNTHETIC_COORDINATION_RECORDS"
+        ]
+      }
+    ]
+  },
+  "fixed_choices": [
+    {
+      "service_id": "synthetic-material-preparation",
+      "ref": {
+        "release_id": "1a1ddb0c-46cc-5cd0-a6af-16479bb03524",
+        "revision": 1,
+        "release_sha256": "8c7af20b586339cac20b1467c7be8b55e16edf4609eaea7d05bf7129e8ec42a1",
+        "instance_id": "park-b-synthetic-material-preparation-full-chain-instance",
+        "config_revision": 1,
+        "config_sha256": "2704d3d587059e53abbed0021bce4bd872a92ee7c91d50d5545a19bf88d73d9c"
+      }
+    },
+    {
+      "service_id": "synthetic-resource-coordination",
+      "ref": {
+        "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+        "revision": 1,
+        "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+        "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+        "config_revision": 1,
+        "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124"
+      }
+    },
+    {
+      "service_id": "synthetic-local-record-recheck",
+      "ref": {
+        "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+        "revision": 1,
+        "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+        "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+        "config_revision": 1,
+        "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9"
+      }
+    }
+  ],
+  "existing_plan": {
+    "id": "b707139d-5c7e-4cc1-a3b2-ffe6ea464c4f",
+    "required_goals": [
+      "LOCAL_MATERIAL_PREPARATION",
+      "LOCAL_CASE_RESOURCE_ASSOCIATION",
+      "LOCAL_INTERNAL_ACCEPTANCE",
+      "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+      "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+      "LOCAL_CASE_RECORD_RECHECK"
+    ],
+    "steps": [
+      {
+        "id": "9dd01239-d08d-43b1-b9dc-526144d37469",
+        "adapter_id": "P1",
+        "depends_on": [],
+        "contract": {
+          "id": "P1",
+          "input": "此Case当前来源版本与已有授权事实",
+          "issues": [
+            "REQUEST_GOAL_COVERAGE_REQUIRED"
+          ],
+          "output": "当前版本的本地确认资料包",
+          "actions": [
+            {
+              "path": "/api/preparations/{preparation_id}/commands",
+              "role": "enterprise_operator",
+              "method": "POST",
+              "commands": [
+                "ADD_EVIDENCE",
+                "CONFIRM"
+              ]
+            },
+            {
+              "path": "/api/preparations/{preparation_id}/commands",
+              "role": "park_specialist",
+              "method": "POST",
+              "commands": [
+                "REQUEST_CHANGES",
+                "REVIEW"
+              ]
+            }
+          ],
+          "adapter": "preparation",
+          "revision": 1,
+          "acceptance": "企业明确核对当前材料版本",
+          "correction": "返回对应原办理入口补正并重新核对",
+          "depends_on": [],
+          "executable": false,
+          "adapter_ref": "preparation",
+          "service_refs": [
+            {
+              "revision": 1,
+              "release_id": "1a1ddb0c-46cc-5cd0-a6af-16479bb03524",
+              "instance_id": "park-b-synthetic-material-preparation-full-chain-instance",
+              "config_sha256": "2704d3d587059e53abbed0021bce4bd872a92ee7c91d50d5545a19bf88d73d9c",
+              "release_sha256": "8c7af20b586339cac20b1467c7be8b55e16edf4609eaea7d05bf7129e8ec42a1",
+              "config_revision": 1
+            },
+            {
+              "revision": 1,
+              "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+              "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124",
+              "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+              "config_revision": 1
+            },
+            {
+              "revision": 1,
+              "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+              "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9",
+              "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+              "config_revision": 1
+            }
+          ],
+          "preconditions": "有来源的诉求摘要和材料目录；当前专员核对权",
+          "responsibility": "企业经办人补件、获派专员人工核对、企业确认",
+          "adapter_revision": 1,
+          "constraint_impact": {
+            "state": "COMPATIBLE",
+            "step_id": "P1",
+            "required_roles": [
+              "enterprise_operator",
+              "park_specialist"
+            ],
+            "blocked_predecessors": [],
+            "excluded_required_roles": []
+          },
+          "instance_mappings": [
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {},
+              "instance_id": "park-b-synthetic-material-preparation-full-chain-instance"
+            },
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance"
+            },
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance"
+            }
+          ],
+          "request_service_ref": "synthetic-material-preparation",
+          "request_service_version": 1
+        }
+      },
+      {
+        "id": "76f10ce9-a260-496c-bcc4-7119d18a0715",
+        "adapter_id": "P2",
+        "depends_on": [
+          "P1"
+        ],
+        "contract": {
+          "id": "P2",
+          "input": "此Case当前来源版本与已有授权事实",
+          "issues": [
+            "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+          ],
+          "output": "此Case的两资源组合关联记录",
+          "actions": [
+            {
+              "path": "/api/preparations/{preparation_id}/resource-link",
+              "role": "enterprise_operator",
+              "method": "POST",
+              "commands": [
+                "CREATE_OR_RECHECK_LINK"
+              ]
+            }
+          ],
+          "adapter": "case-resources",
+          "revision": 1,
+          "acceptance": "核对时段、规则与当前材料绑定",
+          "correction": "返回对应原办理入口补正并重新核对",
+          "depends_on": [
+            "P1"
+          ],
+          "executable": false,
+          "adapter_ref": "case-resources",
+          "service_refs": [
+            {
+              "revision": 1,
+              "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+              "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124",
+              "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+              "config_revision": 1
+            },
+            {
+              "revision": 1,
+              "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+              "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9",
+              "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+              "config_revision": 1
+            }
+          ],
+          "preconditions": "P1核对有效；本人两资源组合有效且明确关联此Case",
+          "responsibility": "企业经办人",
+          "adapter_revision": 1,
+          "constraint_impact": {
+            "state": "COMPATIBLE",
+            "step_id": "P2",
+            "required_roles": [
+              "enterprise_operator"
+            ],
+            "blocked_predecessors": [],
+            "excluded_required_roles": []
+          },
+          "instance_mappings": [
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance"
+            },
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance"
+            }
+          ],
+          "request_service_ref": "synthetic-material-preparation",
+          "request_service_version": 1
+        }
+      },
+      {
+        "id": "746f10f7-644d-4735-b3b5-7013f03c4e56",
+        "adapter_id": "P3",
+        "depends_on": [
+          "P2"
+        ],
+        "contract": {
+          "id": "P3",
+          "input": "此Case当前来源版本与已有授权事实",
+          "issues": [
+            "ACCEPTED_DISPATCH_REQUIRED"
+          ],
+          "output": "当前内部接单及回执事项",
+          "actions": [
+            {
+              "path": "/api/preparations/{preparation_id}/dispatch",
+              "role": "park_specialist",
+              "method": "POST",
+              "commands": [
+                "OFFER"
+              ]
+            },
+            {
+              "path": "/api/service-dispatches/{dispatch_id}/commands",
+              "role": "service_executor",
+              "method": "POST",
+              "commands": [
+                "ACCEPT",
+                "DECLINE"
+              ]
+            }
+          ],
+          "adapter": "dispatch",
+          "revision": 1,
+          "acceptance": "核对本人接受记录及当前运行访问",
+          "correction": "返回对应原办理入口补正并重新核对",
+          "depends_on": [
+            "P2"
+          ],
+          "executable": false,
+          "adapter_ref": "dispatch",
+          "service_refs": [
+            {
+              "revision": 1,
+              "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+              "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124",
+              "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+              "config_revision": 1
+            },
+            {
+              "revision": 1,
+              "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+              "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9",
+              "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+              "config_revision": 1
+            }
+          ],
+          "preconditions": "P2核对有效；已有运行访问；当前材料对应的本人接单",
+          "responsibility": "获派专员分派、已有合法Run访问的执行者本人接单",
+          "adapter_revision": 1,
+          "constraint_impact": {
+            "state": "COMPATIBLE",
+            "step_id": "P3",
+            "required_roles": [
+              "park_specialist",
+              "service_executor"
+            ],
+            "blocked_predecessors": [],
+            "excluded_required_roles": []
+          },
+          "instance_mappings": [
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance"
+            },
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance"
+            }
+          ],
+          "request_service_ref": "synthetic-material-preparation",
+          "request_service_version": 1
+        }
+      },
+      {
+        "id": "21f3dc7c-da3b-41be-9919-9efe47481bfd",
+        "adapter_id": "P4",
+        "depends_on": [
+          "P3"
+        ],
+        "contract": {
+          "id": "P4",
+          "input": "此Case当前来源版本与已有授权事实",
+          "issues": [
+            "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+          ],
+          "output": "企业已核对的合成回执记录",
+          "actions": [
+            {
+              "path": "/api/executor-receipts/{step_id}/commands",
+              "role": "service_executor",
+              "method": "POST",
+              "commands": [
+                "SUBMIT"
+              ]
+            },
+            {
+              "path": "/api/executor-receipts/{step_id}/commands",
+              "role": "enterprise_operator",
+              "method": "POST",
+              "commands": [
+                "ACKNOWLEDGE",
+                "REQUEST_CHANGES",
+                "REOPEN"
+              ]
+            }
+          ],
+          "adapter": "executor-receipts",
+          "revision": 1,
+          "acceptance": "明确核对来源和当前回执版本；仍不证明外部履约",
+          "correction": "返回对应原办理入口补正并重新核对",
+          "depends_on": [
+            "P3"
+          ],
+          "executable": false,
+          "adapter_ref": "executor-receipts",
+          "service_refs": [
+            {
+              "revision": 1,
+              "release_id": "bef6cf4a-1eb1-58de-a459-0d1669cc7f65",
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance",
+              "config_sha256": "0a8bf567b8d004b559126d635e246595a6de3fd9f1932d6421855a47416fc124",
+              "release_sha256": "1461e9da07d8cf4455b502a6e8883fee83c7778e47a30375019f03d1fe6ba9de",
+              "config_revision": 1
+            },
+            {
+              "revision": 1,
+              "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+              "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9",
+              "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+              "config_revision": 1
+            }
+          ],
+          "preconditions": "P3核对有效；当前材料绑定的合成回执",
+          "responsibility": "获派执行者提交、企业经办人核对",
+          "adapter_revision": 1,
+          "constraint_impact": {
+            "state": "COMPATIBLE",
+            "step_id": "P4",
+            "required_roles": [
+              "enterprise_operator",
+              "service_executor"
+            ],
+            "blocked_predecessors": [],
+            "excluded_required_roles": []
+          },
+          "instance_mappings": [
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-resource-coordination-full-chain-instance"
+            },
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance"
+            }
+          ],
+          "request_service_ref": "synthetic-material-preparation",
+          "request_service_version": 1
+        }
+      },
+      {
+        "id": "891542a3-4a2b-4682-a517-7b1ec3a168c4",
+        "adapter_id": "P5",
+        "depends_on": [
+          "P4"
+        ],
+        "contract": {
+          "id": "P5",
+          "input": "此Case当前来源版本与已有授权事实",
+          "issues": [
+            "ACCEPTED_DISPATCH_REQUIRED",
+            "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+            "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+            "REQUEST_GOAL_COVERAGE_REQUIRED"
+          ],
+          "output": "此Case本地记录重新校验",
+          "actions": [
+            {
+              "path": "/api/preparations/{preparation_id}/local-case/commands",
+              "role": "enterprise_operator",
+              "method": "POST",
+              "commands": [
+                "REVALIDATE",
+                "CLOSE_LOCAL_RECORD",
+                "REOPEN"
+              ]
+            }
+          ],
+          "adapter": "case-lifecycle",
+          "revision": 1,
+          "acceptance": "原入口明确重新校验，真实目标与履约仍未验证",
+          "correction": "返回对应原办理入口补正并重新核对",
+          "depends_on": [
+            "P4"
+          ],
+          "executable": false,
+          "adapter_ref": "case-lifecycle",
+          "service_refs": [
+            {
+              "revision": 1,
+              "release_id": "d40fee4a-9de4-5464-876a-7103fbef25da",
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance",
+              "config_sha256": "01ecf8e9d31db9b9515f7a5592b0ebe43638838f900bbedd6962d3bd353d70d9",
+              "release_sha256": "88b9f0ce4e3fa1b13d9efcb1adc8b5364bee207904f48f325986e3eb12be6828",
+              "config_revision": 1
+            }
+          ],
+          "preconditions": "当前材料、资源、本人接单与回执核对均有效",
+          "responsibility": "企业经办人",
+          "lifecycle_cycle": null,
+          "lifecycle_state": "NOT_STARTED",
+          "adapter_revision": 1,
+          "constraint_impact": {
+            "state": "COMPATIBLE",
+            "step_id": "P5",
+            "required_roles": [
+              "enterprise_operator"
+            ],
+            "blocked_predecessors": [],
+            "excluded_required_roles": []
+          },
+          "instance_mappings": [
+            {
+              "roles": {
+                "park_specialist": "prep-specialist-fixture-c",
+                "service_executor": "executor-c",
+                "enterprise_operator": "fixture-c"
+              },
+              "fields": {
+                "need_summary": {
+                  "slot": "need_summary",
+                  "input_field": "park-b-fresh-need_summary"
+                },
+                "material_outline": {
+                  "slot": "material_outline",
+                  "input_field": "park-b-fresh-material_outline"
+                }
+              },
+              "resources": {
+                "primary": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+                "secondary": "6064f697-1ee5-4879-8a59-65624142831d"
+              },
+              "instance_id": "park-b-synthetic-local-record-recheck-full-chain-instance"
+            }
+          ],
+          "request_service_ref": "synthetic-material-preparation",
+          "request_service_version": 1
+        }
+      }
+    ],
+    "dependency_manifest": {
+      "edges": [
+        {
+          "kind": "PRECEDES",
+          "upstream": "P1",
+          "downstream": "P2",
+          "provenance": "COMPILED_REGISTERED_ADAPTER"
+        },
+        {
+          "kind": "PRECEDES",
+          "upstream": "P2",
+          "downstream": "P3",
+          "provenance": "COMPILED_REGISTERED_ADAPTER"
+        },
+        {
+          "kind": "PRECEDES",
+          "upstream": "P3",
+          "downstream": "P4",
+          "provenance": "COMPILED_REGISTERED_ADAPTER"
+        },
+        {
+          "kind": "PRECEDES",
+          "upstream": "P4",
+          "downstream": "P5",
+          "provenance": "COMPILED_REGISTERED_ADAPTER"
+        }
+      ],
+      "sha256": "4feb05fa7d3b9e46bd024717d3881d9d4df4102d5ca52c3a73300bca00b2d81c",
+      "version": 2,
+      "collections": {
+        "resources": {
+          "count": 4,
+          "known": true,
+          "sha256": "823b5d614fa535f5fe8c739ed47d18558fcd65c60adc17b8f8fce131d8d1816a"
+        },
+        "existing_access": {
+          "count": 1,
+          "known": true,
+          "sha256": "94b1a92befb66cda3acb16e2c1afee14fe5a1b8f388e3ea31e3d354b7bbf611a"
+        },
+        "service_catalog": {
+          "count": 1,
+          "known": true,
+          "sha256": "637ba54fdaf64f320614e1d68b4cc4fec07b8a2cdc8da944bb87fb0150105da1"
+        }
+      },
+      "declarations": {
+        "P1": [
+          "REQUEST",
+          "MATERIAL",
+          "FACT",
+          "SERVICE_RULE",
+          "OWNER_AUTHORITY",
+          "SERVICE_CATALOG_QUERY_COLLECTION"
+        ],
+        "P2": [
+          "MATERIAL",
+          "RESOURCE",
+          "RESERVATION",
+          "RESOURCE_RULE_COLLECTION"
+        ],
+        "P3": [
+          "MATERIAL",
+          "DISPATCH",
+          "ACCEPTANCE",
+          "RUN_ACCESS_COLLECTION"
+        ],
+        "P4": [
+          "MATERIAL",
+          "RECEIPT",
+          "RECEIPT_EVENT_COLLECTION",
+          "LOCAL_EXECUTION"
+        ],
+        "P5": [
+          "MATERIAL",
+          "RESOURCE",
+          "ACCEPTANCE",
+          "RECEIPT",
+          "LOCAL_CASE_CHECK"
+        ]
+      }
+    },
+    "manual_locks": [],
+    "owner_amendments": [],
+    "identity_anchor": {
+      "plan_id": "b707139d-5c7e-4cc1-a3b2-ffe6ea464c4f",
+      "original_binding": {
+        "preparation_id": "e25c949e-7e6f-4953-84a5-aeab0676dec1",
+        "case_id": "076a8a35-0c1a-4ee8-87a6-2603aefe07aa",
+        "run_id": "957dc012-1ada-4c56-9161-eafac095bfb2",
+        "preparation_revision": 6,
+        "request_revision": 2,
+        "source_sha256": "b16007381814baa94d2bf2c50e8f619ffe49d21d092c4b7f30f7d44c359a0230",
+        "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+        "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+        "capability_catalog_sha256": "ea56e0d71f5c1fded138d20831cf1b39813661b75f6b074d415e1eb9e38201cb"
+      },
+      "step_ids": {
+        "P1": "9dd01239-d08d-43b1-b9dc-526144d37469",
+        "P2": "76f10ce9-a260-496c-bcc4-7119d18a0715",
+        "P3": "746f10f7-644d-4735-b3b5-7013f03c4e56",
+        "P4": "21f3dc7c-da3b-41be-9919-9efe47481bfd",
+        "P5": "891542a3-4a2b-4682-a517-7b1ec3a168c4"
+      },
+      "owner_id": "fixture-c",
+      "event": {
+        "id": "90624eec-5ef0-455f-8fe0-bcbe56eb8713",
+        "actor_id": "fixture-c",
+        "fingerprint": "16329dde6ded9dbd1c657212f272bd2db8df91baf2876dd8732351e131efa370"
+      }
+    },
+    "identity_anchor_sha256": "98ae23f44590c9c6d5d364168498daf30445a78da5a3591b22b60b3a209cbcb2"
+  },
+  "current_collections": {
+    "resources": {
+      "known": true,
+      "count": 4,
+      "sha256": "96e07e83f92d3899edf6201309b3f0f8c9fd460543c5b54a2bc62e6f601096ce"
+    },
+    "existing_access": {
+      "known": true,
+      "count": 1,
+      "sha256": "94b1a92befb66cda3acb16e2c1afee14fe5a1b8f388e3ea31e3d354b7bbf611a"
+    },
+    "service_catalog": {
+      "known": true,
+      "count": 1,
+      "sha256": "637ba54fdaf64f320614e1d68b4cc4fec07b8a2cdc8da944bb87fb0150105da1"
+    }
+  },
+  "resource_rows_before": [
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "park_id": "park-b",
+      "name": "SYNTHETIC B resource 1",
+      "revision": 1,
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "timezone": "UTC",
+      "namespace": "SYNTHETIC",
+      "authority": "LOCAL_AUTHORITY",
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      }
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "park_id": "park-b",
+      "name": "SYNTHETIC B resource 0",
+      "revision": 1,
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "timezone": "UTC",
+      "namespace": "SYNTHETIC",
+      "authority": "LOCAL_AUTHORITY",
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      }
+    }
+  ],
+  "resource_rows_after": [
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "park_id": "park-b",
+      "name": "SYNTHETIC B resource 1",
+      "revision": 2,
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "timezone": "UTC",
+      "namespace": "SYNTHETIC",
+      "authority": "LOCAL_AUTHORITY",
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      }
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "park_id": "park-b",
+      "name": "SYNTHETIC B resource 0",
+      "revision": 2,
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "timezone": "UTC",
+      "namespace": "SYNTHETIC",
+      "authority": "LOCAL_AUTHORITY",
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      }
+    }
+  ],
+  "resource_query_rows_before": [
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "revision": 1,
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "capability": "HOLD",
+      "active": true
+    },
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "revision": 1,
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "capability": "READ",
+      "active": true
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "revision": 1,
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "capability": "HOLD",
+      "active": true
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "revision": 1,
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 300,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "capability": "READ",
+      "active": true
+    }
+  ],
+  "resource_query_rows_after": [
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "revision": 2,
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "capability": "HOLD",
+      "active": true
+    },
+    {
+      "id": "6064f697-1ee5-4879-8a59-65624142831d",
+      "revision": 2,
+      "source": {
+        "id": "B-independent-resource-1",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.511668+00:00",
+      "open_until": "2026-11-18 00:48:42.511669+00:00",
+      "enabled": true,
+      "capability": "READ",
+      "active": true
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "revision": 2,
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "capability": "HOLD",
+      "active": true
+    },
+    {
+      "id": "a8cd64ee-3b4b-43c8-96b9-1f1be559c7ca",
+      "revision": 2,
+      "source": {
+        "id": "B-independent-resource-0",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "SYNTHETIC B own initial resource fixture"
+      },
+      "capacity": 2,
+      "buffer_seconds": 360,
+      "open_from": "2026-10-18 00:48:42.509257+00:00",
+      "open_until": "2026-11-18 00:48:42.509259+00:00",
+      "enabled": true,
+      "capability": "READ",
+      "active": true
+    }
+  ],
+  "identity_map": {
+    "plan": "b707139d-5c7e-4cc1-a3b2-ffe6ea464c4f",
+    "preparation": "e25c949e-7e6f-4953-84a5-aeab0676dec1",
+    "case": "076a8a35-0c1a-4ee8-87a6-2603aefe07aa",
+    "run": "957dc012-1ada-4c56-9161-eafac095bfb2",
+    "steps": {
+      "P1": "9dd01239-d08d-43b1-b9dc-526144d37469",
+      "P2": "76f10ce9-a260-496c-bcc4-7119d18a0715",
+      "P3": "746f10f7-644d-4735-b3b5-7013f03c4e56",
+      "P4": "21f3dc7c-da3b-41be-9919-9efe47481bfd",
+      "P5": "891542a3-4a2b-4682-a517-7b1ec3a168c4"
+    }
+  },
+  "requested_slot": {
+    "starts_at": "2026-10-19T05:48:50.035153+00:00",
+    "ends_at": "2026-10-19T06:48:50.035153+00:00",
+    "quantity": 2
+  },
+  "budget_per_arm": {
+    "rebuild_selection": 1,
+    "dependency_inspect": 1,
+    "rebuild_returned_nodes": 5,
+    "candidate_rows_constructed": 5
+  },
+  "order": [
+    "FULL",
+    "LOCAL"
+  ]
+}
