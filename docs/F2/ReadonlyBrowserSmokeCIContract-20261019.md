@@ -1,4 +1,4 @@
-# 原页面无会话只读浏览器冒烟：单次 CI 合同
+# 原页面无会话只读浏览器冒烟：首次与一次修复复验
 
 本增量只为当前原页面提供真实 Chrome 的最小无会话冒烟。基线为
 `ec4bd7371f7b9c190618057951e1bb6da8457397`。不修改产品代码、原 7 个 workflow，
@@ -6,11 +6,13 @@
 
 ## 执行与费用边界
 
-新增 workflow 仅接收 `dev/f2-readonly-browser-smoke-20261019` 的 push；限定
-`T1doo/ParkWeave`、公开仓库、首次 run 和 attempt、一个标准 `ubuntu-24.04` job，
+workflow 仅接收 `dev/f2-readonly-browser-smoke-20261019` 的 push；限定
+`T1doo/ParkWeave`、公开仓库、一个标准 `ubuntu-24.04` job。
+首次 run 1 已失败；依据用户随后提供的原始 JSON 和新增明确授权，当前门禁只允许
+**run 2、attempt 1**，由一次正常开发分支 push 触发同一只读 smoke 的修复复验，
 总上限 6 分钟。没有手动、定时、PR 触发器，没有 matrix、cache、artifact 上传、部署、
 外部业务服务或自定义 secret。checkout 使用原先固定 SHA，权限只有 `contents: read`，
-不保留 Git 凭据。不自动重试，失败后不以新 push 或 rerun 继续执行。
+不保留 Git 凭据。本次复验不自动重试，失败后不以额外 push 或 rerun 继续执行。
 
 [GitHub 计费说明](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
 说明公开仓库的标准托管 runner 免费，日志和 job summary 不计 artifact 存储；
@@ -29,6 +31,28 @@ Playwright 1.62.0、pyee 13.0.1、greenlet 3.5.6，与当前项目 `.venv` 一�
 本地包元数据分别标示 Apache-2.0、MIT、MIT AND PSF-2.0；
 [Playwright 1.62.0 官方许可](https://github.com/microsoft/playwright-python/blob/v1.62.0/LICENSE)
 为 Apache-2.0。没有新增许可接受步骤。Chrome 沿用 runner 已有安装，不下载其他浏览器包或 FFmpeg。
+
+## 首次失败定位及最小修复
+
+[首次 run 1](https://github.com/T1doo/ParkWeave/actions/runs/39213055791) 的公开状态为
+Failure，62 秒，job 59 秒，注释退出码 1。用户随后通过父线程提供
+[原始失败 JSON](evidence/readonly-browser-smoke-20261019/first-ci-failure.json)
+（来源 Sentinel_2e648071282881919386dc6be2bf938d）。该 JSON 对应原 SHA
+`31376b083cba7b54d8184e1960de1b7079d155a1`，确认 Chrome 155.0.8059.39 已启动；
+读取 CDP 命令行时因缺少 `--enable-automation` 失败，尚无应用请求、DB 连接尝试或写守卫触发。
+这是用户提供的运行证据；此前 REST 拒绝及当时的未知判断原件继续保留，不重试日志接口。
+
+[官方 CDP Browser 协议](https://github.com/ChromeDevTools/devtools-protocol/blob/master/pdl/domains/Browser.pdl)
+明确 `getBrowserCommandLine` 只有在启用该标志时才返回命令行。
+当前安装的 Playwright 1.62.0 `lib/coreBundle.js` 的 `chromiumSwitches` 与
+[对应官方默认参数源文件](https://github.com/microsoft/playwright/blob/v1.62.0/packages/playwright-core/src/server/chromium/chromiumSwitches.ts)
+均不包含它。原 smoke 没有传 `ignore_default_args`；并非本脚本过滤了该标志。
+Playwright 的内部 app helper 另有过滤逻辑，本脚本不调用该 helper。
+
+最小修复通过官方 `launch(args=...)` 追加 `--enable-automation`，保留全部默认参数，
+不设置 `ignore_default_args`，不跳过 CDP、命令行禁用 sandbox 参数检查或实际 sandbox 页面核验。
+依赖版本、Chrome channel、headless、`chromium_sandbox=True`、无会话、零 DB、
+零浏览器业务写入和全部 NOT_RUN 范围保持不变。
 
 [Playwright 官方浏览器说明](https://playwright.dev/python/docs/browsers)
 支持 `channel="chrome"`；这里使用 runner 的 Chrome 而不是 Playwright 配套 Chromium，
@@ -70,6 +94,12 @@ pytest 报告耗时 **2.75 秒**（外层控制器 7.055 秒），本地浏览�
 Python AST、YAML 和 workflow 的 shell 语法检查通过。原 7 个 workflow 字节不变。
 JUnit、stdout/stderr 和退出码原件保存在忽略的 `.runtime/browser-readiness-ci-20261019/`；
 远端浏览器执行结果必须另据实际 run 核对，本文本地结果不能替代它。
+
+修复复验仍只运行同一合同节点；增加对已消耗 run 1、未授权 run 3 及 attempt 2 的拒绝检查，
+本地不启动浏览器。新增授权只覆盖当前有证据的修复及一次免费 CI，不恢复任何旧业务窗口。
+修复后本地该节点实际 **1 passed**，pytest 退出码 **0**，pytest 耗时 **5.35 秒**，
+同样保留 3 条现有 warning；零 DB、本地浏览器启动 0。此次结果原件另存于
+`.runtime/browser-readiness-ci-recheck-20261019/`，不覆盖首轮记录。
 
 数据库、真实身份/Grant/分派/目录发布/批准、Case、worker、P1–P5、实际 TXT 下载、
 业务冷恢复和 Windows 正式 AT 均为本轮 **NOT_RUN**。已过期业务窗口不延长或复活。

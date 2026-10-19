@@ -26,11 +26,11 @@ NOT_RUN = ["database", "Case", "worker", "P1-P5", "TXT_download", "business_cold
 def require_hosted_once(environment):
     expected = {
         "SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": BRANCH,
-        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "1",
+        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "2",
         "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
     }
     if any(environment.get(k) != v for k, v in expected.items()):
-        raise RuntimeError("only the first public dedicated hosted Linux push is allowed")
+        raise RuntimeError("only the authorized public dedicated hosted Linux push is allowed")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if not re.fullmatch(r"[0-9a-f]{40}", environment.get("SMOKE_SHA", "")) or commit != environment["SMOKE_SHA"]:
         raise RuntimeError("exact checked-out source SHA required")
@@ -107,7 +107,8 @@ def browser_smoke(report):
         report["application"] = evidence
         with sync_playwright() as playwright:
             # Use runner's already installed Chrome; never install or fall back.
-            with playwright.chromium.launch(channel="chrome", headless=True, chromium_sandbox=True) as browser:
+            with playwright.chromium.launch(channel="chrome", headless=True, chromium_sandbox=True,
+                                            args=["--enable-automation"]) as browser:
                 report["chrome_version"] = browser.version
                 command = browser.new_browser_cdp_session().send("Browser.getBrowserCommandLine")["arguments"]
                 forbidden = {"--no-sandbox", "--disable-setuid-sandbox", "--disable-seccomp-filter-sandbox",
