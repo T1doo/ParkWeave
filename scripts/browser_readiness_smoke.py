@@ -19,14 +19,14 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BRANCH = "refs/heads/dev/f2-personal-task-pagination-20261019"
+BRANCH = "refs/heads/dev/f2-unaccepted-step-redispatch-20261019"
 NOT_RUN = ["database", "Case", "worker", "P1-P5", "TXT_download", "business_cold_recovery", "Windows_AT"]
 
 
 def require_hosted_once(environment):
     expected = {
         "SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": BRANCH,
-        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "5",
+        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "6",
         "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
     }
     if any(environment.get(k) != v for k, v in expected.items()):
@@ -182,6 +182,9 @@ def browser_smoke(report):
                 context.close()
                 directory_error_fixture_smoke(browser, base, report)
                 personal_task_fixture_smoke(browser, base, report)
+                ordinary_redispatch_fixture_smoke(browser, base, report)
+                if evidence['blocked_write_probes'] or evidence['db_connect_attempts']:
+                    raise RuntimeError('client-only fixture reached application write or database')
     report["checks"] = ["original_page_bytes", "title_and_heading", "three_workspace_clicks",
                         "invalid_id_feedback", "existing_entry_empty_session", "formal_entry_empty_session",
                         "two_original_401_GETs", "TXT_disabled", "zero_DB", "namespace_seccomp_sandbox"]
@@ -444,8 +447,88 @@ def personal_task_fixture_smoke(browser, base, report):
         raise RuntimeError("synthetic task browser fixture boundary violated")
 
 
+def ordinary_redispatch_fixture_smoke(browser, base, report):
+    """Real original form with exported owned-synthetic DTOs; no server API calls."""
+    from playwright.sync_api import expect
+    snapshot = json.loads((ROOT / 'tests/fixtures/ordinary-redispatch-ui.json').read_text())
+    if (snapshot['scope'] != 'OWNED_SYNTHETIC_CLIENT_RESPONSE_SNAPSHOT_ONLY'
+            or snapshot['before_view']['role'] != 'park_specialist'
+            or snapshot['before_catalog']['can_offer_again'] is not True):
+        raise RuntimeError('exact owned-synthetic reviewer snapshot required')
+    fixture = {'scope': 'SYNTHETIC_CLIENT_RESPONSE_FIXTURES_ONLY', 'requests': [], 'page_errors': [],
+               'backend_execution': 'NOT_RUN_BY_THIS_CHROME_CASE'}
+    report['ordinary_redispatch_fixture'] = fixture
+    path = '/api/preparations/' + snapshot['preparation_id'] + '/dispatch'
+    state = {'committed': False, 'posts': []}
+    violations = []
+    context = browser.new_context(service_workers='block', viewport={'width': 390, 'height': 900})
+
+    def route_fixture(route):
+        request = route.request
+        url = urlsplit(request.url)
+        fixture['requests'].append({'method': request.method, 'path': url.path})
+        if not request.url.startswith(base + '/'):
+            violations.append('nonlocal request'); route.abort()
+        elif request.method in {'GET', 'HEAD'} and url.path in {'/', '/favicon.ico'} and not url.query:
+            route.continue_()
+        elif request.method == 'GET' and url.path == '/api/run-access/status' and not url.query:
+            route.fulfill(status=401, json={'detail': 'synthetic client fixture has no authority'})
+        elif request.method == 'GET' and url.path == '/api/service-dispatches' and not url.query:
+            route.fulfill(status=200, json=snapshot['list_view'])
+        elif request.method == 'GET' and url.path == path and not url.query:
+            route.fulfill(status=200, json=snapshot['after_view' if state['committed'] else 'before_view'])
+        elif request.method == 'GET' and url.path == '/api/service-dispatches/catalog' and url.query == 'preparation_id=' + snapshot['preparation_id']:
+            route.fulfill(status=200, json=snapshot['after_catalog' if state['committed'] else 'before_catalog'])
+        elif request.method == 'POST' and url.path == path and not url.query:
+            item = {'body': request.post_data_json, 'key': request.headers.get('idempotency-key')}
+            if item['body'] != snapshot['post_body'] or not re.fullmatch('[0-9a-f-]{36}', item['key'] or ''):
+                violations.append('unexpected client-only command'); route.abort(); return
+            state['posts'].append(item)
+            if len(state['posts']) == 1:
+                state['committed'] = True
+                route.abort('failed')  # Client-only committed-reply loss, no server write.
+            elif len(state['posts']) == 2 and state['posts'][0] == item:
+                route.fulfill(status=201, json=snapshot['post_response'])
+            else:
+                violations.append('changed or automatic retry'); route.abort()
+        else:
+            violations.append('unexpected application request'); route.abort()
+
+    context.route('**/*', route_fixture)
+    page = context.new_page()
+    page.on('pageerror', lambda error: fixture['page_errors'].append(str(error)))
+    response = page.goto(base + '/', wait_until='load', timeout=10000)
+    if response is None or response.body() != (ROOT / 'src/parkweave/web.html').read_bytes():
+        raise RuntimeError('redispatch fixture must use exact original page bytes')
+    page.locator('[data-tab="collaboration"]').click()
+    page.locator('#token').fill('SYNTHETIC_CLIENT_FIXTURE_REVIEWER')
+    page.locator('#dispatch-list').click()
+    expect(page.locator('#dispatch-items button')).to_have_count(1)
+    page.locator('#dispatch-items button').click()
+    expect(page.locator('#dispatch-offer')).to_be_visible()
+    expect(page.locator('#dispatch-offer-button')).to_have_text('明确另派未接单事项')
+    expect(page.locator('#dispatch-current')).to_contain_text('不延长办理时间')
+    expect(page.locator('#dispatch-current')).to_contain_text(snapshot['first_deadline'])
+    page.locator('#dispatch-executor').select_option(snapshot['post_body']['executor_id'])
+    page.locator('#dispatch-offer-reason').fill(snapshot['post_body']['reason'])
+    page.locator('#dispatch-offer-button').click()
+    expect(page.locator('#dispatch-retry')).to_be_visible()
+    if len(state['posts']) != 1:
+        raise RuntimeError('no automatic redispatch retry permitted')
+    page.locator('#dispatch-retry').click()
+    expect(page.locator('#dispatch-retry')).to_be_hidden()
+    expect(page.locator('#dispatch-current')).to_contain_text('执行者：unassigned')
+    expect(page.locator('#dispatch-history')).to_contain_text('REOFFER')
+    expect(page.locator('#dispatch-history')).to_contain_text('DECLINE')
+    expect(page.locator('#dispatch-offer')).to_be_hidden()
+    if len(state['posts']) != 2 or state['posts'][0] != state['posts'][1] or violations or fixture['page_errors']:
+        raise RuntimeError('synthetic redispatch form boundary or retry proof failed')
+    fixture.update(status='PASS', explicit_client_only_POSTs=2, same_original_key_and_body=True, server_API_requests=0)
+    context.close()
+
+
 def main():
-    report = {"status": "FAIL", "scope": "real Chrome read-only page smoke and synthetic client directory/task pagination fixtures", "NOT_RUN": NOT_RUN}
+    report = {"status": "FAIL", "scope": "real Chrome read-only page smoke and synthetic client directory/task/redispatch fixtures", "NOT_RUN": NOT_RUN}
     try:
         report["source_sha"] = require_hosted_once(os.environ)
         report["runner"] = {k: os.environ.get(k) for k in ["RUNNER_ENVIRONMENT", "RUNNER_OS", "ImageOS", "ImageVersion"]}

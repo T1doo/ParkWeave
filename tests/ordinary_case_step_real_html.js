@@ -99,6 +99,24 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
   check(reviewer.run('dispatchCatalog.assignment_contract')==='CASE_STEP_ASSIGNMENT_V1','ordinary current preparation catalog');check(calls.every(c=>c.method==='GET'),'navigation performs no automatic POST');
   reviewer.$('dispatch-executor').value='executor-a';reviewer.$('dispatch-offer-reason').value='SYNTHETIC ordinary exact duty';await reviewer.$('dispatch-offer').onsubmit({preventDefault(){}});
   const x=reviewer.run('dispatchView');check(x.current_offer.state==='OFFERED','ordinary explicit original offer');result={dispatch_id:x.dispatch_id,deadline:x.assignment_valid_until};
+ }else if(config.phase==='REDISPATCH'){
+  const transport={dropPath:config.drop_reoffer_response?'/dispatch':null};
+  const reviewer=page({...config,token:config.tokens.reviewer},{},calls,transport);
+  await reviewer.$('dispatch-list').click();const item=reviewer.$('dispatch-items').children.find(e=>e.tagName==='button');check(!!item,'responsible specialist original dispatch list');item.click();await until(()=>reviewer.run('dispatchView')!==null);
+  check(reviewer.run('dispatchCatalog.can_offer_again')===true,'ordinary explicit unaccepted redispatch available');
+  check(reviewer.run('dispatchCatalog.can_reassign')===false&&reviewer.run('dispatchCatalog.can_reoffer')===false,'no legacy handoff or material renewal path');
+  check(reviewer.$('dispatch-offer').hidden===false,'original form visible after terminal offer');
+  check(textOf(reviewer.$('dispatch-current')).includes('不延长办理时间'),'first deadline is explained');
+  reviewer.$('dispatch-executor').value='unassigned';reviewer.$('dispatch-offer-reason').value='SYNTHETIC explicit different responsibility after decline';await reviewer.$('dispatch-offer').onsubmit({preventDefault(){}});
+  if(config.drop_reoffer_response){
+   check(reviewer.run('dispatchPending')!==null,'unknown result keeps exact original request');
+   check(calls.filter(c=>c.method==='POST').length===1,'no automatic retry');
+   await reviewer.$('dispatch-retry').click();
+   const writes=calls.filter(c=>c.method==='POST');check(writes.length===2&&writes[0].request_key===writes[1].request_key&&JSON.stringify(writes[0].body)===JSON.stringify(writes[1].body),'explicit retry keeps original key and body');
+  }
+  const x=reviewer.run('dispatchView');check(x.current_offer.executor_id==='unassigned'&&x.current_offer.state==='OFFERED','new executor original offer');check(x.assignment_valid_until===config.deadline,'redispatch does not renew first deadline');
+  check(x.history.length===3&&x.history[0].action==='OFFER'&&x.history[1].action==='DECLINE'&&x.history[2].action==='REOFFER','history and generation retained');
+  result={dispatch_id:x.dispatch_id,offer_id:x.current_offer.id,deadline:x.assignment_valid_until,revision:x.revision};
  }else if(config.phase==='EXECUTE'){
   const executor=page({...config,token:config.tokens.executor},{},calls,{});
   await executor.$('notice-list').click();const card=executor.$('notice-items').children.find(e=>e.dataset?.noticeId),button=card?.children.find(e=>e.tagName==='button');check(!!button,'actual restarted inbox card');button.click();await until(()=>executor.run('noticeView')!==null);

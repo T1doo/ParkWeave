@@ -12,8 +12,9 @@ from ordinary_case_step_support import ordinary_api,worker_once
 
 def html(f,directory,phase,p,**extra):
     directory.mkdir(parents=True,exist_ok=True)
+    executor_id=extra.pop('executor_id','executor-a')
     config=dict(base=str(f[3].base_url).rstrip('/'),preparation_id=p['preparation_id'],phase=phase,
-        tokens=dict(owner=f[2]['fixture-a'],reviewer=f[2][REVIEWER],executor=f[2]['executor-a']),**extra)
+        tokens=dict(owner=f[2]['fixture-a'],reviewer=f[2][REVIEWER],executor=f[2][executor_id]),**extra)
     with (directory/'html.stdout').open('w') as out,(directory/'html.stderr').open('w') as err:
         result=subprocess.run(['node','tests/ordinary_case_step_real_html.js'],input=json.dumps(config)+'\n',
             text=True,stdout=out,stderr=err,timeout=60)
