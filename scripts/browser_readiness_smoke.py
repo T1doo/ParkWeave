@@ -19,14 +19,14 @@ from urllib.parse import urlsplit
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BRANCH = "refs/heads/dev/f2-readonly-browser-smoke-20261019"
+BRANCH = "refs/heads/dev/f3-record-directory-errors-20261019"
 NOT_RUN = ["database", "Case", "worker", "P1-P5", "TXT_download", "business_cold_recovery", "Windows_AT"]
 
 
 def require_hosted_once(environment):
     expected = {
         "SMOKE_REPOSITORY": "T1doo/ParkWeave", "SMOKE_REF": BRANCH,
-        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "2",
+        "SMOKE_EVENT": "push", "SMOKE_ATTEMPT": "1", "SMOKE_NUMBER": "3",
         "SMOKE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Linux",
     }
     if any(environment.get(k) != v for k, v in expected.items()):
@@ -180,13 +180,113 @@ def browser_smoke(report):
                 if any(x["path"].endswith("/entry") for x in requests):
                     raise RuntimeError("empty-session UI made an entry request")
                 context.close()
+                directory_error_fixture_smoke(browser, base, report)
     report["checks"] = ["original_page_bytes", "title_and_heading", "three_workspace_clicks",
                         "invalid_id_feedback", "existing_entry_empty_session", "formal_entry_empty_session",
                         "two_original_401_GETs", "TXT_disabled", "zero_DB", "namespace_seccomp_sandbox"]
 
 
+def directory_error_fixture_smoke(browser, base, report):
+    """Original page/clicks, but synthetic client-only API replies; no real session.
+
+    The fixture token is only an input string. Every API request is intercepted
+    before the original server, and no API write or external request is allowed.
+    """
+    from playwright.sync_api import expect
+    fixture = {"scope": "SYNTHETIC_CLIENT_RESPONSE_FIXTURES_ONLY", "cases": [], "requests": [], "page_errors": []}
+    report["directory_error_fixture"] = fixture
+    violations = []
+    empty = {"scope": "CURRENT_OWNER_LOCAL_CASE_RECORDS", "read_only": True,
+             "automatically_replayed": False, "items": [], "next_after": None}
+    for mode in ["403-json", "403-html", "401-html", "502-html", "late-identity", "late-navigation"]:
+        context = browser.new_context(service_workers="block", viewport={"width": 390, "height": 900})
+        state = {"reads": 0, "held": None}
+
+        def route_fixture(route):
+            request = route.request
+            url = urlsplit(request.url)
+            fixture["requests"].append({"case": mode, "method": request.method, "path": url.path})
+            if not request.url.startswith(base + "/") or request.method not in {"GET", "HEAD"}:
+                violations.append("nonlocal or write request")
+                route.abort()
+            elif url.path in {"/", "/favicon.ico"} and not url.query:
+                route.continue_()
+            elif url.path == "/api/run-access/status" and not url.query:
+                route.fulfill(status=401, json={"detail": "synthetic client fixture has no authority"})
+            elif url.path == "/api/runs" and url.query == "limit=20":
+                state["reads"] += 1
+                if mode.startswith("late-") and state["reads"] == 1:
+                    state["held"] = route
+                elif state["reads"] == 1:
+                    status = int(mode[:3])
+                    if mode.endswith("html"):
+                        route.fulfill(status=status, content_type="text/html", body="<h1>SYNTHETIC non-JSON error</h1>")
+                    else:
+                        route.fulfill(status=status, json={"detail": "synthetic denial"})
+                else:
+                    route.fulfill(status=200, json=empty)
+            else:
+                violations.append("unexpected application request")
+                route.abort()
+
+        context.route("**/*", route_fixture)
+        page = context.new_page()
+        page.on("pageerror", lambda error: fixture["page_errors"].append(str(error)))
+        response = page.goto(base + "/", wait_until="load", timeout=10000)
+        if response is None or response.body() != (ROOT / "src/parkweave/web.html").read_bytes():
+            raise RuntimeError("fixture must use exact original page bytes")
+        page.locator('[data-tab="collaboration"]').click()
+        page.locator("#token").fill("SYNTHETIC_CLIENT_FIXTURE_A")
+        page.locator("#record-directory-read").click()
+        status = page.locator("#record-directory-status")
+        if mode.startswith("late-"):
+            deadline = time.monotonic() + 5
+            while state["held"] is None and time.monotonic() < deadline:
+                page.wait_for_timeout(10)
+            if state["held"] is None:
+                raise RuntimeError("synthetic delayed response was not captured")
+            if mode == "late-identity":
+                page.locator("#token").fill("SYNTHETIC_CLIENT_FIXTURE_B")
+            else:
+                page.locator('[data-tab="service"]').click()
+                page.locator('[data-tab="collaboration"]').click()
+            page.locator("#record-directory-read").click()
+            expect(status).to_have_text("当前没有可读的本地建单记录。")
+            with page.expect_response(lambda reply: reply.url == base + "/api/runs?limit=20" and reply.status == 403) as delayed_response:
+                state["held"].fulfill(status=403, content_type="text/html", body="<h1>SYNTHETIC late denial</h1>")
+            delayed_response.value.finished()
+            page.evaluate("new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))")
+            expect(status).to_have_text("当前没有可读的本地建单记录。")
+            expect(page.locator("#page-feedback")).to_have_text("")
+        else:
+            message = ("当前记录不可读或权限已撤回，请核对本人会话。" if mode.startswith("403") else
+                       "会话已失效，请重新输入本人已有会话后读取。" if mode.startswith("401") else
+                       "记录暂时无法读取，请稍后重新核对。")
+            expect(status).to_have_text(message)
+            expect(status).to_be_visible()
+            expect(status).to_have_attribute("role", "status")
+            expect(status).to_have_attribute("aria-live", "polite")
+            if mode.startswith(("401", "403")):
+                expect(page.locator("#page-feedback")).to_have_text(message)
+            if page.locator("details.engineering-record").evaluate("element=>element.open"):
+                raise RuntimeError("error feedback must not require opening engineering logs")
+            expect(page.locator("#record-directory-read")).to_be_enabled()
+            page.locator("#record-directory-read").focus()
+            page.keyboard.press("Enter")
+            expect(status).to_have_text("当前没有可读的本地建单记录。")
+        expect(page.locator("#record-directory-items button")).to_have_count(0)
+        expect(page.locator("#record-directory-next")).to_be_hidden()
+        expect(page.locator("#record-directory-read")).to_be_enabled()
+        if state["reads"] != 2:
+            raise RuntimeError("fixture expects two explicit reads, no automatic retries")
+        fixture["cases"].append({"mode": mode, "status": "PASS", "explicit_directory_GETs": 2})
+        context.close()
+    if violations or fixture["page_errors"]:
+        raise RuntimeError("synthetic browser fixture boundary violated")
+
+
 def main():
-    report = {"status": "FAIL", "scope": "real Chrome unauthenticated read-only page smoke", "NOT_RUN": NOT_RUN}
+    report = {"status": "FAIL", "scope": "real Chrome read-only page smoke and synthetic client directory error fixtures", "NOT_RUN": NOT_RUN}
     try:
         report["source_sha"] = require_hosted_once(os.environ)
         report["runner"] = {k: os.environ.get(k) for k in ["RUNNER_ENVIRONMENT", "RUNNER_OS", "ImageOS", "ImageVersion"]}

@@ -180,9 +180,10 @@ async function loadRecordDirectory(after=null){
   $('record-directory-read').disabled=true;$('record-directory-status').textContent='正在只读查找当前有权记录…';
   try{
     const response=await entryFetch('/api/runs?limit=20'+(after?'&after='+encodeURIComponent(after):''),{headers:{Authorization:'Bearer '+c.token}});
-    const x=await response.json();if(!current())return;
-    if(response.status===403){clearGeneric();show({error:'当前记录不可读或权限已撤回，请核对本人会话。'});return;}
+    if(!current())return;
+    if(response.status===401||response.status===403){const message=response.status===401?'会话已失效，请重新输入本人已有会话后读取。':'当前记录不可读或权限已撤回，请核对本人会话。';clearGeneric();show({error:message});$('record-directory-status').textContent=message;return;}
     if(!response.ok)throw Error('记录暂时无法读取，请稍后重新核对。');
+    const x=await response.json();if(!current())return;
     const uuid=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
     if(x.scope!=='CURRENT_OWNER_LOCAL_CASE_RECORDS'||x.read_only!==true||x.automatically_replayed!==false||!Array.isArray(x.items)||x.items.length>20||!(x.next_after===null||typeof x.next_after==='string'&&uuid.test(x.next_after))||x.items.some(r=>typeof r.run_id!=='string'||!uuid.test(r.run_id)||typeof r.state!=='string'||r.namespace!=='SYNTHETIC'||!Number.isInteger(r.revision)||r.revision<1))throw Error('记录响应无法核对，请重新读取。');
     for(const r of x.items){const button=document.createElement('button');button.type='button';button.className='secondary';button.textContent='只读核对 '+r.state+' · '+r.run_id;button.onclick=()=>{if(!current())return;$('run').value=r.run_id;$('run').oninput();apiCall('/api/runs/'+encodeURIComponent(r.run_id)).catch(pageError);};$('record-directory-items').append(button);}
