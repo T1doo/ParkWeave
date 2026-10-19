@@ -1,0 +1,55 @@
+{
+  "scope": "ONE_FIXED_SYNTHETIC_V4_PLANNING_ONLY_C_CHANGE",
+  "derived_from_current_outputs": false,
+  "sources": [
+    "docs/sources/V1/平台产品设计 (2).md §4.3, §12.3–12.4",
+    "docs/sources/V1/分阶段开发计划 (2).md §10–11",
+    "tests/fixtures/at24_27_literal_oracle.json selected_resource_capacity_and_revision"
+  ],
+  "service_ids": [
+    "synthetic-material-preparation",
+    "synthetic-resource-coordination",
+    "synthetic-local-record-recheck"
+  ],
+  "required_goals": [
+    "LOCAL_MATERIAL_PREPARATION",
+    "LOCAL_CASE_RESOURCE_ASSOCIATION",
+    "LOCAL_INTERNAL_ACCEPTANCE",
+    "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+    "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+    "LOCAL_CASE_RECORD_RECHECK"
+  ],
+  "adapters": ["P1", "P2", "P3", "P4", "P5"],
+  "adapter_names": ["preparation", "case-resources", "dispatch", "executor-receipts", "case-lifecycle"],
+  "depends_on": [[], ["P1"], ["P2"], ["P3"], ["P4"]],
+  "change": {
+    "selected_resource_count": 2,
+    "revision_before": 1,
+    "revision_after": 2,
+    "buffer_before_seconds": 300,
+    "buffer_after_seconds": 360,
+    "capacity_each_unchanged": 2
+  },
+  "should_update": ["P2", "P3", "P4", "P5"],
+  "should_preserve": ["P1"],
+  "expected": {
+    "semantic_candidates_equal": true,
+    "contract_diff": [],
+    "source_witness_diff": ["P2", "P3", "P4", "P5"],
+    "missed_update_count_each": 0,
+    "missed_update_denominator": 4,
+    "wrong_modification_count_each": 0,
+    "wrong_modification_denominator": 1,
+    "other_park_history_change_count": 0,
+    "comparison_business_writes": 0,
+    "actual_model_calls": 0,
+    "full_business_application": "NOT_RUN"
+  },
+  "failure_rules": [
+    "Any missing goal, invented ref, different catalog/time/plan/permission/budget input, or input mutation invalidates the pair.",
+    "Unknown source or failed original selection validation is rejection/UNKNOWN, never success.",
+    "Changing an unaffected node's meaning, evidence or manual decision is wrong modification; recomputing it is not.",
+    "A mock reference list is not AI semantic competence; script seconds are not participant minutes.",
+    "Do not apply full ADOPT, delete a plan, fake binding changes, use partial, or disable safety to make this comparison run."
+  ]
+}
