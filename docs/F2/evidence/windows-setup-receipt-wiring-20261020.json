@@ -1,0 +1,156 @@
+{
+  "schema": 1,
+  "scope": "PAUSED_MANAGED_SETUP_RECEIPT_WIRING_NOT_FULL_SETUP",
+  "core_source_commit": "43450f746ff2ab01262463ad493c4d96c0171925",
+  "parent_before_core": "15b6b7fc04c234691cb2eceeccb277abe9120f89",
+  "core_source_sha256": {
+    "scripts/windows/lifecycle.py": "141706c236b4086b86ca1f7475cd122b995d6a5571cb541506d167345652f05d",
+    "scripts/windows_ci/Engineering.ps1": "8bb8966e8114e9f5f94ec49980557ce924bc5c94e22d73cab8daf1655ea04bb7",
+    "scripts/windows_ci/child_environment.py": "a22be3a32439e636d19f438aa79ef6e5d7aaa97f30801861e712022346ee3b10",
+    "scripts/windows_ci/native_suite.py": "eda5dc3589e139c99fe04cd905ca784cb9eb0e9c3c59a29e4cdda4f190782ddb",
+    "src/parkweave/installed_fixture_receipt.py": "05b1f5bf56e29c4e33118ea3f828d55851f5896b913852304dc5af711cf5fd48",
+    "src/parkweave/store.py": "57384bd51de8657b2bf94e5290d1d2cc52415fd471f4c321258f277e8fea46b8",
+    "tests/test_ci_cleanup.py": "54f3ee7c464b4cdad114605419ce1c418997886329158447ebd0339df34b4d82",
+    "tests/test_installed_fixture_receipt.py": "baa95902a03138388bb79a9286d918db8da612ef963fe8744c2c04e14085eefb",
+    "tests/test_lifecycle.py": "a926ddf29d71d09681cac86c3bfa8414b243bd8e8b067d97e6261946dc791723",
+    "tests/test_windows_ci_preparation.py": "631280638ca865d8253c74bc26cbf93ea7b809b3487efd9c34961c71ca39faeb"
+  },
+  "implementation": [
+    "Engineering no longer creates parkweave via external psql.",
+    "Explicit maintenance/owner/app DSNs and expected directory bind the same-process issuer, exact receipt and managed owner Store.",
+    "App role existence and three privilege flags are read on verified maintenance connection before CREATE.",
+    "Strict owner/application connectors preserve libpq controls; every owner connection binds the issued identity before returning.",
+    "Store.migrate validates exact native receipt before schema DDL; original migration-025 gate and native 026-032 skips remain.",
+    "Setup-only explicit fields survive managed handoff but are not forwarded to app/worker/regression/seed.",
+    "Windows directory separator conversion applies only to new server identity input, not owned state paths or issuer equality."
+  ],
+  "independent_review": {
+    "design_before_implementation": "PASS_WITH_CONSTRAINTS",
+    "final_code": "PASS",
+    "windows_directory_P2": "FIXED_AND_REVIEWED",
+    "reviewer": "/root/notice_auth_review",
+    "open_P1_P2": 0
+  },
+  "focused_tests": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_installed_fixture_receipt.py",
+      "tests/test_lifecycle.py",
+      "tests/test_ci_cleanup.py",
+      "tests/test_windows_ci_preparation.py",
+      "tests/test_lifecycle_diagnostics.py",
+      "tests/test_source_bytes.py",
+      "tests/test_acceptance_failures.py",
+      "tests/test_regression_shards.py"
+    ],
+    "exit_code": 0,
+    "passed": 300,
+    "skipped": 1,
+    "elapsed_seconds": 20.04,
+    "skip_reason": "portable PowerShell unavailable; fault oracle NOT_RUN",
+    "actual_database_scope": "Existing owned Linux TCP PostgreSQL receipt fixture; no new role/GRANT/credentials. Original issuer, migration025, forgery, restart and transaction tests executed.",
+    "new_setup_factory_and_wiring_scope": "Synthetic connection/ready doubles; no native Setup execution or security mutation."
+  },
+  "catalog_known_failure": {
+    "test": "tests/test_ci_diagnostics.py::test_committed_allowlist_exactly_matches_trusted_test_functions",
+    "actual_exit_code": 1,
+    "failed": 1,
+    "before_this_change_ast_ids": 3492,
+    "current_ast_ids": 3499,
+    "catalog_ids": 2954,
+    "current_missing_ids": 545,
+    "unchanged_limit": 3000,
+    "catalog_or_limit_modified": false
+  },
+  "collection": {
+    "current_cases": 9255,
+    "current_files": 394,
+    "current_stable_collection_sha256": "59b008b3884f2db7d82e49924586cbd35ddba4977a725e389311ab6e2df1207e",
+    "global_private_collection_sha256": "8ea8cc1caa61de5d368a439468b187c6a3f653c97bb19d2dc8922571726be70e",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 2311,
+        "files": 96,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "4c52d1debcd97b334ac2756478d1dadfdc6416279a307dcd3bcdba6c05251411"
+      },
+      {
+        "shard": "S2",
+        "cases": 2309,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "c0c5612b6ba87353b8a740208cc29960f2802797d83761da4f2f1bdc7def6c76"
+      },
+      {
+        "shard": "S3",
+        "cases": 2327,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "293f5c9f3b84ef19c4e15a873a60217b6db65846b53fa3420d33b350a368f3e4"
+      },
+      {
+        "shard": "S4",
+        "cases": 2308,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "77b6c8881946af08d7dd331a083c7a1262cf1ccd15933afa1ea1b9f76523da34"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "source_bytes_unchanged_during_collection": true,
+    "head_blob_raw_sha256_binding_verified": true,
+    "diagnostic_catalog_ast_completeness_claimed": false,
+    "windows_dependency_and_fixture_compatibility_claimed": false
+  },
+  "collection_bounds": {
+    "max_cases_unchanged": 10000,
+    "max_bytes_unchanged": 4194304,
+    "actual_bytes": {
+      "global": 3306993,
+      "S1": 555248,
+      "S2": 558437,
+      "S3": 585130,
+      "S4": 1608295
+    }
+  },
+  "manifest_sha256": "d1e7ce5e21e177623fd6a443f7c7db5371053bb77cceab2dad726ad4f026b5cc",
+  "owner_pause_unchanged": true,
+  "remaining_blockers": [
+    "OWNER_MUTATION_PAUSED remains at Setup preflight, native file creation and owner setter.",
+    "Native migration support still stops at 025; 026-032, roles.sql and seed cannot be claimed complete.",
+    "Windows collection dependencies/fixture, diagnostic catalog bound, original Job cleanup and full-run time capacity remain unresolved."
+  ],
+  "not_executed": [
+    "Windows/PowerShell runtime",
+    "complete Setup/lifecycle",
+    "CI",
+    "real model calls",
+    "user computer operations"
+  ],
+  "windows_acceptance": "NOT_RUN",
+  "full_regression_execution": "NOT_RUN",
+  "unchanged_contract_checks": {
+    "setup_readiness_and_requirement_AST": true,
+    "issuer_DSN_directory_identity_and_receipt_class_AST": true,
+    "native_file_creation_and_owner_pause_module_raw_bytes": true,
+    "current_CI_workflow_and_Setup_wrapper_raw_bytes": true,
+    "comparison_baseline": "15b6b7fc04c234691cb2eceeccb277abe9120f89"
+  },
+  "new_CI_dispatches": 0,
+  "new_CI_runner_executions": 0,
+  "push_event_may_create_skipped_workflow_record": true
+}
