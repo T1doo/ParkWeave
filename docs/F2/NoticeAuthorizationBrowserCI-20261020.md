@@ -16,7 +16,17 @@
 
 只修此精确fixture缺口：原必要只读status GET每身份一次，late两身份共两次；响应明确enabled/can_approve/can_revoke均false。原产品源码不变；不放宽外站、端口、任意路径、写入预算或sandbox断言。3个标准库合同在修补后再通过。独审同时关闭推送前发现的迟到场景完成屏障问题；最终脚本受审范围无开放P1/P2。
 
-唯一修正窗口限定同一workflow的新提交run2/attempt1，保留run1失败，不rerun旧run。当前workflow和脚本只接受run2；后续文档push的run3及以上不分配浏览器job。实际修正结果另据真实回执结算，不预写PASS。
+唯一修正窗口限定同一workflow的新提交run2/attempt1，保留run1失败，不rerun旧run。当前workflow和脚本只接受run2；后续文档push的run3及以上不分配浏览器job。
+
+## 修正窗口实际通过
+
+[run2/attempt1：39358145888](https://github.com/T1doo/ParkWeave/actions/runs/39358145888)，提交 `77667682c44303cb2851f4647aa2bd5a85502d3f`，job `118417690493` completed/success，全部步骤成功。公开run总时长1分6秒、job1分1秒；实际脚本26.789秒。[完整原步骤JSON及job metadata](evidence/notice-auth-browser-pass-20261020.json)已经通过现有GitHub工具读取并保存，不是从成功状态推算各场景。
+
+Chrome `155.0.8059.39`／Playwright `1.62.0`；实际PID namespace、Network namespace、Seccomp-BPF和总体adequately sandboxed通过，实际命令行无原禁止的sandbox/security开关。六场景全部PASS：401/403在正文未结束、handler仍等待时清除原可见通知；迟到401/403的原读取拒绝与错误处理完整结束后，新身份／新选择不变；正常MARK_READ 200变为已读，409保留原可见详情及固定提示。授权拒绝正文JSON解析次数为0。
+
+六场景共34次实际浏览器请求，30 GET／4明确MARK_READ POST；全在精确loopback预算内，violations／page_errors均0，自动命令0，六组自有HTTP均停止。这里的HTTP响应为明确合成传输oracle，不是真实后端鉴权、撤权或业务写入证据。首窗唯一401局部断言不计作另一个通过场景，不与本窗六项相加。
+
+本地3合同、CI首窗3合同和修正窗3合同分别保留，不合并为9个唯一项。修补脚本／workflow有限静态独审无开放P1/P2；独审没有独立启动浏览器。结果归档后将再次核对源码／脚本指纹与正常开发分支远端，产品src tree保持父侧已接受字节。
 
 Node HTTP Python包装另补 `shutil.which` 和不可用时显式skip。父侧提出的best-effort响应体cancel属于非阻断优化，本轮保持已接受产品字节，未将其混入浏览器验证。
 
