@@ -91,6 +91,107 @@ def test_committed_allowlist_exactly_matches_trusted_test_functions():
     assert m._allowed_tests()==expected
 
 
+def _catalog_fixture(tmp_path, source='def test_alpha(): pass\n', ids=None):
+    root=tmp_path/'repo';(root/'tests').mkdir(parents=True)
+    (root/'tests/test_a.py').write_text(source,encoding='utf-8')
+    target=root/'scripts/windows_ci/diagnostic-test-ids.json';target.parent.mkdir(parents=True)
+    ids=['tests/test_a.py::test_alpha'] if ids is None else ids
+    target.write_text(json.dumps({'schema':1,'test_ids':ids}),encoding='utf-8')
+    return root,target
+
+
+def test_catalog_maintenance_exact_ast_and_atomic_update(tmp_path):
+    m=module('diagnostic_catalog')
+    source='def test_alpha(): pass\nclass DemoChecks:\n async def test_beta(self): pass\nclass _Private:\n def test_hidden(self): pass\n'
+    root,target=_catalog_fixture(tmp_path,source)
+    before=target.read_bytes();report=m.inspect(root)
+    assert report['status']=='MISMATCH' and report['expected']==2 and report['missing']==1 and report['extra']==0
+    assert target.read_bytes()==before
+    report=m.inspect(root,write=True)
+    assert report['status']=='UPDATED' and report['write_state']=='CONFIRMED'
+    assert json.loads(target.read_text())['test_ids']==['tests/test_a.py::DemoChecks::test_beta','tests/test_a.py::test_alpha']
+    assert m.inspect(root)['status']=='VALID'
+    assert not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+@pytest.mark.parametrize('count',[3000,3001])
+def test_catalog_maintenance_global_capacity_precedes_any_write(tmp_path,monkeypatch,count):
+    m=module('diagnostic_catalog')
+    root,target=_catalog_fixture(tmp_path,''.join(f'def test_case_{i}(): pass\n' for i in range(count)),['tests/test_a.py::test_case_0'])
+    before=target.read_bytes();entries=set(target.parent.iterdir())
+    if count>3000:
+        monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('capacity refusal must precede temporary creation'))
+    report=m.inspect(root,write=True)
+    assert report['expected']==count and report['limit_ids']==3000
+    if count>3000:
+        assert report['status']=='CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
+        assert target.read_bytes()==before and set(target.parent.iterdir())==entries
+    else:
+        assert report['status']=='UPDATED'
+        reader=module('diagnostics');monkeypatch.setattr(reader,'__file__',str(target.parent/'diagnostics.py'))
+        assert len(reader._allowed_tests())==3000  # Original runtime reader, unchanged.
+
+
+@pytest.mark.parametrize('kind',['duplicate_test','invalid_syntax','source_unicode','source_long_id','illegal_id','duplicate_json','invalid_json','extra_key','bool_schema','duplicate_id','oversize','symlink'])
+def test_catalog_maintenance_invalid_inputs_never_replace_or_echo(tmp_path,monkeypatch,kind):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path)
+    source=root/'tests/test_a.py'
+    if kind=='duplicate_test':source.write_text('def test_alpha(): pass\ndef test_alpha(): pass\n')
+    elif kind=='invalid_syntax':source.write_text('def '+POISON+'(:\n')
+    elif kind=='source_unicode':source.write_text('def test_alpha(): pass\ndef test_é(): pass\n',encoding='utf-8')
+    elif kind=='source_long_id':source.write_text('def test_alpha(): pass\ndef test_'+('x'*256)+'(): pass\n')
+    elif kind=='illegal_id':target.write_text(json.dumps({'schema':1,'test_ids':[POISON]}))
+    elif kind=='duplicate_json':target.write_text('{"schema":1,"schema":1,"test_ids":["tests/test_a.py::test_alpha"]}')
+    elif kind=='invalid_json':target.write_text(POISON)
+    elif kind=='extra_key':target.write_text(json.dumps({'schema':1,'test_ids':['tests/test_a.py::test_alpha'],POISON:POISON}))
+    elif kind=='bool_schema':target.write_text(json.dumps({'schema':True,'test_ids':['tests/test_a.py::test_alpha']}))
+    elif kind=='duplicate_id':target.write_text(json.dumps({'schema':1,'test_ids':['tests/test_a.py::test_alpha']*2}))
+    elif kind=='oversize':target.write_bytes(b' '*(512*1024+1))
+    else:
+        outside=tmp_path/'outside.py';outside.write_text('def test_alpha(): pass\n')
+        source.unlink();source.symlink_to(outside)
+    before=target.read_bytes();entries=set(target.parent.iterdir())
+    monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('refusal must precede temporary creation'))
+    report=m.inspect(root,write=True)
+    assert report['status'] in ('SOURCE_REFUSED','CATALOG_REFUSED','INPUT_REFUSED')
+    assert report['write_state']=='NOT_ATTEMPTED' and POISON not in json.dumps(report)
+    assert target.read_bytes()==before and set(target.parent.iterdir())==entries
+
+
+def test_catalog_maintenance_candidate_byte_capacity_refuses_before_write(tmp_path,monkeypatch):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    before=target.read_bytes();monkeypatch.setattr(m,'MAX_ALLOWLIST_BYTES',len(before)+1)
+    report=m.inspect(root,write=True)
+    assert report['status']=='BYTE_CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
+    assert report['candidate_bytes']>report['limit_bytes'] and target.read_bytes()==before
+    assert not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+def test_catalog_maintenance_changed_source_refuses_before_write(tmp_path,monkeypatch):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    original=m._source;calls=[];before=target.read_bytes()
+    def source(directory):
+        calls.append(directory)
+        if len(calls)==2:
+            path=root/'tests/test_a.py';path.write_text(path.read_text()+'# changed\n')
+        return original(directory)
+    monkeypatch.setattr(m,'_source',source)
+    report=m.inspect(root,write=True)
+    assert report['status']=='INPUT_CHANGED' and report['write_state']=='NOT_ATTEMPTED'
+    assert target.read_bytes()==before and not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+def test_catalog_maintenance_current_cli_reports_capacity_without_writing():
+    import subprocess
+    target=ROOT/'scripts/windows_ci/diagnostic-test-ids.json';before=target.read_bytes()
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/diagnostic_catalog.py'),'--check'],capture_output=True,text=True,timeout=15)
+    report=json.loads(result.stdout)
+    assert result.returncode==2 and report['status']=='CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
+    assert report['expected']>report['limit_ids']==3000 and report['current']==len(json.loads(before)['test_ids'])
+    assert report['missing']==report['expected']-report['current'] and report['extra']==0
+    assert target.read_bytes()==before and not result.stderr
+
+
 def test_static_allowlist_actual_byte_boundary_and_private_refusal(tmp_path,monkeypatch):
     m=module('diagnostics')
     raw=Path(m.__file__).with_name('diagnostic-test-ids.json').read_bytes()
