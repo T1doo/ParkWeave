@@ -116,7 +116,7 @@ def open_case(page, preparation_id, label):
     page.locator('[data-tab="collaboration"]').click()
     page.locator("#prep-list").click()
     page.locator("#prep-items button").filter(has_text=label).click()
-    page.wait_for_function("id => preparationId === id && preparationView !== null", arg=preparation_id)
+    page.wait_for_function("id => preparationId === id && preparationView !== null && preparationReadReady()", arg=preparation_id)
     page.locator("#case-resource-load").click()
     page.wait_for_function("() => caseResourceView !== null")
     assert page.evaluate("caseResourceContext.id") == preparation_id

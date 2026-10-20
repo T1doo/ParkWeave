@@ -146,6 +146,7 @@ def walk(browser, report, secrets, public):
             expect(page.locator('#status')).to_contain_text('已切换')
 
         def post(selector, path, status=200, action=None):
+            report['current_control'] = dict(selector=selector, path=path)
             boundary.authorize(path, action)
             result = resource.click_post(w, selector, path, status)
             boundary.readonly()
@@ -363,6 +364,19 @@ def walk(browser, report, secrets, public):
             report.update(authority_unchanged=True, run_assignments=0, all_business_writes='REAL_BROWSER_DOM_ONLY',
                 JS_business_calls=0, API_business_writes=0, real_browser=True)
         except BaseException:
+            report['remaining_write_budget'] = dict(boundary.remaining)
+            if w is not None and not w.is_closed():
+                try:
+                    report['failure_dom'] = w.evaluate("""() => ({
+                        preparation_read_state: preparationRead?.state,
+                        preparation_read_ready: preparationReadReady(),
+                        active_write: !!activeEntryWriteFlow,
+                        pending_write_count: entryWriteRequests.size,
+                        messages: Object.fromEntries(['prep-read-status','prep-error','case-resource-error',
+                            'service-plan-error','dispatch-error','receipt-error','case-cancel-status']
+                            .map(id=>[id,document.getElementById(id)?.textContent||'']))})""")
+                except BaseException as error:
+                    report['failure_dom_error'] = type(error).__name__
             try:
                 shot('failure-' + re.sub('[^a-z0-9]+', '-', report['stage'].lower()))
             except BaseException as error:
