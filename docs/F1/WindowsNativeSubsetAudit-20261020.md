@@ -55,3 +55,15 @@
 原165唯一项仍163PASS/1FAIL/2ERROR（XML166记录含同例call/teardown）；根因未确立。最小因果缺项是**原失败时刻**同一集群/DB的连接与PG活动/锁/服务日志关联；没有这些原件，重复通过不证明原因。此次没有重跑165/49、没有连旧库、没有改2秒连接或5秒清理预算。此未知只限制对应可靠性结论，不暂停其他已授权开发。
 
 补跑修正已再经有限只读独审，无开放P1/P2：公开失败注释与step结论吻合；17个原文件字节及根文件齐全，最大相对路径55，未扩安全/业务边界。补跑冻结脚本SHA256 `5bd870f0874acbb21a06a8e8c827b0d5ee7352f7711e33305dd0ccf6fdaede3a`，workflow `beb3aef29a89d9ebb179e9d4af353969a6252c926f8288bb930071cc3610c79e`；独审无网络、动态或原生执行。
+
+## 实际补跑结论：失败，不计原生通过
+
+第二次新push源SHA `eb7f5377eba58aea69db7a2f1d9716a62b8cb8d9`，[run 39353828380](https://github.com/T1doo/ParkWeave/actions/runs/39353828380) / [唯一job 118403953546](https://github.com/T1doo/ParkWeave/actions/runs/39353828380/job/118403953546)，run2/attempt1。公开HTML于2026-10-20 01:32 UTC显示Failure、总46秒/job42秒；checkout成功、依赖准备成功、原包装器driver step失败（exit1）。原checkout长路径原因已在此范围修正；整仓Windows默认完整checkout的深证据路径兼容性不因此宣告解决。
+
+[第二次回执](../F2/evidence/windows-native-preflight-second-result-20261020.json)逐项记录已见step结论与HTML hash。公开未登录页面没有原step stdout或结果JSON；当前run页面明确给出的summary_partial只含总体状态，单次公开HTML读取200也没有driver报告。未调用已知Forbidden的Actions REST/日志接口，不再补跑。**driver具体失败阶段、已调用包装器数与各项结果均未确立**，不能猜成产品拒绝、测试断言错误或已通过部分步骤。OS完整caption、实际Python/psutil版本也不拿镜像清单补填。
+
+当前只阻塞本片定因：父侧已有登录浏览器读取上述job的“Original native wrappers fresh prerequisite and refusal subset”原step stdout中打印JSON（status/error_type/active_phase/cases）；若无JSON，读取其原stderr；或已有job summary中的相同JSON。无需任何新执行、凭据创建或权限扩大。收到原件后才可按因修复，当前源码仍拒绝run3及rerun。AT-01整项、AT-04/05/34、成功启动/正常停止/重启/业务隔离和Win11均未因此通过。
+
+本轮本地实际检查为Python AST、YAML/上下文范围合同及真实Git sparse checkout的离线字节/路径合同，无本地原生执行、无新增pytest用例或pytest通过数。原产品、原五个包装器及原九个workflow字节未改，原db108提交为实际HEAD祖先。此前已接受资源浏览器切片未重跑。
+
+收口公开证据再经有限只读独审通过，无开放P1/P2；三份HTML hash、source、step状态及耗时吻合，未知项未被写成通过。原包装器stdout/stderr文件仅写本job的RUNNER_TEMP、没有artifact上传，不能假设job完成后仍可取回这些文件；当前先取GitHub现有console打印的JSON或job summary，不承诺完整原包装器输出已持久保存。此次收口只推文档和回执，执行源码保持双门控不变。
