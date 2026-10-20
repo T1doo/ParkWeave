@@ -32,33 +32,70 @@
       "errors": 0,
       "skipped": 0
     },
-    "final_units": {
+    "unit_selection": "Same 30 explicit unit functions, now 105 cases including 22 new cases; no PG/native fixtures. 19 initial and 3 session cases are included in 105, not additional passes.",
+    "full_repository": "NOT_RUN",
+    "real_PostgreSQL_SQL_or_membership_behavior": "NOT_RUN",
+    "Windows_native": "NOT_RUN",
+    "pre_session_units": {
       "tests": 102,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     },
-    "catalog_consumers": {
+    "pre_session_catalog_consumers": {
       "tests": 3,
       "failures": 0,
       "errors": 0,
       "skipped": 0
     },
-    "unit_selection": "30 explicit functions from the two affected test modules; real-PG fixture functions not selected. Database/socket connect calls blocked and collected fixture graph checked by the private runner. 19 new cases are included in 102, not added again.",
-    "full_repository": "NOT_RUN",
-    "real_PostgreSQL_SQL_or_membership_behavior": "NOT_RUN",
-    "Windows_native": "NOT_RUN"
+    "final_units": {
+      "tests": 105,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_catalog_consumers": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "session_before": {
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0
+    },
+    "real_call_guards": [
+      "psycopg.connect forbidden",
+      "socket.socket.connect/connect_ex forbidden",
+      "pg/fixture/native_database/installed_tcp_cluster absent from collected fixture graph"
+    ],
+    "log_sha256": {
+      "before.log": "b0701a2a353e1e2fd23fb5c97879fc3edc9f53588dd704b3c8d50153a8ce8d85",
+      "after.log": "d5fb74a601ffb43229da4a5620e97276fdfec9c99964b019d139e9e0ae21fea7",
+      "session-before.log": "339a0b18bfd43b53087521973e85e5755214183f8fff3cfa24139dc3ed518276",
+      "final-session-units.log": "7f7fe90d092ce4d80f029efcb3f92c6fdc0a137ec17bab02598ca1fe7c7848b0",
+      "final-session-consumers.log": "a681fb9a4883b09e060b3f6de8e27d8363807d734e7d52692fff93dbda473e05"
+    },
+    "junit_sha256": {
+      "before.xml": "81a1886397be921d195cf5d3139d52b3b37aa268c62b82b8e920bcaa2ff9ddbb",
+      "after.xml": "dd196fdd2176b338f0cfdd8f26684e9caab9ace95a6e0cad439ac00c118bf983",
+      "session-before.xml": "0f7e1a270a1a84eb7f94bc4145d4176f34b71f383372b10df5c92be1d3ec3382",
+      "final-session-units.xml": "5eda52f1b211ab6cf90c81090a68d95a9e6b7de7706ffb2bf4c647fdbca7bc93",
+      "final-session-consumers.xml": "0903e3afacdcd5045ff97782627d7e5525059345ca29a529d4ab81e5a431c727"
+    }
   },
   "source_freeze": {
     "files": 411,
-    "sha256": "be45febec483fd3c0d75f992358a2289a7fa618a2db96611c697eaedefa8f287",
+    "sha256": "779817c4aca17adf0d2c2a2d72a9cfce902f1fd3a38c959d5186079ad3727779",
     "unchanged_during_final_tests": true
   },
   "catalog": {
     "schema": 2,
     "ids": 3529,
     "files": 395,
-    "generation": "08ba9fa936f1a2a3437561ba49283d5a93933a5726c92eaa0c5497c0133921ae",
+    "generation": "48bd7428e9372e1cd94337ac336e33165541705b2d542f42cca707dfd30bca13",
     "raw_bytes": 452639,
     "existing_generation_preserved": true
   },
@@ -90,5 +127,8 @@
     "Native migration026-032/roles/seed trust and execution conditions must be explicitly reviewed; the existing installed receipt covers its current contract only. No role or seed fallback.",
     "One exact authorized disposable cluster/root, already-existing eligible app/owner identities, explicit connection/data-directory inputs and a non-conflicting process inventory; no credential discovery.",
     "Separately authorized source-bound native normal-job exact-handle oracle and complete four-shard/full-lifecycle run within existing budgets; safe observation route only, no denied-log retry."
-  ]
+  ],
+  "intermediate_role_guard_commit": "be0cd30ea35a0602a2661c82da7d580fa744068c",
+  "session_identity_defect": "Existing lifecycle only checked current_user; a connection whose current role is app but whose session login remains owner was accepted, and app_environment forwards the original DSN. Pure DI reproduced this at the intermediate commit; no real PG options/SET ROLE action was executed.",
+  "session_identity_change": "App-only SELECT reads session_user login_usr and requires both current and initial session users equal parkweave_app before version query. Owner app=False SELECT remains byte-identical."
 }

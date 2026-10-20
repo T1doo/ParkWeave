@@ -174,7 +174,7 @@ def check_dsn_scope(dsn,app=False,*,connector=None):
         connection=connector() if connector is not None else Store(dsn).connect()
     with connection as c:
         with stage('database_role'):
-            role_query="""SELECT pg_catalog.current_database() db,current_user usr,
+            role_query="""SELECT pg_catalog.current_database() db,current_user usr,session_user login_usr,
                 r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolcanlogin,r.rolreplication,r.rolbypassrls,
                 EXISTS(SELECT 1 FROM pg_catalog.pg_roles x
                     JOIN pg_catalog.pg_database d ON d.datname=pg_catalog.current_database()
@@ -188,7 +188,8 @@ def check_dsn_scope(dsn,app=False,*,connector=None):
                     'FROM pg_roles r WHERE r.rolname=current_user')
             row=c.execute(role_query).fetchone()
             if (not row or row.get('db')!='parkweave' or (app and (
-                    row.get('usr')!='parkweave_app' or row.get('rolcanlogin') is not True or
+                    row.get('usr')!='parkweave_app' or row.get('login_usr')!='parkweave_app' or
+                    row.get('rolcanlogin') is not True or
                     any(row.get(key) is not False for key in (
                         'rolsuper','rolcreatedb','rolcreaterole','rolreplication','rolbypassrls','dangerous_membership'))))):
                 raise BoundaryError('application must be a dedicated unprivileged parkweave_app role','APP_ROLE_REFUSED')

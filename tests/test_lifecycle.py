@@ -212,10 +212,11 @@ def test_setup_handoff_carries_explicit_creation_inputs_without_receipt_or_hidde
 @pytest.mark.parametrize('field,value', [
     ('rolreplication', True), ('rolbypassrls', True), ('dangerous_membership', True),
     ('rolcanlogin', False), ('rolsuper', None), ('rolcreatedb', 0),
+    ('login_usr', 'postgres'), ('login_usr', None), ('login_usr', 'MISSING'),
     ('rolbypassrls', None), ('dangerous_membership', 0), ('dangerous_membership', 'MISSING'),
 ])
 def test_application_scope_refuses_privileged_or_unknown_role_without_version_read(field,value):
-    row=dict(db='parkweave',usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
+    row=dict(db='parkweave',usr='parkweave_app',login_usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
              rolreplication=False,rolbypassrls=False,rolcanlogin=True,dangerous_membership=False)
     if value=='MISSING':row.pop(field)
     else:row[field]=value
@@ -236,7 +237,7 @@ def test_application_scope_refuses_privileged_or_unknown_role_without_version_re
 
 
 def test_application_role_query_keeps_benign_members_and_owner_maintenance_path():
-    base=dict(db='parkweave',usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
+    base=dict(db='parkweave',usr='parkweave_app',login_usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
               rolreplication=False,rolbypassrls=False,rolcanlogin=True,dangerous_membership=False)
     class Connection:
         def __init__(self,row):self.row=row;self.calls=[]
@@ -248,7 +249,7 @@ def test_application_role_query_keeps_benign_members_and_owner_maintenance_path(
             return type('Result',(),{'fetchone':lambda self:row})()
     # False means none of the explicitly dangerous/owner/pg_* memberships;
     # ordinary benign group membership is not blanket-rejected by this query.
-    for app,row in ((True,base),(False,{**base,'usr':'postgres','rolsuper':True,'dangerous_membership':True})):
+    for app,row in ((True,base),(False,{**base,'usr':'postgres','login_usr':'postgres','rolsuper':True,'dangerous_membership':True})):
         connection=Connection(row)
         assert lifecycle.check_dsn_scope('host=127.0.0.1 dbname=parkweave user=explicit',app=app,connector=lambda:connection)=='SYNTHETIC_POSTGRES_VERSION'
         assert len(connection.calls)==2
