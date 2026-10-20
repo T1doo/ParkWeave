@@ -40,6 +40,9 @@ class _CaseStepTransactions:
     def _check_reoffer_prefix(self,c,parent,offer,event,marker):
         raise Denied('original isolated CaseStep permits only its first OFFER')
 
+    def _receipt_history_empty(self,c,parent,root):
+        return not c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone()
+
     def __init__(self, store, owner, proof, *, owner_id, reviewer_id, executor_ids,
                  enabled_for_isolated_tests=False, seconds=3600, offer_seconds=300):
         from .native_run_access import _proof
@@ -393,12 +396,12 @@ class _CaseStepTransactions:
             current=sd._own_offer(c,p,root) if root else None
             existing=bool(c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(id,)).fetchone())
             executors=[x for x in self.executor_ids if not previous or x!=current['executor_id']]
-            ready=er.material_current(c,parent,store) and not prep.case_write_blocked(c,parent) and not existing and (not root or bool(previous)) and bool(executors)
+            ready=er.material_current(c,parent,store) and not prep.case_write_blocked(c,parent) and (not root or bool(previous)) and self._receipt_history_empty(c,parent,root) and bool(executors)
             return dict(scope=sd.SCOPE,assignment_contract=self.contract,run_access_granted=False,
                 preparation_revision=parent['revision'],dispatch_revision=root['revision'] if root else 0,
                 ready=ready,executors=[dict(id=x) for x in executors] if not root or previous else [],has_receipt_step=existing,
-                can_reassign=False,can_reoffer=False,history_limit_reached=bool(root and root['revision']>=(62 if type(self) is _OrdinaryCaseStep and self.service.local_synthetic_demo is None else 63)),
-                **(dict(can_offer_again=bool(previous and ready)) if type(self) is _OrdinaryCaseStep and self.service.local_synthetic_demo is None else {}),
+                can_reassign=False,can_reoffer=False,history_limit_reached=bool(root and root['revision']>=(61 if type(self) is _OrdinaryCaseStep and self.service.local_synthetic_demo is None else 63)),
+                **(dict(can_offer_again=bool(previous and ready),offer_again_kind='WITHDRAWN_ZERO_RECEIPT' if previous and existing else 'UNACCEPTED_TERMINAL' if previous else None) if type(self) is _OrdinaryCaseStep and self.service.local_synthetic_demo is None else {}),
                 offer_seconds=self.offer_seconds,authority_valid_until=self.valid_until)
 
     def _offer_deadline(self,c):
@@ -422,10 +425,10 @@ class _CaseStepTransactions:
             check_fence(c,parent,data);gate(store,c,parent,2,observe=False)
             if not er.material_current(c,parent,store) or parent['revision']!=data.expected_preparation_revision: raise Conflict('current confirmed preparation required')
             if (root['revision'] if root else 0)!=data.expected_dispatch_revision: raise Conflict('stale CaseStep dispatch revision')
-            if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(id,)).fetchone(): raise Conflict('accepted CaseStep cannot be renewed')
+            if not self._receipt_history_empty(c,parent,root): raise Conflict('accepted CaseStep without proven empty history cannot be renewed')
             if root:
                 previous=self._reoffer_predecessor(c,parent,root)
-                if previous is None:raise Conflict('original unaccepted terminal CaseStep and unchanged deadline required')
+                if previous is None:raise Conflict('original terminal CaseStep and unchanged deadline required')
                 current=sd._own_offer(c,p,root)
                 if current['executor_id']==data.executor_id:raise Conflict('explicit different existing executor required')
                 marker['valid_until']=previous['valid_until']
@@ -461,7 +464,7 @@ class _CaseStepTransactions:
             if data.action=='ACCEPT':
                 from .controlled_plans import gate
                 gate(store,c,parent,2,observe=False)
-                if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone(): raise Conflict('CaseStep receipt already exists')
+                if not self._receipt_history_empty(c,parent,root): raise Conflict('CaseStep receipt already exists without proven empty history')
                 step=er._insert_step(c,parent,p['id']);step_id=step['id']
                 er._event(c,p,step,'dispatch-accept:'+str(offer['id']),fp,'CREATE',dispatch_id=str(id),offer_id=str(offer['id']),reason=data.reason)
             state={'ACCEPT':'ACCEPTED','DECLINE':'DECLINED','WITHDRAW':'WITHDRAWN'}[data.action]
@@ -651,42 +654,77 @@ class _OrdinaryCaseStep(_CaseStepTransactions):
 
     def _connection(self,store):return self.service._connection(store)
 
+    def _pending_step_empty(self,c,step):
+        # A recorded/reopened result never becomes an empty step again.
+        return (type(step['revision']) is int and step['revision']==1
+            and step['state']=='AWAITING_RECEIPT' and step['current_receipt_id'] is None
+            and not c.execute('SELECT 1 FROM service_step_receipts WHERE step_id=%s',(step['id'],)).fetchone()
+            and not c.execute("SELECT 1 FROM service_receipt_events WHERE step_id=%s AND action<>'CREATE'",(step['id'],)).fetchone())
+
     def _terminal_marker(self,c,parent,offer,revision):
         try:
-            terminal=c.execute('SELECT * FROM service_dispatch_events WHERE dispatch_id=%s AND revision=%s',
-                               (offer['dispatch_id'],revision)).fetchone()
+            events=c.execute('SELECT * FROM service_dispatch_events WHERE offer_id=%s ORDER BY revision LIMIT 4',
+                             (offer['id'],)).fetchall()
             origin=self._offered(c,offer)
-            if (not terminal or not origin or terminal['offer_id']!=offer['id']
-                    or origin['revision']!=revision-1 or terminal['action'] not in ('DECLINE','WITHDRAW')
+            accepted=len(events)==3
+            if (not origin or type(revision) is not int or not 2<=revision<=62
+                    or len(events) not in (2,3) or events[0]['id']!=origin['id']
+                    or [e['revision'] for e in events]!=list(range(origin['revision'],revision+1))
+                    or any(type(e['revision']) is not int or e['dispatch_id']!=offer['dispatch_id'] for e in events)
+                    or events[-1]['action'] not in ('DECLINE','WITHDRAW')
                     or offer['receipt_step_id'] is not None
-                    or offer['state']!={'DECLINE':'DECLINED','WITHDRAW':'WITHDRAWN'}[terminal['action']]
-                    or c.execute("SELECT 1 FROM service_dispatch_events WHERE dispatch_id=%s AND action='ACCEPT' AND revision<=%s",
-                                 (offer['dispatch_id'],revision)).fetchone()):
-                raise ValueError('original unaccepted terminal predecessor required')
+                    or offer['state']!={'DECLINE':'DECLINED','WITHDRAW':'WITHDRAWN'}[events[-1]['action']]):
+                raise ValueError('original adjacent terminal predecessor required')
+            terminal=events[-1]
+            if accepted:
+                if terminal['action']!='WITHDRAW' or events[1]['action']!='ACCEPT':
+                    raise ValueError('accepted predecessor requires explicit withdrawal')
+                step=self._accepted_step(c,parent,offer)
+                if not self._pending_step_empty(c,step):raise ValueError('original receipt must have no submission history')
             expected=dict(dispatch_id=str(offer['dispatch_id']),offer_id=str(offer['id']),revision=revision,
                 action=terminal['action'],state=offer['state'],actor_id=self.reviewer_id if terminal['action']=='WITHDRAW' else offer['executor_id'],
                 executor_id=offer['executor_id'],receipt_step_id=None)
-            original=sd.Command(action=terminal['action'],expected_revision=origin['revision'],
+            original=sd.Command(action=terminal['action'],expected_revision=revision-1,
                                 reason=terminal['payload']['reason'],**historical_fields(terminal['payload']))
             if (terminal['actor_id']!=expected['actor_id'] or not sd._typed_fields_equal(terminal['payload'],expected)
-                    or terminal['fingerprint']!=self._fp('DISPATCH_COMMAND',offer['dispatch_id'],original)):
+                    or terminal['fingerprint']!=self._fp('DISPATCH_COMMAND',offer['dispatch_id'],original)
+                    or any(a['created_at']>b['created_at'] for a,b in zip(events,events[1:]))):
                 raise ValueError('original predecessor command proof required')
             return self._marker(c,parent,offer),terminal
         except (KeyError,TypeError,ValueError,AttributeError):
-            raise Denied('ordinary unaccepted CaseStep terminal proof required') from None
+            raise Denied('ordinary terminal CaseStep proof required') from None
+
+    def _receipt_history_empty(self,c,parent,root):
+        if self.service.local_synthetic_demo is not None:
+            return super()._receipt_history_empty(c,parent,root)
+        rows=c.execute('SELECT id FROM service_receipt_steps WHERE preparation_id=%s ORDER BY id LIMIT 32',(parent['id'],)).fetchall()
+        if not rows:return True
+        if not root or len(rows)>31:return False
+        expected=set()
+        offers=c.execute("SELECT o.* FROM service_dispatch_offers o WHERE o.dispatch_id=%s AND EXISTS(SELECT 1 FROM service_dispatch_events e WHERE e.offer_id=o.id AND e.action='ACCEPT') ORDER BY o.id LIMIT 32",(root['id'],)).fetchall()
+        if len(offers)>31:return False
+        for offer in offers:
+            if offer['state']!='WITHDRAWN':return False
+            origin=self._offered(c,offer)
+            if not origin:return False
+            self._terminal_marker(c,parent,offer,origin['revision']+2)
+            step=self._accepted_step(c,parent,offer)
+            if step['id'] in expected or not self._pending_step_empty(c,step):return False
+            expected.add(step['id'])
+        return expected=={r['id'] for r in rows}
 
     def _check_reoffer_prefix(self,c,parent,offer,event,marker):
-        """Prove each unaccepted predecessor; no current old-executor authority."""
+        """Prove each terminal predecessor; no current old-executor authority."""
         try:
             if (type(self) is not _OrdinaryCaseStep or self.service.local_synthetic_demo is not None
-                    or not 3<=event['revision']<=61 or event['revision']%2!=1):
-                raise ValueError('ordinary bounded unaccepted generation required')
+                    or type(event['revision']) is not int or not 3<=event['revision']<=61):
+                raise ValueError('ordinary bounded terminal generation required')
             previous=c.execute('SELECT offer_id FROM service_dispatch_events WHERE dispatch_id=%s AND revision=%s',
                                (offer['dispatch_id'],event['revision']-1)).fetchone()
             prior=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s',
                             (previous['offer_id'],)).fetchone() if previous else None
             origin=self._offered(c,prior) if prior else None
-            if (not prior or not origin or origin['revision']!=event['revision']-2
+            if (not prior or not origin or origin['revision'] not in (event['revision']-2,event['revision']-3)
                     or prior['dispatch_id']!=offer['dispatch_id'] or prior['executor_id']==offer['executor_id']):
                 raise ValueError('adjacent different original executor required')
             previous_marker,terminal=self._terminal_marker(c,parent,prior,event['revision']-1)
@@ -698,16 +736,15 @@ class _OrdinaryCaseStep(_CaseStepTransactions):
                     or any(binding['generations'][id]!=previous_binding['generations'][id] for id in (self.owner_id,self.reviewer_id))):
                 raise ValueError('original predecessor source, authority and deadline required')
         except (KeyError,TypeError,ValueError,AttributeError):
-            raise Denied('ordinary unaccepted CaseStep prefix proof required') from None
+            raise Denied('ordinary terminal CaseStep prefix proof required') from None
 
     def _reoffer_predecessor(self,c,parent,root):
-        if (self.service.local_synthetic_demo is not None or not root or root['revision']>60
-                or c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone()
-                or c.execute("SELECT 1 FROM service_dispatch_events WHERE dispatch_id=%s AND action='ACCEPT'",(root['id'],)).fetchone()):
+        if (self.service.local_synthetic_demo is not None or not root or root['revision']>60):
             return None
         offer=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s',(root['current_offer_id'],)).fetchone()
         if not offer or offer['state'] not in ('DECLINED','WITHDRAWN'):return None
         marker,_=self._terminal_marker(c,parent,offer,root['revision'])
+        if not self._receipt_history_empty(c,parent,root):return None
         binding=marker['binding'];generations=self._generations(c,())
         if (binding['preparation_revision']!=parent['revision'] or binding['preparation_sha256']!=parent['review_sha256']
                 or binding['catalog_sha256']!=self._catalog(c,parent)

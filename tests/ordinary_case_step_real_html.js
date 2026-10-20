@@ -106,6 +106,7 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
   check(reviewer.run('dispatchCatalog.can_offer_again')===true,'ordinary explicit unaccepted redispatch available');
   check(reviewer.run('dispatchCatalog.can_reassign')===false&&reviewer.run('dispatchCatalog.can_reoffer')===false,'no legacy handoff or material renewal path');
   check(reviewer.$('dispatch-offer').hidden===false,'original form visible after terminal offer');
+  if(config.pending_handoff){check(reviewer.run('dispatchCatalog.offer_again_kind')==='WITHDRAWN_ZERO_RECEIPT','exact zero receipt mode');check(reviewer.$('dispatch-offer-button').textContent==='明确交接零回执事项','handoff action named explicitly');check(textOf(reviewer.$('dispatch-current')).includes('不证明现实工作未发生'),'no invented external effect claim');}
   check(textOf(reviewer.$('dispatch-current')).includes('不延长办理时间'),'first deadline is explained');
   reviewer.$('dispatch-executor').value='unassigned';reviewer.$('dispatch-offer-reason').value='SYNTHETIC explicit different responsibility after decline';await reviewer.$('dispatch-offer').onsubmit({preventDefault(){}});
   if(config.drop_reoffer_response){
@@ -115,8 +116,18 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
    const writes=calls.filter(c=>c.method==='POST');check(writes.length===2&&writes[0].request_key===writes[1].request_key&&JSON.stringify(writes[0].body)===JSON.stringify(writes[1].body),'explicit retry keeps original key and body');
   }
   const x=reviewer.run('dispatchView');check(x.current_offer.executor_id==='unassigned'&&x.current_offer.state==='OFFERED','new executor original offer');check(x.assignment_valid_until===config.deadline,'redispatch does not renew first deadline');
-  check(x.history.length===3&&x.history[0].action==='OFFER'&&x.history[1].action==='DECLINE'&&x.history[2].action==='REOFFER','history and generation retained');
+  check(x.history.map(e=>e.action).join(',')===(config.pending_handoff?'OFFER,ACCEPT,WITHDRAW,REOFFER':'OFFER,DECLINE,REOFFER'),'history and generation retained');
+  if(config.pending_handoff)check(reviewer.$('dispatch-offer-button').textContent==='明确交接零回执事项' || x.current_offer.state==='OFFERED','pending handoff uses original explicit form');
   result={dispatch_id:x.dispatch_id,offer_id:x.current_offer.id,deadline:x.assignment_valid_until,revision:x.revision};
+ }else if(config.phase==='WITHDRAW_PENDING'){
+  const executor=page({...config,token:config.tokens.executor},{},calls,{});
+  await executor.$('dispatch-list').click();const item=executor.$('dispatch-items').children.find(e=>e.tagName==='button');check(!!item,'own first invitation');item.click();await until(()=>executor.run('dispatchView')!==null);
+  check(calls.every(c=>c.method==='GET'),'reading does not accept');executor.$('dispatch-decision-reason').value='SYNTHETIC own acceptance';await executor.$('dispatch-accept').click();
+  const old_step=executor.run('dispatchView.receipt_step_id');check(!!old_step,'own acceptance creates old step');
+  const reviewer=page({...config,token:config.tokens.reviewer},{},calls,{});await reviewer.$('dispatch-list').click();const own=reviewer.$('dispatch-items').children.find(e=>e.tagName==='button');own.click();await until(()=>reviewer.run('dispatchView')!==null);
+  check(reviewer.$('dispatch-offer').hidden===true,'active accepted duty cannot silently reassign');reviewer.$('dispatch-decision-reason').value='SYNTHETIC specialist explicitly withdraws unavailable duty';await reviewer.$('dispatch-withdraw').click();
+  check(reviewer.run('dispatchView.current_offer.state')==='WITHDRAWN','specialist withdrawal recorded');check(reviewer.run('dispatchCatalog.can_offer_again')===true,'zero receipt handoff available after explicit withdrawal');
+  check(calls.filter(c=>c.method==='POST').map(c=>c.body.action).join(',')==='ACCEPT,WITHDRAW','only each clicked action is sent');result={old_step};
  }else if(config.phase==='EXECUTE'){
   const executor=page({...config,token:config.tokens.executor},{},calls,{});
   await executor.$('notice-list').click();const card=executor.$('notice-items').children.find(e=>e.dataset?.noticeId),button=card?.children.find(e=>e.tagName==='button');check(!!button,'actual restarted inbox card');button.click();await until(()=>executor.run('noticeView')!==null);

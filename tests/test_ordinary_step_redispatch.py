@@ -126,10 +126,14 @@ def test_active_or_ever_accepted_dispatch_cannot_use_unaccepted_redispatch(ordin
     with f[1].connect() as c:
         before = c.execute('SELECT count(*) n FROM service_dispatch_events').fetchone()['n']
     directory = ok(catalog(f, p))
-    assert not directory['ready'] and not directory['can_offer_again']
-    ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 409)
+    if phase == 'WITHDRAW_AFTER_ACCEPT':
+        assert directory['ready'] and directory['can_offer_again']
+        ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 201)
+    else:
+        assert not directory['ready'] and not directory['can_offer_again']
+        ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 409)
     with f[1].connect() as c:
-        assert c.execute('SELECT count(*) n FROM service_dispatch_events').fetchone()['n'] == before
+        assert c.execute('SELECT count(*) n FROM service_dispatch_events').fetchone()['n'] == before + (1 if phase == 'WITHDRAW_AFTER_ACCEPT' else 0)
 
 
 @pytest.mark.parametrize('target,expected', [('executor-a', 409), ('executor-b', 403), ('executor-c', 403), (REVIEWER, 403)])
@@ -333,7 +337,7 @@ def test_original_acceptance_history_still_blocks_when_receipt_pointer_is_cleare
     with f[1].connect() as c:
         c.execute('DELETE FROM service_receipt_events WHERE step_id=%s', (step,))
         c.execute('DELETE FROM service_receipt_steps WHERE id=%s', (step,))
-    ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 409)
+    ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 403)
     with f[1].connect() as c:
         assert c.execute("SELECT count(*) n FROM service_dispatch_events WHERE action='ACCEPT'").fetchone()['n'] == 1
         assert c.execute('SELECT count(*) n FROM service_dispatch_offers').fetchone()['n'] == 1
@@ -350,3 +354,190 @@ def test_damaged_current_terminal_replay_refuses_without_unhandled_key_error(ord
     ok(decision(f, first, 'WITHDRAW', key=key), 409)
     with f[1].connect() as c:
         assert c.execute('SELECT revision FROM service_dispatches').fetchone()['revision'] == ended['revision']
+
+
+def test_accepted_zero_receipt_explicit_withdraw_then_new_executor_completes(ordinary):
+    f, baseline = ordinary
+    p = prepared(f)
+    first = ok(offer(f, p)[0], 201)
+    accepted = ok(decision(f, first, 'ACCEPT'))
+    old_step = accepted['receipt_step_id']
+    ended = ok(decision(f, accepted, 'WITHDRAW'))
+    directory = ok(catalog(f, p))
+    assert directory['ready'] and directory['can_offer_again']
+    assert directory['offer_again_kind'] == 'WITHDRAWN_ZERO_RECEIPT'
+    renewed = ok(offer(f, p, revision=ended['revision'], executor='unassigned')[0], 201)
+    assert renewed['assignment_valid_until'] == first['assignment_valid_until']
+    ok(f[3].get('/api/executor-receipts/' + old_step, headers=headers(f[2], 'executor-a')), 403)
+    accepted = ok(decision(f, renewed, 'ACCEPT'))
+    assert accepted['receipt_step_id'] != old_step
+    receipt = ok(f[3].get('/api/executor-receipts/' + accepted['receipt_step_id'], headers=headers(f[2], 'unassigned')))
+    receipt = ok(receipt_command(f, receipt, 'SUBMIT', user='unassigned'))
+    receipt = ok(receipt_command(f, receipt, 'ACKNOWLEDGE'))
+    assert receipt['step']['state'] == 'LOCAL_ACKNOWLEDGED'
+    with f[1].connect() as c:
+        old = c.execute('SELECT state,revision,current_receipt_id FROM service_receipt_steps WHERE id=%s', (old_step,)).fetchone()
+        assert old == dict(state='AWAITING_RECEIPT', revision=1, current_receipt_id=None)
+        assert c.execute('SELECT count(*) n FROM service_receipt_events WHERE step_id=%s', (old_step,)).fetchone()['n'] == 1
+    consume(f)
+    with f[1].connect() as c:
+        assert not c.execute("SELECT 1 FROM dispatch_notice_outbox WHERE state='PENDING'").fetchone()
+    with TestClient(configured_app()) as cold:
+        history = ok(dispatch((*f[:3], cold), accepted, 'fixture-a'))
+        assert [e['action'] for e in history['history']] == ['OFFER', 'ACCEPT', 'WITHDRAW', 'REOFFER', 'ACCEPT']
+    assert authority_snapshot(f[1]) == baseline
+
+
+@pytest.mark.parametrize('change', ['receipt', 'reopened', 'revision', 'extra_event', 'create_missing', 'accept_type', 'terminal_type', 'orphan'])
+def test_zero_receipt_handoff_rejects_any_result_or_unknown_history(ordinary, change):
+    f, _ = ordinary
+    p = prepared(f)
+    accepted = ok(decision(f, ok(offer(f, p)[0], 201), 'ACCEPT'))
+    step = accepted['receipt_step_id']
+    if change in ('receipt', 'reopened'):
+        receipt = ok(f[3].get('/api/executor-receipts/' + step, headers=headers(f[2], 'executor-a')))
+        receipt = ok(receipt_command(f, receipt, 'SUBMIT'))
+        if change == 'reopened':
+            ok(receipt_command(f, receipt, 'REOPEN'))
+    ended = ok(decision(f, accepted, 'WITHDRAW'))
+    with f[1].connect() as c:
+        if change == 'revision':
+            c.execute('UPDATE service_receipt_steps SET revision=revision+1 WHERE id=%s', (step,))
+        elif change == 'extra_event':
+            c.execute("UPDATE service_receipt_events SET action='SUBMIT' WHERE step_id=%s", (step,))
+        elif change == 'create_missing':
+            c.execute('DELETE FROM service_receipt_events WHERE step_id=%s', (step,))
+        elif change in ('accept_type', 'terminal_type'):
+            action = 'ACCEPT' if change == 'accept_type' else 'WITHDRAW'
+            row = c.execute('SELECT * FROM service_dispatch_events WHERE action=%s', (action,)).fetchone()
+            payload = row['payload']; payload['revision'] = float(payload['revision'])
+            c.execute('UPDATE service_dispatch_events SET payload=%s WHERE id=%s', (Jsonb(payload), row['id']))
+        elif change == 'orphan':
+            c.execute("INSERT INTO service_receipt_steps SELECT (jsonb_populate_record(NULL::service_receipt_steps,to_jsonb(s)||jsonb_build_object('id',%s::text))).* FROM service_receipt_steps s WHERE id=%s", (str(uuid4()), step))
+        before = c.execute('SELECT count(*) n FROM service_dispatch_offers').fetchone()['n']
+    result = offer(f, p, revision=ended['revision'], executor='unassigned')[0]
+    assert result.status_code in (403, 409), result.text
+    with f[1].connect() as c:
+        assert c.execute('SELECT count(*) n FROM service_dispatch_offers').fetchone()['n'] == before
+
+
+def test_pending_handoff_can_decline_then_return_without_reviving_old_keys(ordinary):
+    f, _ = ordinary
+    p = prepared(f)
+    first = ok(offer(f, p)[0], 201)
+    key = uuid4().hex
+    accepted = ok(decision(f, first, 'ACCEPT', key=key))
+    old_receipt = ok(f[3].get('/api/executor-receipts/' + accepted['receipt_step_id'], headers=headers(f[2], 'executor-a')))
+    ended = ok(decision(f, accepted, 'WITHDRAW'))
+    second = ok(offer(f, p, revision=ended['revision'], executor='unassigned')[0], 201)
+    second = ok(decision(f, second, 'DECLINE'))
+    third = ok(offer(f, p, revision=second['revision'], executor='executor-a')[0], 201)
+    ok(decision(f, first, 'ACCEPT', key=key), 409)
+    ok(receipt_command(f, old_receipt, 'SUBMIT'), 403)
+    fresh = ok(decision(f, third, 'ACCEPT'))
+    assert fresh['receipt_step_id'] != accepted['receipt_step_id']
+    assert fresh['assignment_valid_until'] == first['assignment_valid_until']
+
+
+def test_handoff_after_old_executor_revocation_and_final_deadline_rollback(ordinary, monkeypatch):
+    f, _ = ordinary
+    p = prepared(f)
+    accepted = ok(decision(f, ok(offer(f, p)[0], 201), 'ACCEPT'))
+    ended = ok(decision(f, accepted, 'WITHDRAW'))
+    with f[1].connect() as c:
+        c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+    baseline = authority_snapshot(f[1])
+    assert ok(catalog(f, p))['ready']
+    clock, event = cs._now, cs.sd._event
+    def expire(*args, **kwargs):
+        result = event(*args, **kwargs)
+        monkeypatch.setattr(cs, '_now', lambda c: clock(c) + timedelta(seconds=301))
+        return result
+    monkeypatch.setattr(cs.sd, '_event', expire)
+    ok(offer(f, p, revision=ended['revision'], executor='unassigned')[0], 403)
+    with f[1].connect() as c:
+        assert c.execute('SELECT count(*) n FROM service_dispatch_offers').fetchone()['n'] == 1
+        assert c.execute('SELECT revision FROM service_dispatches').fetchone()['revision'] == ended['revision']
+    monkeypatch.setattr(cs.sd, '_event', event); monkeypatch.setattr(cs, '_now', clock)
+    new = ok(offer(f, p, revision=ended['revision'], executor='unassigned')[0], 201)
+    ok(decision(f, new, 'ACCEPT'))
+    assert authority_snapshot(f[1]) == baseline
+
+
+def test_withdraw_racing_first_submit_never_loses_a_committed_result(ordinary):
+    f, _ = ordinary
+    p = prepared(f)
+    accepted = ok(decision(f, ok(offer(f, p)[0], 201), 'ACCEPT'))
+    receipt = ok(f[3].get('/api/executor-receipts/' + accepted['receipt_step_id'], headers=headers(f[2], 'executor-a')))
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        writes = [pool.submit(decision, f, accepted, 'WITHDRAW'), pool.submit(receipt_command, f, receipt, 'SUBMIT')]
+        withdrawn, submitted = [future.result() for future in writes]
+    assert withdrawn.status_code == 200
+    assert submitted.status_code in (200, 403)
+    ended = withdrawn.json()
+    result = offer(f, p, revision=ended['revision'], executor='unassigned')[0]
+    assert result.status_code in ((403, 409) if submitted.status_code == 200 else (201,)), result.text
+    with f[1].connect() as c:
+        count = c.execute('SELECT count(*) n FROM service_step_receipts').fetchone()['n']
+        assert count == (1 if submitted.status_code == 200 else 0)
+
+
+def test_original_page_pending_handoff_restarts_and_keeps_each_explicit_action(receipt_fixture, tmp_path):
+    initial = receipt_fixture
+    baseline = authority_snapshot(initial[1])
+    with ordinary_api(initial, tmp_path / 'first-api') as api:
+        f = (*initial[:3], api); p = prepared(f)
+        first = html(f, tmp_path / 'first-offer', 'OFFER', p)
+        withdrawn = html(f, tmp_path / 'accepted-withdraw', 'WITHDRAW_PENDING', p)
+    with ordinary_api(initial, tmp_path / 'second-api') as api:
+        f = (*initial[:3], api)
+        new = html(f, tmp_path / 'explicit-handoff', 'REDISPATCH', p,
+            deadline=first['deadline'], pending_handoff=True, drop_reoffer_response=True)
+        assert new['revision'] == 4
+        ok(f[3].get('/api/executor-receipts/' + withdrawn['old_step'], headers=headers(f[2], 'executor-a')), 403)
+    worker_once(initial, tmp_path / 'notice-worker')
+    with ordinary_api(initial, tmp_path / 'third-api') as api:
+        f = (*initial[:3], api)
+        done = html(f, tmp_path / 'new-executor', 'EXECUTE', p, deadline=first['deadline'], executor_id='unassigned')
+        assert done['step'] != withdrawn['old_step'] and done['state'] == 'LOCAL_ACKNOWLEDGED'
+    assert authority_snapshot(initial[1]) == baseline
+    import json
+    (tmp_path / 'pending-handoff-original-page.json').write_text(json.dumps(dict(
+        first=first, withdrawn=withdrawn, new=new, done=done, authority_unchanged=True,
+        real_browser=False, scope='FULL_SHIPPED_HTML_NODE_VM_REAL_ORDINARY_HTTP_WORKER_PG'), indent=2) + '\n')
+
+
+@pytest.mark.parametrize('change', ['orphan', 'old_result'])
+def test_new_accept_rechecks_zero_history_after_invitation(ordinary, change):
+    f, _ = ordinary; p = prepared(f)
+    accepted = ok(decision(f, ok(offer(f, p)[0], 201), 'ACCEPT'))
+    ended = ok(decision(f, accepted, 'WITHDRAW'))
+    renewed = ok(offer(f, p, revision=ended['revision'], executor='unassigned')[0], 201)
+    with f[1].connect() as c:
+        if change == 'orphan':
+            c.execute("INSERT INTO service_receipt_steps SELECT (jsonb_populate_record(NULL::service_receipt_steps,to_jsonb(s)||jsonb_build_object('id',%s::text))).* FROM service_receipt_steps s WHERE id=%s", (str(uuid4()), accepted['receipt_step_id']))
+        else:
+            c.execute('UPDATE service_receipt_steps SET revision=2 WHERE id=%s', (accepted['receipt_step_id'],))
+        count = c.execute('SELECT count(*) n FROM service_receipt_steps').fetchone()['n']
+    assert decision(f, renewed, 'ACCEPT').status_code in (403, 409)
+    with f[1].connect() as c:
+        assert c.execute('SELECT count(*) n FROM service_receipt_steps').fetchone()['n'] == count
+
+
+def test_mixed_history_terminal_revision_61_explains_invitation_limit(monkeypatch):
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    context = object.__new__(cs._OrdinaryCaseStep)
+    context.service = SimpleNamespace(local_synthetic_demo=None)
+    context.executor_ids = ('executor-a',)
+    context.offer_seconds, context.valid_until, context.contract = 300, None, cs.ORDINARY_CONTRACT
+    cursor = SimpleNamespace(fetchone=lambda: None)
+    connection = SimpleNamespace(execute=lambda *args: cursor)
+    context._connection = lambda store: nullcontext(connection)
+    context._parent = lambda *args: (dict(role='park_specialist'), dict(id=uuid4(), revision=4))
+    context._root = lambda *args: dict(revision=61)
+    monkeypatch.setattr(cs.sd, '_own_offer', lambda *args: None)
+    monkeypatch.setattr(cs.er, 'material_current', lambda *args: True)
+    monkeypatch.setattr(cs.prep, 'case_write_blocked', lambda *args: False)
+    result = context.catalog(None, None, uuid4())
+    assert not result['ready'] and not result['can_offer_again'] and result['history_limit_reached']
