@@ -148,8 +148,9 @@ def test_catalog_maintenance_invalid_inputs_never_replace_or_echo(tmp_path,monke
     elif kind=='duplicate_id':target.write_text(json.dumps({'schema':1,'test_ids':['tests/test_a.py::test_alpha']*2}))
     elif kind=='oversize':target.write_bytes(b' '*(512*1024+1))
     else:
-        outside=tmp_path/'outside.py';outside.write_text('def test_alpha(): pass\n')
-        source.unlink();source.symlink_to(outside)
+        # A synthetic path guard avoids requiring Windows symlink privileges.
+        original_is_symlink=Path.is_symlink
+        monkeypatch.setattr(Path,'is_symlink',lambda path:path==source or original_is_symlink(path))
     before=target.read_bytes();entries=set(target.parent.iterdir())
     monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('refusal must precede temporary creation'))
     report=m.inspect(root,write=True)
