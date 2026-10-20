@@ -161,6 +161,18 @@ def walk(browser, report, secrets, public):
             verify(w, adapter)
             boundary.readonly()
 
+        def open_dispatch(parent, dispatch_id):
+            w.locator('[data-tab="collaboration"]').click()
+            w.locator('#dispatch-list').click()
+            # The current CaseStep list deliberately uses its fixed contract
+            # title. This fresh zero-business demo has exactly one dispatch;
+            # verify its actual identity after the explicit original UI click.
+            items = w.locator('#dispatch-items button')
+            expect(items).to_have_count(1)
+            items.click()
+            w.wait_for_function('id=>dispatchView?.dispatch_id===id', arg=dispatch_id)
+            assert w.evaluate('dispatchView.preparation_id') == parent['preparation_id']
+
         def prepare(phase):
             role('enterprise')
             w.locator('[data-tab="service"]').click()
@@ -267,9 +279,7 @@ def walk(browser, report, secrets, public):
             dispatch = post('#dispatch-offer-button', '/api/preparations/' + first['preparation_id'] + '/dispatch', 201)
             settled(w)
             role('executor')
-            w.locator('[data-tab="collaboration"]').click()
-            w.locator('#dispatch-list').click()
-            w.locator('#dispatch-items button').filter(has_text=first['goal']).click()
+            open_dispatch(first, dispatch['dispatch_id'])
             expect(w.locator('#dispatch-decision')).to_be_visible()
             w.locator('#dispatch-decision-reason').fill('SYNTHETIC 许辰本人接受虚构事项')
             accepted = post('#dispatch-accept', '/api/service-dispatches/' + dispatch['dispatch_id'] + '/commands', action='ACCEPT')
@@ -280,9 +290,7 @@ def walk(browser, report, secrets, public):
             verify_step(first, 'P3')
             report['stage'] = 'FIRST_MANUAL_RECEIPT_ACK'
             role('executor')
-            w.locator('[data-tab="collaboration"]').click()
-            w.locator('#dispatch-list').click()
-            w.locator('#dispatch-items button').filter(has_text=first['goal']).click()
+            open_dispatch(first, dispatch['dispatch_id'])
             w.locator('#dispatch-receipt').click()
             expect(w.locator('#receipt-submit')).to_be_visible()
             w.locator('#receipt-text').fill('SYNTHETIC 许辰已整理云杉智造6台虚构设备巡检资料；仅本地演示，无实际履约。')
@@ -292,7 +300,10 @@ def walk(browser, report, secrets, public):
             role('enterprise')
             w.locator('[data-tab="collaboration"]').click()
             w.locator('#receipt-list').click()
-            w.locator('#receipt-items button').filter(has_text=first['goal']).click()
+            receipts = w.locator('#receipt-items button')
+            expect(receipts).to_have_count(1)
+            receipts.click()
+            w.wait_for_function('id=>receiptView?.step.id===id', arg=first['receipt_step_id'])
             expect(w.locator('#receipt-decisions')).to_be_visible()
             w.locator('#receipt-reason').fill('SYNTHETIC 林岚明确核对本次虚构回执')
             post('#receipt-ack', '/api/executor-receipts/' + first['receipt_step_id'] + '/commands', action='ACKNOWLEDGE')
