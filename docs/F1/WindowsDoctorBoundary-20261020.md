@@ -39,3 +39,17 @@ stderr严格为59字节的 `PS_DOCTOR_ENTERED`、`PS_COMMON_PATH_BEGIN` 两条�
 验证准备是另一个一次性公开标准Windows CI，单次原 `powershell.exe -NoProfile -NonInteractive -File Doctor.ps1 -Python <同一venv>`，**不开TraceStages**，不重跑简单入口。沿用原25秒门/最小环境/Server20秒/17文件hash/fresh状态/psutil pin。默认输出必须是原Doctor JSON，model DISABLED、新Setup OWNER_MUTATION_PAUSED/NOT_ACCEPTED，exit0且stderr为空才通过；不把带trace的诊断通过代替默认运行。
 
 10项诊断/验证标准库合同及已有5项标记合同本地通过，其中新增默认调用无trace参数/标记、原25秒/单次且超时不重试、坏JSON/非零退出/额外stderr均拒绝，以及精确分支/trace模式成对限定。它们不是尚未执行的默认Windows验证成绩。下一实测按真实回执填写。
+
+## 默认修复验证：实际通过
+
+受测源 `a25dbc9fedb5e08937897770deba1d6582f6e99d`，[run39362892738](https://github.com/T1doo/ParkWeave/actions/runs/39362892738)／[job118432910317](https://github.com/T1doo/ParkWeave/actions/runs/39362892738/job/118432910317)，job实际成功，公开总时长26秒。[原始安全 JSON](evidence/windows-doctor-default-ci-20261020.json)保留。
+
+同最小环境的默认Doctor单次 **2.171秒、exit0、无超时**，原25秒门不变。明确未启用TraceStages，stages=[]；stdout499字节，为有效原Doctor JSON（已审判据要求ParkWeave/win32/model DISABLED及new_setup BLOCKED/OWNER_MUTATION_PAUSED/NOT_ACCEPTED），hash `c4faaa0c7f33e25ca4c0f601142ec94c9f0bb4a2014aafc500f18d04ed18fc17`。stderr严格0字节、空hash；没有用stdout阶段标记或直接Python调用替代原PowerShell入口。
+
+Server门实际0.032秒通过，原生build26100/product_type3；Python3.12.10、psutil7.2.2、ImageVersion20261007.264.1与失败窗相同，driver总2.218秒。环境键集合与前次诊断一致；fresh状态始终不存在，17个受测源码前后hash保持。跨第二失败窗和本修复窗比较Windows实际17文件hash表，**仅Doctor.ps1改变，其他16文件完全一致**，符合只限定同一个cmdlet的源码改动。
+
+这验证了限定Doctor首个Join-Path后，该runner本次默认Doctor恢复到原预算内完成；两次失败已经分别定位到dot-source语句和其中原Join-Path求值。尚未直接测到该未限定命令内部到底在哪个搜索/加载/实现环节等待，不宣称该机制已证明，也不据单次修复验证承诺所有runner上的表现。无需再盲跑相同Doctor或入口smoke。
+
+本轮实际执行三个各自有界的免费标准Windows窗口：原标记诊断、依据该边界的细分诊断、最小修复后的默认验证；每窗各一次Doctor，原25秒上限，无重试、额外权限、sandbox关闭或超时放宽。Setup/Start/Status/Stop、完整fresh五包装器窗、Win11、正式AT01/04/05/34仍NOT_RUN；模型/数据库调用与owner/ACL/安全变更均0。仅Doctor的本次fresh默认行为通过，不写成整窗通过。
+
+修复候选及默认验证工具已独审，独立10合同通过，无开放P1/P2；与作者重叠不相加。最终安全JSON和文字边界再次独审通过，独立核对两次实际环境键及源码hash差异吻合；独审没有重新执行Windows或取原始stdout，不能称第二次独立原生复测。既有pytest因当前环境缺模块仍NOT_RUN。归档后push受run1/attempt1门限制，不引入新的原生测量；实际跳过状态另核对，不预写平台回执。
