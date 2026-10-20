@@ -119,7 +119,7 @@ class _Connection:
         self.create_error, self.after_change = create_error, after_change
         self.created, self.calls = False, []
         self.autocommit = database == 'postgres'
-        self.role = dict(rolname='parkweave_app', rolsuper=False, rolcreatedb=False, rolcreaterole=False)
+        self.role = dict(rolname='parkweave_app', rolsuper=False, rolcreatedb=False, rolcreaterole=False, rolcanlogin=True)
         self.closed = False
 
     def __enter__(self):
@@ -443,11 +443,16 @@ def test_setup_app_pair_refused_before_any_connection(monkeypatch, changed):
     assert opened == []
 
 
-@pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole'])
+@pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole',
+                                     'nologin', 'unknown_login', 'missing_login', 'nonbool_login'])
 def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
     maintenance, target, opened = _setup_connections(monkeypatch)
     if failure == 'missing':
         maintenance.role = None
+    elif failure == 'missing_login':
+        maintenance.role.pop('rolcanlogin')
+    elif failure in ('nologin', 'unknown_login', 'nonbool_login'):
+        maintenance.role['rolcanlogin'] = {'nologin': False, 'unknown_login': None, 'nonbool_login': 1}[failure]
     else:
         maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
     with pytest.raises(Denied):

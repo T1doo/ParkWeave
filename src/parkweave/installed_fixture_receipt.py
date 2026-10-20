@@ -185,9 +185,10 @@ def create_installed_synthetic_database_receipt(
                 raise Denied('installed synthetic target already exists')
             if application is not None:
                 role = connection.execute(
-                    'SELECT rolname,rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=%s',
+                    'SELECT rolname,rolsuper,rolcreatedb,rolcreaterole,rolcanlogin FROM pg_roles WHERE rolname=%s',
                     ('parkweave_app',)).fetchone()
                 if (not role or role['rolname'] != 'parkweave_app' or
+                        role.get('rolcanlogin') is not True or
                         any(role[key] is not False for key in ('rolsuper', 'rolcreatedb', 'rolcreaterole'))):
                     raise Denied('installed receipt application role refused')
             connection.execute('CREATE DATABASE parkweave')
