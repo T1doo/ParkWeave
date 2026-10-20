@@ -1,7 +1,17 @@
 # Shared native launcher. No execution-policy changes or credential persistence.
+param([switch]$ParkWeaveDoctorTrace)
+if ($ParkWeaveDoctorTrace) { [Console]::Error.WriteLine('PW_STAGE:PS_COMMON_ENTERED'); [Console]::Error.Flush() }
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot 'PythonCommand.ps1')
+if ($ParkWeaveDoctorTrace) {
+    [Console]::Error.WriteLine('PW_STAGE:PS_RESOLVER_PATH_BEGIN'); [Console]::Error.Flush()
+    $ResolverScript = Join-Path $PSScriptRoot 'PythonCommand.ps1'
+    [Console]::Error.WriteLine('PW_STAGE:PS_RESOLVER_PATH_READY'); [Console]::Error.Flush()
+    . $ResolverScript -ParkWeaveDoctorTrace
+    [Console]::Error.WriteLine('PW_STAGE:PS_RESOLVER_SOURCE_READY'); [Console]::Error.Flush()
+} else {
+    . (Join-Path $PSScriptRoot 'PythonCommand.ps1')
+}
 function Invoke-ParkWeave {
     param([string]$Action, [string]$Python = 'python', [switch]$TraceStages)
     if ($TraceStages -and $Action -ne 'doctor') { throw 'Stage tracing is limited to Doctor.' }

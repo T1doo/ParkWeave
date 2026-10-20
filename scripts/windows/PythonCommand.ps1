@@ -1,4 +1,6 @@
 # Resolve one application path before passing it to the call operator.
+param([switch]$ParkWeaveDoctorTrace)
+if ($ParkWeaveDoctorTrace) { [Console]::Error.WriteLine('PW_STAGE:PS_RESOLVER_FILE_ENTERED'); [Console]::Error.Flush() }
 function Resolve-ParkWeavePython {
     param([Parameter(Mandatory=$true)][string]$Python, [switch]$TraceStages)
     if ($TraceStages) { [Console]::Error.WriteLine('PW_STAGE:PS_GET_COMMAND_BEGIN'); [Console]::Error.Flush() }
@@ -18,3 +20,4 @@ function Resolve-ParkWeavePython {
     }
     throw 'No real Python executable found; WindowsApps aliases are not accepted.'
 }
+if ($ParkWeaveDoctorTrace) { [Console]::Error.WriteLine('PW_STAGE:PS_RESOLVER_FILE_READY'); [Console]::Error.Flush() }

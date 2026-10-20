@@ -43,7 +43,7 @@ class DoctorStagesContract(unittest.TestCase):
 
     def test_no_marker_is_distinct_from_dot_source_and_imports(self):
         for stages, pending in [((), []), (('PS_DOCTOR_ENTERED',), ['DOT_SOURCE_COMMON']),
-                                (probe.STAGES[:12], ['LIFECYCLE_CALL', 'PYTHON_IMPORTS'])]:
+                                (probe.STAGES[:probe.STAGES.index('PY_ENTERED') + 1], ['LIFECYCLE_CALL', 'PYTHON_IMPORTS'])]:
             with self.subTest(stages=stages):
                 capture = Mock(side_effect=subprocess.TimeoutExpired(probe.probe_command(), 25, stderr=stderr(stages)))
                 result = probe.observe_doctor(capture)
@@ -75,11 +75,21 @@ class DoctorStagesContract(unittest.TestCase):
                      NATIVE_ATTEMPT='1', NATIVE_NUMBER='1', NATIVE_PUBLIC='true',
                      RUNNER_ENVIRONMENT='github-hosted', RUNNER_OS='Windows', NATIVE_SHA=head)
         self.assertEqual(probe.require_context(valid), head)
+        source_branch = 'refs/heads/dev/windows-doctor-source-boundary-20261020'
+        self.assertEqual(probe.require_context({**valid, 'NATIVE_REF': source_branch}, source_branch), head)
+        with self.assertRaises(RuntimeError):
+            probe.require_context({**valid, 'NATIVE_REF': 'refs/heads/main'}, 'refs/heads/main')
         for key, value in [('NATIVE_REF', 'refs/heads/main'), ('NATIVE_NUMBER', '2'), ('NATIVE_ATTEMPT', '2'),
                            ('NATIVE_PUBLIC', 'false'), ('RUNNER_ENVIRONMENT', 'self-hosted'),
                            ('PARKWEAVE_DSN', 'PRIVATE_SENTINEL'), ('NATIVE_SHA', '0' * 40)]:
             with self.subTest(key=key), self.assertRaises(RuntimeError):
                 probe.require_context({**valid, key: value})
+
+    def test_path_command_boundary_is_distinct_from_common_file_entry(self):
+        stages = ('PS_DOCTOR_ENTERED', 'PS_COMMON_PATH_BEGIN')
+        result = probe.observe_doctor(Mock(side_effect=subprocess.TimeoutExpired(probe.probe_command(), 25, stderr=stderr(stages))))
+        self.assertEqual(result['unreturned_boundaries'], ['DOT_SOURCE_COMMON', 'COMMON_PATH_COMMAND'])
+        self.assertNotIn('COMMON_FILE_ENTRY', result['unreturned_boundaries'])
 
 
 if __name__ == '__main__':

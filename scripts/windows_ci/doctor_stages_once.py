@@ -17,6 +17,7 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 BRANCH = "refs/heads/dev/windows-doctor-stages-20261020"
+AUTHORIZED_BRANCHES = frozenset({BRANCH, "refs/heads/dev/windows-doctor-source-boundary-20261020"})
 PROBE_TIMEOUT = 25
 
 
@@ -25,8 +26,10 @@ def probe_command():
             str(ROOT / "scripts/windows/Doctor.ps1"), "-Python", sys.executable, "-TraceStages"]
 
 
-def require_context(environment):
-    expected = dict(NATIVE_REPOSITORY="T1doo/ParkWeave", NATIVE_REF=BRANCH, NATIVE_EVENT="push",
+def require_context(environment, branch=BRANCH):
+    if branch not in AUTHORIZED_BRANCHES:
+        raise RuntimeError("unapproved diagnostic branch refused")
+    expected = dict(NATIVE_REPOSITORY="T1doo/ParkWeave", NATIVE_REF=branch, NATIVE_EVENT="push",
                     NATIVE_ATTEMPT="1", NATIVE_NUMBER="1", NATIVE_PUBLIC="true",
                     RUNNER_ENVIRONMENT="github-hosted", RUNNER_OS="Windows")
     if any(environment.get(k) != v for k, v in expected.items()) or any(k.startswith("PARKWEAVE_") for k in environment):
@@ -38,7 +41,9 @@ def require_context(environment):
 
 
 STAGES = (
-    "PS_DOCTOR_ENTERED", "PS_COMMON_READY", "PS_INVOKE_ENTERED", "PS_REPO_READY",
+    "PS_DOCTOR_ENTERED", "PS_COMMON_PATH_BEGIN", "PS_COMMON_PATH_READY", "PS_COMMON_ENTERED",
+    "PS_RESOLVER_PATH_BEGIN", "PS_RESOLVER_PATH_READY", "PS_RESOLVER_FILE_ENTERED",
+    "PS_RESOLVER_FILE_READY", "PS_RESOLVER_SOURCE_READY", "PS_COMMON_READY", "PS_INVOKE_ENTERED", "PS_REPO_READY",
     "PS_MANAGED_PATH_READY", "PS_GET_COMMAND_BEGIN", "PS_GET_COMMAND_RETURNED",
     "PS_TEST_PATH_READY", "PS_GET_ITEM_RETURNED", "PS_PYTHON_RESOLVED",
     "PS_LIFECYCLE_BEGIN", "PY_ENTERED", "PY_IMPORTS_READY", "PY_MAIN_ENTERED",
@@ -48,6 +53,12 @@ STAGES = (
 )
 BOUNDARIES = (
     ("DOT_SOURCE_COMMON", "PS_DOCTOR_ENTERED", "PS_COMMON_READY"),
+    ("COMMON_PATH_COMMAND", "PS_COMMON_PATH_BEGIN", "PS_COMMON_PATH_READY"),
+    ("COMMON_FILE_ENTRY", "PS_COMMON_PATH_READY", "PS_COMMON_ENTERED"),
+    ("RESOLVER_PATH_COMMAND", "PS_RESOLVER_PATH_BEGIN", "PS_RESOLVER_PATH_READY"),
+    ("RESOLVER_FILE_ENTRY", "PS_RESOLVER_PATH_READY", "PS_RESOLVER_FILE_ENTERED"),
+    ("RESOLVER_FILE_DEFINITION", "PS_RESOLVER_FILE_ENTERED", "PS_RESOLVER_FILE_READY"),
+    ("RESOLVER_DOT_SOURCE", "PS_RESOLVER_PATH_READY", "PS_RESOLVER_SOURCE_READY"),
     ("GET_COMMAND", "PS_GET_COMMAND_BEGIN", "PS_GET_COMMAND_RETURNED"),
     ("GET_ITEM", "PS_TEST_PATH_READY", "PS_GET_ITEM_RETURNED"),
     ("LIFECYCLE_CALL", "PS_LIFECYCLE_BEGIN", "PS_LIFECYCLE_RETURNED"),
@@ -105,7 +116,7 @@ def observe_doctor(capture):
                 limit_seconds=PROBE_TIMEOUT, seconds=round(time.monotonic() - started, 3))
 
 
-def main():
+def main(branch=BRANCH):
     report = dict(scope="WINDOWS_SERVER_DOCTOR_STAGES_DIAGNOSTIC_ONLY", status="NOT_RUN", doctor_invoked=False,
                   internal_stage_markers_enabled=True, original_doctor_limit_seconds=25,
                   real_model_calls=0, database_calls=0, owner_ACL_security_mutations=0,
@@ -113,7 +124,7 @@ def main():
     out = None
     started = time.monotonic()
     try:
-        report["source_sha"] = require_context(os.environ)
+        report["source_sha"] = require_context(os.environ, branch)
         if sys.platform != "win32" or sys.version_info[:2] != (3, 12) or struct.calcsize("P") != 8:
             raise RuntimeError("native Windows Python3.12 x64 required")
         runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve()
