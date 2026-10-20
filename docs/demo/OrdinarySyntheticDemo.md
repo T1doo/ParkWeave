@@ -19,9 +19,9 @@
   --local-demo-config /tmp/parkweave-ordinary-demo-实际值/local-demo/config.json --port 8765
 ```
 
-本指定环境的Python路径是`/workspace/parkweave-venv/bin/python`。使用setup实际输出的路径，打开serve输出的`demo_url`（`http://127.0.0.1:8765/demo`，仅该环境本机可访问）。选择同一state目录下的`sessions.json`，用左侧人物按钮切换身份、示例按钮填表，右侧仍是原业务页面，所有创建、审核、ADOPT、回执与取消均须明确操作。初始化只生成既有格式的模拟目录、journal与绑定配置，业务记录起初为空；不预插成功事件。`serve`只读取并校验这些既有文件，不能补造或修复。
+本指定环境的Python路径是`/workspace/parkweave-venv/bin/python`。使用setup实际输出的路径，打开serve输出的`demo_url`（`http://127.0.0.1:8765/demo`，仅该环境本机可访问）。选择同一state目录下的`sessions.json`，点击“打开原办理页面”启动独立同源窗口，再用本页人物按钮切换身份、示例按钮填表；原业务页面保持独立，不使用iframe或放宽防嵌入策略，所有创建、审核、ADOPT、回执与取消均须明确操作。初始化只生成既有格式的模拟目录、journal与绑定配置，业务记录起初为空；不预插成功事件。`serve`只读取并校验这些既有文件，不能补造或修复。
 
-新模式复用精确配对的`LOCAL_DEMO_CURRENT_PREPARATION`和`LOCAL_SYNTHETIC_DEMO`，候选标记`NO_MODEL`。它不会开放正式来源或原生权限；默认不带这些参数的旧入口继续保持原模式。材料复用仅复制本人同用途通用目录，新诉求、审核和确认独立进行；第二事项可在提交回执前按原规则取消，第一事项的已办回执仍保留。模拟目录包从setup起有效7天，serve不续期或修改旧文件，期满拒绝并保留数据；资源占位和接单窗口有各自期限，过期按原界面拒绝。
+新模式复用精确配对的`LOCAL_DEMO_CURRENT_PREPARATION`和`LOCAL_SYNTHETIC_DEMO`，候选标记`NO_MODEL`。它不会开放正式来源或原生权限；默认不带这些参数的旧入口继续保持原模式。材料复用仅复制本人同用途通用目录，新诉求、审核和确认独立进行；本演示只验证第二事项独立审核确认后、尚未ADOPT或分派时的取消，第一事项的已办回执仍保留；已接单或已提交回执的取消不属于此演示验收范围。模拟目录包从setup起有效7天，serve不续期或修改旧文件，期满拒绝并保留数据；资源占位和接单窗口有各自期限，过期按原界面拒绝。
 
 下面保留不启用模拟目录的原入口用法。
 

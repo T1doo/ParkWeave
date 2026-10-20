@@ -1,0 +1,71 @@
+name: ParkWeave fictional guide real browser bounded
+
+on:
+  push:
+    branches: [dev/fictional-park-browser-once-20261020]
+    paths:
+      - .github/workflows/fictional-park-browser-once.yml
+      - scripts/fictional_park_browser_once.py
+      - scripts/local_demo_inputs.py
+      - scripts/ordinary_synthetic_demo.py
+      - src/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-fictional-browser-20261020
+  cancel-in-progress: false
+
+jobs:
+  fictional-browser:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/fictional-park-browser-once-20261020' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number <= 2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install existing pinned dependencies
+        timeout-minutes: 3
+        run: |
+          set -eu
+          /usr/bin/python3.12 -m venv .runtime/fictional-browser-venv
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+            PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 \
+            .runtime/fictional-browser-venv/bin/python -m pip install \
+            --no-cache-dir --retries 0 --timeout 20 -r requirements-browser-smoke.txt
+      - name: Actual guide and original independent window DOM business walk
+        timeout-minutes: 3
+        env:
+          PW_BROWSER_SHA: ${{ github.sha }}
+          PW_BROWSER_REPOSITORY: ${{ github.repository }}
+          PW_BROWSER_REF: ${{ github.ref }}
+          PW_BROWSER_EVENT: ${{ github.event_name }}
+          PW_BROWSER_ATTEMPT: ${{ github.run_attempt }}
+          PW_BROWSER_NUMBER: ${{ github.run_number }}
+          PW_BROWSER_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
+            PW_BROWSER_SHA="$PW_BROWSER_SHA" PW_BROWSER_REPOSITORY="$PW_BROWSER_REPOSITORY" PW_BROWSER_REF="$PW_BROWSER_REF" \
+            PW_BROWSER_EVENT="$PW_BROWSER_EVENT" PW_BROWSER_ATTEMPT="$PW_BROWSER_ATTEMPT" \
+            PW_BROWSER_NUMBER="$PW_BROWSER_NUMBER" PW_BROWSER_PUBLIC="$PW_BROWSER_PUBLIC" \
+            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
+            ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+            .runtime/fictional-browser-venv/bin/python -B -m scripts.fictional_park_browser_once
+      - name: Preserve only masked screenshots and synthetic result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: fictional-park-browser-${{ github.run_number }}
+          path: ${{ runner.temp }}/parkweave-fictional-browser-evidence/
+          if-no-files-found: warn
+          retention-days: 1

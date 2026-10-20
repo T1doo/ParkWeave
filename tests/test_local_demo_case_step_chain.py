@@ -193,6 +193,9 @@ def test_fictional_clickable_setup_first_use_reuse_cancel_and_cold_read(tmp_path
         page=api.get('/demo')
         assert page.status_code==200 and first['demo_url'].endswith('/demo')
         assert page.headers['cache-control']=='no-store' and page.headers['referrer-policy']=='no-referrer'
+        assert '<iframe' not in page.text and 'workspace-open' in page.text
+        assert "frame-ancestors 'none'" in page.headers['content-security-policy']
+        assert "frame-ancestors 'none'" in api.get('/').headers['content-security-policy']
         status=call(api,tokens,'/api/formal-preparations/entry-status')
         assert status['state']=='UNAVAILABLE' and not status['business_record_read']
         selected=guide(api,'first');parent={k:selected[k] for k in ('preparation_id','run_id','revision')}

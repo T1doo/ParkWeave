@@ -1,4 +1,4 @@
-// The shipped guide + original page handlers; DOM/iframe mechanics only.
+// The shipped guide + original page handlers; DOM/window mechanics only; CSP and actual popups require the real browser walk.
 const supportText=require('fs').readFileSync('tests/ordinary_case_goal_record_pack_html.js','utf8').split('const until=')[0];
 const scenario=String.raw`
 Element.prototype.dispatchEvent=function(event){this.emit(event.type);return true;};
@@ -14,14 +14,14 @@ const settle=async predicate=>{for(let i=0;i<500;i++){if(predicate())return;awai
   const e=new Element(m[1]);e.id=id||role;if(role)e.dataset.role=role;elements.set(e.id,e);
  }
  const get=id=>elements.get(id),events={};
- get('workspace').contentWindow={document:original.context.document,location:{origin:new URL(config.base).origin},Event:class{constructor(type){this.type=type;}}};
+ const originalWindow={document:original.context.document,location:{origin:new URL(config.base).origin},closed:false,focus(){},Event:class{constructor(type){this.type=type;}}};
  const guide=vm.createContext({console,JSON,Error,location:{origin:new URL(config.base).origin},
   document:{getElementById:get,querySelectorAll:selector=>[...elements.values()].filter(e=>selector==='button'?e.tagName==='button':selector==='[data-role]'&&e.dataset.role)},
-  window:{addEventListener:(name,fn)=>events[name]=fn}});
+  window:{addEventListener:(name,fn)=>events[name]=fn,open:(url,target)=>{check(url==='/'&&target==='_blank','only explicit same-origin business window');return originalWindow;}}});
  vm.runInContext(guideCode,guide);
  get('sessions').files=[{size:2,text:async()=>'{}'}];await get('sessions').onchange();check(get('enterprise').disabled,'invalid session file stays closed');
  const raw=JSON.stringify(config.tokens);get('sessions').files=[{size:Buffer.byteLength(raw),text:async()=>raw}];await get('sessions').onchange();
- check(!get('enterprise').disabled,'six synthetic sessions loaded in browser memory');
+ check(get('enterprise').disabled&&!get('workspace-open').disabled,'identity waits for explicit business window');get('workspace-open').onclick();check(!get('enterprise').disabled,'six synthetic sessions loaded in browser memory');
  const role=name=>get(name).onclick();role('enterprise');
  const before=calls.filter(c=>c.method==='POST').length;
  get('scenario').value=config.phase==='again'?'again':'first';get('fill-goal').onclick();get('fill-request').onclick();get('fill-need').onclick();get('fill-outline').onclick();
