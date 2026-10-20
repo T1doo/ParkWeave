@@ -1,0 +1,43 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_explicit_manual_scope_preserves_note_and_registered_fact_history _____
+
+facts_case = {'u': {'f': (<parkweave.store.Store object at 0x7f1b958cebd0>, <parkweave.store.Store object at 0x7f1b958cee10>, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '033a2f6f-9179-4b1d-9984-e7cd012854e5', ...}}, ...}
+
+    def test_explicit_manual_scope_preserves_note_and_registered_fact_history(facts_case):
+        from test_plan_source_conflicts import edit
+        t=facts_case;f,p=t['f'],t['p']
+        manual='  SYNTHETIC exact owner MANUAL explanation\n preserve whitespace  '
+        edit(f,p,manual)
+        before=deepcopy(stored(f,p));c=change_fact(t)
+        old=view(t,c)
+        assert old['adoption'] is None and 'FACT_PROVENANCE_COMBINATION_UNSUPPORTED' in old['blocking_reasons']
+        r=f[3].get(endpoint(t),headers=headers(f[2]),params=dict(card_id=c['id'],fact_provenance_scope='EMPLOYEES_USER_ASSERTION_MANUAL_V1'))
+        assert r.status_code==200,r.text
+>       v=r.json();assert v['can_adopt'],v['blocking_reasons']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['EXACT_REGISTERED_EMPLOYEES_PROVENANCE_REQUIRED', 'FACT_PROVENANCE_COMBINATION_UNSUPPORTED']
+E       assert False
+
+tests/test_employees_fact_provenance_independent.py:437: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_employees_fact_provenance_independent.py::test_explicit_manual_scope_preserves_note_and_registered_fact_history
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_employees_fact_provenance_independent.py::test_explicit_manual_scope_preserves_note_and_registered_fact_history
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_employees_fact_provenance_independent.py::test_explicit_manual_scope_preserves_note_and_registered_fact_history
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_employees_fact_provenance_independent.py::test_explicit_manual_scope_preserves_note_and_registered_fact_history
+1 failed, 4 warnings in 11.34s

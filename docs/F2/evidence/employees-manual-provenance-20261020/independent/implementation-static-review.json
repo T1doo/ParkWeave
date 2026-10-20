@@ -1,0 +1,39 @@
+{
+  "stage": "UNFROZEN_STATIC_REVIEW",
+  "base_commit": "d974ecb39170f091362d8de07f1fc0bab75200da",
+  "verdict": "NO_REMAINING_P1_P2_IDENTIFIED_IN_CURRENT_DIFF_NOT_FINAL_SIGNOFF",
+  "source_sha256": {
+    "src/parkweave/employees_fact_provenance.py": "5b92fc191ef2b8c6112eb30fb9a1d0248ae32885b0883d0fb7260c8792090db6",
+    "src/parkweave/source_change_adoption.py": "c044307381680c81a4e3e45b4a8b3d377b75aab88c37795401eee7b02e4bc9be",
+    "src/parkweave/service_case_steps.py": "4cb581d5ea722e4ae674e2d6fcde34f3291626b8b3fd265a056ca22042364b1b",
+    "src/parkweave/api.py": "23b5407ccbea5721dc441439620802bc1d65620b9eb0a063dc3420fc0c59daf4",
+    "src/parkweave/web.html": "3270cadce62f76d505dd7cf2ef7554e67533bb675b354cbec39354c62bde5603",
+    "docs/F2/EmployeesManualProvenanceContract-20261020.md": "0d753f4ed594a1bf03cf49e3f75a48350c014540068b9737ebd93689a22c41a4"
+  },
+  "resolved_findings": [
+    {
+      "priority": "P2",
+      "id": "UI_SCOPE_CONFUSION",
+      "finding": "Old employees button could accept a valid new MANUAL preview and later send its explicit MANUAL scope without rendering manual body.",
+      "fix": "Require exact selected/response scope before assigning opportunityPlanView; reject manual without fact and manual+dependency/graph combinations.",
+      "independent_verification": {
+        "command": "node /workspace/scratch/employees-manual-review/selected-scope-only.js",
+        "result": "PASS",
+        "scope": "One controlled NodeVM function probe, no HTTP/browser/PG",
+        "evidence": "/workspace/scratch/employees-manual-review/selected-scope-after.json"
+      }
+    }
+  ],
+  "backend_review": [
+    "V3/V5 strict request scope/version pair and original V2 closed-key validation after proven normalization reject cross-scope, wrong integer type and leftover extensions.",
+    "Manual snapshots reconstruct exact historical note at ADOPT revision-1 via original note/opportunity links. Current owner_amendments compared only for current preview, not substituted into old snapshots.",
+    "Original note blockers, source/permission/CAS/final reread, aggregate partitions and old employees admission remain unchanged.",
+    "Only existing owner/service gate plus all original fact-field READ can get expanded preview. Manual/source material body was already readable under original owner note/plan routes; no new executor/reviewer route.",
+    "Package activation is checked on historical prefix; current creation refuses retained package-v3. No new note or material mutation occurs in projection."
+  ],
+  "limitations": [
+    "Current plan template_migration is rejected by manual snapshot even for earlier V5 history; later same-plan template carry may therefore be rejected by original recovery proof. This is the excluded combination, not compatible functionality.",
+    "No PostgreSQL, real permissions, model, Windows/native, network, or repository write performed in this static slice.",
+    "Need frozen source commit and necessary independent owned-PG mutation/refusal probes before final signoff. Main-side test outcomes are not independently claimed."
+  ]
+}

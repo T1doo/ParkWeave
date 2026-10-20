@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="9" time="108.050" timestamp="2026-10-20T13:59:04.925302+00:00" hostname="1ce47ba0566b"><testcase classname="tests.test_employees_fact_provenance_independent" name="test_explicit_manual_scope_preserves_note_and_registered_fact_history" time="16.659" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_history_reconstructed_at_adopt_not_later_editor_state" time="19.897" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_combination_keeps_lock_keep_defer_and_edit_reconfirmation_gates" time="10.100"><failure message="KeyError: 'revision'">facts_case = {'u': {'f': (&lt;parkweave.store.Store object at 0x7fbca8ad7020&gt;, &lt;parkweave.store.Store object at 0x7fbca8ad6450&gt;, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': 'addf92a3-6a5a-491c-8a41-37b0ce70b2e5', ...}}, ...}
+
+    def test_manual_combination_keeps_lock_keep_defer_and_edit_reconfirmation_gates(facts_case):
+        from test_plan_source_conflicts import edit,read as note_read,send as note_choice
+        from test_manual_content_continuation import send as continue_note
+        from test_preparation import add
+        t=facts_case;f,p=t['f'],t['p'];manual='SYNTHETIC protected human text'
+        edit(f,p,manual);assert lock(f,p,'P1').status_code==200
+        change_fact(t,refresh=False)
+&gt;       r=add(f,p,slot='material_outline',text='SYNTHETIC new exact outline condition');assert r.status_code==200,r.text
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_employees_fact_provenance_independent.py:488: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_preparation.py:40: in add
+    return command(f,row,'ADD_EVIDENCE',slot=slot,text=text,source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC sample document v1',**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fixture = (&lt;parkweave.store.Store object at 0x7fbca8ad7020&gt;, &lt;parkweave.store.Store object at 0x7fbca8ad6450&gt;, {'fixture-a': 'UU...ep-specialist-fixture-a': 'REDACTED_SYNTHETIC_FIXTURE_TOKEN', ...}, &lt;httpx.Client object at 0x7fbca30e5ee0&gt;)
+row = {'instance_id': '3ab231c7-89b0-4e14-ae32-88763f40121a', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': 'addf92a3-6a5a-491c-8a41-37b0ce70b2e5', ...}
+action = 'ADD_EVIDENCE', user = 'fixture-a', key = None, revision = None
+extra = {'slot': 'material_outline', 'text': 'SYNTHETIC new exact outline condition', 'source_kind': 'DOCUMENT_EXCERPT', 'source_label': 'SYNTHETIC sample document v1'}
+
+    def command(fixture,row,action,user='fixture-a',key=None,revision=None,**extra):
+        store,owner,tokens,api=fixture
+&gt;       body={'action':action,'expected_revision':row['revision'] if revision is None else revision,**extra}
+                                                  ^^^^^^^^^^^^^^^
+E       KeyError: 'revision'
+
+tests/test_preparation.py:36: KeyError</failure></testcase><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_scope_stale_preview_cannot_survive_authority_or_source_aba[field_aba]" time="11.404" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_scope_stale_preview_cannot_survive_authority_or_source_aba[source_aba]" time="10.283" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_scope_stale_preview_cannot_survive_authority_or_source_aba[manual_edit]" time="9.852" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_manual_scope_rejects_package_protocol_and_requires_an_actual_manual_note" time="11.002" /><testcase classname="tests.test_employees_fact_provenance_independent" name="test_full_original_html_manual_fact_scope_and_business_recheck[manual_positive]" time="9.321"><failure message="AssertionError: {&quot;message&quot;:&quot;Cannot read properties of undefined (reading 'remove')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'remove')\n    at clearCaseCancellation (evalmachine.&lt;anonymous&gt;:1150:166)\n    at loadPreparationSnapshot (evalmachine.&lt;anonymous&gt;:377:1323)\n    at loadPreparation (evalmachine.&lt;anonymous&gt;:340:17)\n    at evalmachine.&lt;anonymous&gt;:26:24\n    at evalmachine.&lt;anonymous&gt;:1:1\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at run (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:88:30)\n    at load (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:96:31)\n    at /workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:100:8&quot;,&quot;diagnostics&quot;:{&quot;calls&quot;:[]}}&#10;  &#10;assert 1 == 0">facts_case = {'u': {'f': (&lt;parkweave.store.Store object at 0x7fbca8d034d0&gt;, &lt;parkweave.store.Store object at 0x7fbca8d008f0&gt;, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '49a655c3-9dbf-403f-9f07-09ed0aa9ca9e', ...}}, ...}
+mode = 'manual_positive'
+
+    @pytest.mark.parametrize('mode',['manual_positive','manual_lost_ack'])
+    def test_full_original_html_manual_fact_scope_and_business_recheck(facts_case,mode):
+        from test_plan_source_conflicts import edit
+        edit(facts_case['f'],facts_case['p'],'SYNTHETIC manual body independently retained')
+&gt;       run_html(facts_case,mode)
+
+tests/test_employees_fact_provenance_independent.py:545: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = {'u': {'f': (&lt;parkweave.store.Store object at 0x7fbca8d034d0&gt;, &lt;parkweave.store.Store object at 0x7fbca8d008f0&gt;, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '49a655c3-9dbf-403f-9f07-09ed0aa9ca9e', ...}}, ...}
+mode = 'manual_positive'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('employees_fact_provenance_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+&gt;           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"Cannot read properties of undefined (reading 'remove')","stack":"TypeError: Cannot read properties of undefined (reading 'remove')\n    at clearCaseCancellation (evalmachine.&lt;anonymous&gt;:1150:166)\n    at loadPreparationSnapshot (evalmachine.&lt;anonymous&gt;:377:1323)\n    at loadPreparation (evalmachine.&lt;anonymous&gt;:340:17)\n    at evalmachine.&lt;anonymous&gt;:26:24\n    at evalmachine.&lt;anonymous&gt;:1:1\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at run (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:88:30)\n    at load (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:96:31)\n    at /workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:100:8","diagnostics":{"calls":[]}}
+E             
+E           assert 1 == 0
+
+tests/test_employees_fact_provenance_independent.py:369: AssertionError</failure></testcase><testcase classname="tests.test_employees_fact_provenance_independent" name="test_full_original_html_manual_fact_scope_and_business_recheck[manual_lost_ack]" time="9.101"><failure message="AssertionError: {&quot;message&quot;:&quot;Cannot read properties of undefined (reading 'remove')&quot;,&quot;stack&quot;:&quot;TypeError: Cannot read properties of undefined (reading 'remove')\n    at clearCaseCancellation (evalmachine.&lt;anonymous&gt;:1150:166)\n    at loadPreparationSnapshot (evalmachine.&lt;anonymous&gt;:377:1323)\n    at loadPreparation (evalmachine.&lt;anonymous&gt;:340:17)\n    at evalmachine.&lt;anonymous&gt;:26:24\n    at evalmachine.&lt;anonymous&gt;:1:1\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at run (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:88:30)\n    at load (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:96:31)\n    at /workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:100:8&quot;,&quot;diagnostics&quot;:{&quot;calls&quot;:[]}}&#10;  &#10;assert 1 == 0">facts_case = {'u': {'f': (&lt;parkweave.store.Store object at 0x7fbca3361850&gt;, &lt;parkweave.store.Store object at 0x7fbcaced2960&gt;, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '696fa6c4-489a-4879-97fb-cb2602e8f4cc', ...}}, ...}
+mode = 'manual_lost_ack'
+
+    @pytest.mark.parametrize('mode',['manual_positive','manual_lost_ack'])
+    def test_full_original_html_manual_fact_scope_and_business_recheck(facts_case,mode):
+        from test_plan_source_conflicts import edit
+        edit(facts_case['f'],facts_case['p'],'SYNTHETIC manual body independently retained')
+&gt;       run_html(facts_case,mode)
+
+tests/test_employees_fact_provenance_independent.py:545: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+t = {'u': {'f': (&lt;parkweave.store.Store object at 0x7fbca3361850&gt;, &lt;parkweave.store.Store object at 0x7fbcaced2960&gt;, {'fix...2b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '696fa6c4-489a-4879-97fb-cb2602e8f4cc', ...}}, ...}
+mode = 'manual_lost_ack'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('employees_fact_provenance_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+&gt;           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"Cannot read properties of undefined (reading 'remove')","stack":"TypeError: Cannot read properties of undefined (reading 'remove')\n    at clearCaseCancellation (evalmachine.&lt;anonymous&gt;:1150:166)\n    at loadPreparationSnapshot (evalmachine.&lt;anonymous&gt;:377:1323)\n    at loadPreparation (evalmachine.&lt;anonymous&gt;:340:17)\n    at evalmachine.&lt;anonymous&gt;:26:24\n    at evalmachine.&lt;anonymous&gt;:1:1\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at run (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:88:30)\n    at load (/workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:96:31)\n    at /workspace/ParkWeave/tests/employees_fact_provenance_real_html.js:100:8","diagnostics":{"calls":[]}}
+E             
+E           assert 1 == 0
+
+tests/test_employees_fact_provenance_independent.py:369: AssertionError</failure></testcase></testsuite></testsuites>

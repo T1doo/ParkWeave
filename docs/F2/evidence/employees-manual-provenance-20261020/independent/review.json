@@ -1,0 +1,100 @@
+{
+  "verdict": "LIMITED_PASS_NO_P1_P2_IN_REVIEWED_FROZEN_SCOPE",
+  "reviewed_commit": "ff6e1c4151b2cf71beaeab9b9620702b46225eb1",
+  "source_files": {
+    "src/parkweave/employees_fact_provenance.py": {
+      "sha256": "5b92fc191ef2b8c6112eb30fb9a1d0248ae32885b0883d0fb7260c8792090db6",
+      "matches_commit": true
+    },
+    "src/parkweave/source_change_adoption.py": {
+      "sha256": "c044307381680c81a4e3e45b4a8b3d377b75aab88c37795401eee7b02e4bc9be",
+      "matches_commit": true
+    },
+    "src/parkweave/service_case_steps.py": {
+      "sha256": "4cb581d5ea722e4ae674e2d6fcde34f3291626b8b3fd265a056ca22042364b1b",
+      "matches_commit": true
+    },
+    "src/parkweave/api.py": {
+      "sha256": "23b5407ccbea5721dc441439620802bc1d65620b9eb0a063dc3420fc0c59daf4",
+      "matches_commit": true
+    },
+    "src/parkweave/web.html": {
+      "sha256": "3270cadce62f76d505dd7cf2ef7554e67533bb675b354cbec39354c62bde5603",
+      "matches_commit": true
+    },
+    "docs/F2/EmployeesManualProvenanceContract-20261020.md": {
+      "sha256": "0d753f4ed594a1bf03cf49e3f75a48350c014540068b9737ebd93689a22c41a4",
+      "matches_commit": true
+    },
+    "tests/test_employees_fact_provenance_independent.py": {
+      "sha256": "3d2c2a49835f46c499ceefbc412393b8192486680955bffd6707a58988f941da",
+      "matches_commit": true
+    },
+    "tests/employees_fact_client_probes.js": {
+      "sha256": "47838adda1a24482d245489beaa53b0a2f9857746d4b999360edc014d72e34e3",
+      "matches_commit": true
+    },
+    "tests/employees_fact_provenance_real_html.js": {
+      "sha256": "37a1644a924c2d131dd9533337e2b4a82080fd1bf481d848856044052ddae792",
+      "matches_commit": true
+    }
+  },
+  "source_continuity": "All 9 inspected implementation/contract/test artifacts match the frozen commit bytes.",
+  "resolved_findings": [
+    {
+      "priority": "P2",
+      "id": "UI_SCOPE_CONFUSION",
+      "status": "FIXED",
+      "fix": "Require exact chosen/returned old-vs-MANUAL scope before projection; reject invalid MANUAL/dependency/graph flags.",
+      "evidence": "/workspace/scratch/employees-manual-review/selected-scope-after.json",
+      "frozen_web_sha256": "3270cadce62f76d505dd7cf2ef7554e67533bb675b354cbec39354c62bde5603",
+      "scope": "Previously independently executed one controlled NodeVM function probe, same exact web bytes as frozen; no HTTP/browser/PG."
+    }
+  ],
+  "independent_window": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/ParkWeave/src:/workspace/ParkWeave/tests /workspace/parkweave-venv/bin/python -m pytest /workspace/scratch/employees-manual-review/frozen/test_manual_probe.py --rootdir=/workspace/scratch/employees-manual-review/frozen -q --tb=short -p no:cacheprovider --junitxml=/workspace/scratch/employees-manual-review/frozen/probe.xml > /workspace/scratch/employees-manual-review/frozen/probe.log 2>&1",
+    "result": {
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "65.639"
+    },
+    "cases": [
+      "test_later_edit_does_not_replace_old_v5_manual_in_cold_history",
+      "test_rehashed_manual_extension_cannot_replace_original_note_proof[manual_text]",
+      "test_rehashed_manual_extension_cannot_replace_original_note_proof[latest_decision]",
+      "test_saved_scope_version_and_extra_fields_do_not_cross_protocols",
+      "test_missing_original_fact_receipt_yields_unknown_without_adoption"
+    ],
+    "test_source": "/workspace/scratch/employees-manual-review/frozen/test_manual_probe.py",
+    "test_sha256": "3b32fb512105d07bca2b4d689b194e496ee89ddbad48a95465d272388b1c9c13",
+    "initial_exact_copy": "/workspace/scratch/employees-manual-review/frozen/probe-initial.py",
+    "initial_copy_sha256": "3b32fb512105d07bca2b4d689b194e496ee89ddbad48a95465d272388b1c9c13",
+    "conftest_sha256": "f0c9ed0d230843b8ef237cb3a329da90ab5fe31ba55b15c2021e8cae96ca6463",
+    "log": "/workspace/scratch/employees-manual-review/frozen/probe.log",
+    "log_sha256": "b5ea350ae986c20ce7328e98b41a9ed523127046ba9dbbf242612dcb9c80faac",
+    "junit": "/workspace/scratch/employees-manual-review/frozen/probe.xml",
+    "junit_sha256": "10135718d3da7c6c2240b1ae7eb91dfb70cb2639b11c0d1502ab501269308bc8"
+  },
+  "actual_checks": [
+    "Original employees scope rejects MANUAL on the same Cases before explicit new scope is adopted.",
+    "Positive: explicit new V5 ADOPT preserves exact manual note, exact request replay stays idempotent; actual material correction/review/confirmation and P1-P5 VERIFY pass. After later MANUAL EDIT, fresh Store cold recovery still proves the original unchanged V5 manual snapshot without business writes.",
+    "Saved manual text or latest-decision ID changed: inner/manual/source-change hashes, expected preview SHA and original ADOPT fingerprint recomputed; plan read refuses. Two parameter cases.",
+    "Saved old-scope/V5, new-scope/V3, additional source-change field, and float 5.0 are rejected after recomputing envelopes; restoring exact original V5 makes plan readable again. Four shapes in one case.",
+    "Deleting actual original before-CONFIRM receipt, while fact ledger and new current fact remain: preview is THIS_CASE UNKNOWN, preserved empty, no fact/manual projection or adoption; no business change."
+  ],
+  "invariants": "Independent authority_snapshot hash unchanged in every test; hash of full_business snapshot unchanged around rejected/readonly calls. Assertions compare only hashes, avoiding private data in failure output.",
+  "static_conclusion": "No remaining P1/P2 identified in strict V3/V5 scope pairing, envelope closed keys, exact historical note prefix/fact descriptors, original blockers/locks/permissions/ABA/final reread and explicit UI scope isolation.",
+  "artifact_safety": {
+    "matches": [],
+    "method": "Original secret-list writer disabled before fixture setup; evidence redirected to scratch. Success log/JUnit and UUID-only fixture JSONL reviewed; scanned for auth/DSN/password and standalone 43-character urlsafe-token shapes. No actual token list persisted. No exact-token-set matching claimed.",
+    "support": "/workspace/scratch/employees-manual-review/frozen/artifact-safety-check.json"
+  },
+  "constraints": "Only owned temporary synthetic Linux fixtures and existing setup, roles/seed/migrations. No repository/Git writes, native Windows/owner-DACL/real business/production authorization changes, real models, external service calls or deployment.",
+  "limitations": [
+    "This is independent bounded frozen-scope review, not complete F2/F3, real truth/qualification, external fulfillment, native install/migration or real-browser acceptance.",
+    "SOURCE notes, package-v3 activation, partial/template migration and unified-dependency combinations remain unsupported. Later same-plan template carry is not claimed compatible.",
+    "Main-side 8-module/publisher test results are separate; no independent credit or summed test count claimed here."
+  ]
+}

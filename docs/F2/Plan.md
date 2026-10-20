@@ -1,3 +1,7 @@
+## 2026-10-20：员工来源与MANUAL窄兼容
+
+源码 `ff6e1c4151b2cf71beaeab9b9620702b46225eb1` 沿原F3-T02/T03，新增显式v5把原注册员工事实来源与当时MANUAL全文分别证明，历史按ADOPT前缀重放，不用当前事实/正文补旧历史。原v2默认、v3、锁/KEEP-DEFER/继续后编辑重确认和业务VERIFY门保留；双槽v3/模板组合未扩。冻结八模块154PASS、880输入零漂移，独审5场景PASS、无剩余P1/P2；9365只是精确collection。Windows/owner授权及真实来源、履约门保持。见[实质交付与原件](EmployeesManualProvenance-20261020.md)。下方历史范围不变。
+
 ## 2026-10-20：普通事项已接单、零回执的明确交接
 
 源码 `b56c53720332e14c043c6b5580de049bfe361bad` 沿原§5.5/F2-T04/T07补齐：专员明确撤回零提交步骤后，原表单另选已有合法执行者，新方本人接单创建独立步骤；原历史/首次截止保留，不加Run权限。冻结五相关模块152PASS、875输入零漂移，独审5个场景PASS且无P1/P2阻断；原HTML NodeVM配真实普通HTTP/worker/owned PG完成办理链，不称真实浏览器。当前9356精确collection、3537AST目录已刷新；Windows/正式来源/真实履约与原授权门仍未完成。见[实质交付与原始证据](OrdinaryPendingReceiptHandoff-20261020.md)。以下历史保持原范围。

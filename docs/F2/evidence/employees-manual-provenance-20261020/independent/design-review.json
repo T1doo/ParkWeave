@@ -1,0 +1,81 @@
+{
+  "stage": "DESIGN_ONLY_READ_ONLY",
+  "base_commit": "d974ecb39170f091362d8de07f1fc0bab75200da",
+  "verdict": "FEASIBLE_IF_CONSTRAINTS_PRESERVED_NOT_IMPLEMENTATION_SIGNOFF",
+  "source_sha256": {
+    "src/parkweave/employees_fact_provenance.py": "a88402395b4a8a167cf5e700559338ebf2354f2a4c53bff604cb75701ad15d75",
+    "src/parkweave/plan_source_conflicts.py": "6a884ee4d3977a5bd306226b1f3504323e85325e70695d92dfb9d3d8ba4d1ad0",
+    "src/parkweave/source_change_adoption.py": "da6d22ed219d57feb75702f899e8a28431bf6dd9f6dd41d99627c149909dada3",
+    "src/parkweave/service_case_steps.py": "287fcaeea0e2f858df9cbd45e71a42a7a5037fcdcbf2ba0f29599d1e740d2f63",
+    "src/parkweave/material_package_continuation.py": "ccaa139d1974241d46d582a175254a90caba7a412391e167b02bf0dd5f10716a",
+    "src/parkweave/unified_dependency_propagation.py": "c98ece38560bbbc02eb7e59f35ea2158b3289e266960278d5ae66174abc39748",
+    "docs/F2/EmployeesFactProvenanceContract-20261015.md": "db90c1f4e57eb9acc55abda1c10b2bef566d659d159377aa264cffd4022e41af",
+    "docs/F2/ManualContentContinuationContract-20261015.md": "feec46bca98871b58ade353d4e1fa813f9a1bd9f8e5827c182e39611551c2020"
+  },
+  "proposal": {
+    "request_scope": "EMPLOYEES_USER_ASSERTION_MANUAL_V1",
+    "source_change_version": 5,
+    "fact_provenance": "Reuse exact frozen inner employees v1 project/_prefix. Do not change old EMPLOYEES_USER_ASSERTION_V1/v3 admission.",
+    "manual_provenance": "New closed v1 proof: original plan/P1 identity, exact MANUAL note text+hash/revision/event_id/source_ref/source_package and exact original note event/proof reference; select as-of target ADOPT revision.",
+    "existing_note_protocol": "No new note version/action needed. Preserve note v1, note continuation proof v2, original KEEP_AND_CONTINUE/MERGE_NOTE and ledger bidirectional proof.",
+    "normalization": "Strictly validate new fact+manual proofs first. Deep-copy event; remove only validated extensions/scope; normalize envelope version/hash/expected-preview to frozen source-change v2 validation. Never erase owner_amendments or reinterpret old events."
+  },
+  "constraints": [
+    {
+      "priority": "P1",
+      "rule": "Historical manual note must be replayed from exact plan/op ledger prefix before target ADOPT. Current owner_amendments or future EDIT/continuation may not fill or replace old M. Facts remain reconstructed from original registered descriptors and actual Declare/Confirm receipts."
+    },
+    {
+      "priority": "P1",
+      "rule": "Version4 is already unified dependency propagation. Require independent explicit scope+version5 and strict integer/schema/closed-key validation; old v2/default and old employees v3 retain exact behavior/fingerprints."
+    },
+    {
+      "priority": "P1",
+      "rule": "Retain original build blockers and final re-read/CAS: affected LOCK requires original explicit UNLOCK, KEEP/DEFER unresolved, changed source/permission/ABA invalid, subsequent EDIT after continuation requires new explicit continuation. New ADOPT never makes business VERIFY/material correction satisfied."
+    },
+    {
+      "priority": "P1",
+      "rule": "Limit to unique P1 origin MANUAL note, original service/profile/owner/Case/Run, no template migration, partial plan or unified-dependency combination. Reject package.active(plan) including any retained note proof-v3 history."
+    },
+    {
+      "priority": "P1",
+      "rule": "Do not shrink aggregate affected/preserved using selected-employees fine nodes or manual line coverage. Unknown/missing/corrupt original history -> whole Case UNKNOWN, preserved empty and no adoption."
+    },
+    {
+      "priority": "P2",
+      "rule": "Normal MANUAL always has a two-item source_package. Excluding dual-slot means excluding explicit package-continuation-v3 protocol; refusing every two-item package makes the feature impossible."
+    },
+    {
+      "priority": "P2",
+      "rule": "Keep complete manual UTF-8/whitespace and B/M/S identities; no semantic merge/truth inference. Public proof/body only under original owner/material/fact field READ, and no manual text/tokens in recovery localStorage."
+    },
+    {
+      "priority": "P2",
+      "rule": "Expose separate explicit UI choice, exact scope/request whitelist/hash proof check and existing delayed-response/identity/generation/403/UNKNOWN recovery gates. Do not silently choose new scope for old button."
+    },
+    {
+      "priority": "P1",
+      "rule": "The new history projector must not call service._recovery_proofs/dependencies.plan_proof recursively from within validate_history. The existing notes.validate_plan_history pure ledger route is suitable."
+    }
+  ],
+  "oracles": [
+    "Same valid MANUAL Case: old employees scope remains rejected; explicit new scope succeeds, preserves exact M and old fact descriptor history, default v2 remains usable and nonsticky.",
+    "Fact-selected source change + unchanged initial MANUAL anchor: explicit new ADOPT followed by actual correction/VERIFY; initial note does not need invented continuation event.",
+    "Changed outline: KEEP_MANUAL/DEFER cannot adopt; UNLOCK and explicit KEEP_AND_CONTINUE/MERGE_NOTE rebase only with complete exact-line carriage and M preserved; then explicit scoped ADOPT and required business correction/VERIFY.",
+    "Affected manual LOCK blocks until original UNLOCK; no automatic unlock/adopt/verify and unchanged unaffected locks.",
+    "Post-continuation EDIT, including same covered text and A-to-B-to-A, invalidates old preview/continuation; re-preview and explicit continue required.",
+    "Valid saved v5 ADOPT remains cold-readable after later fact/manual edits; reconstructed historical M is the then-current note, never latest M.",
+    "Missing/tampered original fact receipt, note plan/op counterpart, original source anchor, note event ref/revision/body/hash, float/bool schema or changed scope rejects without writes.",
+    "Between preview and POST fact/material/field-grant/source ABA or owner revocation rejects; different body same key rejects; committed lost-response cold GET returns original event without automatic replay.",
+    "SOURCE-origin note, package-v3-active history, migrated template, unified dependency scope and no MANUAL rejected only under new combination; old protocols unchanged.",
+    "Full shipped HTML explicit new scope and scope whitelist; changed draft/Case/actor/generation or delayed response cannot adopt; 403 clears private view and UNKNOWN uses original GET-key recovery."
+  ],
+  "executed_tests": [],
+  "scope": "No repository writes, PG, network, real permissions, models or native Windows operations performed.",
+  "reviewed_design_contract": {
+    "path": "/workspace/ParkWeave/docs/F2/EmployeesManualProvenanceContract-20261020.md",
+    "sha256": "0d753f4ed594a1bf03cf49e3f75a48350c014540068b9737ebd93689a22c41a4",
+    "decision": "ACK_NO_P1_P2_DESIGN_BLOCKER",
+    "implementation_signoff": false
+  }
+}
