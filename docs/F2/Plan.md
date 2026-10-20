@@ -1,3 +1,7 @@
+## 2026-10-20：AT-26 固定人工锁与历史事实工程切片
+
+源码 `5f28e77ed4415f6d3d468635195eda26f381d5e8`，原 runner 当前单一固定场景实际1PASS/0FAIL/0SKIP（80.05秒），source_binding AVAILABLE；正式AT-26仍NOT_RUN。两Case完整人工原文与锁、A冲突拒绝、显式解锁/接受源/采纳/业务纠正和五次VERIFY在同次HTTP/ASGI/owned synthetic PG执行；18阶段保留38条原实体历史，B不变、模板不自动发布、Case不自动完成。产品运行代码无改动，失败与开发窗口独列。898输入零漂移，9366仅精确collection，Windows/真实来源/owner授权门保持。见[实质结果与原件](AT26FixedManualHistory-20261020.md)。下一项转原AT-25独立统计，不扩大组合协议；下方历史保留。
+
 ## 2026-10-20：员工来源与MANUAL窄兼容
 
 源码 `ff6e1c4151b2cf71beaeab9b9620702b46225eb1` 沿原F3-T02/T03，新增显式v5把原注册员工事实来源与当时MANUAL全文分别证明，历史按ADOPT前缀重放，不用当前事实/正文补旧历史。原v2默认、v3、锁/KEEP-DEFER/继续后编辑重确认和业务VERIFY门保留；双槽v3/模板组合未扩。冻结八模块154PASS、880输入零漂移，独审5场景PASS、无剩余P1/P2；9365只是精确collection。Windows/owner授权及真实来源、履约门保持。见[实质交付与原件](EmployeesManualProvenance-20261020.md)。下方历史范围不变。

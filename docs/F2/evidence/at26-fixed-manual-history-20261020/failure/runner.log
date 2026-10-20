@@ -1,0 +1,48 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck __
+
+two_cases = {'u': {'f': (<parkweave.store.Store object at 0x7fc3ac5571a0>, <parkweave.store.Store object at 0x7fc3ac1d6450>, {'fix...eparation', 'original_goal': 'SYNTHETIC PRIVATE_FRESH_fixture-a_241 independently submitted request', ...}, ...}}, ...}
+
+    def test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck(two_cases):
+        """One current execution of the fixed C26 sequence, not formal AT-26 PASS."""
+        t = two_cases; f = t['f']; row = t['rows']['A']
+        n0 = 'SYNTHETIC AT26 人工原文第一行\n第二行：保留全部内容、标点与方法决定。\n'
+        for label, parent in t['rows'].items():
+            value = conflict_view(t, label).json()
+            response = conflict_write(t, conflict_body(value, 'EDIT_NOTE', text=n0), label)
+            assert response.status_code == 200, response.text
+            assert response.json()['current']['note']['text'] == n0
+            assert lock(f, parent, 'P1').status_code == 200
+        # This slice's frozen initial state includes BOTH explicit notes and locks.
+        # The generic fixture's earlier baseline remains separately recorded.
+        t['initial'] = {label: deepcopy(stored(f, parent)) for label, parent in t['rows'].items()}
+        m0 = {label: conflict_view(t, label).json()['source'] for label in t['rows']}
+        frozen_consumer = full_business(t)['consumer']
+        frozen_template = sqlite_snapshot(t['u']['engine'].repository)
+>       change_traffic_start = len(t['traffic'])
+                                   ^^^^^^^^^^^^
+E       KeyError: 'traffic'
+
+tests/test_at24_27_change_batch_independent.py:609: KeyError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_at24_27_change_batch_independent.py::test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_at24_27_change_batch_independent.py::test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_at24_27_change_batch_independent.py::test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_at24_27_change_batch_independent.py::test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck
+1 failed, 4 warnings in 18.09s

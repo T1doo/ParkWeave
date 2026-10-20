@@ -1,0 +1,352 @@
+{
+  "verdict": "LIMITED_PASS_NO_P1_P2_FOR_FIXED_AT26_ENGINEERING_SLICE",
+  "reviewed_source_commit": "5f28e77ed4415f6d3d468635195eda26f381d5e8",
+  "independently_executed_tests": 0,
+  "mode": "Read-only static and primary evidence audit; no additional PG/test scenario run",
+  "primary_actual_runner": {
+    "command_core": "scripts/run_acceptance.py --ids AT-26 --source-head 5f28e77ed4415f6d3d468635195eda26f381d5e8",
+    "report": "/workspace/scratch/at26-fixed-20261020/acceptance-report.json",
+    "sha256": "295cd10d83888f8ad1cfb5a325a5562d198694925fd59a20cd89d51de4d84ac2",
+    "source_binding": {
+      "state": "AVAILABLE",
+      "head_sha": "5f28e77ed4415f6d3d468635195eda26f381d5e8"
+    },
+    "result": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "80.048"
+    },
+    "engineering_subset": "PARTIAL_PASS",
+    "whole_AT26": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "full_regression": false
+  },
+  "source_files_sha256": {
+    "tests/test_at24_27_change_batch_independent.py": "d121b21c904b9f41d09c2763b7367afda984b45840a6b9b01afc3179cf189fa8",
+    "docs/F1/ATBindings.json": "2216bcc30db515db7fe1ff65da820c7eec45ffa6d4e1e6ef069d7a08fc797df9",
+    "docs/F2/AT26FixedManualHistoryContract-20261020.md": "e4290a454df3c666dea732ad930afc26aa0b9b4eec8ced4b7754f726a2720b2e",
+    "scripts/run_acceptance.py": "3ec5bba8718dd68be9e154886971f07584151f0387503fb1703be09f62431291"
+  },
+  "frozen_manifest": {
+    "path": "/workspace/scratch/at26-fixed-20261020/frozen-source-sha256.json",
+    "sha256": "b729223b575cc35b073e0369e96c501619f873b264cda16cd299c1109a09af03",
+    "checked_files": 898,
+    "drift": []
+  },
+  "evidence_checks": {
+    "stages": 18,
+    "denials": 10,
+    "original_immutable_history_tables": {
+      "case_local_events": 2,
+      "preparation_events": 12,
+      "preparation_evidence": 4,
+      "service_dispatch_events": 4,
+      "service_receipt_events": 6,
+      "service_step_receipts": 2,
+      "synthetic_resource_combination_receipts": 2,
+      "synthetic_resource_receipts": 6
+    },
+    "old_entity_rows": 38,
+    "http_requests": 179,
+    "POST_requests": 32,
+    "template_publication_POSTs": 0,
+    "B_note_history_current_P1_lock_unchanged": true,
+    "A_old_events_and_sources_retained": true,
+    "N0_full_Chinese_and_newline_preserved": true,
+    "exact_explicit_action_order": [
+      "KEEP_MANUAL",
+      "DEFER",
+      "UNLOCK",
+      "ACCEPT_SOURCE",
+      "ADOPT",
+      "VERIFY",
+      "VERIFY",
+      "VERIFY",
+      "VERIFY",
+      "VERIFY"
+    ],
+    "current_goal_not_verified_until_P5": true,
+    "all_case_goal_completed_false": true
+  },
+  "phase_summary": [
+    {
+      "stage": "both_manual_notes_and_locks_frozen",
+      "A_P1": "VERIFIED",
+      "A_goal": "LOCAL_OUTPUTS_VERIFIED",
+      "new_actions": []
+    },
+    {
+      "stage": "A_source_changed_old_success_and_current_conflict_separate",
+      "A_P1": "LOCK_CONFLICT",
+      "A_goal": "UNVERIFIED",
+      "new_actions": []
+    },
+    {
+      "stage": "KEEP_MANUAL_does_not_resolve_lock_or_adopt",
+      "A_P1": "LOCK_CONFLICT",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL"
+      ]
+    },
+    {
+      "stage": "DEFER_does_not_resolve_lock_or_adopt",
+      "A_P1": "LOCK_CONFLICT",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER"
+      ]
+    },
+    {
+      "stage": "explicit_UNLOCK_is_not_content_resolution_or_verification",
+      "A_P1": "NEEDS_RECHECK",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK"
+      ]
+    },
+    {
+      "stage": "explicit_ACCEPT_SOURCE_is_not_fact_verification",
+      "A_P1": "NEEDS_RECHECK",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE"
+      ]
+    },
+    {
+      "stage": "explicit_ADOPT_retains_old_verified_sources_until_business_recheck",
+      "A_P1": "NEEDS_RECHECK",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT"
+      ]
+    },
+    {
+      "stage": "actual_business_review_material_before_VERIFY",
+      "A_P1": "NEEDS_RECHECK",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT"
+      ]
+    },
+    {
+      "stage": "explicit_P1_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "actual_business_relink_resources_before_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "explicit_P2_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "actual_business_reoffer_accept_before_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "explicit_P3_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "actual_business_new_report_ack_before_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "explicit_P4_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "actual_business_revalidate_local_before_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "UNVERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "explicit_P5_VERIFY",
+      "A_P1": "VERIFIED",
+      "A_goal": "LOCAL_OUTPUTS_VERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    },
+    {
+      "stage": "six_local_outputs_verified_business_case_not_auto_completed",
+      "A_P1": "VERIFIED",
+      "A_goal": "LOCAL_OUTPUTS_VERIFIED",
+      "new_actions": [
+        "KEEP_MANUAL",
+        "DEFER",
+        "UNLOCK",
+        "ACCEPT_SOURCE",
+        "ADOPT",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY",
+        "VERIFY"
+      ]
+    }
+  ],
+  "literal_and_binding_review": {
+    "original_spec_and_two_literal_oracles_unchanged": true,
+    "other_acceptance_rows_unchanged": true,
+    "AT26_one_engineering_selector_formal_status_unchanged": true
+  },
+  "privacy": {
+    "actual_private_values_checked": 10,
+    "exact_or_first12_prefix_matches": 0,
+    "secret_values_or_secret_file_not_published": true
+  },
+  "artifacts": [
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/baseline-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "bdf6bc80a07926cc306590abffa78c8f95d39ec810aa7832bf214c8773a5f2d7"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/at26-fixed-stages-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "81c01efd7e9323846e9af4da8897ea385fd29a58c36ae20ad3c03a0d73c84610"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/at26-fixed-denials-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "1e4bc71e8b10535d88c063243e5cfaccb410dc818059f3daf4d7cc0eaef7cc64"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/at26-fixed-http-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "dd5c77c66d88b7b9053acab0c1df207615440ae2ae4db8bd680697281389e0e9"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/at-results-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "e11aa2ec7a672b233dcdb230f355455c9dfac9bebf0dd91cf8d95dfc11f1b8d1"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/at24-27-independent/oracle-e25a00e2a0a749d381260aeb22a33370.jsonl",
+      "sha256": "ef8516919b468b807222aa69a471b2ace17687406fda73eed7abcafbf70772a5"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/pytest-60ec60ad8496428abbeecea24cba9c61.log",
+      "sha256": "6dde3128388ca2f5efe7ba27a307ef9fbce8a623e350a601ef7cec1ca39493d6"
+    },
+    {
+      "path": "/workspace/ParkWeave/.runtime/pytest-36a334bc538a4cab8f62a6a1695a1353.xml",
+      "sha256": "09a9d785f8be54419d9e6fd8af8d41f215230640b9952999c8ef7be913456035"
+    }
+  ],
+  "prior_windows_separate": [
+    "Development on earlier dirty test bytes: 1PASS/83.15s; not counted as frozen PASS.",
+    "980df315c511a2539a74b86d18d2efbaad700839 original runner: 0PASS/1FAIL from test-only t.traffic lookup; not product failure or overwritten success. Corrected immutable-history and traffic evidence run is this 5f28 receipt."
+  ],
+  "limitations": [
+    "Independent review did not query PG/SQLite or rerun the primary test. Actual runtime assertions enforce old immutable row subset and no consumer/template change; this audit checks source assertions and recorded row IDs/hashes/phase consistency.",
+    "Formal AT26/whole AT_EX, real browser, Windows/native, real model and real business fulfillment remain NOT_RUN. No new permissions/protocol/production operation.",
+    "AT25 metrics are NOT_RUN and no missed-update/incorrect-change numbers are inferred from this AT26 slice."
+  ]
+}

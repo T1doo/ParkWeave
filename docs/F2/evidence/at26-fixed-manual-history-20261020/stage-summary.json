@@ -1,0 +1,433 @@
+{
+  "source_sha": "5f28e77ed4415f6d3d468635195eda26f381d5e8",
+  "run_id": "e25a00e2a0a749d381260aeb22a33370",
+  "formal_AT26": "NOT_RUN",
+  "scope": "LINUX_SYNTHETIC_HTTP_ASGI_ENGINEERING_ONLY",
+  "stage_count": 18,
+  "rejected_write_count": 10,
+  "rejected_writes": [
+    {
+      "action": "EDIT_NOTE_WHILE_LOCKED",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "ACCEPT_SOURCE_WHILE_LOCKED",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "VERIFY_WHILE_LOCKED",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "KEEP_MANUAL_BOUND_ADOPT",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "KEEP_MANUAL_PROOFLESS_ADOPT",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "DEFER_BOUND_ADOPT",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "DEFER_PROOFLESS_ADOPT",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "UNLOCKED_UNRESOLVED_PROOFLESS_ADOPT",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "UNLOCKED_UNREPAIRED_VERIFY",
+      "status": 409,
+      "no_write": true
+    },
+    {
+      "action": "ADOPTED_UNREPAIRED_VERIFY",
+      "status": 409,
+      "no_write": true
+    }
+  ],
+  "http_requests": 179,
+  "old_immutable_rows_by_table": {
+    "case_local_events": 2,
+    "preparation_events": 12,
+    "preparation_evidence": 4,
+    "service_dispatch_events": 4,
+    "service_receipt_events": 6,
+    "service_step_receipts": 2,
+    "synthetic_resource_combination_receipts": 2,
+    "synthetic_resource_receipts": 6
+  },
+  "current_and_history_separate": [
+    {
+      "stage": "both_manual_notes_and_locks_frozen",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "A_goal_state": "LOCAL_OUTPUTS_VERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "A_source_changed_old_success_and_current_conflict_separate",
+      "A_states": {
+        "P1": "LOCK_CONFLICT",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "KEEP_MANUAL_does_not_resolve_lock_or_adopt",
+      "A_states": {
+        "P1": "LOCK_CONFLICT",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "DEFER_does_not_resolve_lock_or_adopt",
+      "A_states": {
+        "P1": "LOCK_CONFLICT",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_UNLOCK_is_not_content_resolution_or_verification",
+      "A_states": {
+        "P1": "NEEDS_RECHECK",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_ACCEPT_SOURCE_is_not_fact_verification",
+      "A_states": {
+        "P1": "NEEDS_RECHECK",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_ADOPT_retains_old_verified_sources_until_business_recheck",
+      "A_states": {
+        "P1": "NEEDS_RECHECK",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "actual_business_review_material_before_VERIFY",
+      "A_states": {
+        "P1": "NEEDS_RECHECK",
+        "P2": "BLOCKED",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_P1_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "NEEDS_RECHECK",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "actual_business_relink_resources_before_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "NEEDS_RECHECK",
+        "P3": "BLOCKED",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_P2_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "NEEDS_RECHECK",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "actual_business_reoffer_accept_before_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "NEEDS_RECHECK",
+        "P4": "BLOCKED",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_P3_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "NEEDS_RECHECK",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "actual_business_new_report_ack_before_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "NEEDS_RECHECK",
+        "P5": "BLOCKED"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_P4_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "NEEDS_RECHECK"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "actual_business_revalidate_local_before_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "NEEDS_RECHECK"
+      },
+      "A_goal_state": "UNVERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "explicit_P5_VERIFY",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "A_goal_state": "LOCAL_OUTPUTS_VERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    },
+    {
+      "stage": "six_local_outputs_verified_business_case_not_auto_completed",
+      "A_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "A_goal_state": "LOCAL_OUTPUTS_VERIFIED",
+      "B_states": {
+        "P1": "VERIFIED",
+        "P2": "VERIFIED",
+        "P3": "VERIFIED",
+        "P4": "VERIFIED",
+        "P5": "VERIFIED"
+      },
+      "old_entity_rows_exact": true,
+      "template_sha256": "85e4ce8a77afbd810734f770e0fb1c2766a338508bb732d19f70015115cf2160"
+    }
+  ]
+}
