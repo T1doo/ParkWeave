@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import stat
 import sys
-from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary,acceptance_failure,source_binding,ACCEPTANCE_REASONS,shard_summary
+from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,TEST_ID_PATTERN,_allowed_tests,browser_summary,acceptance_failure,source_binding,ACCEPTANCE_REASONS,shard_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
 from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation,validate_identity_refusal
 from regression_progress import PHASES as REGRESSION_PHASES,observation as regression_observation
@@ -214,7 +214,7 @@ def annotation_case(row,allowed):
         value['regression_phase']=row['regression_phase']
     if 'active_test_id' in row:
         test=row['active_test_id']
-        if row['case']!='full_engineering_regression' or 'regression_phase' not in row or not isinstance(test,str) or test not in allowed or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',test):raise ValueError('invalid active test')
+        if row['case']!='full_engineering_regression' or 'regression_phase' not in row or not isinstance(test,str) or test not in allowed or not re.fullmatch(TEST_ID_PATTERN,test):raise ValueError('invalid active test')
         value['active_test_id']=test.removeprefix('tests/').replace('.py::','::')
     if 'shards' in row:
         if row['case']!='full_engineering_regression':raise ValueError('invalid shard case')
@@ -230,10 +230,10 @@ def annotation_case(row,allowed):
         d=row['failure_diagnostics'];states=STATES|{'DIAGNOSTIC_FIELDS_INVALID','DIAGNOSTIC_FIELDS_MISSING'}
         if not isinstance(d,dict) or d.get('state') not in states:raise ValueError('invalid diagnostic')
         ids=d.get('failed_test_ids')
-        if not isinstance(ids,list) or len(ids)>MAX_FAILURE_IDS or any(not isinstance(x,str) or x not in allowed or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',x) for x in ids):raise ValueError('invalid IDs')
+        if not isinstance(ids,list) or len(ids)>MAX_FAILURE_IDS or any(not isinstance(x,str) or x not in allowed or not re.fullmatch(TEST_ID_PATTERN,x) for x in ids):raise ValueError('invalid IDs')
         # Stable allowlisted test identifiers, without repository/runtime paths.
         value['diagnostic_state']=d['state']
-        value['failed_test_ids']=[x.split('::')[0].removeprefix('tests/').removesuffix('.py')+'::'+x.split('::')[1] for x in sorted(set(ids))]
+        value['failed_test_ids']=[x.removeprefix('tests/').replace('.py::','::') for x in sorted(set(ids))]
         if 'failed_test_counts' in d:
             checked=failure_diagnostics(d,allowed)
             if checked['state']=='DIAGNOSTIC_FIELDS_INVALID':raise ValueError('invalid aggregation')

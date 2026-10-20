@@ -36,6 +36,46 @@ def test_real_publisher_CLI_annotations_expose_safe_failure_without_paths(public
         assert private not in '\n'.join(commands)
 
 
+def test_real_publisher_preserves_allowlisted_class_method_identity(publication):
+    source,path,output=publication;m=module('publish_summary')
+    test='tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+    assert test in m._allowed_tests()
+    record=json.loads(path.read_bytes());row=record['cases'][0]
+    row.update(regression_phase='pytest_call',active_test_id=test)
+    row['failure_diagnostics'].update(failed_test_ids=[test],failed_test_counts={test:1},mapped_failed_cases=1,mapped_cases_omitted=0)
+    path.write_text(json.dumps(record),encoding='utf-8')
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=minimal_environment(os.environ,**source),capture_output=True,text=True,timeout=15)
+    assert result.returncode==0 and result.stderr==''
+    public=console_json(result.stdout)
+    assert public['cases'][0]['active_test_id']==test
+    assert public['cases'][0]['failure_diagnostics']['failed_test_ids']==[test]
+    values=payloads([line for line in result.stdout.splitlines() if line.startswith(PREFIX)])
+    case=values[1];display='test_demo_preflight::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+    assert case['active_test_id']==display and case['failed_test_ids']==[display]
+    assert case['failed_test_case_counts']==[1] and case['mapped_failed_cases']==1
+    assert case['annotation_ids_omitted']==0 and not case['ids_truncated']
+    assert test in output.read_text(encoding='utf-8')
+
+
+@pytest.mark.parametrize('field',['active_test_id','failed_test_ids'])
+@pytest.mark.parametrize('identity',[
+    'tests/test_demo_preflight.py::OtherClass::test_wrong_python_not_accepted_as_ready',
+    'tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready[param]',
+    'tests/test_demo_preflight.py::DemoPreflightTests::Nested::test_wrong_python_not_accepted_as_ready',
+])
+def test_class_annotation_requires_exact_catalog_member_and_shared_grammar(publication,monkeypatch,field,identity):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    row=public['cases'][0];row['regression_phase']='pytest_call'
+    if field=='active_test_id':row[field]=identity
+    else:row['failure_diagnostics'][field]=[identity]
+    # Unknown valid spelling must fail membership; even a poisoned catalog
+    # cannot permit parameter or nested-class spellings outside the grammar.
+    if '[' in identity or '::Nested::' in identity:
+        monkeypatch.setattr(m,'_allowed_tests',lambda:{identity})
+    commands,ok=m.annotation_commands(public)
+    assert not ok and payloads(commands)==[{'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'}]
+
+
 @pytest.mark.parametrize('field', ['case','status','phase','category','reason','failed_test_id','active_phase','report_state'])
 def test_hostile_annotation_fields_fail_closed_before_any_case(publication,field):
     source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
