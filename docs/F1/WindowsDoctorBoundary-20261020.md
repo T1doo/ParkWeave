@@ -21,3 +21,21 @@ Common/PythonCommand各用默认false的独立脚本switch，避免其他包装�
 共享有界driver增加精确的新分支入口；只允许两条已指定dev分支，不能用main覆盖。细分workflow沿原已审公开标准windows-2025路径，run1/attempt1、job6分钟、metadata20秒、Doctor25秒和仅psutil7.2.2依赖pin不变。此处细分准备不是新实测通过，也未据尚未验证的autoload猜测改正常运行路径。Python stderr被旧PowerShell包装为NativeCommandError的可能仅是后续解释限制；第一窗没有执行到Python，所以不能用该可能解释已观察超时。
 
 7项标准库诊断合同本地通过；前一阶段6项独审合同及已有5项默认标记合同通过，重复范围不叠加。当前环境缺pytest，既有pytest回归仍NOT_RUN，没有安装测试依赖。细分实测及后续因果修复按真实回执另记。
+
+## 第二阶段实测：首次 Join-Path 求值未返回
+
+受测源 `3b41a5a62ed87a8e2f8ace5e26cab3a6b932c052`，[run39362533098](https://github.com/T1doo/ParkWeave/actions/runs/39362533098)／[job118431750331](https://github.com/T1doo/ParkWeave/actions/runs/39362533098/job/118431750331)，实际 FAIL。[原始安全 JSON](evidence/windows-doctor-source-boundary-ci-20261020.json)保留。Server门0.047秒通过，Doctor25.032秒原上限超时，driver25.14秒。
+
+stderr严格为59字节的 `PS_DOCTOR_ENTERED`、`PS_COMMON_PATH_BEGIN` 两条固定标记，哈希 `0834982e8a8700d26c76fcfdb703e59be45d04d61b14fcbc7af2dd36e5626651`；stdout仍为空，无其他stderr/原错误协议。未收到 `PS_COMMON_PATH_READY` 或 `PS_COMMON_ENTERED`，因此确定原第一次 `Join-Path $PSScriptRoot 'Common.ps1'` 调用未返回；不是已经卡在Common内部、Get-Command、lifecycle或check_python。Join-Path内部是发现命令、加载模块还是cmdlet实现耗时，现有证据仍不能直接区分。
+
+两窗诊断都只调用一次原Doctor、保留25秒和最小环境；第二窗由第一窗的实际边界触发，只细分未返回语句，不是相同输入循环重试。7合同独审独立通过、无开放P1/P2，没有更改安全策略、白名单或原生命周期退出判定。
+
+## 最小修复及默认路径验证准备
+
+仅将Doctor trace/default两支里同一个路径求值改成 `Microsoft.PowerShell.Management\Join-Path $PSScriptRoot 'Common.ps1'`。路径参数、dot-source目标、原始默认Python调用及其他包装器不改。不是用.NET改写路径语义或增加模块安装；不设置PSModulePath、不预加载外部模块、换shell或改变执行/错误策略。
+
+[PowerShell5.1官方命令优先级文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_command_precedence?view=powershell-5.1)说明，未限定且未加载的cmdlet会搜索模块；模块限定名明确指定预期命令，并可按原自动加载规则导入。基于已定位的首次未限定Join-Path边界，限定内置模块是最小候选因果修复；文档本身不证明此runner内部发生了哪种等待。
+
+验证准备是另一个一次性公开标准Windows CI，单次原 `powershell.exe -NoProfile -NonInteractive -File Doctor.ps1 -Python <同一venv>`，**不开TraceStages**，不重跑简单入口。沿用原25秒门/最小环境/Server20秒/17文件hash/fresh状态/psutil pin。默认输出必须是原Doctor JSON，model DISABLED、新Setup OWNER_MUTATION_PAUSED/NOT_ACCEPTED，exit0且stderr为空才通过；不把带trace的诊断通过代替默认运行。
+
+10项诊断/验证标准库合同及已有5项标记合同本地通过，其中新增默认调用无trace参数/标记、原25秒/单次且超时不重试、坏JSON/非零退出/额外stderr均拒绝，以及精确分支/trace模式成对限定。它们不是尚未执行的默认Windows验证成绩。下一实测按真实回执填写。

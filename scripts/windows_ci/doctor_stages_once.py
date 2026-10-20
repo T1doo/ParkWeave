@@ -17,17 +17,20 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 BRANCH = "refs/heads/dev/windows-doctor-stages-20261020"
-AUTHORIZED_BRANCHES = frozenset({BRANCH, "refs/heads/dev/windows-doctor-source-boundary-20261020"})
+AUTHORIZED_BRANCHES = frozenset({BRANCH, "refs/heads/dev/windows-doctor-source-boundary-20261020",
+                                 "refs/heads/dev/windows-doctor-joinpath-20261020"})
 PROBE_TIMEOUT = 25
 
 
-def probe_command():
-    return ["powershell.exe", "-NoProfile", "-NonInteractive", "-File",
-            str(ROOT / "scripts/windows/Doctor.ps1"), "-Python", sys.executable, "-TraceStages"]
+def probe_command(trace=True):
+    command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-File",
+               str(ROOT / "scripts/windows/Doctor.ps1"), "-Python", sys.executable]
+    return command + ["-TraceStages"] if trace else command
 
 
-def require_context(environment, branch=BRANCH):
-    if branch not in AUTHORIZED_BRANCHES:
+def require_context(environment, branch=BRANCH, trace=True):
+    if (branch not in AUTHORIZED_BRANCHES or type(trace) is not bool
+            or trace != (branch != "refs/heads/dev/windows-doctor-joinpath-20261020")):
         raise RuntimeError("unapproved diagnostic branch refused")
     expected = dict(NATIVE_REPOSITORY="T1doo/ParkWeave", NATIVE_REF=branch, NATIVE_EVENT="push",
                     NATIVE_ATTEMPT="1", NATIVE_NUMBER="1", NATIVE_PUBLIC="true",
@@ -68,11 +71,11 @@ BOUNDARIES = (
 )
 
 
-def observe_doctor(capture):
+def observe_doctor(capture, trace=True):
     started = time.monotonic()
     timed_out, exit_code = False, None
     try:
-        result = capture(probe_command(), "DOCTOR_STAGES", PROBE_TIMEOUT)
+        result = capture(probe_command(trace), "DOCTOR_STAGES" if trace else "DOCTOR_DEFAULT", PROBE_TIMEOUT)
         stdout, stderr, exit_code = result.stdout, result.stderr, result.returncode
     except subprocess.TimeoutExpired as error:
         timed_out = True
@@ -101,8 +104,9 @@ def observe_doctor(capture):
     except (ValueError, UnicodeError, AttributeError, TypeError):
         pass
     passed = (not timed_out and exit_code == 0 and bounded and not other
-              and not unknown and ordered and stages == list(STAGES) and valid_doctor)
-    return dict(status="PASS_FRESH_DOCTOR_DIAGNOSTIC_ONLY" if passed else "FAIL_DOCTOR_DIAGNOSTIC",
+              and not unknown and ordered and stages == (list(STAGES) if trace else []) and valid_doctor)
+    success = "PASS_FRESH_DOCTOR_DIAGNOSTIC_ONLY" if trace else "PASS_FRESH_DOCTOR_DEFAULT_ONLY"
+    return dict(status=success if passed else "FAIL_DOCTOR_DIAGNOSTIC",
                 timed_out=timed_out, error_type="TimeoutExpired" if timed_out else None, exit_code=exit_code,
                 stages=stages, last_stage=stages[-1] if stages else None,
                 unreturned_boundaries=[name for name, begin, end in BOUNDARIES if begin in stages and end not in stages],
@@ -116,15 +120,16 @@ def observe_doctor(capture):
                 limit_seconds=PROBE_TIMEOUT, seconds=round(time.monotonic() - started, 3))
 
 
-def main(branch=BRANCH):
-    report = dict(scope="WINDOWS_SERVER_DOCTOR_STAGES_DIAGNOSTIC_ONLY", status="NOT_RUN", doctor_invoked=False,
-                  internal_stage_markers_enabled=True, original_doctor_limit_seconds=25,
+def main(branch=BRANCH, trace=True):
+    report = dict(scope="WINDOWS_SERVER_DOCTOR_STAGES_DIAGNOSTIC_ONLY" if trace else "WINDOWS_SERVER_DOCTOR_DEFAULT_VERIFICATION_ONLY",
+                  status="NOT_RUN", doctor_invoked=False,
+                  internal_stage_markers_enabled=trace, original_doctor_limit_seconds=25,
                   real_model_calls=0, database_calls=0, owner_ACL_security_mutations=0,
                   whole_AT01="NOT_RUN", Win11="NOT_RUN", native_wrapper_acceptance="NOT_RUN")
     out = None
     started = time.monotonic()
     try:
-        report["source_sha"] = require_context(os.environ, branch)
+        report["source_sha"] = require_context(os.environ, branch, trace)
         if sys.platform != "win32" or sys.version_info[:2] != (3, 12) or struct.calcsize("P") != 8:
             raise RuntimeError("native Windows Python3.12 x64 required")
         runner_temp = Path(os.environ["RUNNER_TEMP"]).resolve()
@@ -161,8 +166,9 @@ def main(branch=BRANCH):
         frozen = preflight.original_sources()
         preflight.fresh_application_state()
         report["doctor_command_attempted"] = True
-        report["doctor_probe"] = observe_doctor(capture)
-        report["doctor_invoked"] = "PS_DOCTOR_ENTERED" in report["doctor_probe"]["stages"]
+        report["doctor_probe"] = observe_doctor(capture, trace)
+        report["doctor_invoked"] = ("PS_DOCTOR_ENTERED" in report["doctor_probe"]["stages"]
+                                    or report["doctor_probe"]["doctor_output_valid"])
         preflight.fresh_application_state()
         if preflight.original_sources() != frozen:
             raise RuntimeError("original launchers or environment helper changed")
@@ -178,7 +184,8 @@ def main(branch=BRANCH):
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as stream:
             stream.write("```json\n" + serialized + "\n```\n")
-    return 0 if report["status"] == "PASS_FRESH_DOCTOR_DIAGNOSTIC_ONLY" else 1
+    success = "PASS_FRESH_DOCTOR_DIAGNOSTIC_ONLY" if trace else "PASS_FRESH_DOCTOR_DEFAULT_ONLY"
+    return 0 if report["status"] == success else 1
 
 
 if __name__ == "__main__":

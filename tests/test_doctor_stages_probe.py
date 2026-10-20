@@ -91,6 +91,39 @@ class DoctorStagesContract(unittest.TestCase):
         self.assertEqual(result['unreturned_boundaries'], ['DOT_SOURCE_COMMON', 'COMMON_PATH_COMMAND'])
         self.assertNotIn('COMMON_FILE_ENTRY', result['unreturned_boundaries'])
 
+    def test_default_verification_has_no_trace_argument_or_markers_and_same_budget(self):
+        capture = Mock(return_value=SimpleNamespace(stdout=stdout(), stderr=b'', returncode=0))
+        result = probe.observe_doctor(capture, trace=False)
+        capture.assert_called_once_with(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
+            str(probe.ROOT / 'scripts/windows/Doctor.ps1'), '-Python', sys.executable], 'DOCTOR_DEFAULT', 25)
+        self.assertEqual(result['status'], 'PASS_FRESH_DOCTOR_DEFAULT_ONLY')
+        self.assertEqual(result['stages'], [])
+        for output, error, code in [(b'{}', b'', 0), (stdout(), b'PRIVATE_SENTINEL', 0),
+                                    (stdout(), stderr(probe.STAGES), 0), (stdout(), b'', 1)]:
+            with self.subTest(code=code, stderr_size=len(error)):
+                result = probe.observe_doctor(Mock(return_value=SimpleNamespace(stdout=output, stderr=error, returncode=code)), trace=False)
+                self.assertEqual(result['status'], 'FAIL_DOCTOR_DIAGNOSTIC')
+
+    def test_default_verification_timeout_does_not_retry_or_raise_budget(self):
+        capture = Mock(side_effect=subprocess.TimeoutExpired(probe.probe_command(False), 25, output=b'', stderr=b''))
+        result = probe.observe_doctor(capture, trace=False)
+        self.assertTrue(result['timed_out'])
+        self.assertEqual(result['status'], 'FAIL_DOCTOR_DIAGNOSTIC')
+        capture.assert_called_once()
+
+    def test_exact_authorized_branch_and_mode_pair(self):
+        head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+        branch = 'refs/heads/dev/windows-doctor-joinpath-20261020'
+        valid = dict(NATIVE_REPOSITORY='T1doo/ParkWeave', NATIVE_REF=branch, NATIVE_EVENT='push',
+                     NATIVE_ATTEMPT='1', NATIVE_NUMBER='1', NATIVE_PUBLIC='true',
+                     RUNNER_ENVIRONMENT='github-hosted', RUNNER_OS='Windows', NATIVE_SHA=head)
+        self.assertEqual(probe.require_context(valid, branch, False), head)
+        for mode in (True, 0, None):
+            with self.subTest(mode=mode), self.assertRaises(RuntimeError):
+                probe.require_context(valid, branch, mode)
+        with self.assertRaises(RuntimeError):
+            probe.require_context({**valid, 'NATIVE_REF': probe.BRANCH}, probe.BRANCH, False)
+
 
 if __name__ == '__main__':
     unittest.main()
