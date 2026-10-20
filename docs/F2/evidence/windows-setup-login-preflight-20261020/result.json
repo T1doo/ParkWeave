@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "scope": "WINDOWS_SETUP_APPLICATION_LOGIN_PREFLIGHT_NOT_NATIVE_INSTALL_ACCEPTANCE",
+  "original_plan": "F1-T01/F1-T03 first-install prerequisite; continue the highest-priority Windows installation path without crossing owner/ACL or migration gates",
+  "baseline_before_slice": "afe2056a744659d053b57b140e3b965b919f67d8",
+  "source_commit": "b975af32e958d86573e01747f00699e0c6a7b681",
+  "source_sha256": {
+    "src/parkweave/installed_fixture_receipt.py": "a29581d431e85dc00166ae0908f49f70f4558675c40b98858a14bee8b64996b4",
+    "tests/test_installed_fixture_receipt.py": "f8158920199b2b1f9c0439e9a9698d8db2c928c73da25d36ea23e4328359124f"
+  },
+  "defect": "An existing parkweave_app NOLOGIN role passed the original three role-attribute checks, reached CREATE DATABASE and received creation evidence before the guaranteed later application-login failure. Offline DI reproduced this without DB or role operations.",
+  "change": "Read rolcanlogin in the same pre-CREATE pg_roles query and require exact boolean True; do not alter or repair any role. Unknown/missing/nonboolean observations refuse.",
+  "official_source": {
+    "url": "https://www.postgresql.org/docs/current/catalog-pg-authid.html",
+    "claim": "rolcanlogin determines whether the role can be the initial session identity; pg_roles exposes this without password access."
+  },
+  "red": {
+    "failed": 4,
+    "passed": 4,
+    "deselected": 87,
+    "scope": "Only pre-create role-refusal parameters; four new login observations fail old source"
+  },
+  "focused_tests": {
+    "files": [
+      "tests/test_installed_fixture_receipt.py",
+      "tests/test_lifecycle.py"
+    ],
+    "passed": 112,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 2.5,
+    "scope": "Current Linux owned temporary PG and offline seams; not installed Windows"
+  },
+  "review": {
+    "review": "LIMITED_PASS",
+    "open_P1_P2": 0,
+    "review_base_head": "afe2056a744659d053b57b140e3b965b919f67d8",
+    "source_sha256": {
+      "src/parkweave/installed_fixture_receipt.py": "a29581d431e85dc00166ae0908f49f70f4558675c40b98858a14bee8b64996b4",
+      "tests/test_installed_fixture_receipt.py": "f8158920199b2b1f9c0439e9a9698d8db2c928c73da25d36ea23e4328359124f"
+    },
+    "independent_DI_refusals_before_create": [
+      "false",
+      "none",
+      "missing",
+      "int1",
+      "int0",
+      "str_true"
+    ],
+    "positive_true_role_one_create_and_receipt": true,
+    "real_DB_calls": 0,
+    "unchanged_gates_roles_migrations": {
+      "scripts/windows/lifecycle.py": true,
+      "src/parkweave/roles.sql": true,
+      "src/parkweave/migration-026.sql": true,
+      "src/parkweave/migration-027.sql": true,
+      "src/parkweave/migration-028.sql": true,
+      "src/parkweave/migration-029.sql": true,
+      "src/parkweave/migration-030.sql": true,
+      "src/parkweave/migration-031.sql": true,
+      "src/parkweave/migration-032.sql": true
+    },
+    "reviewed_sources_unchanged": true,
+    "limits": [
+      "LOGIN preflight does not prove actual credentials, CONNECT privilege or end-to-end native Setup",
+      "No Windows, role mutation, migration or database action executed"
+    ]
+  },
+  "collection": {
+    "current_cases": 9289,
+    "current_files": 394,
+    "current_stable_collection_sha256": "125304b16ac6213c0f294583f55fdac3140aac417604eeb44fc9f239808feabd",
+    "global_private_collection_sha256": "8f7ed4dc9132ee90aaff60d9dacd4c11ef2355f15f6f6b7fc32eb6c00e7ecd4c",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 2329,
+        "files": 96,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "92f7c3f040ed741b62d45078ff12da75cd35c98d9959b8152c18d19b31ff0b25"
+      },
+      {
+        "shard": "S2",
+        "cases": 2309,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "c0c5612b6ba87353b8a740208cc29960f2802797d83761da4f2f1bdc7def6c76"
+      },
+      {
+        "shard": "S3",
+        "cases": 2343,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "6d7b8e62c6d5c19e399e4478b05e5cf90f71272915e8fc374132d894c0d85a7e"
+      },
+      {
+        "shard": "S4",
+        "cases": 2308,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "060ac27902410235a16dce0286402583a626ec63cdd336fc18f863c98ac291d7"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "source_bytes_unchanged_during_collection": true,
+    "head_blob_raw_sha256_binding_verified": true,
+    "diagnostic_catalog_ast_completeness_claimed": false,
+    "windows_dependency_and_fixture_compatibility_claimed": false
+  },
+  "final_binding_checks": {
+    "all_394_HEAD_manifest_worktree_test_hashes_match": true,
+    "preserved_prior_history": true,
+    "baseline_roles_migrations_026_032_seed_pause_catalog_bytes_unchanged": true
+  },
+  "limits": [
+    "LOGIN preflight is a metadata snapshot, not proof of credentials, CONNECT, HBA or concurrent administrator stability",
+    "Original runtime connection and identity checks remain",
+    "OWNER_MUTATION_PAUSED and native migration026-032/roles/seed restrictions remain; no native installation or owner/DACL action attempted",
+    "Catalog remains 3509 AST / 2954 current / 555 missing with global limit 3000",
+    "Whole AT/EX and Windows/Win11 complete lifecycle not run"
+  ],
+  "real_model_calls": 0,
+  "real_budget": 0,
+  "CI_runs": 0,
+  "retained_logs": {
+    "focused.log": "02392d3b648b28d9078ca842973d3e40ba32d20e10d987053f7273e5f939e3b5",
+    "focused.xml": "9d560330094185a34b0b1f1a901e80ace38642b888e1b05a3184661484ff3632",
+    "independent-review.json": "385fce9e5a540fb836d0e6025bad3c1626ed1169c593349b2fb53dd97266c3b9",
+    "pre_fix_oracle.log": "e2ec13a1c22ad74126f34f9acf901fe0b82f155b07c79e102eef9767c0a181e0",
+    "red.log": "157647aa8f4e0db10094f261d06c33e88cf6b5e9b1c5041d4e8c575fdd4c132f",
+    "red.xml": "469765393c9c7203c064bc70effb36f6ab88e8fff28eea228fba268bfa4e0f36",
+    "refresh.log": "b16888c2a074968e3fde954a4220819ab885a74cdf7de97a03ed27e2f253fd57"
+  }
+}

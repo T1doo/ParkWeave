@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="8" time="0.134" timestamp="2026-10-20T04:32:26.915516+00:00" hostname="46632f09a754"><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[missing]" time="0.001" /><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[superuser]" time="0.001" /><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[createdb]" time="0.001" /><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[createrole]" time="0.000" /><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[nologin]" time="0.001"><failure message="Failed: DID NOT RAISE Denied">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f7ca89f4290&gt;
+failure = 'nologin'
+
+    @pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole',
+                                         'nologin', 'unknown_login', 'missing_login', 'nonbool_login'])
+    def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
+        maintenance, target, opened = _setup_connections(monkeypatch)
+        if failure == 'missing':
+            maintenance.role = None
+        elif failure == 'missing_login':
+            maintenance.role.pop('rolcanlogin')
+        elif failure in ('nologin', 'unknown_login', 'nonbool_login'):
+            maintenance.role['rolcanlogin'] = {'nologin': False, 'unknown_login': None, 'nonbool_login': 1}[failure]
+        else:
+            maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
+&gt;       with pytest.raises(Denied):
+             ^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Denied
+
+tests/test_installed_fixture_receipt.py:458: Failed</failure></testcase><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[unknown_login]" time="0.001"><failure message="Failed: DID NOT RAISE Denied">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f7ca89f7fe0&gt;
+failure = 'unknown_login'
+
+    @pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole',
+                                         'nologin', 'unknown_login', 'missing_login', 'nonbool_login'])
+    def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
+        maintenance, target, opened = _setup_connections(monkeypatch)
+        if failure == 'missing':
+            maintenance.role = None
+        elif failure == 'missing_login':
+            maintenance.role.pop('rolcanlogin')
+        elif failure in ('nologin', 'unknown_login', 'nonbool_login'):
+            maintenance.role['rolcanlogin'] = {'nologin': False, 'unknown_login': None, 'nonbool_login': 1}[failure]
+        else:
+            maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
+&gt;       with pytest.raises(Denied):
+             ^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Denied
+
+tests/test_installed_fixture_receipt.py:458: Failed</failure></testcase><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[missing_login]" time="0.001"><failure message="Failed: DID NOT RAISE Denied">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f7ca89f4d70&gt;
+failure = 'missing_login'
+
+    @pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole',
+                                         'nologin', 'unknown_login', 'missing_login', 'nonbool_login'])
+    def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
+        maintenance, target, opened = _setup_connections(monkeypatch)
+        if failure == 'missing':
+            maintenance.role = None
+        elif failure == 'missing_login':
+            maintenance.role.pop('rolcanlogin')
+        elif failure in ('nologin', 'unknown_login', 'nonbool_login'):
+            maintenance.role['rolcanlogin'] = {'nologin': False, 'unknown_login': None, 'nonbool_login': 1}[failure]
+        else:
+            maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
+&gt;       with pytest.raises(Denied):
+             ^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Denied
+
+tests/test_installed_fixture_receipt.py:458: Failed</failure></testcase><testcase classname="tests.test_installed_fixture_receipt" name="test_setup_live_app_role_refused_before_create[nonbool_login]" time="0.001"><failure message="Failed: DID NOT RAISE Denied">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f7ca89f7470&gt;
+failure = 'nonbool_login'
+
+    @pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole',
+                                         'nologin', 'unknown_login', 'missing_login', 'nonbool_login'])
+    def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
+        maintenance, target, opened = _setup_connections(monkeypatch)
+        if failure == 'missing':
+            maintenance.role = None
+        elif failure == 'missing_login':
+            maintenance.role.pop('rolcanlogin')
+        elif failure in ('nologin', 'unknown_login', 'nonbool_login'):
+            maintenance.role['rolcanlogin'] = {'nologin': False, 'unknown_login': None, 'nonbool_login': 1}[failure]
+        else:
+            maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
+&gt;       with pytest.raises(Denied):
+             ^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Denied
+
+tests/test_installed_fixture_receipt.py:458: Failed</failure></testcase></testsuite></testsuites>
