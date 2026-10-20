@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.568" timestamp="2026-10-20T13:29:28.956766+00:00" hostname="1ce47ba0566b"><testcase classname="tests.test_ordinary_step_redispatch" name="test_accepted_zero_receipt_explicit_withdraw_then_new_executor_completes" time="1.324"><failure message="assert (False)">ordinary = ((&lt;parkweave.store.Store object at 0x7f1f15d61fa0&gt;, &lt;parkweave.store.Store object at 0x7f1f15d61f10&gt;, {'fixture-a': 'V..., {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+
+    def test_accepted_zero_receipt_explicit_withdraw_then_new_executor_completes(ordinary):
+        f, baseline = ordinary
+        p = prepared(f)
+        first = ok(offer(f, p)[0], 201)
+        accepted = ok(decision(f, first, 'ACCEPT'))
+        old_step = accepted['receipt_step_id']
+        ended = ok(decision(f, accepted, 'WITHDRAW'))
+        directory = ok(catalog(f, p))
+&gt;       assert directory['ready'] and directory['can_offer_again']
+E       assert (False)
+
+tests/test_ordinary_step_redispatch.py:363: AssertionError</failure></testcase></testsuite></testsuites>

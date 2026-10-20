@@ -1,0 +1,89 @@
+{
+  "verdict": "LIMITED_PASS_NO_P1_P2_IN_REVIEWED_CHANGE",
+  "reviewed_commit": "b56c53720332e14c043c6b5580de049bfe361bad",
+  "source_files": {
+    "src/parkweave/case_step_assignments.py": {
+      "sha256": "41df392d462dad9223249e7fab3dba5003453874e96923ff11b8369445ffbd93",
+      "matches_reviewed_commit": true
+    },
+    "src/parkweave/web.html": {
+      "sha256": "a1752d3187b045de95ad1a33010540d36d60e6dc3fefa44a8d7c1276c7b14780",
+      "matches_reviewed_commit": true
+    },
+    "docs/F2/OrdinaryPendingReceiptHandoffContract-20261020.md": {
+      "sha256": "104e09e6c79c148907f9f3ff0368c9d5da7db1d120e580b80819232a979e41cd",
+      "matches_reviewed_commit": true
+    },
+    "src/parkweave/ordinary_plan_sources.py": {
+      "sha256": "3c662a8ea13da8c41221ca9703c2fdfa6035216e899950af4e7ecd5c49a3d6c3",
+      "matches_reviewed_commit": true
+    },
+    "src/parkweave/executor_receipts.py": {
+      "sha256": "902df736e63f5ab4516e7322988cc6845e3bf091ea7484c90c8bdd56b6b92c1b",
+      "matches_reviewed_commit": true
+    }
+  },
+  "static_findings": {
+    "blocking": [],
+    "revision61_limit_flag": "FIXED: ordinary non-demo threshold is >60",
+    "proof": "Adjacent 2/3-event predecessors consume strict integer revisions; original ACCEPT/unique CREATE and pending-empty fields are revalidated; step set equals all withdrawn accepted generations; malformed/missing/result history refused.",
+    "admission": "Only explicit ordinary non-demo scope expands; isolated/default/legacy/demo admission stays unchanged.",
+    "locks": "Writes serialize on preparation FOR UPDATE before dispatch and receipt locks; original CAS/final source/permission/deadline checks retained."
+  },
+  "initial_window": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/ParkWeave/src:/workspace/ParkWeave/tests /workspace/parkweave-venv/bin/python -m pytest /workspace/scratch/ordinary-handoff-review/frozen/test_handoff_probe.py --rootdir=/workspace/scratch/ordinary-handoff-review/frozen -q --tb=short -p no:cacheprovider --junitxml=/workspace/scratch/ordinary-handoff-review/frozen/probe.xml > /workspace/scratch/ordinary-handoff-review/frozen/probe.log 2>&1",
+    "executed_test_artifact": "/workspace/scratch/ordinary-handoff-review/frozen/probe-initial.py",
+    "executed_artifact_sha256": "6fac56683f5f76012845e1aa39601317347094933a93abbd2cc326672900d672",
+    "note": "The command used test_handoff_probe.py before the later consumer assertions; its original exact bytes are preserved as probe-initial.py.",
+    "result": {
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "5.960",
+      "cases": [
+        "test_independent_positive_second_executor_new_step_and_receipt",
+        "test_duplicate_create_refuses_offer_or_accept_without_writes[before_offer]",
+        "test_duplicate_create_refuses_offer_or_accept_without_writes[after_offer]",
+        "test_two_original_acceptances_cannot_claim_one_step",
+        "test_missing_all_steps_does_not_erase_original_acceptance"
+      ]
+    },
+    "log": "/workspace/scratch/ordinary-handoff-review/frozen/probe.log",
+    "junit": "/workspace/scratch/ordinary-handoff-review/frozen/probe.xml"
+  },
+  "enhanced_positive": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/workspace/ParkWeave/src:/workspace/ParkWeave/tests /workspace/parkweave-venv/bin/python -m pytest /workspace/scratch/ordinary-handoff-review/frozen/test_handoff_probe.py::test_independent_positive_second_executor_new_step_and_receipt --rootdir=/workspace/scratch/ordinary-handoff-review/frozen -q --tb=short -p no:cacheprovider --junitxml=/workspace/scratch/ordinary-handoff-review/frozen/plan-source.xml > /workspace/scratch/ordinary-handoff-review/frozen/plan-source.log 2>&1",
+    "executed_test_artifact": "/workspace/scratch/ordinary-handoff-review/frozen/test_handoff_probe.py",
+    "executed_artifact_sha256": "039e2c8cd5f946cb642b793bf07290dfe4b7244fda045e7cfd7ba743118a2f59",
+    "result": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "2.436",
+      "cases": [
+        "test_independent_positive_second_executor_new_step_and_receipt"
+      ]
+    },
+    "assertions": "observation.current false and current_step None after WITHDRAW and new OFFER; B new ACCEPT and ACK select exact B step, never A historical step.",
+    "log": "/workspace/scratch/ordinary-handoff-review/frozen/plan-source.log",
+    "junit": "/workspace/scratch/ordinary-handoff-review/frozen/plan-source.xml"
+  },
+  "unique_scenarios": 5,
+  "not_six_unique": true,
+  "scenario_evidence": [
+    "Independent ordinary API positive: A ACCEPT/WITHDRAW -> B independent ACCEPT with new step UUID -> manual SUBMIT/owner ACK; same original deadline; old A denied; cold history retained.",
+    "Additional unique-revision CREATE before new OFFER: refused, six business-table counts unchanged.",
+    "Additional unique-revision CREATE after B OFFER but before B ACCEPT: refused, counts unchanged.",
+    "Two historical ACCEPT payloads claim one step: refused, counts unchanged.",
+    "All receipt rows deleted while original ACCEPT survives: refused, counts unchanged."
+  ],
+  "authority": "Existing authority_snapshot equality asserted in every scenario and enhanced positive; no grants/identities/Run assignments created by business handoff.",
+  "environment": "Only existing owned temporary Linux PG fixtures and their existing synthetic setup/migrations/roles/seed were used. No repository mutation, external network/model call, Windows/native/owner-DACL action, deployment, or real business action.",
+  "limitations": [
+    "This is bounded independent review, not whole F2/F3, real fulfillment, production authority, Windows install, native migration or real browser acceptance.",
+    "No real model/provider operation tested.",
+    "Main-side broader 152-test window is separate and not counted as independently executed here."
+  ]
+}

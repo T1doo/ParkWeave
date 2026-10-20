@@ -1,0 +1,56 @@
+.....F......................................                             [100%]
+=================================== FAILURES ===================================
+_ test_active_or_ever_accepted_dispatch_cannot_use_unaccepted_redispatch[WITHDRAW_AFTER_ACCEPT] _
+
+ordinary = ((<parkweave.store.Store object at 0x7f00aabde0c0>, <parkweave.store.Store object at 0x7f00aabde750>, {'fixture-a': 'O..., {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+phase = 'WITHDRAW_AFTER_ACCEPT'
+
+    @pytest.mark.parametrize('phase', ['OFFERED', 'ACCEPTED', 'WITHDRAW_AFTER_ACCEPT', 'SUBMITTED', 'ACKNOWLEDGED'])
+    def test_active_or_ever_accepted_dispatch_cannot_use_unaccepted_redispatch(ordinary, phase):
+        f, _ = ordinary
+        p = prepared(f)
+        row = ok(offer(f, p)[0], 201)
+        if phase != 'OFFERED':
+            row = ok(decision(f, row, 'ACCEPT'))
+        if phase == 'WITHDRAW_AFTER_ACCEPT':
+            row = ok(decision(f, row, 'WITHDRAW'))
+        if phase in ('SUBMITTED', 'ACKNOWLEDGED'):
+            receipt = ok(f[3].get('/api/executor-receipts/' + row['receipt_step_id'], headers=headers(f[2], 'executor-a')))
+            receipt = ok(receipt_command(f, receipt, 'SUBMIT'))
+            if phase == 'ACKNOWLEDGED':
+                ok(receipt_command(f, receipt, 'ACKNOWLEDGE'))
+        with f[1].connect() as c:
+            before = c.execute('SELECT count(*) n FROM service_dispatch_events').fetchone()['n']
+        directory = ok(catalog(f, p))
+        if phase == 'WITHDRAW_AFTER_ACCEPT':
+            assert directory['ready'] and directory['can_offer_again']
+            ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 201)
+        else:
+            assert not directory['ready'] and not directory['can_offer_again']
+            ok(offer(f, p, revision=row['revision'], executor='unassigned')[0], 409)
+        with f[1].connect() as c:
+>           assert c.execute('SELECT count(*) n FROM service_dispatch_events').fetchone()['n'] == before
+E           assert 4 == 3
+
+tests/test_ordinary_step_redispatch.py:136: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_step_redispatch.py::test_explicit_different_executor_reaches_receipt_and_cold_history[DECLINE]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_step_redispatch.py::test_explicit_different_executor_reaches_receipt_and_cold_history[DECLINE]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_step_redispatch.py::test_active_or_ever_accepted_dispatch_cannot_use_unaccepted_redispatch[WITHDRAW_AFTER_ACCEPT]
+1 failed, 43 passed, 4 warnings in 62.12s (0:01:02)

@@ -1,3 +1,7 @@
+## 2026-10-20：普通事项已接单、零回执的明确交接
+
+源码 `b56c53720332e14c043c6b5580de049bfe361bad` 沿原§5.5/F2-T04/T07补齐：专员明确撤回零提交步骤后，原表单另选已有合法执行者，新方本人接单创建独立步骤；原历史/首次截止保留，不加Run权限。冻结五相关模块152PASS、875输入零漂移，独审5个场景PASS且无P1/P2阻断；原HTML NodeVM配真实普通HTTP/worker/owned PG完成办理链，不称真实浏览器。当前9356精确collection、3537AST目录已刷新；Windows/正式来源/真实履约与原授权门仍未完成。见[实质交付与原始证据](OrdinaryPendingReceiptHandoff-20261020.md)。以下历史保持原范围。
+
 ## 2026-10-18：SUBMIT冷恢复两种确定完成顺序
 
 冻结 `9d08a09b6560cbb278e166c4e68f11eb34914fe8`，产品src与c66完全相同，未发现需改产品的缺陷。保留原四节点ID／旧先完成，原80ms改为原按钮handler Promise（含catch/finally）完成屏障；新增200／403两节点，新COMMITTED完整settled后才交旧回复并等旧settled。受检state、proof／handle／view／context引用与raw句柄、正文／来源草稿保持，显式release后才清句柄；仅一次原POST，无额外ACK／P4。旧403仍wrong-fixture运输注入，非当前撤权，fixture无已采用P4计划。
