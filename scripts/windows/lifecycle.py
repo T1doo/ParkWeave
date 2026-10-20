@@ -1,6 +1,18 @@
 """Native Windows only CLI; shared policies exercised with Linux mock processes.
 Never installs a database, discovers credentials, enables LIVE or removes data.
 """
+import sys
+
+# Explicit Doctor-only diagnostic switch; no inherited environment control.
+_DOCTOR_TRACE = __name__ == '__main__' and sys.argv[1:] == ['doctor', '--trace-stages']
+
+
+def _doctor_stage(marker):
+    if _DOCTOR_TRACE:
+        print('PW_STAGE:' + marker, file=sys.stderr, flush=True)
+
+
+_doctor_stage('PY_ENTERED')
 import argparse
 import errno
 import json
@@ -8,7 +20,6 @@ import os
 from pathlib import Path
 import socket
 import subprocess
-import sys
 import time
 import uuid
 sys.path.insert(0,str(Path(__file__).resolve().parent))
@@ -21,6 +32,7 @@ STATE = RUNTIME / 'windows-processes.json'
 sys.path.insert(0,str(REPO/'src'))
 from parkweave.process_env import minimal_environment
 from parkweave.synthetic_session_file import create_synthetic_config_file
+_doctor_stage('PY_IMPORTS_READY')
 
 ACTIONS = {'doctor','setup','start','status','stop','test'}
 
@@ -143,7 +155,9 @@ def protect_private_root(root):
 
 @staged('python_guard')
 def check_python(python):
+    _doctor_stage('PY_CHECK_PYTHON_BEGIN')
     result=subprocess.run([str(python),'-c',"import sys,struct,json;print(json.dumps([sys.platform,*sys.version_info[:2],struct.calcsize('P')*8]))"],capture_output=True,text=True,env=minimal_environment(os.environ))
+    _doctor_stage('PY_CHECK_PYTHON_RETURNED')
     if result.returncode or json.loads(result.stdout)!=['win32',3,12,64]:
         raise BoundaryError('native Python3.12 x64 required; no automatic download/downgrade','PYTHON_VERSION_REFUSED')
 
@@ -411,6 +425,7 @@ def setup():
 
 @staged('doctor_output')
 def doctor():
+    _doctor_stage('PY_DOCTOR_ENTERED')
     check_python(sys.executable)
     info={'project':'ParkWeave','platform':sys.platform,'python':sys.version.split()[0],'native_windows':'UNVERIFIED_RUN',
           'model':'DISABLED','file_backend':'NOT_RUN: native backend disabled','cwd':str(REPO),
@@ -425,7 +440,9 @@ def doctor():
         with stage('dependency_freeze'):
             result=subprocess.run([config['python'],'-m','pip','freeze'],capture_output=True,text=True,check=True,env=minimal_environment(os.environ))
         info['dependencies']=result.stdout.splitlines()
+    _doctor_stage('PY_DOCTOR_OUTPUT_BEGIN')
     print(json.dumps(info,ensure_ascii=False,indent=2))  # No DSN/session/environment dump.
+    _doctor_stage('PY_DOCTOR_OUTPUT_END')
 
 
 @staged('process_record')
@@ -587,9 +604,15 @@ def test():
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('action',choices=sorted(ACTIONS));args=parser.parse_args()
+    _doctor_stage('PY_MAIN_ENTERED')
+    parser=argparse.ArgumentParser();parser.add_argument('action',choices=sorted(ACTIONS))
+    parser.add_argument('--trace-stages',action='store_true',help=argparse.SUPPRESS)
+    args=parser.parse_args()
+    if args.trace_stages and (args.action != 'doctor' or not _DOCTOR_TRACE):
+        parser.error('stage tracing requires doctor --trace-stages')
     try:
         require_windows()
+        _doctor_stage('PY_WINDOWS_READY')
         globals()[args.action]()
     except Exception as exc:
         if args.action in ('doctor','start','setup','stop'):
