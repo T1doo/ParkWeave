@@ -1,0 +1,93 @@
+{
+  "review": "DESIGN_ARTIFACT_LIMITED_PASS_RUNTIME_NOT_ELIGIBLE",
+  "review_head": "903a1cbbf378f83dc57139da22157a36a8ff409a",
+  "artifact_sha256": {
+    "proposal.json": "54edca449be7c0423327e129deb7997781ad6d454745b1ea7beb719faa56f05f",
+    "domain-ownership-and-source.json": "9d3b6bf74c4f878c687a45edb5af0ad646f77d07ea6533e4f580962efaaf3c89",
+    "build_disabled_prototype.py": "ca993a71415bc909865bedab7270305f65048ff1eb29444ba8b982ced2b99975",
+    "accounting-and-preservation.json": "aafbf1f64430c2849cce6dd36e6b38bfc3976659c3e3feb21c014a667521b33e"
+  },
+  "historical_contract": "Complete logical catalog cardinality refusal <=3000; no evidence of working-set-only interpretation. Product docs do not establish immutable physical-storage prohibition.",
+  "domain_partitions_exact": true,
+  "source_files": 394,
+  "source_hashes_match": true,
+  "domain_results": [
+    {
+      "domain": "FOUNDATION_HOST",
+      "test_ids": 1249,
+      "file_records": 126,
+      "record_budget": 1375,
+      "bytes": 158165,
+      "sha256": "2d09248b6176b78bc366b8fd931ddef433636a91b3d62c2d1cda7e329085c133"
+    },
+    {
+      "domain": "MATERIAL",
+      "test_ids": 373,
+      "file_records": 40,
+      "record_budget": 413,
+      "bytes": 48871,
+      "sha256": "dbda1851d8ab4a9a3ad2dc1bb2db120a97e5482914891c6588510f55d654cb72"
+    },
+    {
+      "domain": "PLAN_EXECUTION",
+      "test_ids": 1355,
+      "file_records": 180,
+      "record_budget": 1535,
+      "bytes": 177914,
+      "sha256": "ecde7dad65a56af24d9610cd4b6c7c865b85b94c807ee5a284401d5a34a42b15"
+    },
+    {
+      "domain": "RESOURCE",
+      "test_ids": 179,
+      "file_records": 21,
+      "record_budget": 200,
+      "bytes": 22991,
+      "sha256": "eb77093bb0831d51f35d70ac0390675a02da0dfedd7576a415638c0e69847eb6"
+    },
+    {
+      "domain": "WINDOWS_DIAGNOSTICS",
+      "test_ids": 353,
+      "file_records": 27,
+      "record_budget": 380,
+      "bytes": 41521,
+      "sha256": "2633b32aa239538e5d983d3d7a0564e2603d875218828dfa881a774d2cad57a1"
+    }
+  ],
+  "max_jsonl_row_bytes": 159,
+  "reconstructed_index_bytes": 1049,
+  "reconstructed_index_sha256": "9421bf216e7176fd551e8e6b160b862848373e01ec70f11655d03b1a9fc94264",
+  "actual_storage_with_index": 450511,
+  "record_examples_recomputed": [
+    2018,
+    2431,
+    3393,
+    3000,
+    3002
+  ],
+  "runtime_test_and_catalog_unchanged": {
+    "scripts/windows_ci/diagnostics.py": true,
+    "scripts/windows_ci/diagnostic_catalog.py": true,
+    "scripts/windows_ci/diagnostic-test-ids.json": true,
+    "scripts/windows_ci/regression_progress.py": true,
+    "scripts/windows_ci/publish_summary.py": true,
+    "tests/test_ci_diagnostics.py": true
+  },
+  "rule_order_ambiguity_files": [],
+  "implementation_blockers": [
+    "Requires explicit decision changing original global >3000 logical-set refusal",
+    "Hash-only audit of unselected domains does not preserve global syntax/count/duplicate refusal",
+    "Global semantic audit cumulatively parses all catalog records; pagination only bounds resident memory, not cumulative processing",
+    "No approval or implementation of a new index trust/proof contract",
+    "512KiB simultaneous retained buffers require actual accounting including source metadata; catalog storage arithmetic alone does not prove this"
+  ],
+  "work_not_run": [
+    "No pytest or capacity-refusal rerun",
+    "No runtime parser enabled",
+    "No database, Windows, network or model action",
+    "No repository writes"
+  ],
+  "open_P1_P2": 0,
+  "resolved_P2": "Rule precedence previously depended on JSON object order; explicit rule_order and authoritative exact file_to_domain map now remove this ambiguity. Prefix rules are offline maintenance suggestions only.",
+  "byte_limit_scope": "450511 catalog raw bytes reconstructed; does not prove Python heap/RSS <=512KiB or total source-verification I/O <=512KiB.",
+  "review_observer_correction": "An auxiliary final-note assertion expected an invented short routing enum; the artifact correctly uses prose. Corrected the observer to the actual documented authority; no product/design defect or artifact changes."
+}

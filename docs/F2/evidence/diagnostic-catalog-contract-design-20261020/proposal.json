@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "status": "DESIGN_ONLY_NOT_ENABLED",
+  "source_head": "903a1cbbf378f83dc57139da22157a36a8ff409a",
+  "decision": "Cannot establish that changing the original global logical-catalog cardinality refusal into an operation-specific refusal is a representation-only refactor. Preserve runtime and catalog until parent design review resolves this exact semantic difference.",
+  "original_contract_findings": [
+    {
+      "source": "docs/sources/V1/平台产品设计 (2).md and docs/sources/V1/分阶段开发计划 (2).md",
+      "finding": "No 3000-ID or immutable on-disk total-size rule found in the original product/phase documents. Do not invent such a user requirement."
+    },
+    {
+      "commit": "ff00b6d8ad0880b24afaca49e33b9f8b982ceb87",
+      "path": "scripts/windows_ci/diagnostics.py",
+      "function": "_allowed_tests",
+      "quote": "if not isinstance(ids,list) or not 0<len(ids)<=3000",
+      "finding": "Original zero-argument loader validates the complete one-file list and returns its complete frozenset. The 3000 condition is on the entire logical catalog, without a requested-domain parameter; it is not implemented as only a peak-cache limit."
+    },
+    {
+      "commit": "4c163fe23d8a841ece7b796e40e35511d70a0797",
+      "path": "scripts/windows_ci/diagnostics.py and tests/test_ci_diagnostics.py",
+      "finding": "Only the catalog byte allowance changed from 256KiB to an independent 512KiB. The complete-list 3000 check remained."
+    },
+    {
+      "path": "docs/F2/SourceOpportunityAdoption-20261015.md",
+      "quote": "原 schema、3000 条/256 字符/正则/去重及所有公开输出限制不变",
+      "finding": "Engineering delivery explicitly retained the whole-list cardinality alongside schema, syntax and duplicate checks."
+    },
+    {
+      "path": "docs/F2/MultifieldSourceConflict-20261015.md",
+      "quote": "仍在原512KiB/3000项/256字符上限",
+      "finding": "Subsequent engineering delivery continued the existing complete-catalog bound."
+    },
+    {
+      "commit": "351812f251b60bc1092cc63f962eff3656d49815",
+      "path": "scripts/windows_ci/diagnostic_catalog.py",
+      "quote": "MAX_ALLOWLIST_IDS = 3000  # Original total, not a per-file/per-shard allowance.",
+      "finding": "Recent maintenance makes the global interpretation explicit. This comment alone is not treated as evidence of original product intent."
+    }
+  ],
+  "caller_evidence": [
+    {
+      "path": "scripts/windows_ci/diagnostics.py",
+      "function": "failure_tests",
+      "behavior": "Loads the whole catalog before reading JUnit; any catalog error returns constant ALLOWLIST_UNAVAILABLE with no case processing or identifiers."
+    },
+    {
+      "path": "scripts/windows_ci/regression_progress.py",
+      "function": "trusted_tests",
+      "behavior": "lru_cache(maxsize=1) retains the complete allowed frozenset for subsequent membership checks. Domain caches accumulated alongside it would violate a new aggregate working-set bound."
+    },
+    {
+      "path": "scripts/windows_ci/publish_summary.py",
+      "function": "project and annotation_commands",
+      "behavior": "Both request the whole allowlist. Publication prevalidates the entire batch before emitting any row; up to 32 rows can reference 25 failure IDs and an active ID each. A new per-row/per-domain reset would silently broaden the operation budget and is prohibited."
+    },
+    {
+      "path": "tests/test_ci_diagnostics.py",
+      "function": "test_committed_allowlist_exactly_matches_trusted_test_functions",
+      "behavior": "Requires equality between the complete loaded set and the complete AST identity set. Changing it to per-piece subsets without a separate exact whole-source audit would hide the current defect."
+    }
+  ],
+  "minimal_candidate_not_enabled": {
+    "goal": "Complete persisted catalog, fixed aggregate operation limits, no whole-catalog ID cache; explicitly a new reader contract candidate, not claimed compatible with original global refusal.",
+    "stable_domains": [
+      {
+        "domain": "FOUNDATION_HOST",
+        "test_ids": 1249,
+        "file_records": 126,
+        "record_budget": 1375,
+        "bytes": 158165,
+        "sha256": "2d09248b6176b78bc366b8fd931ddef433636a91b3d62c2d1cda7e329085c133"
+      },
+      {
+        "domain": "MATERIAL",
+        "test_ids": 373,
+        "file_records": 40,
+        "record_budget": 413,
+        "bytes": 48871,
+        "sha256": "dbda1851d8ab4a9a3ad2dc1bb2db120a97e5482914891c6588510f55d654cb72"
+      },
+      {
+        "domain": "PLAN_EXECUTION",
+        "test_ids": 1355,
+        "file_records": 180,
+        "record_budget": 1535,
+        "bytes": 177914,
+        "sha256": "ecde7dad65a56af24d9610cd4b6c7c865b85b94c807ee5a284401d5a34a42b15"
+      },
+      {
+        "domain": "RESOURCE",
+        "test_ids": 179,
+        "file_records": 21,
+        "record_budget": 200,
+        "bytes": 22991,
+        "sha256": "eb77093bb0831d51f35d70ac0390675a02da0dfedd7576a415638c0e69847eb6"
+      },
+      {
+        "domain": "WINDOWS_DIAGNOSTICS",
+        "test_ids": 353,
+        "file_records": 27,
+        "record_budget": 380,
+        "bytes": 41521,
+        "sha256": "2633b32aa239538e5d983d3d7a0564e2603d875218828dfa881a774d2cad57a1"
+      }
+    ],
+    "routing": "Only the exact reviewed filename-to-domain mapping is authoritative. Ordered prefix rules are offline maintenance suggestions with an explicit rule_order array; never infer routing from JSON-object key order. A file has exactly one domain. Unknown/new/missing source files require a reviewed mapping update; no runtime fallback.",
+    "format": "Five fixed domain files of ASCII JSON Lines: strictly increasing file records with source SHA256, followed by strictly increasing exact IDs for that file. One bounded fixed-domain index records schema, domain identities, exact counts/bytes and SHA256. No caller-supplied filenames or dynamic directory scan.",
+    "syntax_and_dedup": "Reject duplicate JSON keys, unknown fields, invalid types/constants, oversized lines, wrong domain/file ownership, repeated/out-of-order files or IDs, invalid TEST_ID_PATTERN and length >256. Strict order and exclusive file ownership prove within/across-domain uniqueness without retaining all IDs.",
+    "full_coverage": "Offline maintenance compares the complete partition exactly against the current AST snapshot, all file SHA256 and stable ownership map before writing any candidate. No removed ID or source is accepted. This uses existing bounded developer-source limits, not a hidden runtime exemption.",
+    "membership_api": "One operation receives all needed identities at once, validates grammar and charges all request/result references, derives the union of needed domains and reserves the complete budget before opening domain data. Stream exact comparisons; retain only bounded requests and matches. No repeated per-ID reload or per-row budget reset. No global full-set return or persistent domain cache.",
+    "consumer_integration": "failure_tests gathers a bounded request set before reading domains; over-budget requests return ALLOWLIST_UNAVAILABLE for the whole operation. project and annotation_commands each use one batch scope, preserving batch fail-closed behavior. progress single-ID lookup uses a one-operation scope; remove the old complete-set lru_cache rather than accumulating shards.",
+    "source_binding": "Existing exact HEAD/manifest/worktree source verification must bind each declared file hash and the complete file set. No unverified dict or caller-selected SHA grants trust. Publisher/standalone path must perform or reuse a real checked binding, otherwise refuse. This separate source-verification I/O currently has its own existing 4MiB read-bound contract; it cannot be described as <=512KiB total all-source I/O.",
+    "record_budget": "B = domain_index_records + all source-binding/index records (394 currently, even if reused from an existing verifier) + selected(file_records + id_records) + request_identity_references + maximum_result_identity_references + 32 fixed parser/control slots; B <=3000 for the whole operation. Charge simultaneously retained metadata plus cumulative selected parsed records conservatively. All selected records are charged even though streamed. Reserve before accepting each record. No per-domain/page/row reset within one operation.",
+    "byte_budget": "Total index + complete-domain raw bytes <=524288; index <=8192, JSONL row <=512. A one-pass hash audit can retain only selected bounded raw buffers for later parsing, avoiding double disk reads. Simultaneously retained index + selected buffers + bounded chunk + line + request/result UTF-8 buffers must also be <=524288. These are catalog-only bounds, not an assertion about the existing source-file verification budget. Existing source-binding metadata buffers must be charged if alive at the same time; do not treat the 394-entry source index as free. If a fixed 8192-byte domain index cannot carry the required binding, do not silently enlarge it; retain the existing separately verified source manifest and account its actual retained bytes.",
+    "actual_storage_bytes_without_index": 449462,
+    "worst_storage_bytes_with_max_index": 457654,
+    "preflight_examples": [
+      {
+        "domains": [
+          "PLAN_EXECUTION"
+        ],
+        "source_index_records": 394,
+        "request_and_max_result_each": 26,
+        "record_charge": 2018,
+        "expected": "WITHIN_BUDGET"
+      },
+      {
+        "domains": [
+          "MATERIAL",
+          "PLAN_EXECUTION"
+        ],
+        "source_index_records": 394,
+        "request_and_max_result_each": 26,
+        "record_charge": 2431,
+        "expected": "WITHIN_BUDGET"
+      },
+      {
+        "domains": [
+          "FOUNDATION_HOST",
+          "PLAN_EXECUTION"
+        ],
+        "source_index_records": 394,
+        "request_and_max_result_each": 26,
+        "record_charge": 3393,
+        "expected": "REFUSE_WHOLE_OPERATION_BEFORE_DOMAIN_PARSE"
+      },
+      {
+        "domains": [
+          "PLAN_EXECUTION"
+        ],
+        "source_index_records": 394,
+        "request_and_max_result_each": 517,
+        "record_charge": 3000,
+        "expected": "EXACT_RECORD_LIMIT_BYTE_BUDGET_STILL_REQUIRED"
+      },
+      {
+        "domains": [
+          "PLAN_EXECUTION"
+        ],
+        "source_index_records": 394,
+        "request_and_max_result_each": 518,
+        "record_charge": 3002,
+        "expected": "REFUSE_WHOLE_OPERATION_BEFORE_DOMAIN_PARSE"
+      }
+    ],
+    "prototype_serialization": "build_disabled_prototype.py defines exact bytes: ASCII JSON Lines with ensure_ascii=True, sort_keys=True, separators=(comma,colon), one LF; a file/sha256 record then lexically sorted id records, files lexically sorted. Index uses the same canonical encoding, fixed schema=2, DISABLED_DESIGN_PROTOTYPE status, routing_version=1, source_files, canonical ownership-object SHA256 and the exact five domain records. No active reader loads these files."
+  },
+  "semantic_differences_requiring_parent_decision": [
+    "Original loader rejects the complete catalog when its total logical ID count exceeds 3000. The candidate permits selected operations over a complete catalog with a greater total. This changes an explicit rejection, even if every operation is bounded.",
+    "Hashing all raw domains while parsing only selected domains detects missing files/byte corruption, but cannot reproduce original global syntax/count/duplicate rejection for a malformed unselected domain whose index hash was changed with it. Do not claim equivalent fail-closed semantics.",
+    "Streaming a full semantic audit in bounded pages can preserve global malformed-input refusal with bounded resident memory, but cumulatively parses more than 3000 catalog IDs. It is incompatible if 3000 is an aggregate processing-work limit, as opposed to a simultaneous working-set limit.",
+    "Treating an offline-generated index as proof of unselected-domain semantic validity would introduce a new proof/trust contract. Hashes alone do not prove semantic validity.",
+    "A cap covering all I/O including raw test-source verification is stronger than the original catalog-byte reader cap. Do not silently exclude that I/O or claim such a bound is met."
+  ],
+  "implementation_eligibility": "NOT_ESTABLISHED: current engineering contract is global logical-set refusal; original product docs do not establish an immutable physical-storage prohibition. Parent must judge the explicit semantic changes, not infer resource-only intent from historical implementation.",
+  "unchanged": [
+    "scripts/windows_ci/diagnostics.py",
+    "scripts/windows_ci/diagnostic_catalog.py",
+    "scripts/windows_ci/diagnostic-test-ids.json",
+    "scripts/windows_ci/regression_progress.py",
+    "scripts/windows_ci/publish_summary.py",
+    "tests/test_ci_diagnostics.py"
+  ],
+  "not_run": [
+    "No runtime sharding enabled",
+    "No catalog rewrite",
+    "No production code or tests changed",
+    "No repeat capacity-refusal pytest",
+    "No Windows owner/DACL or migration/roles/seed operation",
+    "No CI or model call"
+  ],
+  "design_review_repair": "Independent review found JSON-object ordering could move test_source_bytes between domains. Added explicit rule_order and made exact file_to_domain the only authority; rules are non-authoritative offline suggestions."
+}
