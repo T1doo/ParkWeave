@@ -2,6 +2,8 @@
 
 2026-10-20 已按本说明实际执行三件新事项的原页面处理函数/HTTP/PG闭环、TXT导出、物理冷启动与两园区企业隔离，见[技术演示记录及边界](../F2/OrdinaryLocalUIDeliveryValidation-20261020.md)。这是助手执行的Linux技术演示；本环境真实Chromium启动受阻，用户人工验收和Windows正式AT仍未验。
 
+第4步的两资源HOLD、组合确认和Case关联另有[正常sandbox Chrome的有界CI记录](../F2/OrdinaryResourceBrowserCIContract-20261020.md)：公开job实际成功，覆盖两域资源页及冷读；资料前置仍由原API准备。该资源场景不将整条办理链升级为全浏览器验收，原step JSON待父侧登录浏览器核对。
+
 本入口新建一个独立Linux合成数据库，在同一库内准备两个明确隔离的合成企业/园区。每套各有企业经办人、资料专员、执行者三种身份、自己的资料目录和两项资源；随后使用原页面、普通API与普通worker。无需手改SQL、Grant、目录、pack或journal。它不是生产安装、真实园区接入或正式批准，也不是V4服务选择/模型演示。
 
 需已有非root Linux、Python3.12和本仓库依赖（包括`pgserver==0.1.4`）。从完整源码根目录运行；不要求`.git`存在。新机器需先按`pyproject.toml`准备Python环境和依赖，本启动器不下载或安装依赖。Windows原生、WSL和其他环境未在本片验收，不能用此入口替代Windows正式AT。

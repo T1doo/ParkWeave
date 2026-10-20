@@ -32,4 +32,14 @@ Chrome使用runner已有channel，`headless=True, chromium_sandbox=True`；CDP�
 
 CI只有实际完整执行才可称通过；queued/skipped、无法读取、失败或只有API成功都不算真实浏览器通过。原Actions REST/日志接口的Forbidden不重试，公开HTML状态与父侧已登录浏览器的精确step JSON另列。失败保留，先给明确证据和范围，不自动再push/rerun消耗第二个执行机会。
 
+## 本次公开CI结果
+
+一次正常push提交 `d624b64c1f020939020007c5404ddce45e79df33` 触发[run1/attempt1：39349292485](https://github.com/T1doo/ParkWeave/actions/runs/39349292485)。公开HTML实际显示Success，总1分16秒；唯一 [resource-browser job](https://github.com/T1doo/ParkWeave/actions/runs/39349292485/job/118389402528) 为completed successfully、1分12秒，非跳过。原HTML及hash保留，并提交[公开结果摘要](evidence/ordinary-resource-browser-ci-20261020.json)。没有重试或第二次实际执行。
+
+精确workflow的资源步骤没有跳过条件，执行冻结脚本；脚本仅在实际sandbox、两范围原资源页12POST（其中8业务写入）、关联回读、8跨域GET403、物理冷启动GET及末尾权限/计数/停服断言全部完成后返回0。**据此成功job可判断这些强制检查通过，这是对执行代码和公开状态的推断。** 本实例没有取得原step JSON，因此不填实际Chrome/runner版本、业务UUID、每条请求或sandbox原文。公开job页未加载步骤，公开summary HTML partial一次404，未重试；待父侧既有登录浏览器核对精确资源步骤原JSON，不能把本摘要当已读原JSON。
+
+另保留平台注释：固定checkout所用Node20被runner改用Node24执行；本片未因此升级action。结果证据提交仅改文档，不重开run1或再次执行资源场景；后续push的run_number不为1，job门禁拒绝分配runner。
+
+公开结果另经有限只读独审，确认34个原件hash、两节点XML、精确CI源码/脚本hash及公开job状态自洽，推断与原JSON未读取的边界明确。独审未做网络、产品import、DB、测试或浏览器执行。
+
 此片不代表全57POST链、用户人工验收、Windows正式AT、真实资源预约/外部受理/现实履约、真实业务或整个PR0通过。此前165项仍为163PASS/1FAIL/2ERROR，超时根因未确立，不据此次结果改写。
