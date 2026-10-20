@@ -1,0 +1,65 @@
+name: ParkWeave notice authorization browser once
+
+on:
+  push:
+    branches: [dev/f2-notice-auth-browser-20261020]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-notice-auth-browser-20261020
+  cancel-in-progress: false
+
+jobs:
+  notice-browser:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-notice-auth-browser-20261020' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install existing pinned dependencies
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set -eu
+          /usr/bin/python3.12 -m venv .runtime/notice-browser-venv
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+            PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 \
+            .runtime/notice-browser-venv/bin/python -m pip install \
+            --no-cache-dir --retries 0 --timeout 20 -r requirements-browser-smoke.txt
+      - name: Check bounded harness safety without launching Chrome
+        timeout-minutes: 1
+        shell: bash
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
+            .runtime/notice-browser-venv/bin/python -m unittest discover -s tests -p test_notice_auth_browser_contract.py
+      - name: One sandboxed real Chrome notification check
+        timeout-minutes: 2
+        shell: bash
+        env:
+          NOTICE_SHA: ${{ github.sha }}
+          NOTICE_REPOSITORY: ${{ github.repository }}
+          NOTICE_REF: ${{ github.ref }}
+          NOTICE_EVENT: ${{ github.event_name }}
+          NOTICE_ATTEMPT: ${{ github.run_attempt }}
+          NOTICE_NUMBER: ${{ github.run_number }}
+          NOTICE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
+            NOTICE_SHA="$NOTICE_SHA" NOTICE_REPOSITORY="$NOTICE_REPOSITORY" NOTICE_REF="$NOTICE_REF" \
+            NOTICE_EVENT="$NOTICE_EVENT" NOTICE_ATTEMPT="$NOTICE_ATTEMPT" NOTICE_NUMBER="$NOTICE_NUMBER" \
+            NOTICE_PUBLIC="$NOTICE_PUBLIC" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+            .runtime/notice-browser-venv/bin/python -B scripts/notice_auth_browser_once.py

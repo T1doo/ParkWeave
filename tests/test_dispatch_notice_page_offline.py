@@ -26,8 +26,11 @@ def test_original_notice_section_offline_pagination(mode):
 
 
 def test_original_notice_refusal_headers_with_real_unfinished_http_body():
+    node=shutil.which('node')
+    if not node:
+        pytest.skip('Node is unavailable for the real HTTP notification check')
     root=Path(__file__).resolve().parents[1]
-    result=subprocess.run(['node',str(root/'tests/dispatch_notice_auth_http.js'),
+    result=subprocess.run([node,str(root/'tests/dispatch_notice_auth_http.js'),
                            str(root/'src/parkweave/web.html')],
                           capture_output=True,text=True,timeout=15)
     assert result.returncode==0,result.stderr
