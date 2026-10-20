@@ -255,9 +255,13 @@ def create_installed_synthetic_store(maintenance_dsn, owner_dsn, application_dsn
     unknown creation remains a refusal; the caller must preserve the database.
     No receipt serialization, subprocess handoff, retry, repair or DROP exists.
     """
-    # The factory requires an app DSN even though the standalone issuer remains
-    # usable for its original owner-only receipt tests.
-    _dsn(application_dsn, 'parkweave')
+    # Setup's later lifecycle gate accepts IPv4 loopback/localhost, while the
+    # standalone issuer accepts IPv4/IPv6 literals. Their intersection is only
+    # 127.0.0.1. Check it before CREATE, never by expanding either contract.
+    parsed = (_dsn(maintenance_dsn, 'postgres'), _dsn(owner_dsn, 'parkweave'),
+              _dsn(application_dsn, 'parkweave'))
+    if any(info['host'] != '127.0.0.1' for info in parsed):
+        raise Denied('installed Setup host refused before creation')
     receipt = create_installed_synthetic_database_receipt(
         maintenance_dsn, owner_dsn, expected_data_directory, application_dsn=application_dsn)
     return _InstalledSyntheticSetupStore(owner_dsn, application_dsn, receipt)

@@ -409,6 +409,29 @@ def _setup_connections(monkeypatch, *, existing=False, create_error=False):
     return maintenance, target, opened
 
 
+@pytest.mark.parametrize('changed', [('maintenance',), ('owner',), ('app',), ('maintenance', 'owner', 'app')])
+def test_setup_ipv6_refused_before_any_connection_or_write(monkeypatch, changed):
+    maintenance, target, opened = _setup_connections(monkeypatch)
+    dsns = {'maintenance': MAINTENANCE, 'owner': TARGET, 'app': APP}
+    for name in changed:
+        dsns[name] = make_conninfo(dsns[name], host='::1')
+    issued = set(native._issued)
+    with pytest.raises(Denied, match='Setup host refused before creation'):
+        native.create_installed_synthetic_store(dsns['maintenance'], dsns['owner'], dsns['app'], '/owned/data')
+    assert opened == [] and maintenance.calls == target.calls == []
+    assert not maintenance.created and set(native._issued) == issued
+
+
+def test_standalone_issuer_ipv6_contract_remains_supported(monkeypatch):
+    maintenance, _, opened = _setup_connections(monkeypatch)
+    receipt = native.create_installed_synthetic_database_receipt(
+        make_conninfo(MAINTENANCE, host='::1'), make_conninfo(TARGET, host='::1'),
+        '/owned/data', application_dsn=make_conninfo(APP, host='::1'))
+    assert type(receipt) is native.NativeDatabaseCreationEvidence
+    assert all(options['host'] == options['hostaddr'] == '::1' for options in opened)
+    assert sum(sql == 'CREATE DATABASE parkweave' for sql, _ in maintenance.calls) == 1
+
+
 @pytest.mark.parametrize('changed', [
     {'host': '::1'}, {'port': '5433'}, {'user': 'postgres'},
     {'dbname': 'postgres'}, {'service': 'hidden'}, {'sslmode': 'prefer'},
