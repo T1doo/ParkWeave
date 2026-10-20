@@ -35,7 +35,7 @@ class Adopt(BaseModel):
     local_revision:Literal[True]|None=None
     partial_adoption:Literal[True]|None=None
     opportunity_proof:OpportunityProof|None=None
-    fact_provenance_scope:Literal['EMPLOYEES_USER_ASSERTION_V1']|None=None
+    fact_provenance_scope:Literal['EMPLOYEES_USER_ASSERTION_V1','EMPLOYEES_USER_ASSERTION_MANUAL_V1']|None=None
     dependency_scope:Literal['BOUNDED_MULTI_SOURCE_V1']|None=None
 
     candidate_id:str|None=Field(default=None,pattern='^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')

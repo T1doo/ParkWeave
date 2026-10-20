@@ -180,8 +180,8 @@ def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None,dep
         new_grants=False,automatic_execution=False,case_goal_completed=False,qualification_decision='NOT_EVALUATED')
     if fact_provenance_scope is not None:
         from . import employees_fact_provenance as fact_provenance
-        if fact_provenance_scope!=fact_provenance.SCOPE:raise Conflict("unsupported fact provenance scope")
-        result,change,affected=fact_provenance.enhance(c,parent,result,change,affected)
+        if fact_provenance_scope not in (fact_provenance.SCOPE,fact_provenance.MANUAL_SCOPE):raise Conflict("unsupported fact provenance scope")
+        result,change,affected=fact_provenance.enhance(c,parent,result,change,affected,scope=fact_provenance_scope)
     if dependency_scope is not None:
         from . import unified_dependency_propagation
         result,change,affected=unified_dependency_propagation.enhance(c,parent,result,change,affected)
@@ -259,7 +259,7 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
     if isinstance(event.get('local_revision',{}).get('source_change'),dict) and event['local_revision']['source_change'].get('version')==4:
         from .unified_dependency_propagation import validate_history as validate_unified_history
         return validate_unified_history(parent,plan,event,previous_dependencies,current_dependencies)
-    if isinstance(event.get("local_revision",{}).get("source_change"),dict) and event["local_revision"]["source_change"].get("version")==3:
+    if isinstance(event.get("local_revision",{}).get("source_change"),dict) and event["local_revision"]["source_change"].get("version") in (3,5):
         from .employees_fact_provenance import validate_history as validate_fact_history
         return validate_fact_history(parent,plan,event,previous_dependencies,current_dependencies)
     from .service_case_steps import Adopt

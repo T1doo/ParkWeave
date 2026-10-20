@@ -13,7 +13,7 @@ const check = (value, description) => { checks++; assert(value, description); };
 class Element {
   constructor(tag = 'div') {
     this.tagName = tag; this.children = []; this.dataset = {}; this.textContent = ''; this.value = '';
-    this.hidden = true; this.disabled = false; this.checked = false; this.listeners = {};
+    const classes=new Set();this.classList={add:(...xs)=>xs.forEach(x=>classes.add(x)),remove:(...xs)=>xs.forEach(x=>classes.delete(x)),contains:x=>classes.has(x),toggle:(x,force)=>{const on=force===undefined?!classes.has(x):!!force;if(on)classes.add(x);else classes.delete(x);return on;}};this.hidden = true; this.disabled = false; this.checked = false; this.listeners = {};
     const named = {}; this.elements = new Proxy([], {get: (a, key) => key in a ? a[key] : (named[key] ??= new Element('input'))});
   }
   append(...values) { this.children.push(...values); }
@@ -94,7 +94,7 @@ function page(config, storage, calls, transport) {
  const config=await initialized,storage={},calls=[],transport={};diagnostics={calls};
  let p=page(config,storage,calls,transport),{$,run}=p;
  const load=async row=>{await run(`loadPreparation(${JSON.stringify(row.preparation_id)},{role:'enterprise_operator'})`);await $('opp-read').onclick();};
- const factButton=id=>{const button=run("document.querySelectorAll('[data-opp-fact-preview]')").find(e=>e.dataset?.oppFactPreview===id);check(!!button&&typeof button.onclick==='function','shipped explicit employees preview button');return button;};
+ const factButton=id=>{const button=config.mode.startsWith('manual_')?run("document.querySelectorAll('[data-opp-manual-fact-preview]')").find(e=>e.dataset?.oppManualFactPreview===id):run("document.querySelectorAll('[data-opp-fact-preview]')").find(e=>e.dataset?.oppFactPreview===id);check(!!button&&typeof button.onclick==='function','shipped explicit employees preview button');return button;};
  const preview=async id=>{await factButton(id).onclick();check(!!run('opportunityPlanView'),$('opp-plan-status').textContent);};
  const output=()=>console.log(JSON.stringify({scope:'FULL_ORIGINAL_HTML_EMPLOYEES_PROVENANCE_ACTUAL_HTTP_ASGI_OWNED_PG',mode:config.mode,checks,calls,real_browser:'NOT_RUN',fake_dto:false}));
  await load(config.A);
@@ -118,16 +118,17 @@ function page(config, storage, calls, transport) {
  $('opp-title').value='SYNTHETIC actual employees source changed';$('opp-note').value='Unverified hint provides no facts or authority';$('opp-purpose').checked=true;$('opp-reason').value='SYNTHETIC explicit original import';
  await $('opp-import').onsubmit({preventDefault(){}});const card=run('oppView.cards.find(c=>c.is_latest_generation).id');
  await control('change_fact');await $('opp-read').onclick();$('opp-reason').value='SYNTHETIC original explicit actual-source refresh';await $('opp-refresh').onclick();
- const button=run("document.querySelectorAll('[data-opp-fact-preview]')").find(e=>e.dataset?.oppFactPreview===card);
+ const manual=config.mode.startsWith('manual_');const button=manual?run("document.querySelectorAll('[data-opp-manual-fact-preview]')").find(e=>e.dataset?.oppManualFactPreview===card):run("document.querySelectorAll('[data-opp-fact-preview]')").find(e=>e.dataset?.oppFactPreview===card);
  check(!!button&&typeof button.onclick==='function','shipped original opportunity card offers explicit employees preview');await button.onclick();
- check(run('opportunityPlanView.scope')==='EMPLOYEES_FACT_PROVENANCE_PREVIEW','new explicit preview scope');
+ check(run('opportunityPlanView.scope')===(manual?'EMPLOYEES_MANUAL_PROVENANCE_PREVIEW':'EMPLOYEES_FACT_PROVENANCE_PREVIEW'),'new explicit preview scope');
+ if(manual){check(run('opportunityPlanView.manual_provenance.note.text')==='SYNTHETIC manual body independently retained','exact independent MANUAL body');check(textOf($('opp-plan-impact')).includes('SYNTHETIC manual body independently retained'),'manual full text actually rendered');}
  check(run('opportunityPlanView.fact_provenance.authenticity')==='USER_ASSERTED_UNVERIFIED','selected assertion remains unverified user claim');
  check(run('opportunityPlanView.fact_provenance.selected_changed')===true&&run('opportunityPlanView.affected.length')===5&&run('opportunityPlanView.preserved.length')===0,'actual employees source change requires original all-five verification');
  const display=textOf($('opp-plan-impact'));check(display.includes('员工')&&display.includes(run('opportunityPlanView.fact_provenance.before.assertion_ref'))&&!display.includes('PRIVATE_FACT_EXCERPT_')&&!display.includes('PRIVATE_REGION_SELECTED'),'projection exposes provenance without private source excerpts/values');
  $('service-plan-reason').value='SYNTHETIC explicit original plan adoption with exact employees provenance';
  const before=calls.filter(c=>c.method==='POST').length;await $('opp-plan-adopt').onclick();check(calls.filter(c=>c.method==='POST').length===before,'unchecked original confirmation sends no POST');
- await preview(card);$('service-plan-reason').value='SYNTHETIC explicit original exact employees provenance';$('opp-plan-confirm').checked=true;await control('before_adopt');if(config.mode==='lost_ack')transport.dropPath='/service-case-plan';await $('opp-plan-adopt').onclick();
- if(config.mode==='lost_ack'){
+ await preview(card);$('service-plan-reason').value='SYNTHETIC explicit original exact employees provenance';$('opp-plan-confirm').checked=true;await control('before_adopt');if(config.mode.endsWith('lost_ack'))transport.dropPath='/service-case-plan';await $('opp-plan-adopt').onclick();
+ if(config.mode.endsWith('lost_ack')){
   check(Object.keys(storage).some(k=>k.startsWith('parkweave.service-plan-recovery.v1.')),'lost response retains original opaque plan recovery handle');
   for(const [k,v] of Object.entries(storage))if(k.startsWith('parkweave.service-plan-recovery.v1.')){const handle=JSON.parse(v);check(!('fact_provenance' in handle)&&!('reason' in handle)&&!('body' in handle),'local recovery handle excludes body and provenance');}
   const n=calls.length;p=page(config,storage,calls,transport);({$,run}=p);await run(`loadPreparation(${JSON.stringify(config.A.preparation_id)},{role:'enterprise_operator'})`);await $('service-plan-prepare').onclick();await $('service-plan-retry').onclick();

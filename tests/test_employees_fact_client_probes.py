@@ -14,5 +14,5 @@ def test_employees_client_late_crypto_and_rehashed_flags():
     assert [r['scenario'] for r in result['results']]==[
         'late_reject_after_case_switch','late_success_after_sequence_switch','draft_changed_current_sequence',
         'rehashed_selected_changed_mismatch','rehashed_aggregate_changed_mismatch',
-        'current403_dispatch_clears_original_private_preparation']
+        'current403_dispatch_clears_original_private_preparation','old_button_rejects_new_manual_scope_before_projection']
     assert all(r['status']=='PASS' for r in result['results'])

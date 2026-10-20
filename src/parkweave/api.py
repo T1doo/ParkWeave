@@ -195,9 +195,9 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return typed_source_impact.read(store,token(authorization),preparation_id)
 
     @app.get('/api/preparations/{preparation_id}/employees-fact-impact')
-    def employees_fact_impact(preparation_id: UUID,card_id: UUID|None=Query(default=None),authorization: str|None=Header(default=None)):
+    def employees_fact_impact(preparation_id: UUID,card_id: UUID|None=Query(default=None),fact_provenance_scope: Literal['EMPLOYEES_USER_ASSERTION_V1','EMPLOYEES_USER_ASSERTION_MANUAL_V1']=Query(default='EMPLOYEES_USER_ASSERTION_V1'),authorization: str|None=Header(default=None)):
         from . import employees_fact_provenance
-        return employees_fact_provenance.read(store,token(authorization),preparation_id,card_id)
+        return employees_fact_provenance.read(store,token(authorization),preparation_id,card_id,scope=fact_provenance_scope)
 
     @app.get('/api/preparations/{preparation_id}/shared-source-cases')
     def shared_source_cases(preparation_id: UUID,

@@ -309,7 +309,8 @@ def html_controls(t,mode,state):
     def before_adopt():state['before']=deepcopy(stored(f,p))
     def after_adopt():
         now=stored(f,p);old=state['before'];change=now['events'][-1]['local_revision']['source_change']
-        assert change['version']==3 and change['fact_provenance']['scope']==SCOPE
+        assert change['version']==(5 if mode.startswith('manual_') else 3) and change['fact_provenance']['scope']==SCOPE
+        if mode.startswith('manual_'):assert now['owner_amendments']==old['owner_amendments'] and change['manual_provenance']['note']==next(iter(old['owner_amendments'].values()))
         assert now['events'][:-1]==old['events'] and now['history']==old['history']
         assert [s['verified_sources'] for s in now['steps']]==[s['verified_sources'] for s in old['steps']]
     def material():chain.material_decision(u,p,'REVIEW');chain.material_decision(u,p,'CONFIRM')
@@ -422,3 +423,130 @@ def test_existing_manual_or_package_combination_refuses_only_new_scope(facts_cas
     assert 'fact_provenance_scope' not in r.json()['adoption']
     assert full(t)==before
     record('compatibility',unsupported_combination=mode,enhanced_rejected=True,legacy_preview_unchanged=True)
+
+
+def test_explicit_manual_scope_preserves_note_and_registered_fact_history(facts_case):
+    from test_plan_source_conflicts import edit
+    t=facts_case;f,p=t['f'],t['p']
+    manual='  SYNTHETIC exact owner MANUAL explanation\n preserve whitespace  '
+    edit(f,p,manual)
+    before=deepcopy(stored(f,p));c=change_fact(t)
+    old=view(t,c)
+    assert old['adoption'] is None and 'FACT_PROVENANCE_COMBINATION_UNSUPPORTED' in old['blocking_reasons']
+    r=f[3].get(endpoint(t),headers=headers(f[2]),params=dict(card_id=c['id'],fact_provenance_scope='EMPLOYEES_USER_ASSERTION_MANUAL_V1'))
+    assert r.status_code==200,r.text
+    v=r.json();assert v['can_adopt'],v['blocking_reasons']
+    assert v['scope']=='EMPLOYEES_MANUAL_PROVENANCE_PREVIEW'
+    assert v['manual_provenance']['note']['text']==manual
+    assert v['manual_provenance']['note']==next(iter(before['owner_amendments'].values()))
+    proof=deepcopy(v['fact_provenance']);key=uuid4().hex
+    r=send(t,v['adoption'],key);assert r.status_code==201,r.text
+    now=stored(f,p);change=now['events'][-1]['local_revision']['source_change']
+    assert send(t,v['adoption'],key).status_code==201
+    different=deepcopy(v['adoption']);different['fact_provenance_scope']=SCOPE
+    assert send(t,different,key).status_code==409
+    from parkweave.store import Store
+    from parkweave.service_case_steps import recover as cold_recover
+    from uuid import UUID
+    assert cold_recover(Store(f[0].dsn),f[2]['fixture-a'],UUID(p['preparation_id']),key)['status']=='COMMITTED'
+    assert change['version']==5 and change['fact_provenance']==proof
+    assert now['owner_amendments']==before['owner_amendments']
+    assert now['events'][:len(before['events'])]==before['events']
+    r=recover(f,p,key);assert r.status_code==200 and r.json()['status']=='COMMITTED'
+    repair_material(t)
+    assert stored(f,p)['owner_amendments']==before['owner_amendments']
+
+
+MANUAL_SCOPE='EMPLOYEES_USER_ASSERTION_MANUAL_V1'
+def manual_view(t,c):
+    r=t['f'][3].get(endpoint(t),headers=headers(t['f'][2]),params=dict(card_id=c['id'],fact_provenance_scope=MANUAL_SCOPE))
+    assert r.status_code==200,r.text
+    return r.json()
+
+
+def test_manual_history_reconstructed_at_adopt_not_later_editor_state(facts_case):
+    from test_plan_source_conflicts import edit
+    t=facts_case;f,p=t['f'],t['p']
+    edit(f,p,'SYNTHETIC original manual body')
+    c=change_fact(t);v=manual_view(t,c);assert v['can_adopt'],v
+    key=uuid4().hex;r=send(t,v['adoption'],key);assert r.status_code==201,r.text
+    old=deepcopy(stored(f,p)['events'][-1]['local_revision']['source_change'])
+    repair_material(t)
+    edit(f,p,'SYNTHETIC later independent manual edit')
+    current=stored(f,p);assert next(iter(current['owner_amendments'].values()))['text']!='SYNTHETIC original manual body'
+    r=recover(f,p,key);assert r.status_code==200 and r.json()['status']=='COMMITTED'
+    assert old==next(e for e in stored(f,p)['events'] if e['request_key']==key)['local_revision']['source_change']
+    assert old['manual_provenance']['note']['text']=='SYNTHETIC original manual body'
+    # The next ordinary request still uses original version2 without a sticky scope.
+    from test_source_change_adoption import preview
+    c=change_fact(t,value=31);default=preview(f,p,c).json()
+    assert 'fact_provenance_scope' not in default['adoption']
+    r=send(t,default['adoption']);assert r.status_code==201,r.text
+    assert stored(f,p)['events'][-1]['local_revision']['source_change']['version']==2
+
+
+def test_manual_combination_keeps_lock_keep_defer_and_edit_reconfirmation_gates(facts_case):
+    from test_plan_source_conflicts import edit,read as note_read,send as note_choice
+    from test_manual_content_continuation import send as continue_note
+    from test_preparation import add
+    t=facts_case;f,p=t['f'],t['p'];manual='SYNTHETIC protected human text'
+    edit(f,p,manual);assert lock(f,p,'P1').status_code==200
+    change_fact(t,refresh=False)
+    r=add(f,current_parent(f,p),slot='material_outline',text='SYNTHETIC new exact outline condition');assert r.status_code==200,r.text
+    c=card(t);v=manual_view(t,c)
+    assert not v['can_adopt'] and 'AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK' in v['blocking_reasons']
+    for action,reason in [('KEEP_MANUAL','OWNER_NOTE_SOURCE_KEPT_PENDING'),('DEFER','OWNER_NOTE_SOURCE_DEFERRED')]:
+        q=note_read(f,p,c).json();r=note_choice(f,p,q,action);assert r.status_code==200,r.text
+        v=manual_view(t,c);assert not v['can_adopt'] and reason in v['blocking_reasons']
+        assert v['manual_provenance']['latest_decision']['action']==action
+    assert plan_command(f,p,'P1','UNLOCK').status_code==200
+    q=note_read(f,p,c).json();merged=manual+'\n'+q['source']['text']
+    r=continue_note(f,p,q,'MERGE_NOTE',merged);assert r.status_code==200,r.text
+    v=manual_view(t,c);assert v['can_adopt'],v['blocking_reasons']
+    stale=deepcopy(v['adoption'])
+    q=note_read(f,p,c).json();r=continue_note(f,p,q,'EDIT_NOTE',merged+'\nSYNTHETIC manual addition');assert r.status_code==200,r.text
+    v=manual_view(t,c);assert not v['can_adopt'] and 'OWNER_NOTE_CONTENT_EDIT_REQUIRES_RECONFIRMATION' in v['blocking_reasons']
+    assert send(t,stale).status_code==409
+    q=note_read(f,p,c).json();r=continue_note(f,p,q,'KEEP_AND_CONTINUE');assert r.status_code==200,r.text
+    v=manual_view(t,c);assert v['can_adopt'],v['blocking_reasons']
+    r=send(t,v['adoption']);assert r.status_code==201,r.text
+    assert stored(f,p)['steps'][0]['verified_sources']!=None
+    repair_material(t)
+    assert next(iter(stored(f,p)['owner_amendments'].values()))['text']==merged+'\nSYNTHETIC manual addition'
+
+
+@pytest.mark.parametrize('change',['field_aba','source_aba','manual_edit'])
+def test_manual_scope_stale_preview_cannot_survive_authority_or_source_aba(facts_case,change):
+    from test_plan_source_conflicts import edit
+    t=facts_case;f,p=t['f'],t['p'];edit(f,p,'SYNTHETIC initial manual')
+    c=change_fact(t);v=manual_view(t,c);assert v['can_adopt']
+    if change=='manual_edit':edit(f,p,'SYNTHETIC later manual')
+    else:
+        with f[1].connect() as db:
+            if change=='field_aba':
+                db.execute("UPDATE field_grants SET active=false WHERE principal_id='fixture-a' AND field_name='employees' AND capability='READ'")
+                db.execute("UPDATE field_grants SET active=true WHERE principal_id='fixture-a' AND field_name='employees' AND capability='READ'")
+            else:
+                db.execute("UPDATE preparation_evidence SET source_label=source_label||' temporary' WHERE preparation_id=%s",(p['preparation_id'],))
+                db.execute("UPDATE preparation_evidence SET source_label=left(source_label,length(source_label)-10) WHERE preparation_id=%s",(p['preparation_id'],))
+    before=full(t);r=send(t,v['adoption']);assert r.status_code==409,r.text;assert full(t)==before
+
+
+def test_manual_scope_rejects_package_protocol_and_requires_an_actual_manual_note(facts_case):
+    from test_plan_source_conflicts import edit
+    t=facts_case;f,p=t['f'],t['p'];c=change_fact(t)
+    v=manual_view(t,c);assert not v['can_adopt'] and v['manual_provenance'] is None
+    edit(f,p,'SYNTHETIC original human note')
+    c=card(t);base='/api/preparations/'+p['preparation_id']
+    q=f[3].get(base+'/plan-material-package',headers=headers(f[2]),params={'card_id':c['id']}).json()
+    b=dict(schema=2,action='KEEP_AND_CONTINUE',expected_plan_id=q['plan_id'],expected_plan_revision=q['plan_revision'],expected_note_revision=q['note']['revision'],expected_ledger_revision=q['opportunity_revision'],expected_preview_sha256=q['preview_sha256'],card_id=c['id'],text=None,reason='SYNTHETIC explicit package enrollment',confirm_package=True)
+    r=f[3].post(base+'/plan-material-package/commands',headers=headers(f[2],key=uuid4().hex),json=b);assert r.status_code==200,r.text
+    v=manual_view(t,c);assert not v['can_adopt'] and v['manual_provenance'] is None and v['adoption'] is None
+    assert v['unknown_scope']=='THIS_CASE' and not v['preserved']
+
+
+@pytest.mark.parametrize('mode',['manual_positive','manual_lost_ack'])
+def test_full_original_html_manual_fact_scope_and_business_recheck(facts_case,mode):
+    from test_plan_source_conflicts import edit
+    edit(facts_case['f'],facts_case['p'],'SYNTHETIC manual body independently retained')
+    run_html(facts_case,mode)

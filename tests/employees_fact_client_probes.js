@@ -26,7 +26,7 @@ function harness(){
  servicePlanCtx:()=>({id:'prep',generation:state.planGeneration}),
  servicePlanCurrent:c=>c.generation===state.planGeneration&&(!c.callerCurrent||c.callerCurrent()),
  loadServiceCasePlan:async()=>{},
- servicePlanCall:async()=>({plan_id:'plan',plan_revision:1,opportunity_revision:1,card_version:1,directly_changed:[],affected:[],preserved:[],blocking_reasons:[],can_adopt:false}),
+ servicePlanCall:async()=>({scope:'EMPLOYEES_FACT_PROVENANCE_PREVIEW',plan_id:'plan',plan_revision:1,opportunity_revision:1,card_version:1,directly_changed:[],affected:[],preserved:[],blocking_reasons:[],can_adopt:false}),
  employeesFactProvenanceCheck:async()=>{entered=true;return deferred},
  oppError(){errors++},servicePlanError(){errors++},
  };
@@ -50,6 +50,14 @@ async function clientScenario(kind){
  if(kind==='draft_changed_current_sequence')assert(h.clears===baseline+1&&s.opportunityPlanView===null,'current changed draft should clear its own preview');
  else assert(h.clears===baseline&&h.errors===0&&s.opportunityPlanView!==null,'stale result cleared or errored against new view');
  return {scenario:kind,status:'PASS',post_seam_clear_calls:h.clears-baseline};
+}
+async function selectedScopeScenario(){
+ const h=harness(),s=h.state;
+ s.servicePlanCall=async()=>({scope:'EMPLOYEES_MANUAL_PROVENANCE_PREVIEW',plan_id:'plan',plan_revision:1,opportunity_revision:1,card_version:1,directly_changed:[],affected:[],preserved:[],blocking_reasons:[],can_adopt:true});
+ h.settle();let rejected=false;
+ try{await s.previewOpportunityPlan('card',true);}catch(e){rejected=e.message.includes('范围');}
+ assert(rejected&&!h.entered&&s.opportunityPlanView===null,'old selected scope must reject new manual DTO before projection or digest seam');
+ return {scenario:'old_button_rejects_new_manual_scope_before_projection',status:'PASS'};
 }
 async function flagScenario(flag){
  const node={field:'employees',assertion_ref:'00000000-0000-0000-0000-000000000001',assertion_revision:1,
@@ -93,5 +101,6 @@ function current403Scenario(){
  for(const kind of ['late_reject_after_case_switch','late_success_after_sequence_switch','draft_changed_current_sequence'])results.push(await clientScenario(kind));
  for(const flag of ['selected_changed','aggregate_changed'])results.push(await flagScenario(flag));
  results.push(current403Scenario());
+ results.push(await selectedScopeScenario());
  process.stdout.write(JSON.stringify({evidence_kind:'CONTROLLED_CLIENT_FUNCTION_PROBES_NO_HTTP_BROWSER_PG',results})+'\n');
 })().catch(e=>{process.stderr.write(String(e.stack)+'\n');process.exitCode=1});

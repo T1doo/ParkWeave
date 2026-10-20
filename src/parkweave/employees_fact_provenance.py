@@ -14,6 +14,8 @@ from .store import Conflict, Denied
 
 SCOPE = 'EMPLOYEES_USER_ASSERTION_V1'
 PUBLIC_SCOPE = 'EMPLOYEES_FACT_PROVENANCE_PREVIEW'
+MANUAL_SCOPE = 'EMPLOYEES_USER_ASSERTION_MANUAL_V1'
+MANUAL_PUBLIC_SCOPE = 'EMPLOYEES_MANUAL_PROVENANCE_PREVIEW'
 ERRORS = (Conflict, Denied, ValidationError, ValueError, KeyError, TypeError, AttributeError, IndexError, OverflowError, RecursionError)
 EVENT_KEYS = {'id','action','revision','preparation_revision','actor_id','reason','decided_at','source_sha256','source_snapshot','applicable','choices','selection','authenticity','decision_sha256'}
 ROW_KEYS = {'id','evidence_id','field_name','value','unit','source_ref','source_kind','source_excerpt','valid_from','valid_until','revision','fingerprint','confirmed_by'}
@@ -161,27 +163,64 @@ def _capture(c,parent,bindings):
     return facts._hash(dict(ledger=row,receipts=rows))
 
 
-def enhance(c,parent,result,change,affected):
+def _manual_snapshot(parent,plan,revision):
+    """Replay the note at THIS plan prefix, never the latest owner_amendments."""
+    from . import plan_source_conflicts as notes, material_package_continuation as package
+    if (type(revision) is not int or type(plan['revision']) is not int or not 1<=revision<=plan['revision']<=64
+            or plan.get('template_migration') or plan.get('partial_adoption')):
+        raise ValueError('bounded original non-template full plan required')
+    prefix=deepcopy(plan)
+    prefix['events']=[e for e in plan['events'] if e['revision']<=revision]
+    if (len(prefix['events'])!=revision or any(type(e['revision']) is not int or e['revision']!=i
+            for i,e in enumerate(prefix['events'],1)) or package.active(prefix)):
+        raise ValueError('complete non-package manual prefix required')
+    events=[e for e in prefix['events'] if e['action'] in notes.ACTIONS]
+    if not events:raise ValueError('original manual note event required')
+    latest=events[-1];note=deepcopy(latest['plan_note']['after_note'])
+    p1=[step for step in plan['steps'] if step['adapter_id']=='P1']
+    if len(p1)!=1 or not note or note['origin']!='MANUAL' or note['step_id']!=p1[0]['id']:
+        raise ValueError('unique original P1 MANUAL note required')
+    prefix['revision']=revision;prefix['owner_amendments']={p1[0]['id']:note}
+    notes.validate_plan_history(parent,prefix)
+    proof=dict(version=1,scope=MANUAL_SCOPE,plan_id=plan['id'],plan_revision=revision,
+        step_id=p1[0]['id'],note=note,note_sha256=cp._hash(note),
+        latest_decision=dict(id=latest['id'],revision=latest['revision'],action=latest['action'],
+            fingerprint=latest['fingerprint'],proof_sha256=latest['plan_note']['sha256']),
+        note_history_sha256=cp._hash(events))
+    proof['sha256']=cp._hash(proof)
+    return proof
+
+
+def enhance(c,parent,result,change,affected,*,scope=SCOPE):
     result=deepcopy(result);change=deepcopy(change)
-    result['scope']=PUBLIC_SCOPE
+    result['scope']=MANUAL_PUBLIC_SCOPE if scope==MANUAL_SCOPE else PUBLIC_SCOPE
     plan=parent['service_case_plan']
     reasons=[]
-    if plan.get('owner_amendments') or plan.get('template_migration'):
+    if scope!=MANUAL_SCOPE and (plan.get('owner_amendments') or plan.get('template_migration')):
         reasons.append('FACT_PROVENANCE_COMBINATION_UNSUPPORTED')
     try:
         if reasons:raise ValueError()
+        manual=_manual_snapshot(parent,plan,plan['revision']) if scope==MANUAL_SCOPE else None
+        if manual is not None and not history._same(plan.get('owner_amendments'),{manual['step_id']:manual['note']}):
+            raise ValueError('current manual body differs from original note events')
         proof,bindings=project(parent,change['before_sources'],change['current_sources'])
         # Capture every retained prefix receipt, not merely the selected current
         # row. Before may be older but must resolve to the exact original event.
         ledger=facts._ledger(parent)
         capture=_capture(c,parent,_receipts(parent,ledger))
-        change.update(version=3,fact_provenance=proof,fact_provenance_capture_sha256=capture)
+        change.update(version=5 if manual is not None else 3,fact_provenance=proof,fact_provenance_capture_sha256=capture)
+        if manual is not None:
+            change['manual_provenance']=manual
+            result['manual_provenance']=deepcopy(manual)
         change['sha256']=cp._hash({k:v for k,v in change.items() if k!='sha256'})
         result.update(fact_provenance=proof,preview_sha256=change['sha256'])
-        result['adoption']['fact_provenance_scope']=SCOPE
+        result['adoption']['fact_provenance_scope']=scope
         result['adoption']['opportunity_proof']['expected_preview_sha256']=change['sha256']
     except ERRORS:
         reasons.append('EXACT_REGISTERED_EMPLOYEES_PROVENANCE_REQUIRED')
+        if scope==MANUAL_SCOPE:
+            reasons.append('EXACT_ORIGINAL_MANUAL_PROVENANCE_REQUIRED')
+            result['manual_provenance']=None
         ids=[s['id'] for s in plan['steps']]
         result.update(fact_provenance=None,unknown_scope='THIS_CASE',directly_changed=ids,affected=ids,preserved=[],adoption=None)
         affected={s['adapter_id'] for s in plan['steps']}
@@ -191,12 +230,19 @@ def enhance(c,parent,result,change,affected):
 
 
 def validate_history(parent,plan,event,previous_dependencies,current_dependencies):
-    """v3 dispatch normalizes solely the envelope for frozen v2 validation."""
+    """v3/v5 dispatch normalizes only proven extensions for frozen v2 validation."""
     from . import source_change_adoption as original
     change=event['local_revision']['source_change']
     request=event['local_revision']['request']
-    if request.get('fact_provenance_scope')!=SCOPE or change.get('version')!=3 or type(change['version']) is not int:
-        raise ValueError('explicit fact provenance scope required')
+    manual=request.get('fact_provenance_scope')==MANUAL_SCOPE
+    expected_version=5 if manual else 3
+    if (request.get('fact_provenance_scope') not in (SCOPE,MANUAL_SCOPE) or
+            change.get('version')!=expected_version or type(change['version']) is not int):
+        raise ValueError('explicit fact provenance scope/version pair required')
+    if manual:
+        expected_manual=_manual_snapshot(parent,plan,event['revision']-1)
+        if not history._same(expected_manual,change.get('manual_provenance')):
+            raise ValueError('historical manual provenance changed')
     _sha(change.get('fact_provenance_capture_sha256'))
     if change.get('sha256')!=cp._hash({k:v for k,v in change.items() if k!='sha256'}) or request['opportunity_proof']['expected_preview_sha256']!=change['sha256']:
         raise ValueError('fact provenance preview binding invalid')
@@ -206,7 +252,9 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
     expected,_=project(parent,change['before_sources'],change['current_sources'])
     if not history._same(expected,change.get('fact_provenance')):raise ValueError('historical fact provenance changed')
     canonical=deepcopy(event);patch=canonical['local_revision'];change=patch['source_change']
-    change.pop('fact_provenance');change.pop('fact_provenance_capture_sha256');change['version']=2
+    change.pop('fact_provenance');change.pop('fact_provenance_capture_sha256')
+    if manual:change.pop('manual_provenance')
+    change['version']=2
     change['sha256']=cp._hash({k:v for k,v in change.items() if k!='sha256'})
     patch['request'].pop('fact_provenance_scope')
     patch['request']['opportunity_proof']['expected_preview_sha256']=change['sha256']
@@ -214,7 +262,7 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
 
 
 @er.bounded
-def read(store,token,id,card_id=None):
+def read(store,token,id,card_id=None,*,scope=SCOPE):
     from . import source_change_adoption as original
     from .service_case_steps import _context
     with store.connect() as c:
@@ -223,6 +271,6 @@ def read(store,token,id,card_id=None):
             raise Denied('existing synthetic owner opportunity Case required')
         store.check_fields(c,principal,list(facts.FIELDS),'READ')
         if card_id is None:
-            return dict(scope=PUBLIC_SCOPE,preparation_id=str(parent['id']),card_id=None,can_adopt=False,
+            return dict(scope=MANUAL_PUBLIC_SCOPE if scope==MANUAL_SCOPE else PUBLIC_SCOPE,**({'manual_provenance':None} if scope==MANUAL_SCOPE else {}),preparation_id=str(parent['id']),card_id=None,can_adopt=False,
                 fact_provenance=None,unknown_scope='THIS_CASE',blocking_reasons=['EXPLICIT_OPPORTUNITY_CARD_REQUIRED'],new_grants=False)
-        return original.build(store,c,principal,parent,card_id,fact_provenance_scope=SCOPE)[0]
+        return original.build(store,c,principal,parent,card_id,fact_provenance_scope=scope)[0]
