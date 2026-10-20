@@ -1,0 +1,163 @@
+{
+  "verdict": "LIMITED_PASS_NO_OPEN_P1_P2_IN_REVIEWED_AT25_ENGINEERING_SLICE",
+  "producer_source_sha": "203bf00732a3e189e53b58dac56b30dd241206b5",
+  "analysis_consumer_source_sha": "9d2f8e8bd3c0ace96a7d60cef6768e674ccefa14",
+  "run_id": "d3625593b1184c77987c482e98e6ede3",
+  "independent_review_mode": "Read-only original-source/primary-evidence audit and pure JSON consumer controls; zero added PG or product test scenarios.",
+  "primary_actual_tests": {
+    "command_core": "scripts/run_acceptance.py --ids AT-25 --source-head 203bf00732a3e189e53b58dac56b30dd241206b5",
+    "tests": 5,
+    "PASS": 5,
+    "FAIL": 0,
+    "SKIP": 0,
+    "seconds": "86.705",
+    "source_binding": "AVAILABLE",
+    "engineering_subset": "PARTIAL_PASS",
+    "formal_AT25": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "full_regression": false
+  },
+  "known": {
+    "unique_scenario_case_observations": 8,
+    "physical_observations": 12,
+    "expected_affected_steps": 31,
+    "expected_preserved_steps": 9,
+    "actual_affected_steps": 31,
+    "missed_impact": 0,
+    "false_impact": 0,
+    "preserved_symmetric_difference": 0
+  },
+  "unknown_separate": {
+    "unique_scenario_case_observations": 2,
+    "physical_observations": 4,
+    "expected_affected_steps": 10,
+    "expected_preserved_steps": 0,
+    "actual_affected_steps": 10,
+    "missed_impact": 0,
+    "false_impact": 0,
+    "preserved_symmetric_difference": 0
+  },
+  "known_partition_only": {
+    "unique_scenario_case_observations": 6,
+    "physical_observations": 10,
+    "expected_affected_steps": 23,
+    "expected_preserved_steps": 7,
+    "actual_affected_steps": 23,
+    "missed_impact": 0,
+    "false_impact": 0,
+    "preserved_symmetric_difference": 0
+  },
+  "selected_capacity": {
+    "unique_scenario_case_observations": 2,
+    "physical_observations": 2,
+    "expected_affected_steps": 8,
+    "expected_preserved_steps": 2,
+    "actual_affected_steps": 8,
+    "missed_impact": 0,
+    "false_impact": 0,
+    "preserved_symmetric_difference": 0
+  },
+  "evidence_checks": {
+    "exact_5_setup_baselines": true,
+    "exact_5_JUnit_node_ids": true,
+    "raw_oracle_records": 16,
+    "unique_scenario_case_observations": 10,
+    "scenario_to_exact_param_node": true,
+    "duplicate_nontransport_payloads_identical": true,
+    "physical_count_per_scenario_and_case": true,
+    "distinct_exact_baseline_step_UUIDs": 50,
+    "actual_partitions_disjoint_cover_only_same_Case_5steps": true,
+    "expected_rebuilt_from_static_literal_and_baseline_not_product_code": true,
+    "reported_counts_independently_recomputed": true,
+    "partition_PASS_receipts": 4,
+    "capacity_action_receipts": 2,
+    "capacity_comparison_progress_receipts": 2
+  },
+  "resolved_findings": [
+    {
+      "severity": "P2",
+      "status": "FIXED_IN_ANALYSIS_CONSUMER_ONLY",
+      "problem": "Original consumer accepted missing reverse observation, arbitrary/wrong parameter test nodes, overlapping and cross-Case actual partitions.",
+      "before": "Original positive accepted and five controlled malformed variants accepted (expected rejection FAIL).",
+      "after": "Same positive accepted; all five exact variants rejected. No PG rerun; producer source/window unchanged.",
+      "probe_result_sha256": "18cd446a506eff6a04821938fca52403f7e858c63f635615d261f5241177ad57"
+    }
+  ],
+  "freeze": {
+    "producer_manifest": "/workspace/scratch/at25-independent-20261020/frozen-source-sha256.json",
+    "producer_manifest_sha256": "1019cc57c93b008c158af8dbbb3424bd246af237ce5e61a36caaa6d287efd52f",
+    "producer_900_original_Git_blobs_checked": true,
+    "consumer_manifest": "/workspace/scratch/at25-independent-20261020/accounting-frozen-source-sha256.json",
+    "consumer_manifest_sha256": "ae067282e45ff01de8cc1ddaf3285e6608cc61148b8f223adf1b133bc510059e",
+    "consumer_900_current_and_Git_blobs_checked": true,
+    "intentional_difference_from_producer": [
+      "docs/F2/evidence/at25-independent-impact-20261020/recompute.py"
+    ],
+    "unchanged_input_count": 899,
+    "report_runtime_source_hashes_checked": 733,
+    "current_consumer_drift": []
+  },
+  "collection_continuity": {
+    "actual_collection_source": "5f28e77ed4415f6d3d468635195eda26f381d5e8",
+    "prior_actual_collected_cases": 9366,
+    "prior_actual_collected_files": 395,
+    "four_pieces": [
+      2352,
+      2309,
+      2368,
+      2337
+    ],
+    "exact_piece_multiset_global_match": true,
+    "bound_source_files_checked": 573,
+    "byte_drift": [],
+    "new_collect_executed": false
+  },
+  "privacy": {
+    "private_values_scanned": 50,
+    "exact_and_first12_matches": 0
+  },
+  "source_sha256": {
+    "docs/F2/evidence/at25-independent-impact-20261020/recompute.py": "7229a40ffff3a212a228e6574804a0a59588aea6d885dce77bf22e719b132f0a",
+    "tests/test_at24_27_change_batch_independent.py": "d121b21c904b9f41d09c2763b7367afda984b45840a6b9b01afc3179cf189fa8",
+    "tests/test_new_enterprise_local_chain.py": "6d22e501cc096ec7851144a2010c20a2dc264940fdae1f1206920957fbc77430",
+    "tests/fixtures/at24_27_literal_oracle.json": "59f45dfb9dfbfbeeaa7348a7d92291c77519eb9c8e388f21e296d21e8a36005b",
+    "docs/F1/ATBindings.json": "8ab302b593b8226a6ed068f17c7289d06bffbf9754ec8a32c71894558c2ec4af"
+  },
+  "source_scope": {
+    "unchanged_original_spec_literal_and_test_bytes": true,
+    "unrelated_acceptance_bindings_unchanged": true,
+    "AT25_only_two_existing_selectors_bound_formal_NOT_RUN": true,
+    "product_code_protocol_permissions_limits_unchanged": true
+  },
+  "limitations": [
+    "Known FN/FP are dependency-impact identification diagnostics; actual text-edit omission/incorrect-modification rates and real business correctness NOT_MEASURED. UNKNOWN10-step conservative expansion is separate from known31-step denominator. Preserved symmetric difference overlaps classification errors and is not added to FN/FP.",
+    "Four-param no-write assertions cover stored plans and original_rows12 Case-scoped record classes, not all public tables or SQLite stores. Reviewer did not query PG.",
+    "Capacity action source asserts each old P2 VERIFY409/no-write, original ADOPT, three actual holds per Case plus bundle, original explicit comparison/link rebind, P2-P5 VERIFY, immutable old P1 lock, six old reservation/link-table row subsets. Per-Case old_verify_status fields reuse final loop variable and are not independent retained HTTP receipts. Current local outputs do not mean formal replacement Approval (NOT_IMPLEMENTED) or fulfilled Case.",
+    "No second PG run was made for consumer9d2. Five actual tests remain pinned to producer203; consumer9d2 recomputes saved same-window records only. Pure JSON controls are not product test counts.",
+    "Formal AT25/whole AT_EX, full regression, real browser/model/Windows/native permissions and real business fulfillment remain unverified. Existing authorization gates remain.",
+    "No repo/Git mutation, network, DB, Windows, role, owner or DACL action performed by this reviewer."
+  ],
+  "commands": [
+    "/workspace/parkweave-venv/bin/python /workspace/scratch/at25-fixed-review/probe_recompute.py (original source; original saved initial receipt retained)",
+    "/workspace/parkweave-venv/bin/python /workspace/scratch/at25-fixed-review/probe_recompute_after.py",
+    "/workspace/parkweave-venv/bin/python /workspace/scratch/at25-fixed-review/audit_raw.py",
+    "/workspace/parkweave-venv/bin/python /workspace/scratch/at25-fixed-review/finalize.py"
+  ],
+  "supporting_evidence_sha256": {
+    "/workspace/scratch/at25-fixed-review/raw-audit.json": "86366c26ad6e3f1816fde56e2efd43bd07a7afafdf3e4d16c8af566963022ae0",
+    "/workspace/scratch/at25-fixed-review/audit_raw.py": "fab167de671b0184a74f5c0bd8329398ca34f22e29b886e975d11e670d011252",
+    "/workspace/scratch/at25-fixed-review/probe_recompute.py": "d28187949181f6404fcd6e5d7a89e3ee62c80c57f67cc491d098942c117c82b3",
+    "/workspace/scratch/at25-fixed-review/recompute-probe-results.json": "6d8a6c41f9448b1111f6e1ed2e493304d4cc09850ec4996b761acef7a06cb683",
+    "/workspace/scratch/at25-fixed-review/probe_recompute_after.py": "8ef71acd8c5291e1c6f6e3dc6b9c1b9923a4b4010872d1d41ec14ace0701af13",
+    "/workspace/scratch/at25-fixed-review/recompute-probe-after-results.json": "18cd446a506eff6a04821938fca52403f7e858c63f635615d261f5241177ad57"
+  },
+  "raw_artifacts_sha256": {
+    "/workspace/ParkWeave/.runtime/at24-27-independent/baseline-d3625593b1184c77987c482e98e6ede3.jsonl": "e039db1ad596fc9bf70a98355fdaad21b9f386b1e720f2c173c40d5f36ad7079",
+    "/workspace/ParkWeave/.runtime/at24-27-independent/oracle-d3625593b1184c77987c482e98e6ede3.jsonl": "3c33da5010fa26d36db7fd1e09d64dc19eaf725311dade78aa026c096a41c774",
+    "/workspace/ParkWeave/.runtime/at24-27-independent/at-results-d3625593b1184c77987c482e98e6ede3.jsonl": "38ed0030076ed9ebc973d029ed33d94b1422d377aeb0b0a2318e9f451d5361fb",
+    "/workspace/ParkWeave/.runtime/at24-27-independent/selected-capacity-progress-d3625593b1184c77987c482e98e6ede3.jsonl": "02af50e79ff9fe852178e9306167a0cd5d9c951016b09839ba1fecbe0f943e74",
+    "/workspace/scratch/at25-independent-20261020/acceptance-report.json": "29e0a629acc8922e224dafabc225ece367292538e8958a907c517cc1631d02d3",
+    "/workspace/ParkWeave/.runtime/pytest-1b9e3c1a98774fc3bdd834e0d480d40b.xml": "894c0477cbd0474b25a25ec3ab6997030ca1d11c8cef69ba6d180e1d4e1843e3",
+    "/workspace/ParkWeave/.runtime/pytest-76adbd395ece4ac48c5f0bd62aa6614d.log": "d52ebb8b883daf35759668c1e4a4b9cec341c6eee8d34f1837526766be486530"
+  }
+}
