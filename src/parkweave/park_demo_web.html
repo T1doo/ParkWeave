@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>青禾园 · ParkWeave 虚构办理演示</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f1;color:#173e32;font:15px/1.6 system-ui}header{padding:22px 28px;background:#173e32;color:white}h1{margin:0;font-size:25px}header p{margin:6px 0 0;color:#d9e8dd}main{display:grid;grid-template-columns:310px minmax(0,1fr);gap:16px;padding:16px}aside{background:white;border:1px solid #d3dfd4;border-radius:14px;padding:20px;align-self:start}h2{font-size:18px;margin:16px 0 8px}h3{font-size:15px;margin-bottom:6px}button,input,select{font:inherit;max-width:100%;width:100%;margin:5px 0;padding:10px;border:1px solid #bdcfc3;border-radius:7px}button{cursor:pointer;background:#edf4ee;color:#173e32;text-align:left}button:disabled{opacity:.5;cursor:not-allowed}.notice{background:#fff4d7;padding:10px;border-radius:7px;font-size:13px}ol{padding-left:21px}li{margin-bottom:7px}small{display:block;color:#546c5e}#workspace{border:1px solid #d3dfd4;border-radius:14px;width:100%;height:calc(100vh - 145px);min-height:600px;background:white}#status{white-space:pre-wrap;overflow-wrap:anywhere}details{border-top:1px solid #d3dfd4;padding:12px 0}summary{cursor:pointer;font-weight:600}@media(max-width:800px){main{grid-template-columns:1fr;padding:9px}aside{padding:14px}#workspace{height:80vh;min-height:650px}header{padding:18px}}
+</style>
+<header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
+<main><aside>
+<p class="notice">所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。</p>
+<h2>1 · 载入本次演示身份</h2>
+<label>选择新建演示库生成的 sessions.json<input id="sessions" type="file" accept=".json,application/json"></label>
+<small>文件只在此页内存读取，不上传、不放入网址或浏览器存储。刷新后需重新选择。</small>
+<button data-role="enterprise" disabled>林岚 · 虚构企业经办人</button>
+<button data-role="specialist" disabled>周禾 · 虚构园区专员</button>
+<button data-role="executor" disabled>许辰 · 虚构执行者</button>
+<p id="status" role="status">等待选择本次模拟会话文件。</p>
+<h2>2 · 选择不同输入</h2>
+<select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
+<button id="fill-goal" disabled>填入新事项目标</button>
+<button id="fill-request" disabled>填入本事项诉求与五个办理目标</button>
+<button id="fill-need" disabled>填入独立诉求摘要</button>
+<button id="fill-outline" disabled>填入同用途通用材料目录</button>
+<small>这些按钮只填表，不提交、不采纳、不生成回执。请在右侧核对后明确点击原业务按钮。</small>
+<h2>3 · 按原办理流程操作</h2>
+<details open><summary>首办：从新输入到回执</summary><ol>
+<li>选林岚。在右侧“服务”查看服务与专员，填入目标后点“开始资料准备”。这是新的Run、Case和资料。</li>
+<li>先点“查看此事项四步计划”，填入诉求与五目标并点“保存诉求与必需目标”；再从计划返回资料。等“已就绪”后，分别填两槽材料并点“追加材料版本”。</li>
+<li>选周禾，从“协同→我的资料准备事项”打开此事项并审核；再选林岚打开同一事项并确认。</li>
+<li>查看当前方案，读取本机模拟目录、生成唯一 NO_MODEL 候选，核对后明确采纳；在持久步骤计划核对P1。</li>
+<li>在“资源”分别占位两项资源，建立组合；回资料关联当前组合并核对P2。占位会过期，过期请读当前状态，不能强行沿用。</li>
+<li>选周禾分派给许辰；许辰在协同接单；林岚核对P3。</li>
+<li>许辰提交标明SYNTHETIC的本地回执；林岚核对回执与P4。再重核本地记录、核对P5。</li>
+<li>查看目标结果、来源轨迹与Case核对包。下载包中原编号和ADOPT/回执来自实际操作，不是预造记录。</li>
+</ol></details>
+<details><summary>再次使用与取消</summary><ol>
+<li>保留首办编号，选“再次使用”的不同输入，再新建事项；不要修改首办冒充新输入。</li>
+<li>在空白新事项先读取“可复用材料目录”，查看首办来源，明确确认复制。仅复制同用途目录，不继承审核/权限/回执。</li>
+<li>追加本次独立诉求，再由周禾审核、林岚确认。两个事项有独立编号和历史。</li>
+<li>若演示取消，在新事项尚未提交回执前走原“取消此Case”，填写原因并确认。首办回执仍保留；已有回执须走原核对流程。</li>
+<li>取消不释放预约；在资源区按原权限单独取消或释放占用。已取消事项不支持假恢复。</li>
+</ol></details>
+<details><summary>错误处理与重启</summary><p>错角色、未审核、过期资源或旧版本请求应准确拒绝。刷新当前事项再按真实状态继续，不跳过审核或复用旧请求。</p><p>重新打开页面后选择同一个会话文件，在协同列表重读。服务停止后可用原state-dir和local-demo-config重启，数据保留；不要重复setup覆盖旧库。模拟目录包自新建起有效7天，期满拒绝，serve不会续期；旧记录和文件保留。</p></details>
+</aside><iframe id="workspace" src="/" title="原ParkWeave办理页面"></iframe></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),roles=['enterprise','specialist','executor'];
+let sessions=null,epoch=0;
+const examples={
+ first:{goal:'SYNTHETIC 青禾科创园 / 云杉智造：6台设备季度巡检资料整理（全部虚构）',need:'SYNTHETIC 虚构企业云杉智造申请整理6台设备季度巡检资料，联系人林岚；仅演示本地办理，不预约真实设备、不申请正式资质。'},
+ again:{goal:'SYNTHETIC 青禾科创园 / 云杉智造：新增2台设备保养资料整理（再次使用，全部虚构）',need:'SYNTHETIC 云杉智造本次新增2台设备保养资料，联系人林岚。与上一事项不同，需独立审核和结果；仅复用同用途通用目录。'}
+};
+const outline='SYNTHETIC 云杉智造同用途通用资料目录（虚构）：\n1. 企业联系人说明：林岚（虚构）\n2. 设备清单与保养记录目录\n3. 周禾核对、许辰办理的本地回执目录\n不包含真实企业资料，不证明资格或线下履约。';
+const goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK'];
+function frame(){const w=$('workspace').contentWindow;if(!w||w.location.origin!==location.origin)throw Error('原办理页面尚未就绪');return w;}
+function field(id,value){const w=frame(),el=w.document.getElementById(id);if(!el)throw Error('请先打开原办理表单');el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));return el;}
+function controls(){document.querySelectorAll('button').forEach(b=>b.disabled=!sessions);}
+function clear(){sessions=null;epoch++;controls();try{field('token','');}catch{} }
+function act(fn){try{fn();}catch{ $('status').textContent='原页面尚未就绪，请等待页面加载后重试；没有提交业务。';}}
+$('sessions').onchange=async()=>{clear();const version=epoch,file=$('sessions').files?.[0];if(!file)return;try{
+ if(file.size>4096||file.size<1)throw Error();const parsed=JSON.parse(await file.text());
+ if(version!==epoch)return;const keys=[...roles,...roles.map(x=>'second_'+x)].sort();
+ if(!parsed||Array.isArray(parsed)||Object.keys(parsed).sort().join('|')!==keys.join('|')||keys.some(k=>typeof parsed[k]!=='string'||! /^[A-Za-z0-9_-]{43}$/.test(parsed[k])))throw Error();
+ sessions=parsed;controls();$('status').textContent='模拟身份已在本页内存就绪。请明确选择人物；不会自动办理。';
+ }catch{if(version===epoch){clear();$('status').textContent='不是本次演示的六身份会话文件；未上传或使用其内容。';}}};
+document.querySelectorAll('[data-role]').forEach(button=>button.onclick=()=>act(()=>{
+ if(!sessions)return;const role=button.dataset.role;field('token',sessions[role]);
+ const w=frame(),el=w.document.getElementById('token');el.dispatchEvent(new w.Event('change',{bubbles:true}));
+ $('status').textContent=button.textContent+'：已切换。请在协同列表重新打开当前事项。';
+}));
+$('fill-goal').onclick=()=>act(()=>{const value=examples[$('scenario').value].goal;field('goal',value);field('prep-goal',value);$('status').textContent='已填新目标；请在原页面核对并明确创建。';});
+$('fill-request').onclick=()=>act(()=>{field('request-current',examples[$('scenario').value].need);field('plan-required-goals',goals.join('\n'));frame().document.getElementById('request-local-goal').checked=false;$('status').textContent='已填本次诉求与五个目标；请明确保存。';});
+function material(slot,text){field('prep-slot',slot);field('prep-text',text);field('prep-source-kind','USER_STATEMENT');field('prep-source-label','SYNTHETIC 青禾园虚构演示');$('status').textContent='已填候选材料；请核对后明确追加，未继承审核。';}
+$('fill-need').onclick=()=>act(()=>material('need_summary',examples[$('scenario').value].need));
+$('fill-outline').onclick=()=>act(()=>material('material_outline',outline));
+window.addEventListener('pagehide',clear);controls();
+</script></html>

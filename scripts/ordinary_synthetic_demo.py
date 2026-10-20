@@ -78,7 +78,8 @@ def source_binding():
         if '__pycache__' in p.parts:continue
         if p.is_symlink():raise Denied('regular demo source files required')
         if p.is_file():paths.append(p)
-    paths += [Path(__file__),ROOT/'scripts/material_only_demo.py',ROOT/'scripts/linux_fixture_server.py']
+    paths += [Path(__file__),ROOT/'scripts/material_only_demo.py',ROOT/'scripts/linux_fixture_server.py',
+              ROOT/'scripts/local_demo_inputs.py']
     files={str(p.relative_to(ROOT)):sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
     return dict(sha256=digest(json.dumps(files,sort_keys=True,separators=(',',':'))),files=files)
 
@@ -156,7 +157,7 @@ def initialize(owner,tokens):
         for rights,tables in SQL_RIGHTS.items():c.execute('GRANT '+rights+' ON '+','.join(tables)+' TO parkweave_app')
 
 
-def setup():
+def setup(*,with_local_catalog=False):
     global _last_owned_state
     if sys.platform!='linux' or os.geteuid()==0:raise Denied('existing unprivileged Linux environment required')
     p=Path(tempfile.mkdtemp(prefix=PREFIX,dir='/tmp'));_last_owned_state=p
@@ -189,6 +190,9 @@ def setup():
                 synthetic_resources=4,synthetic_resource_grants=8)
             assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
                 ('runs','cases','preparations','synthetic_resource_holds','service_dispatches','service_receipt_steps','case_local_events'))
+        if with_local_catalog:
+            from scripts.local_demo_inputs import create
+            create(p,lifecycle.dsn(p,application=True),SCOPES['primary'])
         lifecycle.dump(p/'sessions.json',tokens)
         lifecycle.dump(p/'state.json',dict(schema=SCHEMA,source=source_binding(),system_identifier=identity['system_identifier'],
             database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,scopes=SCOPES,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
@@ -260,7 +264,8 @@ def serve(value,port,local_demo_config=None):
                     print(json.dumps(dict(url=f'http://127.0.0.1:{port}',api_pid=children[0].pid,worker_pid=children[1].pid,
                         postgres_pid=pg.pid,state_dir=str(p),sessions_file=str(p/'sessions.json'),scope='ORDINARY_SYNTHETIC',
                         mode=env['PARKWEAVE_CASE_STEP_MODE'],models='DISABLED',run_assignment_created=False,
-                        available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()])),flush=True)
+                        available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()],
+                        **(dict(demo_url=f'http://127.0.0.1:{port}/demo') if local_demo_config is not None else {}))),flush=True)
                     while all(child.poll() is None for child in children):time.sleep(.25)
                     raise RuntimeError('owned API/worker exited')
                 finally:
@@ -275,12 +280,17 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=('setup','serve'));parser.add_argument('--state-dir');parser.add_argument('--port',type=int,default=8765)
     parser.add_argument('--local-demo-config',help='serve only: existing absolute hash-pinned SYNTHETIC input config')
+    parser.add_argument('--with-local-catalog',action='store_true',help='setup only: create fictional SYNTHETIC catalog inputs in the new private state')
     args=parser.parse_args()
     if (args.command=='serve')!=bool(args.state_dir):parser.error('serve requires existing --state-dir; setup creates only a fresh private directory')
     if args.command!='serve' and args.local_demo_config is not None:parser.error('local demo inputs are read only by serve')
+    if args.command!='setup' and args.with_local_catalog:parser.error('catalog inputs are created only in a fresh setup')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     try:
-        if args.command=='setup':print(json.dumps(dict(state_dir=str(setup()),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED')),flush=True)
+        if args.command=='setup':
+            p=setup(with_local_catalog=args.with_local_catalog)
+            print(json.dumps(dict(state_dir=str(p),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED',
+                **(dict(local_demo_config=str(p/'local-demo/config.json')) if args.with_local_catalog else {}))),flush=True)
         else:serve(args.state_dir,args.port,args.local_demo_config)
     except KeyboardInterrupt:return 130 if args.command=='setup' else 0
     except Exception as error:

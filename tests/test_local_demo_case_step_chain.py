@@ -99,6 +99,8 @@ def test_exact_pair_preserves_old_mode_and_all_other_provider_guards(demo_inputs
             *({key:'{}'} for key in ('PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG','PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'))):
         with pytest.raises(Denied):cs.from_environment(store,env|change)
     ordinary=cs.OrdinaryCaseStepAssignments(store);provider=catalog.configure(store,catalog.PROFILE,json.dumps(cfg))
+    with TestClient(create_app(store,case_step_assignments=ordinary)) as api:
+        assert api.get('/demo').status_code==404
     with pytest.raises(Denied):create_app(store,case_step_assignments=ordinary,local_synthetic_demo=provider)
     paired=cs.from_environment(store,env)
     create_app(store,case_step_assignments=paired,local_synthetic_demo=paired.local_synthetic_demo)
@@ -161,3 +163,63 @@ def test_combined_parent_and_executor_mapping_are_not_authority(demo_inputs):
         with service._connection(store) as c:service._context(c,p['preparation_id'])
     with store.connect() as c:
         c.execute('SET TRANSACTION READ ONLY');assert not c.execute('SELECT 1 FROM service_dispatches').fetchone()
+
+
+def test_fictional_clickable_setup_first_use_reuse_cancel_and_cold_read(tmp_path):
+    """User-authorized fictional data; real ordinary processes, never formal."""
+    from test_ordinary_synthetic_demo import command,environment,PrivateTokens
+    from service_release_acceptance_support import case_history
+    result=subprocess.run(command('setup','--with-local-catalog'),cwd=ROOT,env=environment(),capture_output=True,text=True,timeout=45)
+    (tmp_path/'setup.stdout').write_text(result.stdout);(tmp_path/'setup.stderr').write_text(result.stderr)
+    assert result.returncode==0,result.stderr
+    ready=json.loads(result.stdout.splitlines()[-1]);p=Path(ready['state_dir']);config=Path(ready['local_demo_config'])
+    marker=json.loads((p/'state.json').read_text());tokens=PrivateTokens(json.loads((p/'sessions.json').read_text()))
+    private=ROOT/'.runtime/clickable-park-demo';private.mkdir(parents=True,exist_ok=True)
+    redaction=private/'session-redaction.private.json'
+    known=json.loads(redaction.read_text()) if redaction.exists() else []
+    redaction.write_text(json.dumps(sorted(set(known)|set(tokens.values()))));redaction.chmod(0o600)
+    files=[p/'state.json',p/'sessions.json',config,config.parent/'pack.json',config.parent/'journal.json']
+    hashes={str(path):sha256(path.read_bytes()).hexdigest() for path in files}
+
+    def guide(api,phase):
+        value=dict(base=str(api.base_url).rstrip('/'),tokens=tokens,ids=demo.IDS,phase=phase)
+        run=subprocess.run(['node','tests/clickable_park_demo_html.js'],cwd=ROOT,input=json.dumps(value)+'\n',text=True,capture_output=True,timeout=120)
+        (tmp_path/(phase+'.stdout')).write_text(run.stdout);(tmp_path/(phase+'.stderr')).write_text(run.stderr)
+        assert run.returncode==0,run.stderr
+        return json.loads(run.stdout.splitlines()[-1])
+
+    with server(p,tmp_path/'first-start',local_demo_config=config) as (api,first):
+        page=api.get('/demo')
+        assert page.status_code==200 and first['demo_url'].endswith('/demo')
+        assert page.headers['cache-control']=='no-store' and page.headers['referrer-policy']=='no-referrer'
+        status=call(api,tokens,'/api/formal-preparations/entry-status')
+        assert status['state']=='UNAVAILABLE' and not status['business_record_read']
+        selected=guide(api,'first');parent={k:selected[k] for k in ('preparation_id','run_id','revision')}
+        dispatch,results=complete(api,tokens,parent,'青禾园虚构设备首办')
+        assert results['source_trace']['candidate']['producer']['mode']=='NO_MODEL'
+        base='/api/preparations/'+parent['preparation_id'];original_plan=call(api,tokens,base+'/service-case-plan')
+        original_history=case_history(Store(demo.lifecycle.dsn(p)),parent['preparation_id'])
+        record=html((None,None,{'fixture-a':tokens['enterprise'],'executor-a':tokens['executor']},api),tmp_path/'record-pack',parent,results['plan_id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=5)
+        again=guide(api,'again');assert again['preparation_id']!=parent['preparation_id'] and again['run_id']!=parent['run_id']
+        assert case_history(Store(demo.lifecycle.dsn(p)),parent['preparation_id'])==original_history
+        receipt=call(api,tokens,'/api/executor-receipts/'+dispatch['receipt_step_id'])
+        assert receipt['step']['state']=='LOCAL_ACKNOWLEDGED'
+        with Store(demo.lifecycle.dsn(p)).connect() as c:
+            c.execute('SET TRANSACTION READ ONLY');assert demo.authority(c)==marker['authority']
+            assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+            assert c.execute('SELECT state FROM cases WHERE id=(SELECT case_id FROM preparations WHERE id=%s)',(again['preparation_id'],)).fetchone()['state']=='CANCELLED'
+    with server(p,tmp_path/'cold-start',local_demo_config=config) as (api,cold):
+        assert all(first[key]!=cold[key] for key in ('postgres_pid','api_pid','worker_pid'))
+        assert call(api,tokens,base+'/service-case-plan')==original_plan
+        assert call(api,tokens,base+'/goal-results')==results
+        assert api.get('/demo').status_code==200
+    assert {str(path):sha256(path.read_bytes()).hexdigest() for path in files}==hashes
+    # Real linked sample, produced only by the ordinary API commands above.
+    sample=dict(kind='SYNTHETIC',fictional_park='青禾科创园',fictional_enterprise='云杉智造',
+        source_adapter='LOCAL_SYNTHETIC_DEMO_NO_MODEL_V1',state_dir=str(p),first=parent,
+        plan=original_plan,receipt=receipt,results=results,second=again,
+        input_hashes_unchanged=True,authority_unchanged=True,run_assignments=0,
+        html_checks=[selected['checks'],again['checks'],record['checks']],
+        real_browser=False,formal_source=False,real_model_calls=0)
+    (tmp_path/'fictional-linked-sample.json').write_text(json.dumps(sample,ensure_ascii=False,default=str,indent=2)+'\n')
+    (private/'latest-run.json').write_text(json.dumps(dict(state_dir=str(p),artifact_dir=str(tmp_path)),indent=2)+'\n')

@@ -8,6 +8,25 @@
 
 需已有非root Linux、Python3.12和本仓库依赖（包括`pgserver==0.1.4`）。从完整源码根目录运行；不要求`.git`存在。新机器需先按`pyproject.toml`准备Python环境和依赖，本启动器不下载或安装依赖。Windows原生、WSL和其他环境未在本片验收，不能用此入口替代Windows正式AT。
 
+## 青禾园虚构人物与可点击引导
+
+用户已明确允许新造演示数据。需要“青禾科创园 / 云杉智造”首办、再次使用和取消引导时，在新库初始化时明确选择本机模拟目录：
+
+```bash
+.venv/bin/python -B -m scripts.ordinary_synthetic_demo setup --with-local-catalog
+.venv/bin/python -B -m scripts.ordinary_synthetic_demo serve \
+  --state-dir /tmp/parkweave-ordinary-demo-实际值 \
+  --local-demo-config /tmp/parkweave-ordinary-demo-实际值/local-demo/config.json --port 8765
+```
+
+本指定环境的Python路径是`/workspace/parkweave-venv/bin/python`。使用setup实际输出的路径，打开serve输出的`demo_url`（`http://127.0.0.1:8765/demo`，仅该环境本机可访问）。选择同一state目录下的`sessions.json`，用左侧人物按钮切换身份、示例按钮填表，右侧仍是原业务页面，所有创建、审核、ADOPT、回执与取消均须明确操作。初始化只生成既有格式的模拟目录、journal与绑定配置，业务记录起初为空；不预插成功事件。`serve`只读取并校验这些既有文件，不能补造或修复。
+
+新模式复用精确配对的`LOCAL_DEMO_CURRENT_PREPARATION`和`LOCAL_SYNTHETIC_DEMO`，候选标记`NO_MODEL`。它不会开放正式来源或原生权限；默认不带这些参数的旧入口继续保持原模式。材料复用仅复制本人同用途通用目录，新诉求、审核和确认独立进行；第二事项可在提交回执前按原规则取消，第一事项的已办回执仍保留。模拟目录包从setup起有效7天，serve不续期或修改旧文件，期满拒绝并保留数据；资源占位和接单窗口有各自期限，过期按原界面拒绝。
+
+下面保留不启用模拟目录的原入口用法。
+
+## 原普通合成模式
+
 初始化与日常启动分开。在源码根目录、已有`.venv`环境中先执行一次：
 
 ```bash

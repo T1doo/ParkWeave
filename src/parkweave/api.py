@@ -258,6 +258,14 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def index():
         return Path(__file__).with_name("web.html").read_text(encoding='utf-8')
 
+    @app.get('/demo', response_class=HTMLResponse)
+    def fictional_park_demo():
+        from .case_step_assignments import local_demo_pair
+        if not local_demo_pair(case_step_assignments,store,local_synthetic_demo):
+            raise HTTPException(404,'fictional demo profile is not enabled')
+        return HTMLResponse(Path(__file__).with_name('park_demo_web.html').read_text(encoding='utf-8'),
+            headers={'Cache-Control':'no-store','Referrer-Policy':'no-referrer'})
+
     @app.get("/health")
     def health():
         with store.connect() as c:
