@@ -1,0 +1,109 @@
+{
+  "stage": "READ_ONLY_DESIGN_NOT_EXECUTED",
+  "reviewed_base_sha": "ff67d40b205140faf1d15d7112b20cc9bbaf9f49",
+  "verdict": "ACK_ONE_EXISTING_BACKEND_FIXED_AT27_ENGINEERING_SELECTOR_WITH_EVIDENCE_GATES",
+  "source_sha256": {
+    "docs/sources/V1/平台产品设计 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "docs/sources/V1/分阶段开发计划 (2).md": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+    "docs/F2/AT24-27FixedOracles-20261015.json": "e5da8d65d71c1e657a4a8aca18da38b5d6cf97536c469bce524dadd0c2e42a07",
+    "tests/fixtures/at24_27_literal_oracle.json": "59f45dfb9dfbfbeeaa7348a7d92291c77519eb9c8e388f21e296d21e8a36005b",
+    "tests/test_at24_27_change_batch_independent.py": "d121b21c904b9f41d09c2763b7367afda984b45840a6b9b01afc3179cf189fa8",
+    "tests/at24_27_change_batch_real_html.js": "e849a4dc47b10fd6a45185a5ec508716268f38afd787aef8c2d86fba5efa40e5",
+    "src/parkweave/template_upgrade.py": "901054f04b370eac2238e0c9e19b6512b7c7bded3de682405c2397a7137e8db9",
+    "src/parkweave/template_migration.py": "511d9a3c46de62ccd2b8175aa64dc572d83a83f160a75b4986cfa0c950eda24e",
+    "src/parkweave/template_candidate.py": "ae199975416873cc1a2efd81b2e382da5770b3a29cca9bbf763ad03d208e89fe"
+  },
+  "original_contract": {
+    "V1_product": "7.5: immutable releases and independent Case/reservation/receipt data; compatibility check first; destructive migration refused; definition rollback does not undo facts.",
+    "V1_AT27": "Reject incompatible publication/data migration/rollback attempts; keep business facts; evidenced precheck.",
+    "fixed_C27": [
+      "C27_INVALID_REGISTERED_DEFINITION",
+      "C27_PUBLISH_WITHOUT_REVIEW",
+      "C27_BREAKING_OLD_CASE_APPLICABILITY",
+      "C27_MIGRATE_TYPED_CHOICE",
+      "C27_ROLLBACK_SUPERSEDED_REF",
+      "C27_APPLY_BREAKING"
+    ]
+  },
+  "selectors": [
+    "tests/test_at24_27_change_batch_independent.py::test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial"
+  ],
+  "minimal_execution": {
+    "maximum_existing_pytest_cases": 1,
+    "one_frozen_window": true,
+    "suggested_runner_timeout_seconds": 240,
+    "mode": "Original acceptance runner AT-27 selectors only, authorized owned Linux ephemeral synthetic fixture/HTTP ASGI. No new protocol, scope matrix, permission or model calls.",
+    "sample_unit": "One existing backend test reuses its original owned synthetic A/B pair for publication guards, each Case compatibility/recheck/complete-apply/old-target checks.",
+    "no_duplicated_product_tests": "Do not rerun unchanged HTML/UI, AT25/26, legacy schema/grant migration selectors, or full regression; no new matrix."
+  },
+  "expected_oracles": [
+    {
+      "stage": "baseline",
+      "oracle": "A/B independently identified six goals and P1-P5 currently VERIFIED; distinct Case/Run/preparation/plan/step/reservation/receipt/consumer identities; original facts/full text saved before change."
+    },
+    {
+      "stage": "invalid_definition",
+      "oracle": "Full SAVE_DRAFT with empty steps under original actor returns422 from typed definition validator; entire candidate engine journal and all business+consumer snapshots unchanged."
+    },
+    {
+      "stage": "unreviewed_publish",
+      "oracle": "Full CANDIDATE_PUBLISH by valid publisher after SAVE_DRAFT+SUBMIT but before independent REVIEW returns409; no new release, template journal unchanged from submitted state, both business states unchanged."
+    },
+    {
+      "stage": "reviewed_new_head",
+      "oracle": "Original independent REVIEW then CANDIDATE_PUBLISH200 yields a distinct latest release removing original mandatory coordination goal. It may legally publish; it must not alter/migrate either old Case. Original immutable template release rows remain available as historical proof."
+    },
+    {
+      "stage": "each_A_B_check_and_choices",
+      "oracle": "GET check200 exact original/latest release references; BREAKING_REJECTED, allowed_choices onlyKEEP_CURRENT and application ineligible. REQUEST_RECHECK409 no journal/business writes. MIGRATE422 is typed choice rejection only. Explicit KEEP_CURRENT200 may append exactly one correctly bound upgrade journal event per Case and no business write."
+    },
+    {
+      "stage": "each_A_B_full_apply",
+      "oracle": "Current complete Apply DTO passes request shape and references fresh check, exact saved KEEP event, exact initial plan id/revision/current preparation/source. POST /apply409 includes actual incompatible-scope business blocker UPGRADE_SCOPE_UNSUPPORTED (with CURRENT_EXPLICIT_CHOICE_REQUIRED expected for KEEP), not body422,404, stale proof or auth-only substitute. Checker journal and all business+consumer states unchanged from immediately before denied operation."
+    },
+    {
+      "stage": "each_A_B_old_target_check",
+      "oracle": "Original superseded release reference GET check403 current target unavailable; old original binding/full data/receipts/reservations remain exact. This is a rollback-precheck refusal, no rollback execution or F5 recovery claim."
+    }
+  ],
+  "required_bounded_evidence_supplement": [
+    "Freeze/save stage original/latest release identity and exact full Apply request, fresh check/projection, KEEP event, response status+body. Assert specific incompatible-scope blocker so a generic409 cannot masquerade as actual compatibility guard.",
+    "Keep entire full_business PostgreSQL public table and consumer SQLite equality checks. full_business intentionally excludes authorization_audit; it excludes template engine/checker stores, which need their existing separate state checks. Do not claim all database bytes globally unchanged.",
+    "Save original immutable template release/entity row IDs and hashes/full payload subset before and after the lawful publication, alongside mutable head movement. Old current candidate availability may change; historical data is distinct from current validity.",
+    "Retain allowed KEEP_CURRENT journal writes separately from forbidden business writes; record journal predecessor and final two exact events, not blanket no-write claim.",
+    "Archive source-bound baseline/results/JUnit/log plus UI stdout calls; no authentication token/header values or prefixes in public archive. No need repeat PG for independent arithmetic/source review.",
+    "Apply.model_validate is auxiliary DTO-shape proof only; actual original HTTP409 response and fresh projection must both include UPGRADE_SCOPE_UNSUPPORTED. KEEP_CURRENT alone is not compatibility proof."
+  ],
+  "open_design_P1_P2": [],
+  "scope_cautions": [
+    "Existing test only asserts full Apply409; evidence-specific incompatibility reason should be asserted/retained before final acceptance signoff.",
+    "MIGRATE422 is schema rejection; superseded-target403 is current source refusal. Neither is successful or fully invoked migration/rollback execution.",
+    "Breaking new target publication itself is permitted after review; original guarantee is incompatible old Case applicability/application refusal, not blanket ban on publishing a new definition."
+  ],
+  "reporting": {
+    "engineering": "Only frozen original-runner result after actual run may be PARTIAL_PASS. Planned2 selectors are not current passes.",
+    "formal_AT27": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "full_regression": false,
+    "real_browser": "NOT_RUN",
+    "real_models": "NOT_RUN",
+    "native_Windows": "NOT_RUN",
+    "actual_business_fulfillment": "NOT_MEASURED",
+    "F5_migration_rollback_execution": "NOT_RUN",
+    "UI_current_slice": "NOT_RUN"
+  },
+  "independent_execution": "None. Read-only source/design inspection; no PG, model, network, permissions, repo/Git writes or product tests.",
+  "historical_UI": "Original NodeVM HTML AT27 driver reads/checks only A and observes GET-only/disabled controls; it is historical evidence, not executed by current one-selector window. UI and real browser NOT_RUN this slice.",
+  "binding_transition": {
+    "replace_original_AT27_engineering_selectors_only": true,
+    "new_engineering_selectors": [
+      "tests/test_at24_27_change_batch_independent.py::test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial"
+    ],
+    "preserve_prior_two_as_nonexecuted_metadata": "historical_engineering_selectors",
+    "historical_binding_source_sha": "ff67d40b205140faf1d15d7112b20cc9bbaf9f49",
+    "runner_static_check": "validate_bindings and summarize consume engineering_selectors; historical field is ignored for execution/count/missing, so previous selectors are traceability only.",
+    "formal_whole_status": "NOT_RUN",
+    "other_AT_rows": "UNCHANGED"
+  },
+  "design_revision": "Parent explicitly narrowed scope to one existing backend selector after initial two-selector suggestion; no execution results changed or claimed."
+}

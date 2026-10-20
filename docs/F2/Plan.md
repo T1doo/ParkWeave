@@ -1,3 +1,7 @@
+## 2026-10-20：AT-27 固定定义升级与业务数据工程切片
+
+源码 `9a2a9d5a778e58661f9cc7269827823146830667`，原runner实际1PASS/0FAIL/0SKIP（18.21秒），source_binding AVAILABLE；正式AT27仍NOT_RUN。既有两Case原注册定义/未审发布拒绝、合法新定义不迁移旧Case、完整11字段Apply实际409含UPGRADE_SCOPE_UNSUPPORTED及KEEP非执行选择阻断；旧ref403仅当前可用性预检，MIGRATE422仅类型拒绝，不冒迁移/回滚执行。21类64原行全文、45张业务PG表排audit、consumer/计划/历史在8保全点不变，checker仅两KEEP。907输入零漂移，9366仅精确collection且ID增删0；产品src/UI未改不重跑。见[实质结果与原件](AT27FixedDefinitionData-20261020.md)。Windows/真实来源/owner授权门与原计划剩余项保持，下方历史保留。
+
 ## 2026-10-20：AT-25 独立影响统计与既有容量动作链
 
 执行源码 `203bf00732a3e189e53b58dac56b30dd241206b5`，统计校验源码 `9d2f8e8bd3c0ace96a7d60cef6768e674ccefa14`，原runner当前5PASS/0FAIL/0SKIP（86.71秒）；正式AT-25仍NOT_RUN。原literal+当次baseline独立重算：known12读数去重8观察、影响31/保全9、FN/FP/保全差各0；UNKNOWN4读数去重2观察、10步扩大单列，不作正文误改率。原容量两Case明确重绑定/P2–P5VERIFY，P1锁及旧reservations保留。独审发现统计输入校验缺口已最小修复，仅重算同原件，不重复5项PG；900输入中仅统计脚本1项有意变动，producer/consumer分别冻结。沿用9366精确collection、573输入无字节差，不新收集或冒实跑。见[结果、原件与未验范围](AT25IndependentImpact-20261020.md)；原Windows/真实来源/owner授权门不变，下方历史保留。
