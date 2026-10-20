@@ -590,6 +590,134 @@ def test_at26_real_note_keep_defer_original_unlock_and_bound_source_accept(two_c
         exact_actual_source_text=True, original_six_goals_and_uuids_preserved=True, adoption_and_verify_remain_explicit=True))
 
 
+def test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck(two_cases):
+    """One current execution of the fixed C26 sequence, not formal AT-26 PASS."""
+    t = two_cases; f = t['f']; row = t['rows']['A']
+    n0 = 'SYNTHETIC AT26 人工原文第一行\n第二行：保留全部内容、标点与方法决定。\n'
+    for label, parent in t['rows'].items():
+        value = conflict_view(t, label).json()
+        response = conflict_write(t, conflict_body(value, 'EDIT_NOTE', text=n0), label)
+        assert response.status_code == 200, response.text
+        assert response.json()['current']['note']['text'] == n0
+        assert lock(f, parent, 'P1').status_code == 200
+    # This slice's frozen initial state includes BOTH explicit notes and locks.
+    # The generic fixture's earlier baseline remains separately recorded.
+    t['initial'] = {label: deepcopy(stored(f, parent)) for label, parent in t['rows'].items()}
+    m0 = {label: conflict_view(t, label).json()['source'] for label in t['rows']}
+    frozen_consumer = full_business(t)['consumer']
+    frozen_template = sqlite_snapshot(t['u']['engine'].repository)
+    change_traffic_start = len(t['traffic'])
+    controls = material_controls(t)
+
+    def stage(name):
+        views = {label: plan_read(f, parent).json() for label, parent in t['rows'].items()}
+        plans = {label: deepcopy(stored(f, parent)) for label, parent in t['rows'].items()}
+        notes = {label: conflict_view(t, label).json()['note'] for label in t['rows']}
+        for label, plan in plans.items():
+            initial = t['initial'][label]
+            assert plan['id'] == initial['id'] and plan['required_goals'] == initial['required_goals']
+            assert [s['id'] for s in plan['steps']] == [s['id'] for s in initial['steps']]
+            assert plan['events'][:len(initial['events'])] == initial['events']
+            assert plan['history'] == initial['history']
+        assert plans['B'] == t['initial']['B'] and notes['B']['text'] == n0
+        assert all(s['state'] == 'VERIFIED' for s in views['B']['steps'])
+        assert full_business(t)['consumer'] == frozen_consumer
+        assert sqlite_snapshot(t['u']['engine'].repository) == frozen_template
+        goals = {label: call(t['u'], '/api/preparations/' + parent['preparation_id'] + '/goal-results')
+                 for label, parent in t['rows'].items()}
+        append_record('at26-fixed-stages', dict(stage=name, scope='LINUX_SYNTHETIC_HTTP_ASGI_ENGINEERING_ONLY',
+            formal_at26='NOT_RUN', n0=n0, m0=m0, notes=notes,
+            goals=goals, no_automatic_publication=True, template_sha256=fingerprint(frozen_template),
+            current={label: dict(state=v['state'], steps=v['steps']) for label, v in views.items()},
+            historical={label: dict(events=p['events'], history=p['history'],
+                stored_step_verified_sources={s['adapter_id']: s.get('verified_sources') for s in p['steps']}) for label, p in plans.items()}))
+        return views
+
+    def denied(name, request):
+        before = full_business(t)
+        response = request()
+        assert response.status_code == 409, response.text
+        assert full_business(t) == before, name
+        append_record('at26-fixed-denials', dict(action=name, status=response.status_code, response=response.json(), no_write=True))
+
+    stage('both_manual_notes_and_locks_frozen')
+    imported = opportunity_post(f, row, opportunity_body(opportunities(f, row).json(), item=entry()))
+    assert imported.status_code == 200, imported.text
+    controls['change_material']()
+    refreshed = opportunity_post(f, row, opportunity_body(opportunities(f, row).json(), 'REFRESH'))
+    assert refreshed.status_code == 200, refreshed.text
+    card = refreshed.json()['current']['cards'][0]
+    views = stage('A_source_changed_old_success_and_current_conflict_separate')
+    assert views['A']['steps'][0]['state'] == 'LOCK_CONFLICT'
+    assert views['A']['steps'][0]['verified_sha256'] != views['A']['steps'][0]['source_sha256']
+    assert call(t['u'], '/api/preparations/' + row['preparation_id'] + '/goal-results')['state'] != 'LOCAL_OUTPUTS_VERIFIED'
+    assert conflict_view(t, card=card).json()['note']['text'] == n0
+    assert [s['verified_sources'] for s in stored(f, row)['steps']] == [s['verified_sources'] for s in t['initial']['A']['steps']]
+    for action in ('EDIT_NOTE', 'ACCEPT_SOURCE'):
+        value = conflict_view(t, card=card).json()
+        data = conflict_body(value, action, text='SYNTHETIC forbidden replacement' if action == 'EDIT_NOTE' else None)
+        denied(action + '_WHILE_LOCKED', lambda: conflict_write(t, data))
+    current_plan = plan_read(f, row).json()
+    denied('VERIFY_WHILE_LOCKED', lambda: plan_command(f, row, 'P1', row=current_plan))
+    for action in ('KEEP_MANUAL', 'DEFER'):
+        value = conflict_view(t, card=card).json()
+        result = conflict_write(t, conflict_body(value, action))
+        assert result.status_code == 200, result.text
+        assert result.json()['current']['state'] == {'KEEP_MANUAL': 'KEPT_MANUAL', 'DEFER': 'DEFERRED'}[action]
+        assert result.json()['current']['note']['text'] == n0
+        view = stage(action + '_does_not_resolve_lock_or_adopt')
+        assert view['A']['steps'][0]['state'] == 'LOCK_CONFLICT'
+        assert stored(f, row)['steps'][0]['manual_lock'] == t['initial']['A']['steps'][0]['manual_lock']
+        proposal = preview(f, row, card).json()
+        assert not proposal['can_adopt']
+        denied(action + '_BOUND_ADOPT', lambda: adopt(f, row, proposal['adoption']))
+        data = patch_body(f, row)
+        denied(action + '_PROOFLESS_ADOPT', lambda: patch(f, row, body=data))
+
+    response = plan_command(f, row, 'P1', 'UNLOCK')
+    assert response.status_code == 200, response.text
+    assert response.json()['steps'][0]['state'] == 'NEEDS_RECHECK'
+    stage('explicit_UNLOCK_is_not_content_resolution_or_verification')
+    data = patch_body(f, row)
+    denied('UNLOCKED_UNRESOLVED_PROOFLESS_ADOPT', lambda: patch(f, row, body=data))
+    current_plan = plan_read(f, row).json()
+    denied('UNLOCKED_UNREPAIRED_VERIFY', lambda: plan_command(f, row, 'P1', row=current_plan))
+    value = conflict_view(t, card=card).json()
+    assert value['note']['text'] == n0 and value['source']['text'] == 'SYNTHETIC AT25 actual revised material outline version two'
+    accepted = conflict_write(t, conflict_body(value, 'ACCEPT_SOURCE'))
+    assert accepted.status_code == 200, accepted.text
+    current = accepted.json()['current']
+    assert current['state'] == 'ACCEPTED_AWAITING_RECHECK'
+    assert current['note']['origin'] == 'SOURCE' and current['note']['text'] == value['source']['text']
+    assert current['note']['text_sha256'] == hashlib.sha256(value['source']['text'].encode()).hexdigest()
+    stage('explicit_ACCEPT_SOURCE_is_not_fact_verification')
+    proposal = preview(f, row, card).json()
+    assert proposal['can_adopt']
+    controls['before_adopt']()
+    response = adopt(f, row, proposal['adoption'])
+    assert response.status_code == 201, response.text
+    controls['after_adopt']()
+    stage('explicit_ADOPT_retains_old_verified_sources_until_business_recheck')
+    current_plan = plan_read(f, row).json()
+    denied('ADOPTED_UNREPAIRED_VERIFY', lambda: plan_command(f, row, 'P1', row=current_plan))
+    for adapter, correction in zip(ALL, ('review_material', 'relink_resources', 'reoffer_accept', 'new_report_ack', 'revalidate_local')):
+        controls[correction]()
+        stage('actual_business_' + correction + '_before_VERIFY')
+        verified(f, row, adapter)
+        stage('explicit_' + adapter + '_VERIFY')
+    controls['final_evidence']()
+    final = stage('six_local_outputs_verified_business_case_not_auto_completed')
+    assert all(s['state'] == 'VERIFIED' for s in final['A']['steps'])
+    actions = [e['action'] for e in stored(f, row)['events'][len(t['initial']['A']['events']):]]
+    assert actions.count('UNLOCK') == 1 and actions.count('ADOPT') == 1 and actions.count('VERIFY') == 5
+    traffic = t['traffic'][change_traffic_start:]
+    assert not any(r['method'] != 'GET' and '/template-' in r['path'] for r in traffic)
+    append_record('at26-fixed-http', dict(requests=traffic, no_automatic_template_publication=True))
+    append_record('at-results', dict(at='AT-26', scenario='C26_BOTH_LOCKED_SINGLE_CURRENT_EXECUTION', result='PASS',
+        formal_at26='NOT_RUN', explicit_actions=actions, exact_full_manual_text=n0,
+        historical_success_separate_from_current_validity=True, real_browser='NOT_RUN', windows='NOT_RUN', real_model_calls=0))
+
+
 @pytest.mark.parametrize('action', ['ACCEPT_SOURCE', 'KEEP_MANUAL', 'DEFER'])
 def test_note_actual_material_a_b_a_rejects_old_choice_without_writes(two_cases, action):
     t = two_cases; f = t['f']; card, value = create_manual_conflict(t, locked=False)
