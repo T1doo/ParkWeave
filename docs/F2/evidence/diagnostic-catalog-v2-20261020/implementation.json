@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "scope": "APPROVED_SCHEMA_2_GLOBAL_DIAGNOSTIC_CATALOG_MIGRATION",
+  "source_parent_head": "a5603e81e5b54c96599110632137641560f83dd4",
+  "authorization": "Parent relayed explicit user approval (通过 / 批准) for schema-2 global migration; prior design-only refusal is historical.",
+  "contract": {
+    "logical_global_ids": 4096,
+    "global_source_files": 512,
+    "active_index_plus_all_domain_raw_bytes": 524288,
+    "index_raw_bytes": 8192,
+    "line_raw_bytes": 512,
+    "identity_bytes": 256,
+    "retained_full_identity_references": 3000,
+    "batch_request_occurrences": 832,
+    "complete_global_AST_scans_per_operation": 1,
+    "source_file_raw_bytes": 4194304,
+    "source_total_raw_bytes": 33554432
+  },
+  "observed": {
+    "ids": 3525,
+    "files": 395,
+    "active_raw_bytes": 452178,
+    "generation": "ae3da63efdd39fda9017fe5f41df47749a1cb9d8b299d779cf1adaac961487d2",
+    "mapping_sha256": "51267724ece5b4718c56690621962aed6e70aa63243798f0cda0eb3dd4900654",
+    "legacy_ids": 2954,
+    "legacy_ids_removed": 0,
+    "newly_covered_ids": 571
+  },
+  "invariants": [
+    "All five domains are semantically read and checked against exact current source AST before membership/output.",
+    "Fixed source-to-domain mapping; strict order, uniqueness, complete file/ID equality; no hash-only acceptance.",
+    "One operation request/reference ledger, with no per-ID/row/domain reset; no membership cache.",
+    "Index published last with os.replace; incomplete/unknown generations refuse; failed/development outputs retained outside active generation.",
+    "Final source/index/domain fingerprints and generation file set checked before output/checkpoint commit.",
+    "JUnit SAX discards unknown attributes/text; a single start tag is budgeted before attribute decoding.",
+    "Publisher JSON token preflight includes pairs-hook copies and decoder memo key/value references before full JSON decoding.",
+    "Per-persisted-checkpoint fresh global validation, one coalesced <=1024-byte pending slot, observation clock captured before scan, bounded shutdown and late-write cancellation.",
+    "Index strings are checked individually before JSON object construction: full identities, including escapes and unknown fields, refuse; legal index schema contains none."
+  ],
+  "public_limits_unchanged": {
+    "summary_bytes": 65536,
+    "annotations": 8,
+    "annotation_command_bytes": 2048,
+    "annotation_total_bytes": 16384,
+    "annotation_batch_ids": 25
+  },
+  "reference_scope": "Full diagnostic identity references, including display strings, input/output containers, query keys and decoder scratch. Opaque serialized catalog/XML/JSON bytes and source AST partial names have separate I/O budgets; no 512KiB Python heap or RSS claim.",
+  "legacy_migration": "Known sorted schema-1 input is streamed; up to 2968 retained entries reserve >=32 scratch slots. Actual historical 2954-entry input migrates. 3000-entry legacy input refuses REFERENCE_LIMIT rather than exceeding resident contract.",
+  "deployment_and_acceptance": {
+    "OWNER_MUTATION_PAUSED": "UNCHANGED",
+    "migrations_026_to_032_roles_seed_DACL": "UNCHANGED",
+    "native_Windows_installation": "NOT_RUN",
+    "native_end_to_end": "NOT_RUN",
+    "synthetic_setup_receipt_is_native_acceptance": false,
+    "real_model_calls": 0,
+    "real_budget": 0,
+    "deployment": "NOT_RUN"
+  },
+  "development_evidence": "Development failures and superseded generations retained under /workspace/scratch/catalog-implementation; only frozen successful checks count as validation."
+}

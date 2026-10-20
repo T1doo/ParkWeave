@@ -1,3 +1,4 @@
+from catalog_test_support import catalog_ids
 """Safe identifiers only: poisoned private XML/metadata never become public output."""
 import ast
 from contextlib import contextmanager
@@ -51,7 +52,7 @@ def test_missing_oversize_and_case_limits_are_visible(tmp_path,monkeypatch):
 
 
 def test_truncated_allowlisted_ids_preserve_failure_counts(tmp_path):
-    m=module('diagnostics');ids=sorted(m._allowed_tests())[:m.MAX_FAILURE_IDS+3]
+    m=module('diagnostics');ids=sorted(catalog_ids())[:m.MAX_FAILURE_IDS+3]
     entries=[]
     for id in ids:
         file,*parts=id.split('::');entries.append((Path(file).stem+('.'+parts[0] if len(parts)==2 else ''),parts[-1]+'['+POISON+']','failure'))
@@ -88,53 +89,66 @@ def test_committed_allowlist_exactly_matches_trusted_test_functions():
                 for method in node.body:
                     if isinstance(method,(ast.FunctionDef,ast.AsyncFunctionDef)) and method.name.startswith('test_'):
                         expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name+'::'+method.name)
-    assert m._allowed_tests()==expected
+    result=m._allowed_tests([KNOWN])
+    assert KNOWN in result and result.stats['ids']==len(expected)
+    assert result.stats['catalog_scans']==1
+    index=json.loads((ROOT/'scripts/windows_ci/diagnostic-test-ids.json').read_bytes())
+    actual=[]
+    for row in index['domains']:
+        path=ROOT/'scripts/windows_ci/diagnostic-catalog-v2'/index['generation']/(row['domain']+'.jsonl')
+        for line in path.read_bytes().splitlines():
+            item=json.loads(line)
+            if 'id' in item:actual.append(item['id'])
+    assert len(actual)==len(set(actual)) and set(actual)==expected
 
 
-def _catalog_fixture(tmp_path, source='def test_alpha(): pass\n', ids=None):
+def _catalog_fixture(tmp_path, monkeypatch, source='def test_alpha(): pass\n', ids=None):
     root=tmp_path/'repo';(root/'tests').mkdir(parents=True)
     (root/'tests/test_a.py').write_text(source,encoding='utf-8')
     target=root/'scripts/windows_ci/diagnostic-test-ids.json';target.parent.mkdir(parents=True)
     ids=['tests/test_a.py::test_alpha'] if ids is None else ids
     target.write_text(json.dumps({'schema':1,'test_ids':ids}),encoding='utf-8')
+    monkeypatch.setattr(module('diagnostic_catalog').cv,'FILE_DOMAINS',{'tests/test_a.py':'FOUNDATION_HOST'})
     return root,target
 
 
-def test_catalog_maintenance_exact_ast_and_atomic_update(tmp_path):
+def test_catalog_maintenance_exact_ast_and_atomic_update(tmp_path,monkeypatch):
     m=module('diagnostic_catalog')
     source='def test_alpha(): pass\nclass DemoChecks:\n async def test_beta(self): pass\nclass _Private:\n def test_hidden(self): pass\n'
-    root,target=_catalog_fixture(tmp_path,source)
+    root,target=_catalog_fixture(tmp_path,monkeypatch,source)
     before=target.read_bytes();report=m.inspect(root)
     assert report['status']=='MISMATCH' and report['expected']==2 and report['missing']==1 and report['extra']==0
     assert target.read_bytes()==before
     report=m.inspect(root,write=True)
     assert report['status']=='UPDATED' and report['write_state']=='CONFIRMED'
-    assert json.loads(target.read_text())['test_ids']==['tests/test_a.py::DemoChecks::test_beta','tests/test_a.py::test_alpha']
+    assert json.loads(target.read_text())['schema']==2
+    assert all(i in m.cv.scan(root,catalog_ids(root)) for i in catalog_ids(root))
     assert m.inspect(root)['status']=='VALID'
     assert not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
 
 
-@pytest.mark.parametrize('count',[3000,3001])
+@pytest.mark.parametrize('count',[4096,4097])
 def test_catalog_maintenance_global_capacity_precedes_any_write(tmp_path,monkeypatch,count):
     m=module('diagnostic_catalog')
-    root,target=_catalog_fixture(tmp_path,''.join(f'def test_case_{i}(): pass\n' for i in range(count)),['tests/test_a.py::test_case_0'])
+    root,target=_catalog_fixture(tmp_path,monkeypatch,''.join(f'def test_case_{i}(): pass\n' for i in range(count)),['tests/test_a.py::test_case_0'])
     before=target.read_bytes();entries=set(target.parent.iterdir())
-    if count>3000:
+    if count>4096:
         monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('capacity refusal must precede temporary creation'))
     report=m.inspect(root,write=True)
-    assert report['expected']==count and report['limit_ids']==3000
-    if count>3000:
+    assert report['expected']==count and report['limit_ids']==4096
+    if count>4096:
         assert report['status']=='CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
         assert target.read_bytes()==before and set(target.parent.iterdir())==entries
     else:
         assert report['status']=='UPDATED'
         reader=module('diagnostics');monkeypatch.setattr(reader,'__file__',str(target.parent/'diagnostics.py'))
-        assert len(reader._allowed_tests())==3000  # Original runtime reader, unchanged.
+        result=reader._allowed_tests(['tests/test_a.py::test_case_0'])
+        assert result.stats['ids']==4096 and 'tests/test_a.py::test_case_0' in result
 
 
 @pytest.mark.parametrize('kind',['duplicate_test','invalid_syntax','source_unicode','source_long_id','illegal_id','duplicate_json','invalid_json','extra_key','bool_schema','duplicate_id','oversize','symlink'])
 def test_catalog_maintenance_invalid_inputs_never_replace_or_echo(tmp_path,monkeypatch,kind):
-    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path)
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch)
     source=root/'tests/test_a.py'
     if kind=='duplicate_test':source.write_text('def test_alpha(): pass\ndef test_alpha(): pass\n')
     elif kind=='invalid_syntax':source.write_text('def '+POISON+'(:\n')
@@ -154,14 +168,14 @@ def test_catalog_maintenance_invalid_inputs_never_replace_or_echo(tmp_path,monke
     before=target.read_bytes();entries=set(target.parent.iterdir())
     monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('refusal must precede temporary creation'))
     report=m.inspect(root,write=True)
-    assert report['status'] in ('SOURCE_REFUSED','CATALOG_REFUSED','INPUT_REFUSED')
+    assert report['status'] in ('SOURCE_REFUSED','CATALOG_REFUSED','INDEX_REFUSED','INPUT_REFUSED')
     assert report['write_state']=='NOT_ATTEMPTED' and POISON not in json.dumps(report)
     assert target.read_bytes()==before and set(target.parent.iterdir())==entries
 
 
 def test_catalog_maintenance_candidate_byte_capacity_refuses_before_write(tmp_path,monkeypatch):
-    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,'def test_alpha(): pass\ndef test_beta(): pass\n')
-    before=target.read_bytes();monkeypatch.setattr(m,'MAX_ALLOWLIST_BYTES',len(before)+1)
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    before=target.read_bytes();monkeypatch.setattr(m.cv,'MAX_BYTES',len(before)+1)
     report=m.inspect(root,write=True)
     assert report['status']=='BYTE_CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
     assert report['candidate_bytes']>report['limit_bytes'] and target.read_bytes()==before
@@ -169,14 +183,13 @@ def test_catalog_maintenance_candidate_byte_capacity_refuses_before_write(tmp_pa
 
 
 def test_catalog_maintenance_changed_source_refuses_before_write(tmp_path,monkeypatch):
-    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,'def test_alpha(): pass\ndef test_beta(): pass\n')
-    original=m._source;calls=[];before=target.read_bytes()
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    original=m.cv.generate;before=target.read_bytes()
     def source(directory):
-        calls.append(directory)
-        if len(calls)==2:
-            path=root/'tests/test_a.py';path.write_text(path.read_text()+'# changed\n')
-        return original(directory)
-    monkeypatch.setattr(m,'_source',source)
+        result=original(directory)
+        path=root/'tests/test_a.py';path.write_text(path.read_text()+'# changed\n')
+        return result
+    monkeypatch.setattr(m.cv,'generate',source)
     report=m.inspect(root,write=True)
     assert report['status']=='INPUT_CHANGED' and report['write_state']=='NOT_ATTEMPTED'
     assert target.read_bytes()==before and not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
@@ -187,24 +200,23 @@ def test_catalog_maintenance_current_cli_reports_capacity_without_writing():
     target=ROOT/'scripts/windows_ci/diagnostic-test-ids.json';before=target.read_bytes()
     result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/diagnostic_catalog.py'),'--check'],capture_output=True,text=True,timeout=15)
     report=json.loads(result.stdout)
-    assert result.returncode==2 and report['status']=='CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
-    assert report['expected']>report['limit_ids']==3000 and report['current']==len(json.loads(before)['test_ids'])
+    assert result.returncode==0 and report['status']=='VALID' and report['write_state']=='NOT_ATTEMPTED'
+    assert report['expected']==report['current']==json.loads(before)['ids']
+    assert report['limit_ids']==4096
     assert report['missing']==report['expected']-report['current'] and report['extra']==0
     assert target.read_bytes()==before and not result.stderr
 
 
 def test_static_allowlist_actual_byte_boundary_and_private_refusal(tmp_path,monkeypatch):
-    m=module('diagnostics')
-    raw=Path(m.__file__).with_name('diagnostic-test-ids.json').read_bytes()
-    expected=frozenset(json.loads(raw)['test_ids'])
-    path=tmp_path/'diagnostic-test-ids.json'
-    limit=512*1024  # Independent public contract; other diagnostic limits stay unchanged.
-    assert len(raw)<limit
+    from catalog_test_support import owned_catalog
+    root,cv=owned_catalog(tmp_path,monkeypatch)
+    m=module('diagnostics');monkeypatch.setattr(m,'__file__',str(root/'scripts/windows_ci/diagnostics.py'))
+    path=root/cv.CATALOG;raw=path.read_bytes();limit=8192
     path.write_bytes(b' '*(limit-len(raw))+raw)
-    monkeypatch.setattr(m,'__file__',str(tmp_path/'diagnostics.py'))
-    assert path.stat().st_size==limit and m._allowed_tests()==expected
+    result=m._allowed_tests(['tests/test_a.py::test_alpha'])
+    assert path.stat().st_size==limit and 'tests/test_a.py::test_alpha' in result
     with path.open('ab') as stream:stream.write(b' ')
-    with pytest.raises(ValueError,match='diagnostic input too large'):m._allowed_tests()
+    with pytest.raises(ValueError):m._allowed_tests()
     _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','failure')])
     result=m.failure_tests(tmp_path,reference)
     assert result=={'state':'ALLOWLIST_UNAVAILABLE','failed_test_ids':[],'test_cases_seen':0,'failed_cases':0,'unknown_failed_cases':0,'ids_truncated':False}
@@ -231,11 +243,12 @@ def test_actual_unittest_class_junit_exact_identity_and_private_parameter_redact
 
 
 @pytest.mark.parametrize('suffix',['Private::Nested::test_method','_Private::test_method','Public[private]::test_method','Public::test_method[private]'])
-def test_allowlist_refuses_nested_private_or_parameterized_class_identifiers(monkeypatch,suffix):
-    m=module('diagnostics')
-    payload=json.dumps({'schema':1,'test_ids':['tests/test_demo_preflight.py::'+suffix]}).encode()
-    monkeypatch.setattr(m,'_bounded_bytes',lambda path,limit:payload)
-    with pytest.raises(ValueError,match='invalid allowlist'):m._allowed_tests()
+def test_allowlist_refuses_nested_private_or_parameterized_class_identifiers(tmp_path,monkeypatch,suffix):
+    from catalog_test_support import owned_catalog,mutate
+    root,cv=owned_catalog(tmp_path,monkeypatch)
+    m=module('diagnostics');monkeypatch.setattr(m,'__file__',str(root/'scripts/windows_ci/diagnostics.py'))
+    mutate(root,cv,'FOUNDATION_HOST',lambda raw:raw.replace(b'tests/test_a.py::test_alpha',('tests/test_demo_preflight.py::'+suffix).encode()))
+    with pytest.raises(ValueError):m._allowed_tests()
 
 
 def test_browser_binding_failure_has_explicit_phase_without_path(tmp_path,monkeypatch):
@@ -258,7 +271,7 @@ def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_fail
     elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'<unclosed>')
     elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
     if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
-        def unavailable():raise ValueError(POISON)
+        def unavailable(*args,**kwargs):raise ValueError(POISON)
         monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
     summary=tmp_path/'job-summary.md'
     monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
@@ -312,7 +325,7 @@ def test_non_utf8_declared_xml_is_refused(tmp_path):
 @pytest.mark.parametrize('failure',[FileNotFoundError,ValueError,TypeError,KeyError])
 def test_unavailable_allowlist_is_constant_and_does_not_echo(tmp_path,monkeypatch,failure):
     m=module('diagnostics');path,reference=junit(tmp_path,[])
-    def unavailable():raise failure(POISON)
+    def unavailable(*args,**kwargs):raise failure(POISON)
     monkeypatch.setattr(m,'_allowed_tests',unavailable)
     result=m.failure_tests(tmp_path,reference)
     assert result['state']=='ALLOWLIST_UNAVAILABLE' and POISON not in json.dumps(result)

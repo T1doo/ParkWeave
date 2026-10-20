@@ -1,3 +1,4 @@
+from catalog_test_support import catalog_ids
 """Real local publisher stdout and hostile metadata; no GitHub writes or CI."""
 from copy import deepcopy
 import json
@@ -39,7 +40,7 @@ def test_real_publisher_CLI_annotations_expose_safe_failure_without_paths(public
 def test_real_publisher_preserves_allowlisted_class_method_identity(publication):
     source,path,output=publication;m=module('publish_summary')
     test='tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
-    assert test in m._allowed_tests()
+    assert test in m._allowed_tests([test])
     record=json.loads(path.read_bytes());row=record['cases'][0]
     row.update(regression_phase='pytest_call',active_test_id=test)
     row['failure_diagnostics'].update(failed_test_ids=[test],failed_test_counts={test:1},mapped_failed_cases=1,mapped_cases_omitted=0)
@@ -71,7 +72,7 @@ def test_class_annotation_requires_exact_catalog_member_and_shared_grammar(publi
     # Unknown valid spelling must fail membership; even a poisoned catalog
     # cannot permit parameter or nested-class spellings outside the grammar.
     if '[' in identity or '::Nested::' in identity:
-        monkeypatch.setattr(m,'_allowed_tests',lambda:{identity})
+        monkeypatch.setattr(m,'_allowed_tests',lambda *a,**kw:{identity})
     commands,ok=m.annotation_commands(public)
     assert not ok and payloads(commands)==[{'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'}]
 
@@ -99,7 +100,7 @@ def test_unknown_nested_fields_are_discarded_and_PASS_rows_not_emitted(publicati
 
 def test_batch_case_limit_and_global_ID_limit_have_exact_omission_counts(publication):
     source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
-    ids=sorted(m._allowed_tests())[:25];row=public['cases'][0];row['failure_diagnostics']['failed_test_ids']=ids
+    ids=sorted(catalog_ids())[:25];row=public['cases'][0];row['failure_diagnostics']['failed_test_ids']=ids
     public['cases']=[deepcopy(row) for _ in range(32)]
     commands,ok=m.annotation_commands(public);assert ok and len(commands)==8
     values=payloads(commands);assert values[0]['annotation_cases_omitted']==25
@@ -111,7 +112,7 @@ def test_batch_case_limit_and_global_ID_limit_have_exact_omission_counts(publica
 def test_long_whitelisted_IDs_pack_whole_identifiers_under_byte_limit(publication,monkeypatch):
     source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
     ids=['tests/test_synthetic.py::test_'+('a'*210)+str(n) for n in range(25)]
-    monkeypatch.setattr(m,'_allowed_tests',lambda:set(ids));public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
+    monkeypatch.setattr(m,'_allowed_tests',lambda *a,**kw:set(ids));public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
     commands,ok=m.annotation_commands(public);assert ok
     values=payloads(commands);case=values[1];assert not case['ids_truncated'] and case['annotation_ids_omitted']==0
     converted={x.removeprefix('tests/').replace('.py::','::') for x in ids}
@@ -144,7 +145,7 @@ def test_message_percent_CR_LF_escaping_does_not_create_workflow_commands():
 
 def test_unavailable_and_allowlist_failure_use_only_constant_notice(publication,monkeypatch):
     source,path,_=publication;m=module('publish_summary');public=m.read_summary(source)
-    def fail():raise OSError(POISON)
+    def fail(*a,**kw):raise OSError(POISON)
     monkeypatch.setattr(m,'_allowed_tests',fail)
     commands,ok=m.annotation_commands(public);assert not ok and POISON not in ''.join(commands)
     path.unlink();commands,ok=m.annotation_commands(m.read_summary(source))
@@ -220,7 +221,7 @@ def test_real_CLI_annotation_bytes_have_exact_LF_without_console_normalization(p
 def test_four_shards_survive_maximum_safe_diagnostics_with_existing_byte_limits():
     from test_windows_ci_preparation import module
     publisher=module('publish_summary');progress=module('regression_progress');diagnostics=module('diagnostics')
-    ids=sorted(diagnostics._allowed_tests(),key=len,reverse=True)[:25]
+    ids=sorted(catalog_ids(),key=len,reverse=True)[:25]
     obs={k:900000 for k in progress.TIMINGS}
     obs.update({k:10000 for k in progress.COUNTS|progress.DB_COUNTS},fixture_stage='CREATE_DB',sample_attempts=20,
                sample_state='AVAILABLE',sample_elapsed_ms=900000,sample_cost_ms=900000,checkpoint_age_ms=900000)
@@ -244,7 +245,7 @@ def test_four_shards_survive_maximum_safe_diagnostics_with_existing_byte_limits(
 
 def test_eng065_shape_preserves_twenty_safe_failure_ids_in_existing_eight_slots():
     publisher=module('publish_summary');progress=module('regression_progress')
-    ids=sorted(x for x in publisher._allowed_tests() if x.startswith('tests/test_regression_shards.py::'))[:20]
+    ids=sorted(x for x in catalog_ids() if x.startswith('tests/test_regression_shards.py::'))[:20]
     assert len(ids)==20
     obs={k:286921 for k in progress.TIMINGS};obs.update({k:287 for k in progress.COUNTS},fixture_stage='DONE',sample_attempts=0,sample_state='NOT_SAMPLED')
     shards=[{'id':'S'+str(i),'status':'FAIL','reason':'COMPLETE','counts':{'PASS':281,'FAIL':35,'SKIP':25},'ms':288891,'cleanup':'OWNED_TREE_STOPPED','coverage':True,'exit':1,'category':'OTHER'} for i in range(1,5)]
@@ -271,12 +272,15 @@ def test_eng065_shape_preserves_twenty_safe_failure_ids_in_existing_eight_slots(
 
 def test_continuation_final_false_flag_fits_every_byte_boundary(publication,monkeypatch):
     source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
-    ids=sorted(m._allowed_tests(),key=len,reverse=True)[:2]
+    ids=sorted(catalog_ids(),key=len,reverse=True)[:2]
     public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
     row=m.annotation_case(public['cases'][0],set(ids))
     empty={**row,'failed_test_ids':[],'annotation_ids_omitted':2,'ids_truncated':False}
     singles=[{'kind':'case_ids','case':row['case'],'status':row['status'],'failed_test_ids':[test]} for test in row['failed_test_ids']]
     minimum=max(m.annotation_size(m.annotation_command(value)) for value in [empty,*singles])
+    # This loop checks serialization at every byte boundary. Fresh global
+    # membership is covered by the real CLI and one-operation catalog tests.
+    monkeypatch.setattr(m,'_allowed_tests',lambda *args,**kwargs:set(ids))
     for limit in range(minimum,minimum+300):
         monkeypatch.setattr(m,'MAX_ANNOTATION_BYTES',limit)
         commands,ok=m.annotation_commands(public)

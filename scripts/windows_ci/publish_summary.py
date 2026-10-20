@@ -55,7 +55,34 @@ def failure_diagnostics(value,allowed):
     return result
 
 
-def project(record,binding):
+def identity_references(value):
+    # Count occurrences, including aggregation keys and unknown private fields;
+    # this is a reference ledger, not a distinct-ID or Python heap estimate.
+    if isinstance(value,str):return int(bool(re.fullmatch(TEST_ID_PATTERN,value)))
+    if isinstance(value,dict):return sum(identity_references(k)+identity_references(v) for k,v in value.items())
+    if isinstance(value,(list,tuple)):return sum(identity_references(v) for v in value)
+    return 0
+
+
+def batch_requests(rows):
+    for row in rows:
+        if not isinstance(row,dict):continue
+        if 'active_test_id' in row:yield row['active_test_id']
+        diagnostic=row.get('failure_diagnostics')
+        ids=diagnostic.get('failed_test_ids') if isinstance(diagnostic,dict) else None
+        if isinstance(ids,list):
+            for index,test in enumerate(ids):
+                if index>=MAX_FAILURE_IDS:break
+                yield test
+
+
+def current(allowed):
+    # Explicit test seams may use a set; production always returns a fresh
+    # Membership with the final whole-snapshot change check.
+    if hasattr(allowed,'assert_current'):allowed.assert_current()
+
+
+def project(record,binding,*,operation=None):
     if not isinstance(record,dict) or type(record.get('diagnostic_schema')) is not int or record['diagnostic_schema']!=SCHEMA or binding is None or record.get('diagnostic_binding')!=binding:raise ValueError('invalid summary binding')
     for key,value in (('scope','WINDOWS_SERVER_ENGINEERING_NOT_WIN11'),('production_R4','DISABLED'),('whole_AT_EX','NOT_RUN'),('Win11','NOT_RUN')):
         if record.get(key)!=value:raise ValueError('invalid summary scope')
@@ -65,8 +92,13 @@ def project(record,binding):
     rows=record.get('cases')
     if 'native_stage' in record and record['native_stage'] not in ('lifecycle','validation'):raise ValueError('invalid native stage')
     if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid summary rows')
-    allowed=_allowed_tests();result=base('SUMMARY_AVAILABLE');result.update(report_state=state,active_phase=phase)
-    for row in rows:
+    retained=identity_references(record)
+    allowed=_allowed_tests(batch_requests(rows),retained_references=retained)
+    result=base('SUMMARY_AVAILABLE');result.update(report_state=state,active_phase=phase)
+    # Release each input row as its public row is rebuilt. Do not keep two
+    # entire ID/count-key trees alive beside the membership query dictionary.
+    for index in range(len(rows)):
+        row=rows[index];rows[index]=None
         if not isinstance(row,dict) or not isinstance(row.get('case'),str) or row['case'] not in CASES or row.get('status') not in ('PASS','FAIL','NOT_RUN'):raise ValueError('invalid summary row')
         if record.get('native_stage')=='lifecycle' and row['case'] in ('full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles'):raise ValueError('invalid lifecycle row')
         public={'case':row['case'],'status':row['status']}
@@ -122,6 +154,8 @@ def project(record,binding):
             public.update(cleanup_failures_count=row['cleanup_failures_count'],cleanup_categories_truncated=row['cleanup_categories_truncated'])
         if 'cleanup_diagnostics' in row:public['cleanup_diagnostics']='INVALID_METADATA'
         result['cases'].append(public)
+    current(allowed)
+    if operation is not None:operation.append(allowed)
     return result
 
 
@@ -141,7 +175,48 @@ def strict_object(pairs):
 def invalid_constant(value):raise ValueError('invalid JSON constant')
 
 
-def read_summary(source):
+def preflight_json_references(text):
+    """Linear token ledger before object_pairs_hook can duplicate references.
+
+    Charge every decoded full-ID token plus the largest object's *direct*
+    full-ID keys/values. Arrays/nested containers do not copy their contained
+    string references when that object's pairs become a dictionary. Two more
+    slots per key cover the decoder memo, plus 264 for token/hook scratch.
+    This is a reference count contract, not a Python heap bound.
+    """
+    stack=[];total=largest=keys=0;position=0
+    while position<len(text):
+        char=text[position]
+        if char=='"':
+            begin=position;position+=1
+            while position<len(text):
+                if text[position]=='\\':position+=2;continue
+                if text[position]=='"':position+=1;break
+                position+=1
+            else:raise ValueError('invalid JSON string')
+            value=json.loads(text[begin:position])
+            if isinstance(value,str) and re.fullmatch(TEST_ID_PATTERN,value):
+                total+=1
+                if stack and stack[-1][0]=='{':
+                    stack[-1][1]+=1;largest=max(largest,stack[-1][1])
+                following=position
+                while following<len(text) and text[following].isspace():following+=1
+                if following<len(text) and text[following]==':':keys+=1
+                # CPython's decoder memo has key and value references for
+                # object keys in addition to pairs/current output dictionary.
+                if total+largest+2*keys+264>3000:raise ValueError('reference limit')
+            continue
+        if char in '{[':
+            if len(stack)>=128:raise ValueError('JSON depth limit')
+            stack.append([char,0])
+        elif char in '}]':
+            if not stack or stack[-1][0]!=('{' if char=='}' else '['):raise ValueError('invalid JSON nesting')
+            stack.pop()
+        position+=1
+    if stack:raise ValueError('invalid JSON nesting')
+
+
+def read_summary(source,*,operation=None):
     if not source.get('PARKWEAVE_CI_ROOT') or not source.get('RUNNER_TEMP'):return base('SUMMARY_MISSING')
     try:
         root=Path(source['PARKWEAVE_CI_ROOT']);temporary=Path(source['RUNNER_TEMP']);report=root/'engineering.json'
@@ -149,8 +224,9 @@ def read_summary(source):
         if linked(report) or report.resolve()!=report:return base('SUMMARY_INVALID')
         with report.open('rb') as stream:data=stream.read(MAX_BYTES+1)
         if len(data)>MAX_BYTES:return base('SUMMARY_INVALID')
-        record=json.loads(data.decode('utf-8'),object_pairs_hook=strict_object,parse_constant=invalid_constant)
-        binding=current_binding(root,source);result=project(record,binding)
+        text=data.decode('utf-8');preflight_json_references(text)
+        record=json.loads(text,object_pairs_hook=strict_object,parse_constant=invalid_constant)
+        binding=current_binding(root,source);result=project(record,binding,operation=operation)
         if record.get('native_stage') in ('lifecycle','validation'):
             try:
                 failure=command_failure(read_command(root/(record['native_stage']+'-command.json'),binding),'suite_exception')
@@ -250,7 +326,7 @@ def annotation_case(row,allowed):
     return value
 
 
-def annotation_commands(public):
+def annotation_commands(public,*,allowed=None):
     """Prevalidate the entire batch; errors produce only one constant notice.
 
     At most seven FAIL/NOT_RUN rows, 25 test IDs across the entire batch. Drop
@@ -266,10 +342,18 @@ def annotation_commands(public):
         if public.get('report_state') not in ('IN_PROGRESS','COMPLETED') or public.get('active_phase') not in PHASES:raise ValueError('invalid stage')
         rows=public.get('cases')
         if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid rows')
-        allowed=_allowed_tests();values=[annotation_case(row,allowed) for row in rows]
+        retained=identity_references(public)
+        requests=sum(1 for _ in batch_requests(rows))
+        if requests>832:raise ValueError('request limit')
+        if allowed is None:allowed=_allowed_tests(batch_requests(rows),retained_references=retained)
+        query_refs=len(getattr(allowed,'wanted',()))
+        # Output display IDs, seven case-count maps and row temporaries also
+        # carry identity references; reserve them before creating any rows.
+        if retained+query_refs+requests+7*MAX_FAILURE_IDS+256>3000:raise ValueError('reference limit')
+        values=[annotation_case(row,allowed) for row in rows]
         candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row or 'shards' in row)];remaining=MAX_FAILURE_IDS;commands=[];packed=[];pending=[]
         original_truncation={id(row):row.get('ids_truncated',False) for row in candidates}
-        case_counts={id(row):dict(zip(row.get('failed_test_ids',[]),row.get('failed_test_case_counts',[]))) for row in candidates}
+        case_counts={id(row):dict(zip(row.get('failed_test_ids',[]),row.get('failed_test_case_counts',[]))) for row in candidates[:MAX_ANNOTATIONS-1]}
         def align_counts(row):
             if 'failed_test_case_counts' in row:
                 row['failed_test_case_counts']=[case_counts[id(row)][test] for test in row['failed_test_ids']]
@@ -325,6 +409,7 @@ def annotation_commands(public):
                 'case_counts':{s:sum(row['status']==s for row in values) for s in ('PASS','FAIL','NOT_RUN')},'annotation_cases_omitted':len(candidates)-len(packed)}
         commands.insert(0,annotation_command(header))
         if len(commands)>MAX_ANNOTATIONS or any(annotation_size(c)>MAX_ANNOTATION_BYTES for c in commands) or sum(annotation_size(c) for c in commands)>MAX_ANNOTATION_TOTAL_BYTES:raise ValueError('oversize annotations')
+        current(allowed)
         return commands,True
     except Exception:return [unavailable],False
 
@@ -342,7 +427,14 @@ def write_annotations(commands,stream=None):
 
 def main(source=None):
     source=os.environ if source is None else source
-    public=read_summary(source);text=json.dumps(public,indent=2)
+    operation=[]
+    public=read_summary(source,operation=operation)
+    commands,annotations_ok=annotation_commands(public,allowed=operation[0] if operation else None)
+    try:
+        if operation:current(operation[0])
+    except Exception:
+        public=base('SUMMARY_INVALID');commands,annotations_ok=annotation_commands(public)
+    text=json.dumps(public,indent=2)
     if len(text.encode('utf-8'))>MAX_BYTES:text=json.dumps(public,separators=(',',':'))
     console_ok=True;summary_ok=False
     # Independent outputs: a console failure must not suppress the Job Summary.
@@ -358,7 +450,6 @@ def main(source=None):
     except (OSError,ValueError,TypeError,UnicodeError,RuntimeError,RecursionError):pass
     # Validate everything before printing any command. A failed annotation sink
     # must not suppress the independent safe console/Job Summary outputs.
-    commands,annotations_ok=annotation_commands(public)
     try:write_annotations(commands)
     except Exception:annotations_ok=False
     return 0 if console_ok and summary_ok and annotations_ok and public['publication_state']=='SUMMARY_AVAILABLE' else 1

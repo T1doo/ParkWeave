@@ -1,5 +1,4 @@
 """One bounded atomic phase/timing/count checkpoint; no SQL, raw IDs or DSNs."""
-from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -35,31 +34,44 @@ def observation(value):
     return dict(value)
 
 
-@lru_cache(maxsize=1)
-def trusted_tests():return _allowed_tests()
+def trusted_tests(requests=()):return _allowed_tests(requests,retained_references=2)
 
 
-def safe_test_id(nodeid):
+def safe_test_id(nodeid,scope=None):
     if not isinstance(nodeid,str):return None
     value=nodeid.split('[',1)[0].replace('\\','/')
-    try:return value if value in trusted_tests() else None
+    try:
+        allowed=trusted_tests([value])
+        if scope is not None:scope.append(allowed)
+        return value if value in allowed else None
     except Exception:return None
 
 
-def write(path,phase,active_test_id=None,*,telemetry=None):
+def write(path,phase,active_test_id=None,*,telemetry=None,observed_clock_ns=None,_cancel=None,_commit_lock=None):
     if path is None:return
     temporary=None
+    observed=time.monotonic_ns() if observed_clock_ns is None else observed_clock_ns
     try:
+        if type(observed) is not int or not 0<=observed<2**63:return
         path=Path(path);match=re.fullmatch(PATTERN,path.name)
         if not match or phase not in PHASES:return
-        row={'schema':1,'execution_id':match[1],'phase':phase,'active_test_id':safe_test_id(active_test_id)}
+        value=active_test_id.split('[',1)[0].replace('\\','/') if isinstance(active_test_id,str) else None
+        allowed=trusted_tests([value] if value is not None else [])
+        row={'schema':1,'execution_id':match[1],'phase':phase,'active_test_id':value if value is not None and value in allowed else None}
         if telemetry is not None:
             clean=observation(telemetry);clean.pop('checkpoint_age_ms',None)
-            row.update(telemetry=clean,clock_ns=time.monotonic_ns())
+            row.update(telemetry=clean,clock_ns=observed)
         data=json.dumps(row,separators=(',',':'))+'\n'
         if len(data.encode('ascii'))>MAX_BYTES:return
+        if _cancel is not None and _cancel.is_set():return
         temporary=path.with_name('.progress-'+uuid.uuid4().hex+'.tmp')
-        temporary.write_text(data,encoding='ascii');os.replace(temporary,path)
+        temporary.write_text(data,encoding='ascii')
+        allowed.assert_current()
+        if _commit_lock is None:
+            os.replace(temporary,path)
+        else:
+            with _commit_lock:
+                if _cancel is None or not _cancel.is_set():os.replace(temporary,path)
     except Exception:pass  # Telemetry cannot change a test's result or cleanup.
     finally:
         if temporary is not None:
@@ -86,7 +98,8 @@ def read_snapshot(path):
         required={'schema','execution_id','phase','active_test_id'}
         if not isinstance(row,dict) or set(row) not in (required,required|{'telemetry','clock_ns'}) or type(row['schema']) is not int or row['schema']!=1 or row['execution_id']!=match[1] or not isinstance(row['phase'],str) or row['phase'] not in PHASES:return unknown
         value=row['active_test_id']
-        if value is not None and (not isinstance(value,str) or value not in trusted_tests()):return unknown
+        allowed=trusted_tests([value] if value is not None else [])
+        if value is not None and (not isinstance(value,str) or value not in allowed):return unknown
         result={'regression_phase':row['phase']}
         if value is not None:result['active_test_id']=value
         if 'telemetry' in row:
@@ -95,6 +108,7 @@ def read_snapshot(path):
             age=(time.monotonic_ns()-row['clock_ns'])//1000000
             if 0<=age<=900000:telemetry['checkpoint_age_ms']=age
             result['regression_observation']=telemetry
+        allowed.assert_current()
         return result
     except Exception:return unknown
 

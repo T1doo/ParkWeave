@@ -1,3 +1,4 @@
+from catalog_test_support import catalog_ids
 """Fixed object enums and a single last-recorded snapshot; synthetic probes only."""
 import json
 import os
@@ -120,7 +121,7 @@ def test_safe_projection_and_annotations_expose_fixed_object_and_last_id_with_gl
     publisher=module('publish_summary');binding={'synthetic':'binding'}
     record=module('native_suite').summary([
         {'case':'Setup_native','status':'FAIL','boundary_phase':'private_acl','category':'BoundaryError','boundary_reason':'ACL_OWNER_MISMATCH','acl_object':'CONFIG','raw':POISON},
-        {'case':'full_engineering_regression','status':'FAIL','phase':'regression_run','category':'TimeoutExpired','regression_phase':'pytest_call','active_test_id':KNOWN,'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':sorted(publisher._allowed_tests(),key=len)[:25]}},
+        {'case':'full_engineering_regression','status':'FAIL','phase':'regression_run','category':'TimeoutExpired','regression_phase':'pytest_call','active_test_id':KNOWN,'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':sorted(catalog_ids(),key=len)[:25]}},
     ])
     record.update(diagnostic_schema=1,diagnostic_binding=binding,report_state='COMPLETED',active_phase='UNKNOWN')
     public=publisher.project(record,binding);commands,ok=publisher.annotation_commands(public)
