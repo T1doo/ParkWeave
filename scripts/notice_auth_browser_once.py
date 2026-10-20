@@ -30,10 +30,10 @@ B = "22222222-2222-4222-8222-222222222222"
 
 def require_hosted_once(environment):
     expected = dict(NOTICE_REPOSITORY="T1doo/ParkWeave", NOTICE_REF=BRANCH, NOTICE_EVENT="push",
-                    NOTICE_ATTEMPT="1", NOTICE_NUMBER="1", NOTICE_PUBLIC="true",
+                    NOTICE_ATTEMPT="1", NOTICE_NUMBER="2", NOTICE_PUBLIC="true",
                     RUNNER_ENVIRONMENT="github-hosted", RUNNER_OS="Linux")
     if any(environment.get(k) != v for k, v in expected.items()) or any(k.startswith("PARKWEAVE_") for k in environment):
-        raise RuntimeError("only the authorized public hosted Linux first push/attempt is allowed")
+        raise RuntimeError("only the bounded public hosted Linux correction run2/attempt1 is allowed")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if not re.fullmatch(r"[0-9a-f]{40}", environment.get("NOTICE_SHA", "")) or commit != environment["NOTICE_SHA"]:
         raise RuntimeError("exact checked-out source SHA required")
@@ -48,6 +48,7 @@ class Boundary:
         self.base = base
         self.report = report
         self.remaining = Counter({("GET", "/"): 1, ("GET", "/favicon.ico"): 1,
+                                  ("GET", "/api/run-access/status"): 2 if mode == "late" else 1,
                                   ("GET", "/api/dispatch-notices"): 2 if mode == "late" else 1,
                                   ("GET", "/api/dispatch-notices/" + A): 1})
         if mode == "late":
@@ -139,6 +140,11 @@ class Fixture:
                 elif self.path == "/favicon.ico":
                     self.send_response(204)
                     self.end_headers()
+                elif self.path == "/api/run-access/status":
+                    # Original token-change feature probe remains unavailable;
+                    # this fixture never grants native or isolated Run access.
+                    self.json_reply(200, dict(enabled=False, role=None, can_approve=False,
+                                             can_revoke=False, max_validity_hours=0))
                 elif self.path == "/api/dispatch-notices":
                     fixture.lists += 1
                     identifier = B if fixture.mode == "late" and fixture.lists > 1 else A
@@ -273,7 +279,9 @@ def scenario(browser, mode, status, result):
                 assert fixture.headers_sent.is_set() and not fixture.release_body.is_set() and not fixture.body_handler_done.is_set()
                 assert page.evaluate("window.__noticeJSON.every(x => x.status !== 401 && x.status !== 403)")
                 result["error_headers_received_body_never_finished"] = True
-            assert not result["page_errors"] and not result["violations"] and not fixture.errors
+            assert not result["page_errors"], "unexpected page script error"
+            assert not result["violations"], "browser request outside frozen fixture budget"
+            assert not fixture.errors, "HTTP fixture rejected the original request"
             expected_posts = 0 if mode == "late" else 1
             assert sum(r["method"] == "POST" for r in result["requests"]) == expected_posts
             assert all(count == 0 for key, count in boundary.remaining.items() if key[1] != "/favicon.ico")
