@@ -1,0 +1,132 @@
+{
+  "scope": "WINDOWS_SERVER_REMAINING_FRESH_REFUSAL_NOOP_SUBSET_ONLY",
+  "status": "PASS_REMAINING_FRESH_REFUSAL_NOOP_SUBSET_ONLY",
+  "cases": [
+    {
+      "action": "Setup",
+      "exit_code": 1,
+      "expected_exit": 1,
+      "seconds": 2.812,
+      "stdout_sha256": "bd2affeca4af50352cc2ab306d7a7361967ae4e789b50b2b09f4fa5c914a9058",
+      "stderr_sha256": "81dbec9cc4b02d23615993340ab95b34b2e07cca62fa30e0d3137a4d1f03b1e7",
+      "status": "PASS_EXPECTED_REFUSAL",
+      "diagnostic": {
+        "boundary_phase": "configuration",
+        "category": "BoundaryError",
+        "boundary_reason": "OWNER_MUTATION_PAUSED"
+      }
+    },
+    {
+      "action": "Start",
+      "exit_code": 1,
+      "expected_exit": 1,
+      "seconds": 0.532,
+      "stdout_sha256": "be654c94c1d86c87ad2e880ddd749b8e33b241aec83f4800a26933cd4448b34b",
+      "stderr_sha256": "c0a12e17a420cf01cb843c1fbb1bac50a87cbbeed8b634feb888d0bbf133d20c",
+      "status": "PASS_EXPECTED_REFUSAL",
+      "diagnostic": {
+        "boundary_phase": "configuration",
+        "category": "BoundaryError",
+        "boundary_reason": "CONFIG_MISSING"
+      }
+    },
+    {
+      "action": "Status",
+      "exit_code": 1,
+      "expected_exit": 1,
+      "seconds": 0.562,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "fecc13d9159059e6044bdc5b2c479382acebc1174cad5c5f96092405a67c437a",
+      "status": "PASS_EXPECTED_REFUSAL",
+      "observation": "CONFIG_MISSING original error text"
+    },
+    {
+      "action": "Stop",
+      "exit_code": 0,
+      "expected_exit": 0,
+      "seconds": 0.469,
+      "stdout_sha256": "ddc0dc7736eaeda72e2fd5f4cb25ea1721daaeb2295fc200e3569dd60a3cedf7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "PASS_EXPECTED_NOOP",
+      "observation": "NO_MANAGED_RECORD; not a successful service stop"
+    }
+  ],
+  "attempted_actions": [
+    "Setup",
+    "Start",
+    "Status",
+    "Stop"
+  ],
+  "doctor": "NOT_RUN_THIS_WINDOW",
+  "whole_AT01": "NOT_RUN",
+  "AT04_AT05_AT34": "NOT_RUN",
+  "Win11": "NOT_RUN",
+  "successful_app_start_stop_restart": "NOT_RUN",
+  "business_isolation": "NOT_RUN",
+  "real_model_calls": 0,
+  "database_calls": 0,
+  "owner_ACL_security_mutations": 0,
+  "source_sha": "54862b33920ad71d5392ef16c11b1fde577a5e24",
+  "psutil": "7.2.2",
+  "os_metadata_collection": {
+    "method": "sys.getwindowsversion",
+    "limit_seconds": 20,
+    "isolated": true,
+    "site_disabled": true,
+    "code_sha256": "183f83d652fa66efeb16294b90bb851b4798fba1fef856d4467a887f1c1d4622",
+    "seconds": 0.047
+  },
+  "active_phase": "COMPLETE",
+  "platform": {
+    "source": "sys.getwindowsversion",
+    "major": 10,
+    "minor": 0,
+    "build": 26100,
+    "platform": 2,
+    "product_type": 3,
+    "platform_version": [
+      10,
+      0,
+      26100
+    ]
+  },
+  "python": "3.12.10",
+  "image": {
+    "ImageOS": "win25-vs2026",
+    "ImageVersion": "20261007.264.1"
+  },
+  "application_state_remained_absent": true,
+  "original_source_sha256": {
+    "scripts\\windows\\Common.ps1": "dce11ec21f0be5fbeda3504ec4048ba4a90c7d5d3593c549a9cefa46007df662",
+    "scripts\\windows\\descriptor_readonly_probe.py": "4f84a8f5abf062445e9e78177bb8aab56bb9a7e36fb29c05f51b9300c8070a23",
+    "scripts\\windows\\Doctor.ps1": "ce4bea7f6c53570298c6b2c6beb6ff23e471b71d6ca9723bbecc05c24fdb6cda",
+    "scripts\\windows\\file_candidate_probe.py": "26466535cf3342fa7f0e99c7b84f5138f5cc1d1fd27bf99a049215fbe9c14220",
+    "scripts\\windows\\FileCandidateTest.ps1": "a10ebcefc80e25d1a76fffd718ea32691e8f339be22773a45dfa20c2e6b1371b",
+    "scripts\\windows\\lifecycle.py": "2b32084824da9a4a2881e74e91387494f9f9348c750926571e39709d08680464",
+    "scripts\\windows\\lifecycle_diagnostics.py": "abd03fec9b9d2ac65f46c0ab5c8cc4d7c20d2f8fdbda89c7a6da45e8c31dcd69",
+    "scripts\\windows\\owner_descriptor_observation.py": "e5bb11236274650971157c14dd0fbff66ca026e5866a8789c6b6d59c9a352882",
+    "scripts\\windows\\PythonCommand.ps1": "83f622478fface788ab9dc3aa8b529f8e66cef82a08e08eb47352fc3867308cd",
+    "scripts\\windows\\server_identity.py": "bfb62fce030394203eccab21ad0cc12ad4fa6b547201f1c5cfbfca52e5064481",
+    "scripts\\windows\\Setup.ps1": "5d2fa4e475051bf5ddc45933ee9a818512a3db21884c8bd66d5991d33feb3ce2",
+    "scripts\\windows\\Start.ps1": "351cb81407570817a66564ec72b7f56fe2061cc141285a0cd7c93ebaa05b80e7",
+    "scripts\\windows\\Status.ps1": "64c0953b27b49c90a4671d64d93d6102a7b753ec9762413b31791f995d5360d9",
+    "scripts\\windows\\Stop.ps1": "34826cc9939ac70364fe6142f962454e7b76f922d6bd932c704528f957cc4949",
+    "scripts\\windows\\Test.ps1": "1497fe5963f7916f25f869be6508d0479f4610ae2d42f4290de6faa3b99f7135",
+    "src\\parkweave\\synthetic_session_file.py": "da826c1f05d1fe3d35122221b04337103064d9a1e2ca76f6e772a8e5e256c0cf",
+    "src\\parkweave\\process_env.py": "92a4512788b66377a8369e4d6161957c4511d01f1f24811a5c934df0733000f8"
+  },
+  "original_sources_unchanged": true,
+  "child_environment_keys": [
+    "COMSPEC",
+    "PATH",
+    "PATHEXT",
+    "PYTHONDONTWRITEBYTECODE",
+    "PYTHONUTF8",
+    "SYSTEMROOT",
+    "SystemRoot",
+    "TEMP",
+    "TMP",
+    "WINDIR"
+  ],
+  "seconds": 4.485
+}
