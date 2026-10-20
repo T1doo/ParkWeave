@@ -32,13 +32,17 @@
 
 ## CI、依赖与证据边界
 
-用户已批准在既定范围使用有界免费Windows CI。[GitHub计费说明](https://docs.github.com/en/billing/concepts/product-billing/github-actions)确认公开仓库标准托管runner免费；本片限定公开T1doo/ParkWeave、精确开发分支、run1/attempt1、标准windows-2025一个job/6分钟，contents:read、固定checkout SHA、不保留凭据，无其他触发器、matrix、secret、cache、artifact上传、部署或安全权限变化。
+用户已批准在既定范围使用有界免费Windows CI。[GitHub计费说明](https://docs.github.com/en/billing/concepts/product-billing/github-actions)确认公开仓库标准托管runner免费；本片限定公开T1doo/ParkWeave、精确开发分支、标准windows-2025一个job/6分钟，contents:read、固定checkout SHA、不保留凭据，无其他触发器、matrix、secret、cache、artifact上传、部署或安全权限变化。首次run1/attempt1在checkout即失败；有明确原因后仅补run2/attempt1，之后push或rerun均在job前拒绝。
 
 [官方镜像清单](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md)标明Windows Server2025、已有Python3.12和PostgreSQL17；实际版本由run另记录，不拿清单当实测。只从显式`RUNNER_TOOL_CACHE/Python/3.12.x/x64/python.exe`选择已有最高补丁版，再经原`PythonCommand.ps1`解析并核对3.12/x64；不依赖默认PATH碰巧指向3.12，缺失或不匹配就拒绝，不下载Python或猜个人路径。在RUNNER_TEMP新venv仅装原`requirements-windows-candidate.txt`已有的唯一所需包`psutil==7.2.2`（只用wheel、无依赖、无cache、零下载重试）；[该版原许可](https://github.com/giampaolo/psutil/blob/release-7.2.2/LICENSE)为BSD-3-Clause，无新增许可接受步骤。不装PG、Linux pgserver、完整应用依赖、浏览器或模型。Start/Status/Stop在缺配置/record前也先import psutil，不能忽略这个已有依赖。
 
 本地只做AST、YAML和范围检查；未在Linux模拟成原生通过，未写新测试框架、未改固定AT状态。最终独审及实际CI结果另记录。公开状态与原step JSON分开；原Forbidden Actions REST/日志接口不重试，失败不盲重跑。
 
 推送前有限只读独审通过，无开放P1/P2。已闭合超时丢失输出/阶段与默认PATH版本不确定两处薄调用器问题，未改产品。冻结脚本SHA256 `1537e2c5cc3e92d25e2192c5a9edaa6eb2698da3cc8516d50227c94c59ba09b4`，workflow `1b1e3a0d288b23e9d6fc41362edcaf464ae933d9333393e02d583b8f12fc260d`。独审只读源码、AST/hash和旧原件，没有动态测试、网络、产品import或Windows执行。
+
+首次实际CI [39353359602](https://github.com/T1doo/ParkWeave/actions/runs/39353359602)，源SHA `b99aa8b3765bd27f044aa93e4bfc81f3159b8ca1`：[公开job](https://github.com/T1doo/ParkWeave/actions/runs/39353359602/job/118402464025)显示checkout失败，10条注释均为历史`docs/F2/evidence/known-not-started-frontier-20261016`深路径`Filename too long`。依赖准备和原生包装器step均Skipped，原生调用为零；不能称预检失败或成功。[失败回执](../F2/evidence/windows-native-preflight-first-failure-20261020.json)保留公开注释和HTML hash，原失败不覆盖。
+
+根据这个明确原因，修正仅将checkout设为Git cone sparse模式，保留整个原`scripts/windows`、`scripts/windows_ci`、`src/parkweave`及Git cone默认的根文件（含`pyproject.toml`），不检出无关历史证据目录。未改Git全局设置、LongPaths注册表、执行策略、安全描述符或原产品文件；实际原包装器源码仍前后hash一致。只允许同workflow的第二次新push/run2/attempt1，不重跑原失败run，不放开无界重试；补跑结果另记。
 
 成功启动/正常停止/重启及业务隔离的下一最小输入是：合法Windows安装初态中的受保护配置/会话和原目录、已安装原固定依赖、合法受限app DSN/schema及合成业务权限；若从fresh新建，则需先接通并评审原生创建/迁移与文件authority边界。收到这些输入时可直接复用原Start/Status/Stop和既有native suite相应子项，不要求先完成全部Win11人工/真实模型门，也不能由此次错误路径测试补造这些输入。
 
@@ -49,3 +53,5 @@
 原`target_read`在prepared→ADD连接超时，早于撤销READ/另派；其DROP teardown语句超时。原`WITHDRAW[material]`在fixture GRANTS连接超时并清理超时。后窗1880次连接/关闭均成功，失败采样为0。现有后窗日志不足以识别原失败的连接等待、锁持有者、资源压力或未关闭连接；不能因DROP超时直接断言泄漏，也不能把后窗低负载当原窗原因。
 
 原165唯一项仍163PASS/1FAIL/2ERROR（XML166记录含同例call/teardown）；根因未确立。最小因果缺项是**原失败时刻**同一集群/DB的连接与PG活动/锁/服务日志关联；没有这些原件，重复通过不证明原因。此次没有重跑165/49、没有连旧库、没有改2秒连接或5秒清理预算。此未知只限制对应可靠性结论，不暂停其他已授权开发。
+
+补跑修正已再经有限只读独审，无开放P1/P2：公开失败注释与step结论吻合；17个原文件字节及根文件齐全，最大相对路径55，未扩安全/业务边界。补跑冻结脚本SHA256 `5bd870f0874acbb21a06a8e8c827b0d5ee7352f7711e33305dd0ccf6fdaede3a`，workflow `beb3aef29a89d9ebb179e9d4af353969a6252c926f8288bb930071cc3610c79e`；独审无网络、动态或原生执行。

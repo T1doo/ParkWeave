@@ -21,10 +21,10 @@ BRANCH = "refs/heads/dev/windows-native-preflight-20261020"
 
 def require_context(environment):
     expected = {"NATIVE_REPOSITORY": "T1doo/ParkWeave", "NATIVE_REF": BRANCH,
-                "NATIVE_EVENT": "push", "NATIVE_ATTEMPT": "1", "NATIVE_NUMBER": "1",
+                "NATIVE_EVENT": "push", "NATIVE_ATTEMPT": "1", "NATIVE_NUMBER": "2",
                 "NATIVE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Windows"}
     if any(environment.get(k) != v for k, v in expected.items()):
-        raise RuntimeError("only the authorized public first hosted Windows push is allowed")
+        raise RuntimeError("only the authorized public second hosted Windows push is allowed")
     if any(k.startswith("PARKWEAVE_") for k in environment):
         raise RuntimeError("inherited business configuration refused")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
