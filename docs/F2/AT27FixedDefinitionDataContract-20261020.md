@@ -1,0 +1,13 @@
+# AT-27 定义升级与业务数据：固定工程合同
+
+接续 ff67d40b205140faf1d15d7112b20cc9bbaf9f49。只读核原 V1 §7.5/AT-27、AT24-27FixedOracles-20261015.json C27六项与既有 fixed two_cases/backend；原文和 literal oracle不改。原runner仅绑定现成backend单一selector，原AT27两个legacy schema/grant迁移selector存historical_engineering_selectors和历史来源SHA，不执行、不冒充本轮定义升级验证。whole_status仍NOT_RUN。
+
+实际初态复用授权Linux owned synthetic PG/原HTTP-ASGI/独立SQLite：同园区组织owner的两Case，各原六目标、P1–P5稳定UUID，真实审核确认、资源/预约/接受、回执、本地重核、逐步VERIFY完成，结清第二Case导致的owner集合差异。固定base保存实际UUID、完整计划/诉求/材料/回执全文、预约和历史实体及consumer。全public PG排authorization_audit与全部consumer行作为严格相等预期，不仅冻结引用；可公开业务行原件和全表逐行hash。
+
+固定oracle不是产品输出推导：空注册步骤的完整SAVE_DRAFT应422且发布库/业务不变；有效角色未独立REVIEW的完整CANDIDATE_PUBLISH应409且无新release/业务变化；原独立REVIEW后合法新版本发布200、少一个必需协调目标，但不迁移旧Case。原release payload/sha/id/scope保留；RETURN_DRAFT允许其外部state由PUBLISHED到SUPERSEDED，新release独立，不将这个元数据状态变动冒充payload或业务回滚。
+
+A/B分别fresh /check200→BREAKING_REJECTED/仅KEEP_CURRENT；REQUEST_RECHECK409无journal/业务写；MIGRATE422只算封闭choice类型拒绝，不是迁移执行证据。原KEEP_CURRENT200各留一条独立审计事件，无业务写。再fresh check，完整Apply DTO逐字段与当前plan/preparation/check/KEEP事件匹配、辅助原model_validate通过，再实际POST /apply409；projection和真实HTTP拒绝正文必须均含UPGRADE_SCOPE_UNSUPPORTED，不以404、body422、陈旧CAS或纯choice拒绝代签兼容门。旧superseded ref实际GET /check403，仅证明当前目标可用性预检拒绝；没有真实rollback执行或业务撤销。两Case全UUID、原全文、预约、回执、consumer及历史严格不变；checker仅原两条KEEP_CURRENT。
+
+冻结一个原runner --ids AT-27工程场景，timeout180秒；失败保留且按因果限定重试。绑定安全约束2项、更新catalog后的publisher2项各自另窗。只改既有测试证据/断言和工程绑定，发现真实产品缺口才最小修。无新测试ID/协议/兼容矩阵、没有重复运行不变HTML/UI；当前UI/真实浏览器NOT_RUN。完整root tests源码按既有source校验预算绑定HEAD；维护catalog及精确collection不抬上限，不把collection当PASS。
+
+设计独审ACK，记录SHA256 51f5c1170b39ccc15f11423337d9d57aadf920b2159ba2287b063f04c6d7574d。正式AT27、全回归、实际迁移/回滚/真实业务交付未验。Windows OWNER_MUTATION_PAUSED/owner-DACL/原生026–032/roles/seed门不变，不新增权限费用凭据或真实模型调用，不部署/用户电脑/强推/main写。

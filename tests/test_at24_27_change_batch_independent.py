@@ -253,8 +253,12 @@ def template_action(t, action, actor, **fields):
     h = {'X-Isolated-Template-Actor': actor, 'Idempotency-Key': uuid4().hex}
     current = f[3].get(path, headers=h); assert current.status_code == 200, current.text
     view = current.json()
-    return f[3].post(path + '/commands', headers=h, json=dict(action=action, expected_revision=view['revision'],
-        expected_definition_sha256=view['definition_sha256'], reason='SYNTHETIC AT27 explicit original ' + action, **fields))
+    data = dict(action=action, expected_revision=view['revision'], expected_definition_sha256=view['definition_sha256'],
+        reason='SYNTHETIC AT27 explicit original ' + action, **fields)
+    response = f[3].post(path + '/commands', headers=h, json=data)
+    append_record('at27-template-http', dict(actor=actor, method='POST', path=path + '/commands',
+        request=data, status=response.status_code, response=response.json()))
+    return response
 
 
 def breaking_target(t):
@@ -285,14 +289,57 @@ def breaking_target(t):
 
 
 def test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial(two_cases):
-    t = two_cases; f = t['f']; target = breaking_target(t); before = full_business(t)
+    from parkweave.template_migration import Apply
+    t = two_cases; f = t['f']
+    oracle = json.loads((ROOT / 'docs/F2/AT27FixedDefinitionDataOracle-20261020.json').read_text())
+    before = full_business(t); original_engine = sqlite_snapshot(t['u']['engine'].repository)
+    traffic_start = len(t['u']['traffic'])
+    core = ('cases', 'runs', 'preparations', 'preparation_evidence', 'preparation_events',
+        'synthetic_resource_holds', 'synthetic_resource_combinations', 'synthetic_resource_combination_members',
+        'synthetic_resource_combination_receipts', 'resource_case_claims', 'case_resource_links',
+        'service_dispatches', 'service_dispatch_offers', 'service_dispatch_events',
+        'service_receipt_steps', 'service_step_receipts', 'service_receipt_events',
+        'case_local_lifecycles', 'case_local_events', 'controlled_plans', 'controlled_plan_events')
+    assert all(name in before['pg'] for name in core)
+    append_record('at27-fixed-baseline', dict(oracle_sha256=hashlib.sha256(
+        (ROOT / 'docs/F2/AT27FixedDefinitionDataOracle-20261020.json').read_bytes()).hexdigest(),
+        case_ids=t['rows'], plans=t['initial'], original_release=t['release'],
+        core_business_rows={name: before['pg'][name] for name in core}, consumer=before['consumer'],
+        all_pg_rows={name: [dict(id=str(row.get('id', 'NO_ID')), sha256=fingerprint(row)) for row in rows]
+            for name, rows in before['pg'].items()}, business_sha256=fingerprint(before), template=original_engine))
+    target = breaking_target(t)
+    assert full_business(t) == before
+    published_engine = sqlite_snapshot(t['u']['engine'].repository)
+    releases = {row[0]: row for row in published_engine['template_releases']}
+    original_releases = {row[0]: row for row in original_engine['template_releases']}
+    assert set(releases) == set(original_releases) | {target['release_id']}
+    for id, old in original_releases.items():
+        current = releases[id]
+        assert current[:2] == old[:2] and current[3:] == old[3:]
+        assert [old[2], current[2]] == oracle['original_release_state_transition']
+    append_record('at27-published-definition', dict(target=target, original_template=original_engine,
+        current_template=published_engine, all_business_and_consumer_unchanged=True))
+
+    def preserved(stage, label):
+        current = full_business(t)
+        assert current == before and sqlite_snapshot(t['u']['engine'].repository) == published_engine
+        for case, parent in t['rows'].items():
+            assert stored(f, parent) == t['initial'][case]
+        append_record('at27-preservation', dict(stage=stage, case=label, before_sha256=fingerprint(before),
+            current_sha256=fingerprint(current), consumer_sha256=fingerprint(current['consumer']),
+            template_sha256=fingerprint(published_engine),
+            pg_tables={name: dict(rows=len(rows), sha256=fingerprint(rows)) for name, rows in current['pg'].items()},
+            exact_full_business_consumer_plans_and_history_unchanged=True))
+
     for label, row in t['rows'].items():
         path = '/api/template-upgrade/' + row['instance_id']
         query = dict(target_release_id=target['release_id'], target_sha256=target['release_sha256'])
         response = f[3].get(path + '/check', headers=headers(f[2]), params=query)
         assert response.status_code == 200, response.text
-        value = response.json(); assert value['check']['classification'] == 'BREAKING_REJECTED'
-        assert value['check']['allowed_choices'] == ['KEEP_CURRENT'] and not value['application']['eligible']
+        value = response.json(); assert value['check']['classification'] == oracle['classification']
+        assert value['check']['allowed_choices'] == oracle['allowed_choices'] and not value['application']['eligible']
+        assert oracle['required_apply_business_blocker'] in value['application']['blockers']
+        preserved('fresh_breaking_precheck', label)
         body = dict(target_release_id=target['release_id'], expected_target_sha256=target['release_sha256'],
             expected_check_sha256=value['check_sha256'], expected_revision=value['revision'], choice='REQUEST_RECHECK',
             reason='SYNTHETIC AT27 explicit refused incompatible old Case recheck')
@@ -302,10 +349,19 @@ def test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback
         migration_choice = f[3].post(path + '/choices', headers=headers(f[2], key=uuid4().hex), json={**body, 'choice': 'MIGRATE'})
         assert migration_choice.status_code == 422, migration_choice.text
         assert sqlite_snapshot(t['u']['checker'].repository) == before_journal
+        preserved('recheck_and_typed_choice_refused', label)
         keep = f[3].post(path + '/choices', headers=headers(f[2], key=uuid4().hex), json={**body, 'choice': 'KEEP_CURRENT'})
         assert keep.status_code == 200, keep.text
         value = f[3].get(path + '/check', headers=headers(f[2]), params=query).json()
         event = keep.json()['event']; current = preparation_read(f, row).json()['preparation']
+        application_view = value['application']
+        assert application_view['plan_id'] == t['initial'][label]['id']
+        assert application_view['plan_revision'] == t['initial'][label]['revision']
+        assert application_view['preparation_revision'] == current['revision']
+        assert application_view['choice_revision'] == event['revision']
+        assert application_view['choice_event_sha256'] == event['event_sha256']
+        assert application_view['source_sha256'] == value['check']['case_state_sha256']
+        assert oracle['required_apply_business_blocker'] in application_view['blockers']
         apply_body = dict(expected_instance_id=row['instance_id'], target_release_id=target['release_id'],
             expected_target_sha256=target['release_sha256'], expected_check_sha256=value['check_sha256'],
             expected_choice_revision=event['revision'], expected_choice_event_sha256=event['event_sha256'],
@@ -313,17 +369,37 @@ def test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback
             expected_preparation_revision=current['revision'], expected_source_sha256=value['check']['case_state_sha256'],
             reason='SYNTHETIC AT27 current complete request attempts rejected breaking application')
         journal_now = sqlite_snapshot(t['u']['checker'].repository)
+        assert set(apply_body) == set(oracle['complete_apply_fields'])
+        assert Apply.model_validate(apply_body).model_dump(mode='json') == apply_body
         application = f[3].post(path + '/apply', headers=headers(f[2], key=uuid4().hex), json=apply_body)
-        assert application.status_code == 409, application.text
+        assert application.status_code == oracle['complete_apply_status'], application.text
+        assert oracle['required_apply_business_blocker'] in application.text
+        preserved('complete_apply_business_scope_refused', label)
         rollback = f[3].get(path + '/check', headers=headers(f[2]), params=dict(target_release_id=t['release']['release_id'], target_sha256=t['release']['release_sha256']))
         assert rollback.status_code == 403, rollback.text
         assert sqlite_snapshot(t['u']['checker'].repository) == journal_now
         assert full_business(t) == before and stored(f, row) == t['initial'][label]
+        preserved('superseded_target_availability_refused_without_fact_rollback', label)
+        append_record('at27-complete-execution-guard', dict(case=label, precheck=value,
+            refused_recheck_request=body, refused_recheck_status=recheck.status_code, refused_recheck_response=recheck.json(),
+            unsupported_migrate_status=migration_choice.status_code, unsupported_migrate_is_execution_proof=False,
+            keep_response=keep.json(), complete_apply_request=apply_body, request_model_validated=True,
+            complete_apply_status=application.status_code, complete_apply_response=application.json(),
+            rollback_query=dict(target_release_id=t['release']['release_id'], target_sha256=t['release']['release_sha256']),
+            rollback_status=rollback.status_code, rollback_response=rollback.json(), rollback_execution='NOT_RUN'))
         append_record('at-results', dict(at='AT-27', case=label, scenario='breaking_release_old_case_migration_and_rollback', result='PASS',
             target_release_id=target['release_id'], classification=value['check']['classification'], breaking_recheck_status=recheck.status_code,
             unsupported_migrate_choice_status=migration_choice.status_code, unsupported_choice_is_not_execution_proof=True,
             complete_application_status=application.status_code, complete_application_response=application.json(), rollback_status=rollback.status_code,
             old_case_uuid_goals_text_reservations_receipts_consumer_and_history_unchanged=True))
+    journal = sqlite_snapshot(t['u']['checker'].repository)
+    assert len(journal['upgrade_events']) == 2
+    events = [json.loads(dict(zip(UpgradeRepository.COLUMNS['upgrade_events'], row))['payload'])
+              for row in journal['upgrade_events']]
+    assert all(e['choice'] == 'KEEP_CURRENT' and e['revision'] == 1 for e in events)
+    assert {e['scope']['instance_id'] for e in events} == {r['instance_id'] for r in t['rows'].values()}
+    append_record('at27-final-http', dict(requests=t['u']['traffic'][traffic_start:], upgrade_journal=journal,
+        old_cases_unchanged=True, actual_rollback_execution='NOT_RUN', UI='NOT_RUN', whole_AT27='NOT_RUN'))
 
 
 def run_html(t, mode, controls=None, **extra):
