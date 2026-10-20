@@ -119,7 +119,8 @@ class _Connection:
         self.create_error, self.after_change = create_error, after_change
         self.created, self.calls = False, []
         self.autocommit = database == 'postgres'
-        self.role = dict(rolname='parkweave_app', rolsuper=False, rolcreatedb=False, rolcreaterole=False, rolcanlogin=True)
+        self.role = dict(rolname='parkweave_app', rolsuper=False, rolcreatedb=False, rolcreaterole=False, rolcanlogin=True,
+                         rolreplication=False, rolbypassrls=False, dangerous_membership=False)
         self.closed = False
 
     def __enter__(self):
@@ -130,7 +131,8 @@ class _Connection:
 
     def execute(self, statement, params=None):
         self.calls.append((statement, params))
-        if 'FROM pg_roles WHERE rolname=' in statement:
+        if ('FROM pg_roles WHERE rolname=' in statement or
+                'FROM pg_catalog.pg_roles r WHERE r.rolname=' in statement):
             return _Result(self.role)
         if 'SELECT max(version) version' in statement:
             return _Result({'version': 0})
@@ -525,3 +527,32 @@ def test_native_migration_rejects_forgery_before_any_schema_statement(monkeypatc
     with pytest.raises(Denied, match='issued .*creation evidence required'):
         owner.migrate()
     assert target.calls == []
+
+
+
+@pytest.mark.parametrize('field,value', [
+    ('rolreplication', True), ('rolbypassrls', True), ('dangerous_membership', True),
+    ('rolreplication', None), ('rolbypassrls', 0), ('dangerous_membership', None),
+    ('dangerous_membership', 0), ('dangerous_membership', 'MISSING'),
+])
+def test_setup_privileged_or_unknown_app_refused_before_CREATE(monkeypatch, field, value):
+    maintenance,target,opened=_setup_connections(monkeypatch)
+    if value=='MISSING':maintenance.role.pop(field)
+    else:maintenance.role[field]=value
+    with pytest.raises(Denied):
+        native.create_installed_synthetic_store(MAINTENANCE,TARGET,APP,'/owned/data')
+    assert [o['dbname'] for o in opened]==['postgres']
+    assert not maintenance.created and not target.calls
+    assert all('CREATE DATABASE' not in sql for sql,_ in maintenance.calls)
+
+
+def test_setup_role_query_checks_current_owner_and_transitive_dangerous_membership(monkeypatch):
+    maintenance,_,_=_setup_connections(monkeypatch)
+    receipt=native.create_installed_synthetic_store(MAINTENANCE,TARGET,APP,'/owned/data')
+    query=next(sql for sql,_ in maintenance.calls if 'rolcanlogin' in sql)
+    assert 'pg_catalog.pg_roles' in query and 'pg_catalog.pg_database' in query
+    assert 'rolreplication' in query and 'rolbypassrls' in query
+    assert "pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')" in query
+    assert 'r.oid=d.datdba' in query and 'x.oid=d.datdba' in query and "pg_catalog.left(x.rolname,3)='pg_'" in query
+    assert 'x.oid<>r.oid' not in query
+    assert maintenance.created and type(receipt) is native._InstalledSyntheticSetupStore

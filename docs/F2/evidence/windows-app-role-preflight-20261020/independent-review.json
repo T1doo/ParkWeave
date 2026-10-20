@@ -1,0 +1,127 @@
+{
+  "verdict": "LIMITED_PASS",
+  "open_P1_P2": 0,
+  "head": "593c3cdefa356745a050dedffe9c9cbb1b1b991e",
+  "frozen_files": 411,
+  "frozen_manifest_sha256": "be45febec483fd3c0d75f992358a2289a7fa618a2db96611c697eaedefa8f287",
+  "negative_cases": [
+    {
+      "field": "rolreplication",
+      "value": true,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolreplication",
+      "value": null,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolreplication",
+      "value": 0,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolreplication",
+      "value": "false",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolreplication",
+      "value": "MISSING",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolbypassrls",
+      "value": true,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolbypassrls",
+      "value": null,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolbypassrls",
+      "value": 0,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolbypassrls",
+      "value": "false",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "rolbypassrls",
+      "value": "MISSING",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "dangerous_membership",
+      "value": true,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "dangerous_membership",
+      "value": null,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "dangerous_membership",
+      "value": 0,
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "dangerous_membership",
+      "value": "false",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    },
+    {
+      "field": "dangerous_membership",
+      "value": "MISSING",
+      "preCREATE": "DENIED_NO_CREATE_NO_TARGET_NO_RECEIPT",
+      "lifecycle": "APP_ROLE_REFUSED_BEFORE_VERSION"
+    }
+  ],
+  "benign_false_membership": "ONE_CREATE_AND_RECEIPT_APP_VERSION_PASS",
+  "owner_app_false": "ORIGINAL_SELECT_AND_TWO_QUERY_PATH_UNCHANGED",
+  "static_SQL": "EXACT_APPROVED_OWNER_SELF_AND_MEMBER_PREDICATE_BOTH_CONSUMERS",
+  "paused_setup_and_protected_files_unchanged": [
+    "src/parkweave/roles.sql",
+    "src/parkweave/synthetic_session_file.py",
+    "src/parkweave/migration-026.sql",
+    "src/parkweave/migration-027.sql",
+    "src/parkweave/migration-028.sql",
+    "src/parkweave/migration-029.sql",
+    "src/parkweave/migration-030.sql",
+    "src/parkweave/migration-031.sql",
+    "src/parkweave/migration-032.sql"
+  ],
+  "source_sha256": {
+    "src/parkweave/installed_fixture_receipt.py": "1be37c7033c13733f1d332024ebb6b34f65424e7a585e5d280ef07eecf4eeecc",
+    "scripts/windows/lifecycle.py": "2d2963a6fde0c94f5b327d0939deea1dbb704d266a43afd32fbb806ae506e764"
+  },
+  "frozen_sources_unchanged": true,
+  "limits": [
+    "No real PostgreSQL evaluation of membership predicates, Windows/native acceptance, credentials or effective-ACL proof",
+    "SQL owner/membership truth is supported by fixed-query audit and consumer DI, not live SQL execution"
+  ],
+  "not_run": [
+    "No pytest",
+    "No repository writes",
+    "Real DB/socket/role/permission/Windows/network/model calls blocked or not performed"
+  ]
+}

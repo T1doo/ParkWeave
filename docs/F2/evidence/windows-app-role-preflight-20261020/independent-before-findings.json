@@ -1,0 +1,45 @@
+{
+  "scope": "READ_ONLY_INSTALL_CHAIN_AUDIT_WITH_PURE_DI_NO_REAL_DATABASE",
+  "head": "593c3cdefa356745a050dedffe9c9cbb1b1b991e",
+  "source_sha256": "a29581d431e85dc00166ae0908f49f70f4558675c40b98858a14bee8b64996b4",
+  "results": [
+    {
+      "catalog_fault": "rolreplication",
+      "observed": "CREATE_AND_RECEIPT_ACCEPTED",
+      "create_statements": 1,
+      "opened": [
+        "postgres",
+        "parkweave"
+      ],
+      "role_select": "SELECT rolname,rolsuper,rolcreatedb,rolcreaterole,rolcanlogin FROM pg_roles WHERE rolname=%s"
+    },
+    {
+      "catalog_fault": "rolbypassrls",
+      "observed": "CREATE_AND_RECEIPT_ACCEPTED",
+      "create_statements": 1,
+      "opened": [
+        "postgres",
+        "parkweave"
+      ],
+      "role_select": "SELECT rolname,rolsuper,rolcreatedb,rolcreaterole,rolcanlogin FROM pg_roles WHERE rolname=%s"
+    },
+    {
+      "catalog_fault": "privileged_owner_membership",
+      "observed": "CREATE_AND_RECEIPT_ACCEPTED",
+      "create_statements": 1,
+      "opened": [
+        "postgres",
+        "parkweave"
+      ],
+      "role_select": "SELECT rolname,rolsuper,rolcreatedb,rolcreaterole,rolcanlogin FROM pg_roles WHERE rolname=%s"
+    }
+  ],
+  "finding": "Existing dedicated-unprivileged application-role preflight omits replication/bypass-RLS flags and dangerous membership. All three synthetic inputs reach CREATE and issue receipt.",
+  "recommendation": "Before CREATE, read and strictly reject replication/bypass-RLS and known dangerous/owner memberships; preserve LOGIN and old flag checks. Align lifecycle application-role validation so existing configurations cannot bypass the same contract. Do not infer blanket rejection of harmless memberships.",
+  "not_run": [
+    "No DB/socket/role/GRANT/Windows/migration/seed action",
+    "No network/model call",
+    "No repository write or pytest"
+  ],
+  "unchanged_source": true
+}

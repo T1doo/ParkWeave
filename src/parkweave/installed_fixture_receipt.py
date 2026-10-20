@@ -184,12 +184,25 @@ def create_installed_synthetic_database_receipt(
                     'SELECT oid FROM pg_database WHERE datname=%s', ('parkweave',)).fetchone():
                 raise Denied('installed synthetic target already exists')
             if application is not None:
+                # The maintenance DB owner is already bound to the exact
+                # CREATE owner. Observe privilege/owner membership; never
+                # alter roles or repair unexpected privileges.
                 role = connection.execute(
-                    'SELECT rolname,rolsuper,rolcreatedb,rolcreaterole,rolcanlogin FROM pg_roles WHERE rolname=%s',
+                    """SELECT r.rolname,r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolcanlogin,
+                        r.rolreplication,r.rolbypassrls,
+                        EXISTS(SELECT 1 FROM pg_catalog.pg_roles x
+                            JOIN pg_catalog.pg_database d ON d.datname=pg_catalog.current_database()
+                            WHERE r.oid=d.datdba OR (
+                                (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR
+                                 x.rolreplication OR x.rolbypassrls OR x.oid=d.datdba OR
+                                 pg_catalog.left(x.rolname,3)='pg_') AND
+                                pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER'))) dangerous_membership
+                        FROM pg_catalog.pg_roles r WHERE r.rolname=%s""",
                     ('parkweave_app',)).fetchone()
                 if (not role or role['rolname'] != 'parkweave_app' or
                         role.get('rolcanlogin') is not True or
-                        any(role[key] is not False for key in ('rolsuper', 'rolcreatedb', 'rolcreaterole'))):
+                        any(role.get(key) is not False for key in ('rolsuper', 'rolcreatedb', 'rolcreaterole',
+                                                               'rolreplication', 'rolbypassrls', 'dangerous_membership'))):
                     raise Denied('installed receipt application role refused')
             connection.execute('CREATE DATABASE parkweave')
             # Read the created OID on the original maintenance connection and

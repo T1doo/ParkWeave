@@ -174,9 +174,23 @@ def check_dsn_scope(dsn,app=False,*,connector=None):
         connection=connector() if connector is not None else Store(dsn).connect()
     with connection as c:
         with stage('database_role'):
-            row=c.execute('SELECT current_database() db,current_user usr,r.rolsuper,r.rolcreatedb,r.rolcreaterole '
-                          'FROM pg_roles r WHERE r.rolname=current_user').fetchone()
-            if row['db']!='parkweave' or (app and (row['usr']!='parkweave_app' or row['rolsuper'] or row['rolcreatedb'] or row['rolcreaterole'])):
+            role_query="""SELECT pg_catalog.current_database() db,current_user usr,
+                r.rolsuper,r.rolcreatedb,r.rolcreaterole,r.rolcanlogin,r.rolreplication,r.rolbypassrls,
+                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x
+                    JOIN pg_catalog.pg_database d ON d.datname=pg_catalog.current_database()
+                    WHERE r.oid=d.datdba OR (
+                        (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR
+                         x.rolreplication OR x.rolbypassrls OR x.oid=d.datdba OR
+                         pg_catalog.left(x.rolname,3)='pg_') AND
+                        pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER'))) dangerous_membership
+                FROM pg_catalog.pg_roles r WHERE r.rolname=current_user""" if app else (
+                    'SELECT current_database() db,current_user usr,r.rolsuper,r.rolcreatedb,r.rolcreaterole '
+                    'FROM pg_roles r WHERE r.rolname=current_user')
+            row=c.execute(role_query).fetchone()
+            if (not row or row.get('db')!='parkweave' or (app and (
+                    row.get('usr')!='parkweave_app' or row.get('rolcanlogin') is not True or
+                    any(row.get(key) is not False for key in (
+                        'rolsuper','rolcreatedb','rolcreaterole','rolreplication','rolbypassrls','dangerous_membership'))))):
                 raise BoundaryError('application must be a dedicated unprivileged parkweave_app role','APP_ROLE_REFUSED')
         with stage('database_version'):version=c.execute('SELECT version() version').fetchone()['version']
     return version

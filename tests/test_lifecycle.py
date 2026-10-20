@@ -206,3 +206,55 @@ def test_setup_handoff_carries_explicit_creation_inputs_without_receipt_or_hidde
     monkeypatch.setenv('PGSERVICE','SYNTHETIC_FORBIDDEN')
     with pytest.raises(lifecycle.BoundaryError,match='inherited PostgreSQL configuration refused'):lifecycle.setup()
     assert len(calls)==1
+
+
+
+@pytest.mark.parametrize('field,value', [
+    ('rolreplication', True), ('rolbypassrls', True), ('dangerous_membership', True),
+    ('rolcanlogin', False), ('rolsuper', None), ('rolcreatedb', 0),
+    ('rolbypassrls', None), ('dangerous_membership', 0), ('dangerous_membership', 'MISSING'),
+])
+def test_application_scope_refuses_privileged_or_unknown_role_without_version_read(field,value):
+    row=dict(db='parkweave',usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
+             rolreplication=False,rolbypassrls=False,rolcanlogin=True,dangerous_membership=False)
+    if value=='MISSING':row.pop(field)
+    else:row[field]=value
+    class Connection:
+        calls=[]
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def execute(self,sql):
+            self.calls.append(sql)
+            assert 'version()' not in sql,'role refusal must precede version query'
+            return type('Result',(),{'fetchone':lambda self:row})()
+    connection=Connection()
+    with pytest.raises(lifecycle.BoundaryError,match='dedicated unprivileged') as error:
+        lifecycle.check_dsn_scope('host=127.0.0.1 dbname=parkweave user=parkweave_app',app=True,connector=lambda:connection)
+    import lifecycle_diagnostics as diagnostic
+    assert diagnostic.failure(error.value)['boundary_reason']=='APP_ROLE_REFUSED'
+    assert len(connection.calls)==1
+
+
+def test_application_role_query_keeps_benign_members_and_owner_maintenance_path():
+    base=dict(db='parkweave',usr='parkweave_app',rolsuper=False,rolcreatedb=False,rolcreaterole=False,
+              rolreplication=False,rolbypassrls=False,rolcanlogin=True,dangerous_membership=False)
+    class Connection:
+        def __init__(self,row):self.row=row;self.calls=[]
+        def __enter__(self):return self
+        def __exit__(self,*a):pass
+        def execute(self,sql):
+            self.calls.append(sql)
+            row={'version':'SYNTHETIC_POSTGRES_VERSION'} if 'version()' in sql else self.row
+            return type('Result',(),{'fetchone':lambda self:row})()
+    # False means none of the explicitly dangerous/owner/pg_* memberships;
+    # ordinary benign group membership is not blanket-rejected by this query.
+    for app,row in ((True,base),(False,{**base,'usr':'postgres','rolsuper':True,'dangerous_membership':True})):
+        connection=Connection(row)
+        assert lifecycle.check_dsn_scope('host=127.0.0.1 dbname=parkweave user=explicit',app=app,connector=lambda:connection)=='SYNTHETIC_POSTGRES_VERSION'
+        assert len(connection.calls)==2
+        sql=connection.calls[0]
+        if app:
+            assert 'pg_catalog.pg_roles' in sql and 'pg_catalog.pg_database' in sql
+            assert 'r.oid=d.datdba' in sql and 'x.oid=d.datdba' in sql and 'x.oid<>r.oid' not in sql
+            assert "pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')" in sql
+        else:assert 'pg_has_role' not in sql and 'rolreplication' not in sql

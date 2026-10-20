@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "scope": "OFFLINE_INSTALLATION_APPLICATION_ROLE_PREFLIGHT_NOT_NATIVE_ACCEPTANCE",
+  "source_parent_head": "593c3cdefa356745a050dedffe9c9cbb1b1b991e",
+  "defect": "The dedicated unprivileged application-role checks omitted replication, bypass-RLS and dangerous/database-owner membership. Three independently reproduced synthetic roles reached CREATE and received creation evidence. Existing-configuration lifecycle check also accepted them.",
+  "change": "Both application consumers require exact booleans: LOGIN True, five privilege flags and dangerous_membership False. Before CREATE the already-verified maintenance database owner is the planned target owner. Existing-config check binds the actual current database owner. Both include owner-self and transitive MEMBER, five privileged flags and pg_* roles; benign memberships are not blanket-rejected.",
+  "owner_path": "lifecycle app=False keeps its original SELECT and maintenance behavior; the new membership/LOGIN contract is applied only to app=True. Standalone receipt without application_dsn retains its existing behavior.",
+  "official_basis": [
+    {
+      "url": "https://www.postgresql.org/docs/17/role-attributes.html",
+      "claim": "LOGIN, REPLICATION, BYPASSRLS and role membership are distinct properties."
+    },
+    {
+      "url": "https://www.postgresql.org/docs/17/functions-info.html",
+      "claim": "pg_has_role MEMBER checks direct or indirect membership."
+    },
+    {
+      "url": "https://www.postgresql.org/docs/17/view-pg-roles.html",
+      "claim": "Role metadata is exposed by the public pg_roles view."
+    }
+  ],
+  "tests": {
+    "development_before": {
+      "tests": 19,
+      "failures": 19,
+      "errors": 0,
+      "skipped": 0
+    },
+    "development_after": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_units": {
+      "tests": 102,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "catalog_consumers": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "unit_selection": "30 explicit functions from the two affected test modules; real-PG fixture functions not selected. Database/socket connect calls blocked and collected fixture graph checked by the private runner. 19 new cases are included in 102, not added again.",
+    "full_repository": "NOT_RUN",
+    "real_PostgreSQL_SQL_or_membership_behavior": "NOT_RUN",
+    "Windows_native": "NOT_RUN"
+  },
+  "source_freeze": {
+    "files": 411,
+    "sha256": "be45febec483fd3c0d75f992358a2289a7fa618a2db96611c697eaedefa8f287",
+    "unchanged_during_final_tests": true
+  },
+  "catalog": {
+    "schema": 2,
+    "ids": 3529,
+    "files": 395,
+    "generation": "08ba9fa936f1a2a3437561ba49283d5a93933a5726c92eaa0c5497c0133921ae",
+    "raw_bytes": 452639,
+    "existing_generation_preserved": true
+  },
+  "protected_source_unchanged": {
+    "src/parkweave/synthetic_session_file.py": true,
+    "src/parkweave/store.py": true,
+    "src/parkweave/roles.sql": true,
+    "src/parkweave/migration-026.sql": true,
+    "src/parkweave/migration-027.sql": true,
+    "src/parkweave/migration-028.sql": true,
+    "src/parkweave/migration-029.sql": true,
+    "src/parkweave/migration-030.sql": true,
+    "src/parkweave/migration-031.sql": true,
+    "src/parkweave/migration-032.sql": true
+  },
+  "limitations": [
+    "No role ALTER/CREATE/GRANT/REVOKE, schema migration, seed, real database creation or owner/DACL action executed.",
+    "OWNER_MUTATION_PAUSED and native migration026-032/roles/seed restrictions remain.",
+    "Queries observe one catalog snapshot; privileged concurrent administrator changes are not frozen or repaired.",
+    "LOGIN and metadata preflight do not prove credentials, CONNECT privilege, exact ACL, target authentication or full native Setup."
+  ],
+  "real_model_calls": 0,
+  "real_budget": 0,
+  "deployment": "NOT_RUN",
+  "ci": "NOT_RUN",
+  "minimum_native_conditions": [
+    "Authorized Win11 x64 machine (or separately scoped Server engineering host), approved native Python3.12 x64/PostgreSQL17+ sources and exact versions; Server evidence does not sign off Win11.",
+    "Security owner must separately resolve raw DACL/control preservation on SESSION/CONFIG CREATE_NEW, then authorize the exact new log/process-record/temp-inode/runtime and CI-root objects before any native owner action. Existing/unknown files stay preserved.",
+    "Native migration026-032/roles/seed trust and execution conditions must be explicitly reviewed; the existing installed receipt covers its current contract only. No role or seed fallback.",
+    "One exact authorized disposable cluster/root, already-existing eligible app/owner identities, explicit connection/data-directory inputs and a non-conflicting process inventory; no credential discovery.",
+    "Separately authorized source-bound native normal-job exact-handle oracle and complete four-shard/full-lifecycle run within existing budgets; safe observation route only, no denied-log retry."
+  ]
+}
