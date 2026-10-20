@@ -1,0 +1,79 @@
+{
+  "source_HEAD": "9276a730a3013f735bcc21bc372aec05b0857ea0",
+  "original_suite": {
+    "host": "cd8f6963ff1b",
+    "started": "2026-10-19T09:28:36.541875+00:00",
+    "ended_from_xml_duration": "2026-10-19T09:39:44.739875+00:00",
+    "unique_nodes": 165,
+    "testcase_records": 166,
+    "failures": [
+      {
+        "name": "test_redispatch_rechecks_current_permissions_and_confirmed_sources[target_read]",
+        "kind": "failure",
+        "seconds": "10.766",
+        "message": "psycopg.errors.ConnectionTimeout: connection timeout expired",
+        "fixture_database_ids": [
+          "fixture_7facddc31fc14f2b8310fff6aafeef12"
+        ]
+      },
+      {
+        "name": "test_redispatch_rechecks_current_permissions_and_confirmed_sources[target_read]",
+        "kind": "error",
+        "seconds": "5.032",
+        "message": "failed on teardown with \"psycopg.errors.QueryCanceled: canceling statement due to statement timeout\"",
+        "fixture_database_ids": [
+          "fixture_7facddc31fc14f2b8310fff6aafeef12"
+        ]
+      },
+      {
+        "name": "test_withdraw_is_not_locked_by_the_access_it_terminates[material]",
+        "kind": "error",
+        "seconds": "24.856",
+        "message": "failed on setup with \"psycopg.errors.ConnectionTimeout: connection timeout expired\nOwned fixture cleanup failed: QueryCanceled\"",
+        "fixture_database_ids": [
+          "fixture_ca323d40af4f45289e492dad77e48b16"
+        ]
+      }
+    ],
+    "end_utc_ns_from_XML": 1792402784739875000
+  },
+  "available_PG_log": {
+    "path": ".runtime/unaccepted-step-redispatch-20261019/bounded-prefix-diagnostics/postgres.log",
+    "first_UTC": "2026-10-19 09:40:23.960",
+    "last_UTC": "2026-10-19 09:46:05.243",
+    "belongs_to": "later bounded-prefix 49PASS, not original failing165"
+  },
+  "available_connection_diagnostics": {
+    "first_UTC": "2026-10-19T09:40:22.249628+00:00",
+    "last_UTC": "2026-10-19T09:46:05.319555+00:00",
+    "kinds": {
+      "pytest_phase": 147,
+      "owned_pg_logging_enabled": 1,
+      "connect_begin": 1880,
+      "connect_end": 1880,
+      "close_begin": 1880,
+      "close_end": 1880,
+      "fixture_stage": 392,
+      "pytest_report": 147,
+      "diagnostic_finish": 1
+    },
+    "first_utc_ns": 1792402822249628057,
+    "last_utc_ns": 1792403165319554665
+  },
+  "causal_verdict": "INSUFFICIENT_ORIGINAL_FAILURE_OBSERVATIONS; no rerun performed; root cause not established",
+  "do_not_infer": [
+    "load/CPU or connection leak from later successful run",
+    "DB lock owner from cleanup timeout alone",
+    "redispatch business bug before target_read setup completed"
+  ],
+  "artifacts_sha256": {
+    ".runtime/unaccepted-step-redispatch-20261019/frozen-final.xml": "3bda80f40e67884353c743e30556e47d4ecc330ada5e86149ad1d26e90822076",
+    ".runtime/unaccepted-step-redispatch-20261019/frozen-final.stdout": "e9e7403c2ecd89c295afab0e63e5d292270306839da105da1f3404ddede50dbb",
+    ".runtime/unaccepted-step-redispatch-20261019/frozen-final.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/unaccepted-step-redispatch-20261019/frozen-final-result.json": "9e278fa6ae2acbe551e5dedd215b4bdd27ea231b67bfaccc460a68944f8728e5",
+    ".runtime/unaccepted-step-redispatch-20261019/bounded-prefix-summary.json": "05c16c3b86d8822a52728fa9de8712fbd718cf6b68bd5bde7d78b015a34b5101",
+    ".runtime/unaccepted-step-redispatch-20261019/bounded-prefix-diagnostics/connections.jsonl": "11e524cc510045a107aa860bc3fc3ab57fdb37d4beaee26a2ef4a3a92d7b193b",
+    ".runtime/unaccepted-step-redispatch-20261019/bounded-prefix-diagnostics/postgres.log": "333b52a70c926d73a9c18832b5a506839ef6cec3fe90ec120aca43aebdb1cb80"
+  },
+  "original_end_to_first_available_diagnostic_ns": 37509753057
+}
