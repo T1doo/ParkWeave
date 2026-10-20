@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "producer_source_commit": "6fa8a072d3918844c17906cc27ee6495828a08e2",
+  "parent_before_source": "351812f251b60bc1092cc63f962eff3656d49815",
+  "source_sha256": {
+    "tests/test_ci_diagnostics.py": "16d02cb0a84cfa23c1a9e19587a3de5542232e3f93e1173dea1f9a877a6e53fe"
+  },
+  "scope": "BOUNDED_CATALOG_MAINTENANCE_CAPACITY_BLOCKER_NOT_COMPLETENESS_FIX",
+  "review": {
+    "design": "PASS",
+    "candidate": "PASS",
+    "open_P1_P2": 0
+  },
+  "focused_tests": {
+    "files": [
+      "tests/test_ci_diagnostics.py",
+      "tests/test_safe_annotations.py",
+      "tests/test_summary_publication.py",
+      "tests/test_minimal_observations.py"
+    ],
+    "exit_code": 1,
+    "passed": 174,
+    "skipped": 7,
+    "failed": 1,
+    "elapsed_seconds": 8.12,
+    "failed_test": "test_committed_allowlist_exactly_matches_trusted_test_functions",
+    "failure_is_original_completeness_assertion": true,
+    "new_maintenance_cases_passed": 18
+  },
+  "actual_catalog_write_refusal": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/windows_ci/diagnostic_catalog.py",
+      "--write"
+    ],
+    "exit_code": 2,
+    "report": {
+      "schema": 1,
+      "scope": "WORKTREE_AST_CATALOG_MAINTENANCE",
+      "status": "CAPACITY_EXCEEDED",
+      "expected": 3507,
+      "current": 2954,
+      "missing": 553,
+      "extra": 0,
+      "limit_ids": 3000,
+      "limit_bytes": 524288,
+      "candidate_bytes": 392553,
+      "write_state": "NOT_ATTEMPTED"
+    },
+    "stderr_empty": true,
+    "target_sha256_before": "925aa3816de3ffe0dd9912d07995a5bd2f8f9ca44dbe07fd725efd034a4a48a6",
+    "target_sha256_after": "925aa3816de3ffe0dd9912d07995a5bd2f8f9ca44dbe07fd725efd034a4a48a6",
+    "target_bytes_unchanged": true,
+    "temporary_file_set_unchanged": true
+  },
+  "unchanged_contract_checks": {
+    "scripts/windows_ci/diagnostics.py": true,
+    "scripts/windows_ci/diagnostic-test-ids.json": true,
+    "scripts/windows_ci/regression_progress.py": true,
+    "scripts/windows_ci/publish_summary.py": true,
+    "src/parkweave/synthetic_session_file.py": true,
+    ".github/workflows/windows-server-engineering.yml": true,
+    "tests/test_ci_diagnostics.py::test_committed_allowlist_exactly_matches_trusted_test_functions": true
+  },
+  "catalog_update_blocker": {
+    "action": "python3 -B scripts/windows_ci/diagnostic_catalog.py --write",
+    "target": "scripts/windows_ci/diagnostic-test-ids.json",
+    "state": "REFUSED_BY_LOCAL_CAPACITY_GUARD_NOT_ATTEMPTED",
+    "reason": "Complete 3507 unique AST identifiers exceed original global cardinality limit 3000; compression, aggregation or partition counting cannot preserve that contract. No valid identifier was removed.",
+    "required_decision": "Define and review a new completeness/resource contract before enabling a larger logical set; no alternative is enabled here."
+  },
+  "remaining_blockers": [
+    "Catalog completeness remains unresolved; runtime reader and catalog unchanged",
+    "OWNER_MUTATION_PAUSED unchanged",
+    "Native migration026-032/roles/seed unsupported",
+    "Windows/Win11/complete Setup and lifecycle not executed"
+  ],
+  "maintenance_implementation_commit": "351812f251b60bc1092cc63f962eff3656d49815",
+  "portability_refinement": "Synthetic is_symlink seam replaces OS symlink creation; no Windows privilege required.",
+  "collection": {
+    "current_cases": 9278,
+    "current_files": 394,
+    "current_stable_collection_sha256": "a44f6389abaee0e965c69f232cce4db1839931efad7ff0c5aed727d0ca70daff",
+    "global_private_collection_sha256": "191b52cd1cdc7eeee877c04a473e6ab4e88ac127226f7c18a6f8da2235aed792",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 2329,
+        "files": 96,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "d3e93a2231325f77227100dc72633589eba5df06c85bf3a43689a31b438f5871"
+      },
+      {
+        "shard": "S2",
+        "cases": 2309,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "c0c5612b6ba87353b8a740208cc29960f2802797d83761da4f2f1bdc7def6c76"
+      },
+      {
+        "shard": "S3",
+        "cases": 2332,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "6265155b3862d4394987e595733e822d841c88b8f8940aa3259223c9320e6da9"
+      },
+      {
+        "shard": "S4",
+        "cases": 2308,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "2b58c859dec20c4b1fac043fc28d382433f6106dcda8e48c2e0b87a248ccd8be"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "source_bytes_unchanged_during_collection": true,
+    "head_blob_raw_sha256_binding_verified": true,
+    "diagnostic_catalog_ast_completeness_claimed": false,
+    "windows_dependency_and_fixture_compatibility_claimed": false
+  },
+  "collection_bounds": {
+    "max_cases_unchanged": 10000,
+    "max_bytes_unchanged": 4194304,
+    "actual_bytes": {
+      "global": 3312015,
+      "S1": 559145,
+      "S2": 558437,
+      "S3": 586255,
+      "S4": 1608295
+    }
+  },
+  "manifest_sha256": "833e2e1b0150a2c3ebd27a18985180458e3b8e723280e89b1a085f6145a75248",
+  "owner_pause_unchanged": true,
+  "new_CI_dispatches": 0,
+  "new_CI_runner_executions": 0,
+  "push_event_may_create_skipped_workflow_record": true,
+  "windows_acceptance": "NOT_RUN",
+  "full_regression_execution": "NOT_RUN"
+}
