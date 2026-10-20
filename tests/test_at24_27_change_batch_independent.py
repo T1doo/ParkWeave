@@ -604,9 +604,16 @@ def test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck(
     # The generic fixture's earlier baseline remains separately recorded.
     t['initial'] = {label: deepcopy(stored(f, parent)) for label, parent in t['rows'].items()}
     m0 = {label: conflict_view(t, label).json()['source'] for label in t['rows']}
-    frozen_consumer = full_business(t)['consumer']
+    initial_business = full_business(t)
+    frozen_consumer = initial_business['consumer']
     frozen_template = sqlite_snapshot(t['u']['engine'].repository)
-    change_traffic_start = len(t['traffic'])
+    immutable_tables = ('preparation_evidence', 'preparation_events', 'service_step_receipts',
+                        'service_receipt_events', 'service_dispatch_events', 'case_local_events',
+                        'synthetic_resource_combination_receipts', 'synthetic_resource_receipts')
+    immutable_history = {name: deepcopy(initial_business['pg'][name]) for name in immutable_tables}
+    assert all(immutable_history.values())
+    history_rows = {name: {str(r['id']): fingerprint(r) for r in rows} for name, rows in immutable_history.items()}
+    change_traffic_start = len(t['u']['traffic'])
     controls = material_controls(t)
 
     def stage(name):
@@ -621,12 +628,16 @@ def test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck(
             assert plan['history'] == initial['history']
         assert plans['B'] == t['initial']['B'] and notes['B']['text'] == n0
         assert all(s['state'] == 'VERIFIED' for s in views['B']['steps'])
-        assert full_business(t)['consumer'] == frozen_consumer
+        current_business = full_business(t)
+        assert current_business['consumer'] == frozen_consumer
+        for table, original in immutable_history.items():
+            assert all(old in current_business['pg'][table] for old in original), table
         assert sqlite_snapshot(t['u']['engine'].repository) == frozen_template
         goals = {label: call(t['u'], '/api/preparations/' + parent['preparation_id'] + '/goal-results')
                  for label, parent in t['rows'].items()}
         append_record('at26-fixed-stages', dict(stage=name, scope='LINUX_SYNTHETIC_HTTP_ASGI_ENGINEERING_ONLY',
             formal_at26='NOT_RUN', n0=n0, m0=m0, notes=notes,
+            original_immutable_history_rows=history_rows, original_history_rows_exact_subset=True,
             goals=goals, no_automatic_publication=True, template_sha256=fingerprint(frozen_template),
             current={label: dict(state=v['state'], steps=v['steps']) for label, v in views.items()},
             historical={label: dict(events=p['events'], history=p['history'],
@@ -710,7 +721,7 @@ def test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck(
     assert all(s['state'] == 'VERIFIED' for s in final['A']['steps'])
     actions = [e['action'] for e in stored(f, row)['events'][len(t['initial']['A']['events']):]]
     assert actions.count('UNLOCK') == 1 and actions.count('ADOPT') == 1 and actions.count('VERIFY') == 5
-    traffic = t['traffic'][change_traffic_start:]
+    traffic = t['u']['traffic'][change_traffic_start:]
     assert not any(r['method'] != 'GET' and '/template-' in r['path'] for r in traffic)
     append_record('at26-fixed-http', dict(requests=traffic, no_automatic_template_publication=True))
     append_record('at-results', dict(at='AT-26', scenario='C26_BOTH_LOCKED_SINGLE_CURRENT_EXECUTION', result='PASS',
