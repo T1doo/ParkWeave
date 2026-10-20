@@ -46,7 +46,43 @@ async function first(ids=['A'],cursor=one){const p=loadNoticeList().catch(notice
 const probe=`
 (async()=>{
  token('SYNTHETIC-A');
- if(mode==='empty_continue'){
+ if(mode.startsWith('auth_')){
+  const [,statusText,bodyKind]=mode.split('_'),status=Number(statusText);
+  const ready=loadNotice('A').catch(noticeError),n=item('A');n.open_requested_at='SYNTHETIC';
+  answer(take('/api/dispatch-notices/A'),{notice:n});await ready;
+  preparationView={private:'old'};dispatchView={private:'old'};receiptView={private:'old'};
+  let bodyReads=0;
+  const command=$('notice-read').click(),q=take('/api/dispatch-notices/A/commands');
+  assert(JSON.parse(q.options.body).action==='MARK_READ','only explicit original notice command sent');
+  q.resolve({status,ok:false,json:()=>{bodyReads++;
+   if(bodyKind==='pending')return new Promise(()=>{});
+   if(bodyKind==='html')return Promise.reject(Error('PRIVATE SYNTHETIC AUTH BODY'));
+   return Promise.resolve({detail:'PRIVATE SYNTHETIC AUTH BODY'});
+  }});
+  await tick();
+  assert(noticeView===null&&noticeContext===null&&noticeId===null&&$('notice-detail').hidden,
+   'authorization headers clear notice detail without waiting for body');
+  assert(preparationView===null&&dispatchView===null&&receiptView===null&&noticeNextCursor===null,
+   'authorization refusal clears linked private views and continuation');
+  assert(bodyReads===0,'authorization response body is never parsed');
+  assert($('notice-error').textContent.includes('刷新')&&!$('notice-error').textContent.includes('PRIVATE'),
+   'fixed refusal feedback offers explicit refresh');
+  await command;
+  const count=requests.length;await noticeCommand('MARK_READ').catch(noticeError);
+  assert(requests.length===count&&entryWriteRequests.size===0,'no command replay after refusal');
+  await first(['RECOVERED'],two);
+  assert($('notice-items').children[0].dataset.noticeId==='RECOVERED'&&!$('notice-error').textContent,
+   'explicit refresh can recover using current server response');
+  assert(requests.filter(x=>x.options.method==='POST').length===1,'no automatic OPEN or MARK_READ');
+ }else if(mode.startsWith('late_auth_')){
+  const status=Number(mode.slice('late_auth_'.length));let bodyReads=0;
+  const old=loadNotice('A').catch(noticeError),q=take('/api/dispatch-notices/A');
+  token('SYNTHETIC-B');await first(['NEW'],two);
+  q.resolve({status,ok:false,json:()=>{bodyReads++;return new Promise(()=>{});}});await tick();
+  assert(bodyReads===0,'stale authorization response body is not read');await old;
+  assert($('notice-items').children[0].dataset.noticeId==='NEW'&&noticeNextCursor===two&&!$('notice-error').textContent,
+   'stale authorization response cannot clear newer identity');
+ }else if(mode==='empty_continue'){
   await first([],one);assert(!$('notice-next').hidden&&!$('notice-next').disabled,'empty page permits continuing');
   const p=$('notice-next').click(),q=take(nextPath());assert($('notice-next').hidden&&noticeListLoading,'continuing clears and locks private view');
   $('notice-next').click();assert(pending.length===0,'duplicate continue has no request');
@@ -85,7 +121,7 @@ const probe=`
   await first();const old=loadNoticeList({continueOlder:true}).catch(noticeError),q=take(nextPath());clearNotices();answer(q,page(['OLD'],one));await old;
   assert($('notice-items').textContent===''&&noticeNextCursor===null&&$('notice-next').hidden,'explicit clear invalidates in-flight continuation');
  }else throw Error('Unknown offline mode');
- assert(requests.every(x=>x.options.method==='GET'&&x.options.cache==='no-store'&&!x.options.body),'no automatic OPEN MARK_READ or cached response');
+ assert(requests.every(x=>x.options.cache==='no-store'&&(mode.startsWith('auth_')||x.options.method==='GET'&&!x.options.body)),'no cached response or unintended business request');
  return JSON.stringify({mode,checks,scope:'NODE_VM_WITH_DOM_AND_FETCH_DOUBLES_ONLY'});
 })()
 `;

@@ -1,0 +1,465 @@
+{
+  "baseline_sha": "4695193a529e456b15701b691637545ffed7cc7a",
+  "branch": "dev/f2-notice-auth-headers-20261020",
+  "started_utc": "2026-10-20T02:03:54.016455+00:00",
+  "ended_utc": "2026-10-20T02:03:55.751657+00:00",
+  "source_before": {
+    "src/parkweave/web.html": "a50f602bbc1bf84f28afbae16b9ff4f5e9bdbe9d951eaa7700d09122bc497301",
+    "tests/dispatch_notice_pagination_offline.js": "3db410f39668fd3a17df1f1e5cfe5c0f4260ceb85671d89eb67518b627cdf6af",
+    "tests/dispatch_notice_auth_http.js": "83321ec68f16d78ec02f18b868356fe41bd2a731584110dd29e18cb705cd40a4",
+    "tests/test_dispatch_notice_page_offline.py": "5b37c2b4ff5b0eb96c10f8a6e94600dc99de5a04c467a093c1f26d264170183a"
+  },
+  "source_after": {
+    "src/parkweave/web.html": "a50f602bbc1bf84f28afbae16b9ff4f5e9bdbe9d951eaa7700d09122bc497301",
+    "tests/dispatch_notice_pagination_offline.js": "3db410f39668fd3a17df1f1e5cfe5c0f4260ceb85671d89eb67518b627cdf6af",
+    "tests/dispatch_notice_auth_http.js": "83321ec68f16d78ec02f18b868356fe41bd2a731584110dd29e18cb705cd40a4",
+    "tests/test_dispatch_notice_page_offline.py": "5b37c2b4ff5b0eb96c10f8a6e94600dc99de5a04c467a093c1f26d264170183a"
+  },
+  "final_node_results": [
+    {
+      "mode": "empty_continue",
+      "exit": 0,
+      "seconds": 0.068,
+      "checks": [
+        "empty page permits continuing",
+        "continuing clears and locks private view",
+        "duplicate continue has no request",
+        "older page reached and end explicit",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "refresh_order",
+      "exit": 0,
+      "seconds": 0.063,
+      "checks": [
+        "older refresh response ignored",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "continue_then_refresh",
+      "exit": 0,
+      "seconds": 0.059,
+      "checks": [
+        "old page cleared before next response",
+        "late continuation cannot overwrite refreshed high water",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "identity_aba",
+      "exit": 0,
+      "seconds": 0.056,
+      "checks": [
+        "identity ABA invalidates original reply",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "current_denied",
+      "exit": 0,
+      "seconds": 0.056,
+      "checks": [
+        "403 clears every linked private view and position",
+        "denial offers explicit refresh",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "stale_denied",
+      "exit": 0,
+      "seconds": 0.069,
+      "checks": [
+        "stale 403 cannot clear current page",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "detail_clears",
+      "exit": 0,
+      "seconds": 0.091,
+      "checks": [
+        "detail navigation clears list and cursor",
+        "explicit detail remains readable",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "stale_card",
+      "exit": 0,
+      "seconds": 0.053,
+      "checks": [
+        "detached previous-page action ignored",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "malformed_response",
+      "exit": 0,
+      "seconds": 0.062,
+      "checks": [
+        "invalid response leaves no old private data or continue handle",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "clear_inflight",
+      "exit": 0,
+      "seconds": 0.055,
+      "checks": [
+        "explicit clear invalidates in-flight continuation",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_401_json",
+      "exit": 0,
+      "seconds": 0.058,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_403_json",
+      "exit": 0,
+      "seconds": 0.055,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_401_html",
+      "exit": 0,
+      "seconds": 0.067,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_403_html",
+      "exit": 0,
+      "seconds": 0.052,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_401_pending",
+      "exit": 0,
+      "seconds": 0.129,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "auth_403_pending",
+      "exit": 0,
+      "seconds": 0.072,
+      "checks": [
+        "only explicit original notice command sent",
+        "authorization headers clear notice detail without waiting for body",
+        "authorization refusal clears linked private views and continuation",
+        "authorization response body is never parsed",
+        "fixed refusal feedback offers explicit refresh",
+        "no command replay after refusal",
+        "explicit refresh can recover using current server response",
+        "no automatic OPEN or MARK_READ",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "late_auth_401",
+      "exit": 0,
+      "seconds": 0.145,
+      "checks": [
+        "stale authorization response body is not read",
+        "stale authorization response cannot clear newer identity",
+        "no cached response or unintended business request"
+      ]
+    },
+    {
+      "mode": "late_auth_403",
+      "exit": 0,
+      "seconds": 0.201,
+      "checks": [
+        "stale authorization response body is not read",
+        "stale authorization response cannot clear newer identity",
+        "no cached response or unintended business request"
+      ]
+    }
+  ],
+  "final_full_page_http": [
+    {
+      "status": 401,
+      "result": "PASS",
+      "requests": 2,
+      "error_body_finished": false,
+      "scope": "WHOLE_PAGE_JS_REAL_LOOPBACK_HTTP_MECHANICAL_DOM"
+    },
+    {
+      "status": 403,
+      "result": "PASS",
+      "requests": 2,
+      "error_body_finished": false,
+      "scope": "WHOLE_PAGE_JS_REAL_LOOPBACK_HTTP_MECHANICAL_DOM"
+    }
+  ],
+  "baseline_node_failures": [
+    {
+      "mode": "auth_401_json",
+      "exit": 1,
+      "error": "Error: authorization headers clear notice detail without waiting for body"
+    },
+    {
+      "mode": "auth_403_json",
+      "exit": 1,
+      "error": "Error: authorization response body is never parsed"
+    },
+    {
+      "mode": "auth_401_html",
+      "exit": 1,
+      "error": "Error: authorization headers clear notice detail without waiting for body"
+    },
+    {
+      "mode": "auth_403_html",
+      "exit": 1,
+      "error": "Error: authorization response body is never parsed"
+    },
+    {
+      "mode": "auth_401_pending",
+      "exit": 1,
+      "error": "Error: authorization headers clear notice detail without waiting for body"
+    },
+    {
+      "mode": "auth_403_pending",
+      "exit": 1,
+      "error": "Error: authorization headers clear notice detail without waiting for body"
+    },
+    {
+      "mode": "late_auth_401",
+      "exit": 1,
+      "error": "Error: stale authorization response body is not read"
+    },
+    {
+      "mode": "late_auth_403",
+      "exit": 1,
+      "error": "Error: stale authorization response body is not read"
+    }
+  ],
+  "baseline_full_page_http": {
+    "result": "EXPECTED_FAILURE",
+    "first_status": 401,
+    "failure": "refusal waited for unfinished body",
+    "body_wait_test_limit_seconds": 2,
+    "stderr_sha256": "78369583cef17a57232963d2fd398684ed54616d0b684f10c213d2f49cc657a5"
+  },
+  "independent_original_function_probes": {
+    "source_sha256": "a50f602bbc1bf84f28afbae16b9ff4f5e9bdbe9d951eaa7700d09122bc497301",
+    "scope": "Independent original-notice-function VM probes; DOM and fetch doubles; no browser, DB, or full cleanup integration",
+    "results": [
+      {
+        "name": "current-401-body-not-accessed-and-opaque-reference-preserved",
+        "result": "PASS"
+      },
+      {
+        "name": "stale-401-headers-after-same-token-ABA",
+        "result": "PASS"
+      },
+      {
+        "name": "stale-401-error-presentation-after-new-selection",
+        "result": "PASS"
+      },
+      {
+        "name": "current-403-body-not-accessed-and-opaque-reference-preserved",
+        "result": "PASS"
+      },
+      {
+        "name": "stale-403-headers-after-same-token-ABA",
+        "result": "PASS"
+      },
+      {
+        "name": "stale-403-error-presentation-after-new-selection",
+        "result": "PASS"
+      },
+      {
+        "name": "success-body-settles-after-new-generation",
+        "result": "PASS"
+      },
+      {
+        "name": "502-preserves-previous-nonauthorization-behavior",
+        "result": "PASS"
+      }
+    ]
+  },
+  "independent_regression": {
+    "reviewer_node_regression_count": 18,
+    "result": "PASS",
+    "source_sha256": "a50f602bbc1bf84f28afbae16b9ff4f5e9bdbe9d951eaa7700d09122bc497301",
+    "cases": [
+      {
+        "mode": "empty_continue",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "refresh_order",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "continue_then_refresh",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "identity_aba",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "current_denied",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "stale_denied",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "detail_clears",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "stale_card",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "malformed_response",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "clear_inflight",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_401_json",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_403_json",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_401_html",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_403_html",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_401_pending",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "auth_403_pending",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "late_auth_401",
+        "exit": 0,
+        "error": ""
+      },
+      {
+        "mode": "late_auth_403",
+        "exit": 0,
+        "error": ""
+      }
+    ]
+  },
+  "independent_initialization_cleanup": {
+    "exit": 1,
+    "elapsed_seconds": 0.057,
+    "expected_failure_seen": true,
+    "stderr": "evalmachine.<anonymous>:1\nthrow new Error(\"SYNTHETIC_INITIALIZATION_FAILURE\");\n^\n\nError: SYNTHETIC_INITIALIZATION_FAILURE\n    at evalmachine.<anonymous>:1:7\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at page (/workspace/ParkWeave/tests/dispatch_notice_auth_http.js:46:5)\n    at check (/workspace/ParkWeave/tests/dispatch_notice_auth_http.js:65:17)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async /workspace/ParkWeave/tests/dispatch_notice_auth_http.js:87:42\n"
+  },
+  "review": {
+    "open_p1_p2": 0,
+    "full_page_http_statuses_independently_passed": [
+      401,
+      403
+    ],
+    "linked_cleanup_is_original": true,
+    "dom_is_mechanical": true,
+    "browser_or_database_pass_claimed": false
+  },
+  "browser": {
+    "result": "BLOCKED_BEFORE_PRODUCT_LOAD",
+    "sandbox_enabled": true,
+    "attempts": 1,
+    "reason": "SUID sandbox helper configuration invalid; crashpad database error",
+    "retry_or_permission_change": false
+  },
+  "not_run": [
+    "pytest",
+    "database regression",
+    "real browser UI",
+    "Windows",
+    "formal AT",
+    "LIVE models",
+    "real business",
+    "full project regression"
+  ]
+}
