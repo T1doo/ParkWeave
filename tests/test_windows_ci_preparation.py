@@ -54,6 +54,10 @@ def test_ci_scripts_only_new_cluster_no_service_uac_policy_mutation():
     text=(DIRECTORY/'Engineering.ps1').read_text()+(DIRECTORY/'ClusterControl.psm1').read_text()
     assert "'--auth-host=trust'" in text and '-h 127.0.0.1' in text and 'parkweave-server-ci-' in text
     assert 'Get-OwnedState' in text and 'Get-ItemProperty' in text and 'EnableLUA' in text
+    assert 'CREATE DATABASE parkweave' not in (DIRECTORY/'Engineering.ps1').read_text()
+    assert 'PARKWEAVE_SETUP_MAINTENANCE_DSN' in text and 'PARKWEAVE_SETUP_DATA_DIRECTORY' in text
+    assert "$setupDataDirectory=$state.data.Replace('\\','/')" in text
+    assert 'PARKWEAVE_SETUP_DATA_DIRECTORY=$setupDataDirectory' in text
     for prohibited in ('Set-ExecutionPolicy','Set-ItemProperty','Start-Service','Stop-Service','Remove-Item','netsh','Invoke-Expression','PGPASSWORD','root password'):
         assert prohibited not in text
     assert 'no version spoof' in (DIRECTORY/'server_candidate_probe.py').read_text()

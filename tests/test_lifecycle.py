@@ -120,6 +120,8 @@ def test_first_setup_pause_precedes_all_install_and_database_side_effects(tmp_pa
     monkeypatch.setattr(lifecycle,'REPO',repo);monkeypatch.setattr(lifecycle,'RUNTIME',runtime);monkeypatch.setattr(lifecycle,'CONFIG',config)
     before={str(p.relative_to(repo)):p.read_bytes() if p.is_file() else None for p in repo.rglob('*')}
     def forbidden(*args,**kwargs):raise AssertionError('installation/database/environment boundary crossed')
+    from parkweave import installed_fixture_receipt
+    monkeypatch.setattr(installed_fixture_receipt,'create_installed_synthetic_store',forbidden)
     for name in ('check_python','needed_environment','protect_private_root','write_exclusive','check_dsn_scope'):
         monkeypatch.setattr(lifecycle,name,forbidden)
     monkeypatch.setattr(lifecycle.subprocess,'run',forbidden)
@@ -156,3 +158,51 @@ def test_setup_cli_emits_fixed_pause_and_nonzero_before_side_effects(tmp_path,mo
     assert row['boundary_reason']=='OWNER_MUTATION_PAUSED' and row['boundary_phase']=='configuration'
     assert 'New native setup is paused' in output.err and str(tmp_path) not in output.out
     assert list(tmp_path.iterdir())==[]
+
+
+def test_managed_setup_uses_issued_store_and_preserves_migration_failure(tmp_path,monkeypatch):
+    """Local ready double exercises dormant wiring, never enables native Setup."""
+    from parkweave import installed_fixture_receipt
+    managed=tmp_path/'.venv-windows/Scripts/python.exe';managed.parent.mkdir(parents=True);managed.touch()
+    monkeypatch.setattr(lifecycle,'REPO',tmp_path);monkeypatch.setattr(lifecycle,'CONFIG',tmp_path/'missing-config.json')
+    monkeypatch.setattr(lifecycle.sys,'executable',str(managed))
+    monkeypatch.setattr(lifecycle,'require_setup_readiness',lambda:None)
+    monkeypatch.setattr(lifecycle,'check_python',lambda value:None)
+    values={'PARKWEAVE_SETUP_MAINTENANCE_DSN':'SYNTHETIC-maintenance','PARKWEAVE_OWNER_DSN':'SYNTHETIC-owner',
+            'PARKWEAVE_DSN':'SYNTHETIC-app','PARKWEAVE_SETUP_DATA_DIRECTORY':'/owned/data'}
+    for key,value in values.items():monkeypatch.setenv(key,value)
+    calls=[]
+    class MigrationFailure(Exception):pass
+    class Owner:
+        def connect(self):raise AssertionError('only the explicit connector seam may read role metadata')
+        def connect_application(self):raise AssertionError('only the explicit connector seam may read role metadata')
+        def migrate(self):calls.append('migrate');raise MigrationFailure('SYNTHETIC_MIGRATION_REFUSAL')
+    owner=Owner()
+    def create(*args):calls.append(args);return owner
+    monkeypatch.setattr(installed_fixture_receipt,'create_installed_synthetic_store',create)
+    monkeypatch.setattr(lifecycle,'check_dsn_scope',lambda dsn,app=False,**kw:calls.append((dsn,app,kw['connector'])))
+    monkeypatch.setattr(lifecycle,'protect_private_root',lambda *args:pytest.fail('migration refusal must prevent file changes'))
+    with pytest.raises(MigrationFailure):lifecycle.setup()
+    assert calls==[('SYNTHETIC-maintenance','SYNTHETIC-owner','SYNTHETIC-app','/owned/data'),
+        ('SYNTHETIC-owner',False,owner.connect),('SYNTHETIC-app',True,owner.connect_application),'migrate']
+    assert not (tmp_path/'missing-config.json').exists()
+
+
+def test_setup_handoff_carries_explicit_creation_inputs_without_receipt_or_hidden_defaults(tmp_path,monkeypatch):
+    managed=tmp_path/'.venv-windows/Scripts/python.exe';managed.parent.mkdir(parents=True);managed.touch()
+    monkeypatch.setattr(lifecycle,'REPO',tmp_path);monkeypatch.setattr(lifecycle,'CONFIG',tmp_path/'missing-config.json')
+    monkeypatch.setattr(lifecycle.sys,'executable',str(tmp_path/'base-python'))
+    monkeypatch.setattr(lifecycle,'require_setup_readiness',lambda:None)
+    monkeypatch.setattr(lifecycle,'check_python',lambda value:None)
+    values={'PARKWEAVE_SETUP_MAINTENANCE_DSN':'SYNTHETIC-maintenance','PARKWEAVE_OWNER_DSN':'SYNTHETIC-owner',
+            'PARKWEAVE_DSN':'SYNTHETIC-app','PARKWEAVE_SETUP_DATA_DIRECTORY':'/owned/data'}
+    for key,value in values.items():monkeypatch.setenv(key,value)
+    monkeypatch.setenv('PARKWEAVE_TEST_OWNER_DSN','SYNTHETIC-unrelated')
+    calls=[]
+    monkeypatch.setattr(lifecycle.subprocess,'run',lambda command,**kw:calls.append((command,kw)))
+    lifecycle.setup()
+    assert len(calls)==1 and calls[0][0]==[str(managed),str(PATH),'setup']
+    assert {k:v for k,v in calls[0][1]['env'].items() if k.startswith('PARKWEAVE_')}==values
+    monkeypatch.setenv('PGSERVICE','SYNTHETIC_FORBIDDEN')
+    with pytest.raises(lifecycle.BoundaryError,match='inherited PostgreSQL configuration refused'):lifecycle.setup()
+    assert len(calls)==1

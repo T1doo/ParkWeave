@@ -1,4 +1,4 @@
-"""Dormant receipt candidate: unit seams + owned Linux TCP PG, NOT native Windows.
+"""Receipt/paused Setup wiring: unit seams + owned Linux TCP PG, NOT native Windows.
 
 No global pg fixture, new role, GRANT, identity, lifecycle, or Windows security
 operation. Real database cleanup is limited to our confirmed receipt's exact OID.
@@ -119,6 +119,8 @@ class _Connection:
         self.create_error, self.after_change = create_error, after_change
         self.created, self.calls = False, []
         self.autocommit = database == 'postgres'
+        self.role = dict(rolname='parkweave_app', rolsuper=False, rolcreatedb=False, rolcreaterole=False)
+        self.closed = False
 
     def __enter__(self):
         return self
@@ -128,12 +130,19 @@ class _Connection:
 
     def execute(self, statement, params=None):
         self.calls.append((statement, params))
+        if 'FROM pg_roles WHERE rolname=' in statement:
+            return _Result(self.role)
+        if 'SELECT max(version) version' in statement:
+            return _Result({'version': 0})
         if statement == 'CREATE DATABASE parkweave':
             if self.create_error:
                 raise psycopg.OperationalError(POISON)
             self.created = True
             return _Result(None)
         return _Result({'oid': 42} if self.created or self.existing else None)
+
+    def close(self):
+        self.closed = True
 
 
 def _metadata(connection):
@@ -379,3 +388,112 @@ def test_real_sql025_rejects_changed_ticket_and_rolls_back(native_database, fiel
     with owner.connect() as c:
         assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
         assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') t").fetchone()['t'] is None
+
+
+APP = 'host=127.0.0.1 port=5432 user=parkweave_app dbname=parkweave sslmode=disable'
+
+
+def _setup_connections(monkeypatch, *, existing=False, create_error=False):
+    maintenance = _Connection('postgres', existing=existing, create_error=create_error)
+    target = _Connection('parkweave')
+    opened = []
+
+    def connect(*args, **options):
+        if args:
+            options = dict(native.conninfo_to_dict(args[0]), **options)
+        opened.append(options)
+        return maintenance if options['dbname'] == 'postgres' else target
+
+    monkeypatch.setattr(native.psycopg, 'connect', connect)
+    monkeypatch.setattr(native, '_identity', _metadata)
+    return maintenance, target, opened
+
+
+@pytest.mark.parametrize('changed', [
+    {'host': '::1'}, {'port': '5433'}, {'user': 'postgres'},
+    {'dbname': 'postgres'}, {'service': 'hidden'}, {'sslmode': 'prefer'},
+])
+def test_setup_app_pair_refused_before_any_connection(monkeypatch, changed):
+    _, _, opened = _setup_connections(monkeypatch)
+    with pytest.raises(Denied):
+        native.create_installed_synthetic_store(MAINTENANCE, TARGET, make_conninfo(APP, **changed), '/owned/data')
+    assert opened == []
+
+
+@pytest.mark.parametrize('failure', ['missing', 'superuser', 'createdb', 'createrole'])
+def test_setup_live_app_role_refused_before_create(monkeypatch, failure):
+    maintenance, target, opened = _setup_connections(monkeypatch)
+    if failure == 'missing':
+        maintenance.role = None
+    else:
+        maintenance.role[{'superuser': 'rolsuper', 'createdb': 'rolcreatedb', 'createrole': 'rolcreaterole'}[failure]] = True
+    with pytest.raises(Denied):
+        native.create_installed_synthetic_store(MAINTENANCE, TARGET, APP, '/owned/data')
+    assert [o['dbname'] for o in opened] == ['postgres']
+    assert not maintenance.created and not target.calls
+    assert all('CREATE DATABASE' not in sql for sql, _ in maintenance.calls)
+
+
+@pytest.mark.parametrize('directory', ['/owned/data', 'C:/runner/_temp/parkweave-server-ci-owned/data'])
+def test_setup_factory_keeps_exact_receipt_and_strict_connections_through_migration(monkeypatch, directory):
+    maintenance, target, opened = _setup_connections(monkeypatch)
+    monkeypatch.setattr(native, '_identity', lambda connection: _metadata(connection) | {'data_directory': directory})
+    owner = native.create_installed_synthetic_store(MAINTENANCE, TARGET, APP, directory)
+    receipt = owner._case_fact_fixture_receipt
+    assert native._issued[receipt.database_nonce] is receipt and receipt.issuer_pid == os.getpid()
+    assert receipt.data_directory == directory
+    owner.migrate()
+    with owner.connect_application():
+        pass
+    assert sum(sql == 'CREATE DATABASE parkweave' for sql, _ in maintenance.calls) == 1
+    assert [o['user'] for o in opened] == ['postgres', 'postgres', 'postgres', 'parkweave_app']
+    for options in opened:
+        assert options['host'] == options['hostaddr'] == '127.0.0.1'
+        assert options['passfile'] == os.devnull and options['password'] == ''
+        assert options['sslmode'] == options['gssencmode'] == 'disable'
+        assert options['require_auth'] == 'none,password,md5,scram-sha-256'
+    statements = [sql for sql, _ in target.calls]
+    assert next(i for i, sql in enumerate(statements) if 'INSERT INTO pg_temp.parkweave_fixture_migration_receipt' in sql) < next(
+        i for i, sql in enumerate(statements) if "parkweave:migrate" in sql)
+    # Inherited defaults added later cannot enter either owner or app connection.
+    monkeypatch.setenv('PGSERVICE', 'SYNTHETIC_FORBIDDEN')
+    before = len(opened)
+    for connector in (owner.connect, owner.connect_application):
+        with pytest.raises(Denied, match='inherited PostgreSQL configuration refused'):
+            connector()
+    assert len(opened) == before
+
+
+@pytest.mark.parametrize('failure', ['existing', 'create_error', 'target_unknown'])
+def test_setup_factory_unknown_or_existing_never_retries_adopts_or_drops(monkeypatch, failure):
+    maintenance, target, opened = _setup_connections(
+        monkeypatch, existing=failure == 'existing', create_error=failure == 'create_error')
+    if failure == 'target_unknown':
+        target.after_change = {'database_oid': 43}
+    before = set(native._issued.keys())
+    with pytest.raises(Denied):
+        native.create_installed_synthetic_store(MAINTENANCE, TARGET, APP, '/owned/data')
+    assert set(native._issued.keys()) == before
+    assert sum(sql == 'CREATE DATABASE parkweave' for sql, _ in maintenance.calls) == (0 if failure == 'existing' else 1)
+    assert all('DROP' not in sql for sql, _ in maintenance.calls + target.calls)
+
+
+@pytest.mark.parametrize('forgery', ['manual', 'subtype', 'method_object'])
+def test_native_migration_rejects_forgery_before_any_schema_statement(monkeypatch, forgery):
+    _, target, _ = _setup_connections(monkeypatch)
+    valid = native.create_installed_synthetic_store(MAINTENANCE, TARGET, APP, '/owned/data')
+    receipt = valid._case_fact_fixture_receipt
+    class Subtype(native.NativeDatabaseCreationEvidence):
+        def authorize_migration(self, connection):
+            raise AssertionError('subtype method must not run')
+    class MethodObject:
+        def authorize_migration(self, connection):
+            raise AssertionError('arbitrary method must not run')
+    invalid = (native.NativeDatabaseCreationEvidence(**vars(receipt)) if forgery == 'manual' else
+               Subtype(**vars(receipt)) if forgery == 'subtype' else MethodObject())
+    owner = Store(TARGET)
+    owner._case_fact_fixture_receipt = invalid
+    target.calls.clear()
+    with pytest.raises(Denied, match='issued .*creation evidence required'):
+        owner.migrate()
+    assert target.calls == []

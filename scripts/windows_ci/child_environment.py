@@ -14,6 +14,8 @@ def command_environment(source,config,phase):
     if phase=='setup':
         overrides={'PARKWEAVE_OWNER_DSN':config['PARKWEAVE_OWNER_DSN'],
                    'PARKWEAVE_DSN':application_dsn(config['PARKWEAVE_DSN'])}
+        for name in ('PARKWEAVE_SETUP_MAINTENANCE_DSN','PARKWEAVE_SETUP_DATA_DIRECTORY'):
+            if name in config:overrides[name]=config[name]
     elif phase in ('doctor','start','status'):
         overrides={'PARKWEAVE_DSN':application_dsn(config['PARKWEAVE_DSN'])}
     elif phase=='regression':

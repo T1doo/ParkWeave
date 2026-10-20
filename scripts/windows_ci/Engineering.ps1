@@ -85,12 +85,18 @@ try {
         # Publish only explicitly constructed ephemeral config, never inherited secrets.
         $env:PARKWEAVE_CI_ROOT=$root
         "PARKWEAVE_CI_ROOT=$root" | Add-Content -LiteralPath $env:GITHUB_ENV
-        $testDsn="host=127.0.0.1 port=$port dbname=postgres user=park_ci_owner"
-        $ownerDsn="host=127.0.0.1 port=$port dbname=parkweave user=park_ci_owner"
-        $appDsn="host=127.0.0.1 port=$port dbname=parkweave user=parkweave_app"
+        $testDsn="host=127.0.0.1 port=$port dbname=postgres user=park_ci_owner sslmode=disable"
+        $ownerDsn="host=127.0.0.1 port=$port dbname=parkweave user=park_ci_owner sslmode=disable"
+        $appDsn="host=127.0.0.1 port=$port dbname=parkweave user=parkweave_app sslmode=disable"
         "PARKWEAVE_TEST_OWNER_DSN=$testDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_OWNER_DSN=$ownerDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_DSN=$appDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
+        "PARKWEAVE_SETUP_MAINTENANCE_DSN=$testDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
+        # PostgreSQL canonicalizes Windows separators to '/'. Keep the owned
+        # state/control path unchanged; only this exact server-identity input
+        # uses PostgreSQL's representation. The issuer still compares bytes.
+        $setupDataDirectory=$state.data.Replace('\','/')
+        "PARKWEAVE_SETUP_DATA_DIRECTORY=$setupDataDirectory" | Add-Content -LiteralPath $env:GITHUB_ENV
         Invoke-Checked (Join-Path $env:PGBIN 'initdb.exe') @('-D',$state.data,'-U','park_ci_owner','--auth-local=trust','--auth-host=trust','--encoding=UTF8','--locale=C') 'initdb' 120
         # Start failure may include owned status/stop recovery (up to 145s).
         # Admit it only when all those existing bounded paths fit before cutoff.
@@ -99,7 +105,8 @@ try {
         if ($started.status -ne 'STARTED') { $started | ConvertTo-Json -Depth 4; throw 'Owned PG start failed; primary failure preserved.' }
         $psql=Join-Path $env:PGBIN 'psql.exe'
         Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE') 'create_role' 30
-        Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE DATABASE parkweave') 'create_database' 30
+        # Setup's managed Python performs the sole CREATE and keeps its issued
+        # receipt in that same process. External psql cannot pre-create/adopt it.
         if (Test-Path -LiteralPath '.venv-windows') { throw 'Existing managed environment protected; fresh checkout required.' }
         Invoke-Checked $BasePython @('-m','venv','.venv-windows') 'venv' 60
         $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'

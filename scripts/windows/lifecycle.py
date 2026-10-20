@@ -1,5 +1,6 @@
 """Native Windows only CLI; shared policies exercised with Linux mock processes.
-Never installs a database, discovers credentials, enables LIVE or removes data.
+Never installs PostgreSQL, discovers credentials, enables LIVE or removes data.
+First Setup's database creation wiring remains behind OWNER_MUTATION_PAUSED.
 """
 import sys
 
@@ -163,14 +164,14 @@ def check_python(python):
 
 
 @staged('dsn_parse')
-def check_dsn_scope(dsn,app=False):
+def check_dsn_scope(dsn,app=False,*,connector=None):
     from psycopg.conninfo import conninfo_to_dict
     from parkweave.store import Store
     info=conninfo_to_dict(dsn)
     if info.get('dbname')!='parkweave' or info.get('host') not in ('127.0.0.1','localhost') or info.get('service') or info.get('hostaddr') not in (None,'127.0.0.1','::1'):
         raise BoundaryError('explicit localhost parkweave database DSN required','DSN_SCOPE_REFUSED')
     with stage('database_connect'):
-        connection=Store(dsn).connect()
+        connection=connector() if connector is not None else Store(dsn).connect()
     with connection as c:
         with stage('database_role'):
             row=c.execute('SELECT current_database() db,current_user usr,r.rolsuper,r.rolcreatedb,r.rolcreaterole '
@@ -394,6 +395,10 @@ def require_setup_readiness():
 def setup():
     if CONFIG.exists():raise BoundaryError('existing configuration protected; use Doctor/Start, not overwrite setup')
     require_setup_readiness()
+    # Check before a managed-Python handoff could strip inherited PG defaults.
+    # Base Python need not have the project dependencies installed yet.
+    if any(name.upper().startswith('PG') for name in os.environ):
+        raise BoundaryError('installed receipt inherited PostgreSQL configuration refused','DSN_SCOPE_REFUSED')
     check_python(sys.executable)
     managed=REPO/'.venv-windows'
     python=managed/'Scripts'/'python.exe'
@@ -406,11 +411,17 @@ def setup():
         subprocess.run([str(python),'-m','pip','install','--no-deps','-e',str(REPO)],check=True,env=minimal_environment(os.environ))
     if Path(sys.executable).resolve()!=python.resolve():
         # The managed interpreter performs DB/setup work after dependency install.
-        subprocess.run([str(python),str(Path(__file__).resolve()),'setup'],check=True,env=minimal_environment(os.environ,PARKWEAVE_OWNER_DSN=needed_environment('PARKWEAVE_OWNER_DSN'),PARKWEAVE_DSN=needed_environment('PARKWEAVE_DSN')));return
-    check_dsn_scope(needed_environment('PARKWEAVE_OWNER_DSN'))
-    check_dsn_scope(needed_environment('PARKWEAVE_DSN'),app=True)
-    from parkweave.store import Store
-    owner=Store(needed_environment('PARKWEAVE_OWNER_DSN'));owner.migrate()
+        subprocess.run([str(python),str(Path(__file__).resolve()),'setup'],check=True,env=minimal_environment(os.environ,
+            PARKWEAVE_OWNER_DSN=needed_environment('PARKWEAVE_OWNER_DSN'),PARKWEAVE_DSN=needed_environment('PARKWEAVE_DSN'),
+            PARKWEAVE_SETUP_MAINTENANCE_DSN=needed_environment('PARKWEAVE_SETUP_MAINTENANCE_DSN'),
+            PARKWEAVE_SETUP_DATA_DIRECTORY=needed_environment('PARKWEAVE_SETUP_DATA_DIRECTORY')));return
+    from parkweave.installed_fixture_receipt import create_installed_synthetic_store
+    owner_dsn=needed_environment('PARKWEAVE_OWNER_DSN');app_dsn=needed_environment('PARKWEAVE_DSN')
+    owner=create_installed_synthetic_store(needed_environment('PARKWEAVE_SETUP_MAINTENANCE_DSN'),
+        owner_dsn,app_dsn,needed_environment('PARKWEAVE_SETUP_DATA_DIRECTORY'))
+    check_dsn_scope(owner_dsn,connector=owner.connect)
+    check_dsn_scope(app_dsn,app=True,connector=owner.connect_application)
+    owner.migrate()
     with owner.connect() as c:c.execute((REPO/'src/parkweave/roles.sql').read_text(encoding='utf-8'))
     protect_private_root(RUNTIME)
     sessions=RUNTIME/'synthetic-sessions.json'

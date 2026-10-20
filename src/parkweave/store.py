@@ -182,6 +182,16 @@ class Store:
 
     def migrate(self):
         with self.connect() as c:
+            # A native creation receipt must bind before *any* schema DDL.
+            # Invoke the exact implementation, never a forged subclass method.
+            receipt=getattr(self,'_case_fact_fixture_receipt',None)
+            if receipt is not None:
+                from .case_fact_clarifications import FixtureDatabaseEvidence
+                from .installed_fixture_receipt import NativeDatabaseCreationEvidence
+                if type(receipt) is NativeDatabaseCreationEvidence:
+                    NativeDatabaseCreationEvidence.authorize_migration(receipt,c)
+                elif type(receipt) is not FixtureDatabaseEvidence:
+                    raise Denied('issued fixture database creation evidence required')
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text(encoding='utf-8'))
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]

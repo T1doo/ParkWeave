@@ -111,6 +111,8 @@ def main():
     checkpoint(phase)
     try:
         config={key:os.environ[key] for key in ('PARKWEAVE_OWNER_DSN','PARKWEAVE_DSN','PARKWEAVE_TEST_OWNER_DSN')}
+        for key in ('PARKWEAVE_SETUP_MAINTENANCE_DSN','PARKWEAVE_SETUP_DATA_DIRECTORY'):
+            if key in os.environ:config[key]=os.environ[key]
         phase='managed_python';checkpoint(phase);managed=REPO/'.venv-windows/Scripts/python.exe'
         if Path(sys.executable).resolve()!=managed.resolve():raise RuntimeError('prepared managed Python required')
     except Exception as exc:return emit_summary(args.report,rows+[exception_row('suite_initialization',exc,phase)],args.stage if job else None)

@@ -9,9 +9,10 @@ import pytest
 from test_windows_ci_preparation import module, ROOT, DIRECTORY
 
 APP='host=127.0.0.1 dbname=parkweave user=parkweave_app'
-CONFIG={'PARKWEAVE_DSN':APP,'PARKWEAVE_OWNER_DSN':'SYNTHETIC-owner','PARKWEAVE_TEST_OWNER_DSN':'SYNTHETIC-test-owner'}
+CONFIG={'PARKWEAVE_DSN':APP,'PARKWEAVE_OWNER_DSN':'SYNTHETIC-owner','PARKWEAVE_TEST_OWNER_DSN':'SYNTHETIC-test-owner',
+        'PARKWEAVE_SETUP_MAINTENANCE_DSN':'SYNTHETIC-setup-owner','PARKWEAVE_SETUP_DATA_DIRECTORY':'SYNTHETIC-owned-data'}
 
-@pytest.mark.parametrize('phase,keys', [('setup',{'PARKWEAVE_DSN','PARKWEAVE_OWNER_DSN'}),('doctor',{'PARKWEAVE_DSN'}),('start',{'PARKWEAVE_DSN'}),('status',{'PARKWEAVE_DSN'}),('regression',{'PARKWEAVE_TEST_OWNER_DSN'}),('stop',set()),('file_probe',set()),('guard',set()),('browser',set())])
+@pytest.mark.parametrize('phase,keys', [('setup',{'PARKWEAVE_DSN','PARKWEAVE_OWNER_DSN','PARKWEAVE_SETUP_MAINTENANCE_DSN','PARKWEAVE_SETUP_DATA_DIRECTORY'}),('doctor',{'PARKWEAVE_DSN'}),('start',{'PARKWEAVE_DSN'}),('status',{'PARKWEAVE_DSN'}),('regression',{'PARKWEAVE_TEST_OWNER_DSN'}),('stop',set()),('file_probe',set()),('guard',set()),('browser',set())])
 def test_phase_environment_only_reads_required_configuration(phase,keys):
     m=module('child_environment');reads=[]
     class Config(dict):
