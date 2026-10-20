@@ -99,7 +99,8 @@ def test_exact_pair_preserves_old_mode_and_all_other_provider_guards(demo_inputs
             *({key:'{}'} for key in ('PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG','PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'))):
         with pytest.raises(Denied):cs.from_environment(store,env|change)
     ordinary=cs.OrdinaryCaseStepAssignments(store);provider=catalog.configure(store,catalog.PROFILE,json.dumps(cfg))
-    with TestClient(create_app(store,case_step_assignments=ordinary)) as api:
+    ordinary_store=Store(f[0].dsn)
+    with TestClient(create_app(ordinary_store,case_step_assignments=cs.OrdinaryCaseStepAssignments(ordinary_store))) as api:
         assert api.get('/demo').status_code==404
     with pytest.raises(Denied):create_app(store,case_step_assignments=ordinary,local_synthetic_demo=provider)
     paired=cs.from_environment(store,env)
