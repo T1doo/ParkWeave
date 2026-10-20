@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.287" timestamp="2026-10-20T04:28:12.794017+00:00" hostname="46632f09a754"><testcase classname="tests.test_safe_annotations" name="test_real_publisher_preserves_allowlisted_class_method_identity" time="0.070"><failure message="assert (1 == 0)&#10; +  where 1 = CompletedProcess(args=['/workspace/parkweave-venv/bin/python', '/workspace/ParkWeave/scripts/windows_ci/publish_summar...\n}\n::notice title=ParkWeave safe diagnostics::{&quot;kind&quot;:&quot;publication&quot;,&quot;state&quot;:&quot;ANNOTATIONS_UNAVAILABLE&quot;}\n', stderr='').returncode">publication = ({'PARKWEAVE_CI_ROOT': '/tmp/pytest-of-agent/pytest-0/test_real_publisher_preserves_0/parkweave-server-ci-f2161413-3be...3f7bd4febf1b/engineering.json'), PosixPath('/tmp/pytest-of-agent/pytest-0/test_real_publisher_preserves_0/summary.md'))
+
+    def test_real_publisher_preserves_allowlisted_class_method_identity(publication):
+        source,path,output=publication;m=module('publish_summary')
+        test='tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+        assert test in m._allowed_tests()
+        record=json.loads(path.read_bytes());row=record['cases'][0]
+        row.update(regression_phase='pytest_call',active_test_id=test)
+        row['failure_diagnostics'].update(failed_test_ids=[test],failed_test_counts={test:1},mapped_failed_cases=1,mapped_cases_omitted=0)
+        path.write_text(json.dumps(record),encoding='utf-8')
+        result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=minimal_environment(os.environ,**source),capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0 and result.stderr==''
+E       assert (1 == 0)
+E        +  where 1 = CompletedProcess(args=['/workspace/parkweave-venv/bin/python', '/workspace/ParkWeave/scripts/windows_ci/publish_summar...\n}\n::notice title=ParkWeave safe diagnostics::{"kind":"publication","state":"ANNOTATIONS_UNAVAILABLE"}\n', stderr='').returncode
+
+tests/test_safe_annotations.py:48: AssertionError</failure></testcase></testsuite></testsuites>

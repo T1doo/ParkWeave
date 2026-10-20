@@ -1,0 +1,37 @@
+........................................................................ [ 34%]
+.....sss..........................s.sss................................. [ 68%]
+.........F........................................................       [100%]
+=================================== FAILURES ===================================
+_______ test_committed_allowlist_exactly_matches_trusted_test_functions ________
+
+    def test_committed_allowlist_exactly_matches_trusted_test_functions():
+        m=module('diagnostics');expected=set()
+        for path in (ROOT/'tests').glob('test_*.py'):
+            for node in ast.parse(path.read_text(encoding='utf-8')).body:
+                if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name.startswith('test_'):expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name)
+                elif isinstance(node,ast.ClassDef) and node.name[0].isalpha() and node.name.isascii():
+                    for method in node.body:
+                        if isinstance(method,(ast.FunctionDef,ast.AsyncFunctionDef)) and method.name.startswith('test_'):
+                            expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name+'::'+method.name)
+>       assert m._allowed_tests()==expected
+E       AssertionError: assert frozenset({'t...l_zero', ...}) == {'tests/test_...al_zero', ...}
+E         
+E         Extra items in the right set:
+E         'tests/test_ordinary_runtime_read_browser.py::test_existing_signed_access_history_opens_original_read_only_panel_with_host_binder_di'
+E         'tests/test_ordinary_step_redispatch.py::test_damaged_prefix_or_renewed_deadline_cannot_authorize_new_offer'
+E         'tests/test_installed_writer_launch.py::InstalledLaunchTests::test_existing_outputs_are_not_adopted_overwritten_or_retried'
+E         'tests/test_case_step_notices.py::test_original_page_list_notice_open_and_read_with_late_results'
+E         'tests/test_ordinary_runtime_write.py::OrdinaryWriteTests::test_inner_public_duplicate_or_foreign_policy_pin_refuses'...
+E         
+E         ...Full output truncated (551 lines hidden), use '-vv' to show
+
+tests/test_ci_diagnostics.py:91: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ci_diagnostics.py::test_committed_allowlist_exactly_matches_trusted_test_functions
+1 failed, 202 passed, 7 skipped, 1 warning in 6.69s
