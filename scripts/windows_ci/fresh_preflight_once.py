@@ -16,15 +16,56 @@ import time
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BRANCH = "refs/heads/dev/windows-native-preflight-20261020"
+BRANCH = "refs/heads/dev/windows-native-metadata-20261020"
+OS_METADATA_TIMEOUT = 20
+OS_METADATA_CODE = """import json, sys
+if sys.platform != 'win32':
+    raise SystemExit(2)
+v = sys.getwindowsversion()
+print(json.dumps(dict(source='sys.getwindowsversion', major=v.major, minor=v.minor,
+    build=v.build, platform=v.platform, product_type=v.product_type,
+    platform_version=list(v.platform_version)), ensure_ascii=True), flush=True)
+"""
+
+
+def metadata_command():
+    # Same explicitly selected interpreter; no site hooks, shell, CIM or WMI.
+    return [sys.executable, "-I", "-S", "-B", "-c", OS_METADATA_CODE]
+
+
+def validate_server_metadata(raw):
+    if not isinstance(raw, bytes) or not 0 < len(raw) <= 4096:
+        raise RuntimeError("bounded native OS metadata required")
+    info = json.loads(raw.decode("utf-8-sig"))
+    fields = {"source", "major", "minor", "build", "platform", "product_type", "platform_version"}
+    if not isinstance(info, dict) or set(info) != fields or info["source"] != "sys.getwindowsversion":
+        raise RuntimeError("native OS metadata shape refused")
+    if any(type(info[k]) is not int for k in ("major", "minor", "build", "platform", "product_type")):
+        raise RuntimeError("native OS metadata types refused")
+    # Same native product/build gate used by server_candidate_probe; never trust
+    # a runner label or a fabricated Caption. Workstations of build26100 refuse.
+    if (info["major"], info["minor"], info["build"], info["platform"]) != (10, 0, 26100, 2) or info["product_type"] not in {2, 3}:
+        raise RuntimeError("native Server2025 build26100 required")
+    diagnostic = info["platform_version"]
+    if not isinstance(diagnostic, list) or len(diagnostic) != 3 or any(type(n) is not int or n < 0 for n in diagnostic):
+        raise RuntimeError("native diagnostic version shape refused")
+    # platform_version is logged only, as specified by the Python documentation.
+    return info
+
+
+def collect_os_metadata(capture):
+    result = capture(metadata_command(), "OS_METADATA", OS_METADATA_TIMEOUT)
+    if result.returncode != 0:
+        raise RuntimeError("native OS metadata subprocess failed")
+    return validate_server_metadata(result.stdout)
 
 
 def require_context(environment):
     expected = {"NATIVE_REPOSITORY": "T1doo/ParkWeave", "NATIVE_REF": BRANCH,
-                "NATIVE_EVENT": "push", "NATIVE_ATTEMPT": "1", "NATIVE_NUMBER": "2",
+                "NATIVE_EVENT": "push", "NATIVE_ATTEMPT": "1", "NATIVE_NUMBER": "1",
                 "NATIVE_PUBLIC": "true", "RUNNER_ENVIRONMENT": "github-hosted", "RUNNER_OS": "Windows"}
     if any(environment.get(k) != v for k, v in expected.items()):
-        raise RuntimeError("only the authorized public second hosted Windows push is allowed")
+        raise RuntimeError("only the authorized public metadata first hosted Windows push is allowed")
     if any(k.startswith("PARKWEAVE_") for k in environment):
         raise RuntimeError("inherited business configuration refused")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -76,6 +117,7 @@ def main():
 
         def capture(command, name, timeout):
             report["active_phase"] = name
+            capture_started = time.monotonic()
             try:
                 result = subprocess.run(command, cwd=ROOT, env=environment, capture_output=True, timeout=timeout)
             except subprocess.TimeoutExpired as error:
@@ -83,19 +125,18 @@ def main():
                 (out / (name + ".stdout")).write_bytes(stdout)
                 (out / (name + ".stderr")).write_bytes(stderr)
                 report["failed_command"] = dict(phase=name, timed_out=True,
+                    limit_seconds=timeout, seconds=round(time.monotonic() - capture_started, 3),
                     stdout_sha256=sha256(stdout).hexdigest(), stderr_sha256=sha256(stderr).hexdigest())
                 raise
             (out / (name + ".stdout")).write_bytes(result.stdout)
             (out / (name + ".stderr")).write_bytes(result.stderr)
             return result
 
-        os_info = capture(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
-                           "Get-CimInstance Win32_OperatingSystem | Select-Object Caption,BuildNumber,ProductType | ConvertTo-Json -Compress"],
-                          "OS_METADATA", 20)
-        assert os_info.returncode == 0
-        info = json.loads(os_info.stdout.decode("utf-8-sig"))
-        assert "Windows Server 2025" in info["Caption"] and info["ProductType"] != 1
-        report["platform"] = info
+        metadata_started = time.monotonic()
+        report["os_metadata_collection"] = dict(method="sys.getwindowsversion", limit_seconds=OS_METADATA_TIMEOUT,
+            isolated=True, site_disabled=True, code_sha256=sha256(OS_METADATA_CODE.encode()).hexdigest())
+        report["platform"] = collect_os_metadata(capture)
+        report["os_metadata_collection"]["seconds"] = round(time.monotonic() - metadata_started, 3)
         report["python"] = sys.version.split()[0]
         report["image"] = {k: os.environ.get(k) for k in ("ImageOS", "ImageVersion")}
         frozen = original_sources()
