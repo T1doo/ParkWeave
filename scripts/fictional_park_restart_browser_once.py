@@ -1,6 +1,6 @@
 """Cold recovery candidate; workflow activation awaits review, not user permission.
 
---describe is read-only. --candidate requires the exact public hosted run6 gate.
+--describe is read-only. --candidate requires the exact public hosted run7 gate.
 No workflow is changed here. Healthy timing estimates do not guarantee PASS.
 """
 from hashlib import sha256
@@ -35,15 +35,15 @@ DESIGN = dict(status='FONT_FALLBACK_SET_CANDIDATE_NOT_EXECUTED', workflow_change
     planned_fresh_setup_calls=1, planned_setup_calls_during_recovery=0, recovery_business_POST_budget=0,
     GET_budget_shared_with_first_walk=800, artifact_max_files=10,
     artifact_max_bytes=8388608, selected_initial_screenshots=sorted(CAPTURE_NAMES),
-    font_policy='Unchanged UI codepoints covered by trusted installed-font and actual fontconfig fallback unions; no installation',
-    runner_font_status='Run5 single-face filter failed; hosted fallback collection and glyph rendering not observed',
+    font_policy='Unchanged UI codepoints covered by trusted system fonts plus exactly verified approved original Noto file; private fontconfig only',
+    runner_font_status='Run6 fontconfig inventory had zero of683 required codepoints; approved pinned private font staging awaits run7',
     references=dict(fontconfig='https://www.freedesktop.org/software/fontconfig/fontconfig-user.html',
         runner_image='https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md'),
-    uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/tree/main/Sans',
-        license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE',
-        downloaded=False, installed=False, new_license_accepted=False),
-    pending_before_execution=['This execution is gated to exact hosted run6/attempt1; no automatic retry',
-        'run5 ended and will not be retried; no font installation or license change'])
+    uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/blob/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf',
+        license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/LICENSE',
+        downloaded=False, installed=False, new_license_accepted=True),
+    pending_before_execution=['This execution is gated to exact hosted run7/attempt1; no automatic retry',
+        'only the explicitly approved pinned font and original license may be staged privately; no system installation'])
 
 
 class BudgetRefused(RuntimeError):
@@ -102,7 +102,7 @@ FONT_DIAGNOSTIC_LIMIT = 1024 * 1024  # Within the unchanged total 8MiB publicati
 FONT_DIAGNOSTIC_RAW_LIMIT = 16 * 1024 * 1024
 
 
-def font_candidates(text, points):
+def font_candidates(text, points, approved=None):
     """Keep every row and rejection reason, including Unicode family names."""
     rows = []
     for raw in text.splitlines():
@@ -114,13 +114,16 @@ def font_candidates(text, points):
             covered = charset_coverage(charset, points)
             row['covered_codepoints'] = sorted(covered)
             path = Path(file).resolve(strict=True)
-            if not any(path.is_relative_to(p) for p in (Path('/usr/share/fonts'), Path('/usr/local/share/fonts'))):
+            exact = (approved is not None and str(path) == approved['path'] and index == '0'
+                and row['postscript_names'] == [approved['postscript_name']])
+            if not exact and not any(path.is_relative_to(p) for p in (Path('/usr/share/fonts'), Path('/usr/local/share/fonts'))):
                 raise ValueError('outside trusted installed-system font roots')
             if not path.is_file() or not index.isdecimal():
                 raise ValueError('not a regular font file or invalid face index')
             if not families or any(not f or len(f) > 160 or any(ord(c) < 32 for c in f) for f in row['families']):
                 raise ValueError('invalid family metadata; Unicode names are allowed')
-            row.update(file=str(path), index=int(index), eligible=True)
+            row.update(file=str(path), index=int(index), eligible=True,
+                source='EXACT_APPROVED_OFFICIAL_FONT' if exact else 'INSTALLED_SYSTEM_FONT')
         except (ValueError, OSError) as error:
             row['exclusion_reason'] = str(error)
         row.update(covered_count=len(row['covered_codepoints']),
@@ -190,7 +193,7 @@ def unpack_font_diagnostics(selected, *, require_complete=True):
 
 
 def installed_font_environment(environment, directory, report):
-    """Run before launching Chrome or setup. No downloads, installs or font copy."""
+    """Read system fonts and the exact earlier approved staging; no downloads here."""
     directory.mkdir(mode=0o700, exist_ok=False)
     font_env = dict(environment, XDG_CACHE_HOME=str(directory))
     text = ''.join((original.ROOT / f).read_text() for f in
@@ -201,8 +204,21 @@ def installed_font_environment(environment, directory, report):
         downloads=0, installs=0, rendering_observed=False)
     diagnostics = dict(required_codepoints=sorted(points), commands={})
     try:
+        from scripts.fictional_park_font_once import verified_font
+        approved = verified_font(required=environment.get('RUNNER_ENVIRONMENT') == 'github-hosted')
+        font_dir = ''
+        if approved is not None:
+            report['approved_official_font'] = approved
+            selected['approved_font_staged_before_browser'] = True
+            font_dir = '<dir>' + escape(approved['directory']) + '</dir>'
+        config = directory / 'fonts.conf'
+        prefix = '<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">' + \
+            '<fontconfig><include>/etc/fonts/fonts.conf</include>' + font_dir
+        config.write_text(prefix + '</fontconfig>')
+        font_env['FONTCONFIG_FILE'] = str(config)
+        diagnostics['initial_config_xml'] = config.read_text()
         inventory = fontconfig_read(['fc-list', '-f', FONT_FORMAT], font_env, directory, diagnostics, 'inventory')
-        rows = diagnostics['candidates'] = font_candidates(inventory, points)
+        rows = diagnostics['candidates'] = font_candidates(inventory, points, approved)
         eligible = [row for row in rows if row['eligible']]
         union = set().union(*(set(row['covered_codepoints']) for row in eligible))
         missing = selected['missing_codepoints'] = sorted(points - union)
@@ -217,12 +233,10 @@ def installed_font_environment(environment, directory, report):
             chosen.append(row)
             remaining.difference_update(row['covered_codepoints'])
         families = list(dict.fromkeys(row['families'][0] for row in chosen))
-        config = directory / 'fonts.conf'
         aliases = ''.join('<alias><family>' + generic + '</family><prefer>' +
             ''.join('<family>' + escape(family) + '</family>' for family in families) +
             '</prefer></alias>' for generic in ('system-ui', 'sans-serif'))
-        config.write_text('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">'
-            '<fontconfig><include>/etc/fonts/fonts.conf</include>' + aliases + '</fontconfig>')
+        config.write_text(prefix + aliases + '</fontconfig>')
         diagnostics['config_xml'] = config.read_text()
         resolved_env = dict(environment, FONTCONFIG_FILE=str(config), XDG_CACHE_HOME=str(directory))
         selected['preferred_families'] = families
@@ -231,7 +245,7 @@ def installed_font_environment(environment, directory, report):
         for generic in ('system-ui', 'sans-serif'):
             output = fontconfig_read(['fc-match', '-s', '-f', FONT_FORMAT, generic + ':lang=zh-cn'],
                 resolved_env, directory, diagnostics, generic)
-            resolved = diagnostics[generic] = font_candidates(output, points)
+            resolved = diagnostics[generic] = font_candidates(output, points, approved)
             for row in resolved:
                 if row['eligible'] and (row['file'], row['index'], tuple(row['postscript_names'])) not in identities:
                     row.update(eligible=False, exclusion_reason='resolved face absent from captured trusted inventory')
@@ -537,7 +551,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--describe', action='store_true')
-    mode.add_argument('--candidate', action='store_true', help='exact public hosted run6/attempt1 only; no retry')
+    mode.add_argument('--candidate', action='store_true', help='exact public hosted run7/attempt1 only; no retry')
     args = parser.parse_args()
     if args.describe:
         print(json.dumps(DESIGN, ensure_ascii=False, indent=2))

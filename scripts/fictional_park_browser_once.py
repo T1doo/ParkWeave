@@ -555,7 +555,7 @@ def main(*, restart_candidate=False):
     secrets, public = [], None
     started = time.monotonic()
     try:
-        report['source_sha'] = require_hosted(os.environ, run_number='6' if restart_candidate else '4')
+        report['source_sha'] = require_hosted(os.environ, run_number='7' if restart_candidate else '4')
         PRIVATE.mkdir(parents=True, mode=0o700, exist_ok=False)
         public = Path(os.environ['RUNNER_TEMP']) / 'parkweave-fictional-browser-candidate'
         public.mkdir(mode=0o700, exist_ok=False)
