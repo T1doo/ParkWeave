@@ -1,6 +1,6 @@
 """Cold recovery candidate; workflow activation awaits review, not user permission.
 
---describe is read-only. --candidate requires the exact public hosted run5 gate.
+--describe is read-only. --candidate requires the exact public hosted run6 gate.
 No workflow is changed here. Healthy timing estimates do not guarantee PASS.
 """
 from hashlib import sha256
@@ -42,8 +42,8 @@ DESIGN = dict(status='FONT_FALLBACK_SET_CANDIDATE_NOT_EXECUTED', workflow_change
     uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/tree/main/Sans',
         license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE',
         downloaded=False, installed=False, new_license_accepted=False),
-    pending_before_execution=['parent review of font fallback candidate; no new CI in this slice',
-        'a future exact-run gate must be coordinated separately; run5 ended and will not be retried'])
+    pending_before_execution=['This execution is gated to exact hosted run6/attempt1; no automatic retry',
+        'run5 ended and will not be retried; no font installation or license change'])
 
 
 class BudgetRefused(RuntimeError):
@@ -537,7 +537,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--describe', action='store_true')
-    mode.add_argument('--candidate', action='store_true', help='exact public hosted run5 only; workflow not activated')
+    mode.add_argument('--candidate', action='store_true', help='exact public hosted run6/attempt1 only; no retry')
     args = parser.parse_args()
     if args.describe:
         print(json.dumps(DESIGN, ensure_ascii=False, indent=2))
