@@ -87,7 +87,7 @@ class Boundary:
         route.continue_() if allowed else route.abort()
 
 
-def walk(browser, report, secrets, public, *, before_stop=None, capture_names=None, page_ready=None):
+def walk(browser, report, secrets, public, *, before_stop=None, capture_names=None, page_ready=None, narrow=None):
     from playwright.sync_api import expect
     from test_ordinary_synthetic_demo import command, environment, server
     from test_demo_original_page_intake_browser import settled, open_from_list, open_service_plan, verify
@@ -116,7 +116,8 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             conn.execute('SET TRANSACTION READ ONLY')
             assert all(conn.execute('SELECT count(*) n FROM ' + table).fetchone()['n'] == 0
                 for table in ('runs', 'cases', 'preparations', 'service_dispatches', 'service_receipt_steps', 'run_assignments'))
-        context = browser.new_context(service_workers='block', accept_downloads=True, viewport=dict(width=1440, height=1100))
+        context = browser.new_context(service_workers='block', accept_downloads=True, viewport=narrow.viewport if narrow is not None else dict(width=1440, height=1100))
+        if narrow is not None:narrow.install(context)
         boundary = Boundary(base, report)
         context.route('**/*', boundary.route)
         context.on('page', lambda p: p.on('pageerror', lambda error: report['page_errors'].append(str(error))))
@@ -144,11 +145,13 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             report['screenshots'].append(dict(file=path.name, sha256=sha256(path.read_bytes()).hexdigest()))
 
         def role(name):
+            if narrow is not None:narrow.before(page,'[data-role="' + name + '"]')
             page.locator('[data-role="' + name + '"]').click()
             expect(page.locator('#status')).to_contain_text('已切换')
 
         def post(selector, path, status=200, action=None):
             report['current_control'] = dict(selector=selector, path=path)
+            if narrow is not None:narrow.before(w,selector)
             boundary.authorize(path, action)
             result = resource.click_post(w, selector, path, status)
             boundary.readonly()
@@ -159,9 +162,11 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             assert w.evaluate('preparationId') == parent['preparation_id']
 
         def verify_step(parent, adapter):
+            if narrow is not None:narrow.before(w,'#service-plan-prepare')
             boundary.authorize('/api/preparations/' + parent['preparation_id'] + '/service-case-plan/commands', 'VERIFY')
             verify(w, adapter)
             boundary.readonly()
+            if narrow is not None:narrow.checkpoint(w,'NARROW_VERIFIED_'+adapter)
 
         def open_dispatch(parent, dispatch_id):
             w.locator('[data-tab="collaboration"]').click()
@@ -175,7 +180,7 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             w.wait_for_function('id=>dispatchView?.dispatch_id===id', arg=dispatch_id)
             assert w.evaluate('dispatchView.preparation_id') == parent['preparation_id']
 
-        def prepare(phase):
+        def prepare(phase, input_values=None):
             role('enterprise')
             w.locator('[data-tab="service"]').click()
             page.locator('#scenario').select_option(phase)
@@ -183,7 +188,9 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             expect(w.locator('#prep-create')).to_be_visible()
             w.locator('#prep-reviewer').select_option(demo.IDS['specialist'])
             page.locator('#fill-goal').click()
+            if input_values is not None:w.locator('#prep-goal').fill(input_values['goal'])
             goal = w.locator('#prep-goal').input_value()
+            if narrow is not None:narrow.before(w,'#prep-create button')
             boundary.intake()
             w.locator('#prep-create button').click()
             settled(w, preparation=True)
@@ -193,6 +200,7 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             w.locator('#plan-prepare').click()
             expect(w.locator('#request-intent-form')).to_be_visible()
             page.locator('#fill-request').click()
+            if input_values is not None:w.locator('#request-current').fill(input_values['request'])
             post('#request-save', '/api/preparations/' + p['preparation_id'] + '/request-intent')
             settled(w)
             w.locator('#plan-materials').click()
@@ -210,6 +218,7 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
                 settled(w, preparation=True)
             for fill in (['#fill-need', '#fill-outline'] if phase == 'first' else ['#fill-need']):
                 page.locator(fill).click()
+                if input_values is not None:w.locator('#prep-text').fill(input_values['need_summary' if fill=='#fill-need' else 'material_outline'])
                 text = w.locator('#prep-text').input_value()
                 post('#prep-evidence button', '/api/preparations/' + p['preparation_id'] + '/commands', action='ADD_EVIDENCE')
                 settled(w, preparation=True)
@@ -242,7 +251,7 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             page.locator('#sessions').set_input_files(state / 'sessions.json')
             expect(page.locator('#workspace-open')).to_be_enabled()
             assert page.locator('iframe').count() == 0
-            shot('01-fictional-guide')
+            shot('01-narrow-guide' if narrow is not None else '01-fictional-guide')
             with page.expect_popup() as popup:
                 page.locator('#workspace-open').click()
             w = popup.value
@@ -253,8 +262,20 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             roots = [r for r in report['responses'] if r['path'] in ('/', '/demo')]
             assert len(roots) == 2 and all("frame-ancestors 'none'" in r['content_security_policy'] for r in roots)
             report['window_contract'] = 'EXPLICIT_SAME_ORIGIN_TOP_LEVEL_POPUP_NO_IFRAME_CSP_UNCHANGED'
+            old,old_history=None,None
+            if narrow is not None:
+                report['stage']='NARROW_BASELINE_ONLY_REVIEW_CONFIRM'
+                old=prepare('first')
+                report['narrow']['baseline']=old
+                old_history=case_history(Store(demo.lifecycle.dsn(state)),old['preparation_id'])
+                assert old_history['preparations'][0]['service_case_plan'] is None
+                report['narrow']['baseline_scope']='Old6-device input only independently reviewed/confirmed,no ADOPT;not the new narrow completion claim'
             report['stage'] = 'FIRST_INTAKE_REVIEW_CONFIRM'
-            first = prepare('first')
+            first = prepare('first',narrow.data['inputs'] if narrow is not None else None)
+            if narrow is not None:
+                narrow.checkpoint(w,'NARROW_NEW_REVIEW_CONFIRMED')
+                w.locator('#prep-materials').scroll_into_view_if_needed()
+                shot('02-narrow-new-materials')
             report['first'] = first
             open_service_plan(w)
             w.locator('#service-selection-read').click()
@@ -267,10 +288,14 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             post('#service-plan-adopt', '/api/preparations/' + first['preparation_id'] + '/service-case-plan', 201)
             settled(w)
             first['plan_id'] = w.evaluate('servicePlanView.plan_id')
-            shot('02-first-adopted-plan')
+            if narrow is not None:
+                w.locator('#service-plan-summary').scroll_into_view_if_needed()
+                narrow.checkpoint(w,'NARROW_NEW_ADOPTED')
+            shot('03-narrow-new-plan' if narrow is not None else '02-first-adopted-plan')
             report['stage'] = 'FIRST_RESOURCE_AND_P1_P2'
             verify_step(first, 'P1')
-            report['resources'] = resource.resource_walk(w, boundary, demo.SCOPES['primary'], first, first['goal'])
+            report['resources'] = resource.resource_walk(w, boundary, demo.SCOPES['primary'], first, first['goal'],
+                **(dict(before_action=narrow.before) if narrow is not None else {}))
             settled(w, preparation=True)
             verify_step(first, 'P2')
             report['stage'] = 'FIRST_DISPATCH_ACCEPT'
@@ -297,8 +322,8 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             open_dispatch(first, dispatch['dispatch_id'])
             w.locator('#dispatch-receipt').click()
             expect(w.locator('#receipt-submit')).to_be_visible()
-            w.locator('#receipt-text').fill('SYNTHETIC 许辰已整理云杉智造6台虚构设备巡检资料；仅本地演示，无实际履约。')
-            w.locator('#receipt-source').fill('SYNTHETIC 青禾园本地虚构办理记录 v1')
+            w.locator('#receipt-text').fill(narrow.data['inputs']['receipt'] if narrow is not None else 'SYNTHETIC 许辰已整理云杉智造6台虚构设备巡检资料；仅本地演示，无实际履约。')
+            w.locator('#receipt-source').fill(narrow.data['inputs']['receipt_source'] if narrow is not None else 'SYNTHETIC 青禾园本地虚构办理记录 v1')
             post('#receipt-submit-button', '/api/executor-receipts/' + first['receipt_step_id'] + '/commands', action='SUBMIT')
             settled(w)
             role('enterprise')
@@ -314,7 +339,11 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             settled(w)
             assert w.evaluate('receiptView.step.state') == 'LOCAL_ACKNOWLEDGED'
             report['receipt'] = w.evaluate('receiptView')
-            shot('03-first-acknowledged-receipt')
+            if narrow is not None:
+                w.locator('#receipt-summary').scroll_into_view_if_needed()
+                narrow.checkpoint(w,'NARROW_NEW_ACKNOWLEDGED')
+                narrow.font_observation(w,'NARROW_NEW_ACKNOWLEDGED')
+            shot('04-narrow-new-receipt' if narrow is not None else '03-first-acknowledged-receipt')
             report['stage'] = 'FIRST_P4_P5_AND_DOWNLOAD'
             open_case(first)
             verify_step(first, 'P4')
@@ -344,34 +373,56 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
                 w.locator('#case-record-pack-download').click()
             downloaded.value.save_as(public / 'first-case-record-pack.txt')
             assert first['plan_id'] in (public / 'first-case-record-pack.txt').read_text()
-            shot('04-first-five-goals-and-source')
-            history = case_history(Store(demo.lifecycle.dsn(state)), first['preparation_id'])
-            report['stage'] = 'AGAIN_EXPLICIT_REUSE_REVIEW_CONFIRM'
-            again = prepare('again')
-            report['second'] = again
-            assert again['run_id'] != first['run_id'] and again['case_id'] != first['case_id']
-            assert w.evaluate('preparationView.history.some(e=>!!e.payload.material_reuse)')
-            shot('05-again-independent-reused-materials')
-            report['stage'] = 'AGAIN_EXPLICIT_CANCEL'
-            w.locator('#case-cancel-read').click()
-            w.wait_for_function('()=>caseCancelView?.can_cancel===true')
-            w.locator('#case-cancel-reason').fill('SYNTHETIC 林岚取消新增2台设备事项，首办回执和历史保留')
-            w.locator('#case-cancel-confirm').check()
-            post('#case-cancel-submit', '/api/preparations/' + again['preparation_id'] + '/case-cancellation')
-            w.wait_for_function('()=>preparationView?.case_cancelled===true')
-            shot('06-again-cancelled')
-            assert case_history(Store(demo.lifecycle.dsn(state)), first['preparation_id']) == history
-            report['first_history_unchanged'] = True
-            report['stage'] = 'FIRST_READ_AFTER_SECOND_CANCEL'
-            open_case(first)
-            open_service_plan(w)
-            w.locator('#goal-results-read').click()
-            w.wait_for_function('()=>goalResultView!==null')
-            assert w.evaluate('goalResultView') == result
-            w.set_viewport_size(dict(width=390, height=1000))
-            w.locator('#goal-results-status').scroll_into_view_if_needed()
-            assert w.evaluate('document.documentElement.scrollWidth<=innerWidth')
-            shot('07-mobile-first-history-retained')
+            if narrow is not None:
+                w.locator('#case-record-pack-output').scroll_into_view_if_needed()
+                narrow.checkpoint(w,'NARROW_NEW_TXT_EXPORTED')
+                narrow.font_observation(w,'NARROW_NEW_TXT_EXPORTED')
+            shot('05-narrow-new-results' if narrow is not None else '04-first-five-goals-and-source')
+            if narrow is not None:
+                report['stage']='NARROW_VERIFY_OLD_NEW_SEPARATION'
+                old_after=case_history(Store(demo.lifecycle.dsn(state)),old['preparation_id'])
+                new_history=case_history(Store(demo.lifecycle.dsn(state)),first['preparation_id'])
+                narrow.separation(old,first,old_history,old_after,new_history,result,report['receipt'],
+                    (public/'first-case-record-pack.txt').read_text())
+                open_case(old)
+                assert w.evaluate('preparationId')==old['preparation_id']
+                material_text=w.locator('#prep-materials').text_content()
+                assert all(row['text'] in material_text for row in old_after['preparation_evidence'])
+                assert not any(value in material_text for value in (narrow.data['inputs']['need_summary'],narrow.data['inputs']['material_outline']))
+                w.locator('#prep-materials').scroll_into_view_if_needed()
+                narrow.checkpoint(w,'NARROW_OLD_MATERIALS_RETAINED')
+                narrow.checkpoint(page,'NARROW_GUIDE_FINAL_390')
+                shot('06-narrow-old-retained')
+                report['old_baseline_history_unchanged']=True
+                report['narrow']['full_new_flow_complete']=True
+            else:
+                history = case_history(Store(demo.lifecycle.dsn(state)), first['preparation_id'])
+                report['stage'] = 'AGAIN_EXPLICIT_REUSE_REVIEW_CONFIRM'
+                again = prepare('again')
+                report['second'] = again
+                assert again['run_id'] != first['run_id'] and again['case_id'] != first['case_id']
+                assert w.evaluate('preparationView.history.some(e=>!!e.payload.material_reuse)')
+                shot('05-again-independent-reused-materials')
+                report['stage'] = 'AGAIN_EXPLICIT_CANCEL'
+                w.locator('#case-cancel-read').click()
+                w.wait_for_function('()=>caseCancelView?.can_cancel===true')
+                w.locator('#case-cancel-reason').fill('SYNTHETIC 林岚取消新增2台设备事项，首办回执和历史保留')
+                w.locator('#case-cancel-confirm').check()
+                post('#case-cancel-submit', '/api/preparations/' + again['preparation_id'] + '/case-cancellation')
+                w.wait_for_function('()=>preparationView?.case_cancelled===true')
+                shot('06-again-cancelled')
+                assert case_history(Store(demo.lifecycle.dsn(state)), first['preparation_id']) == history
+                report['first_history_unchanged'] = True
+                report['stage'] = 'FIRST_READ_AFTER_SECOND_CANCEL'
+                open_case(first)
+                open_service_plan(w)
+                w.locator('#goal-results-read').click()
+                w.wait_for_function('()=>goalResultView!==null')
+                assert w.evaluate('goalResultView') == result
+                w.set_viewport_size(dict(width=390, height=1000))
+                w.locator('#goal-results-status').scroll_into_view_if_needed()
+                assert w.evaluate('document.documentElement.scrollWidth<=innerWidth')
+                shot('07-mobile-first-history-retained')
             boundary.readonly()
             assert not report['violations'] and not report['page_errors']
             assert all(r['status'] in (200, 201, 202) for r in report['responses'] if r['method'] == 'POST')
@@ -379,9 +430,10 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
                 conn.execute('SET TRANSACTION READ ONLY')
                 assert demo.authority(conn) == marker['authority']
                 assert not conn.execute('SELECT 1 FROM run_assignments').fetchone()
-                assert conn.execute('SELECT state FROM cases WHERE id=%s', (again['case_id'],)).fetchone()['state'] == 'CANCELLED'
+                if narrow is None:assert conn.execute('SELECT state FROM cases WHERE id=%s', (again['case_id'],)).fetchone()['state'] == 'CANCELLED'
             report.update(authority_unchanged=True, run_assignments=0, all_business_writes='REAL_BROWSER_DOM_ONLY',
                 JS_business_calls=0, API_business_writes=0, real_browser=True)
+            if narrow is not None:narrow.work_complete()
             if before_stop is not None:
                 before_stop(dict(state=state, config=config, inputs=inputs, input_hashes=before,
                     marker=marker, processes=launched, first=first, second=again,
@@ -422,14 +474,16 @@ def write_result(directory, report, secrets):
     return serialized
 
 
-def publish_artifacts(public, report, secrets, *, restart=False, started=None):
+def publish_artifacts(public, report, secrets, *, restart=False, started=None, allowed_names=None):
     serialized = write_result(public, report, secrets)
     files = list(public.iterdir())
     assert len(files) <= 10 and sum(p.stat().st_size for p in files) <= 8 * 1024 * 1024
     text_names = ('result.json', 'first-case-record-pack.txt') + (('restarted-case-record-pack.txt',) if restart else ())
     image_pattern = r'(?:0[1-9]-[a-z-]+|failure-[a-z0-9-]+)\.png' if restart else r'(?:0[1-7]-[a-z-]+|failure-[a-z0-9-]+)\.png'
     for p in files:
-        if restart:
+        if allowed_names is not None:
+            allowed = p.name in allowed_names or re.fullmatch(r'failure-[a-z0-9-]+\.png',p.name)
+        elif restart:
             from scripts.fictional_park_restart_browser_once import PUBLIC_FILES
             allowed = p.name in PUBLIC_FILES or re.fullmatch(r'failure-[a-z0-9-]+\.png', p.name)
         else:
@@ -473,7 +527,7 @@ def write_summary(stream, offset, serialized):
     assert stream.write(raw) == len(raw)
 
 
-def finish_report(report, secrets, public, *, restart=False, started=None):
+def finish_report(report, secrets, public, *, restart=False, started=None, allowed_names=None):
     """No stdout PASS precedes fallible output or the final deadline check."""
     summary, offset = None, None
     summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
@@ -505,7 +559,7 @@ def finish_report(report, secrets, public, *, restart=False, started=None):
                 measurement_scope='output checkpoint; artifact/summary finalization and final deadline check still follow')), flush=True)
         serialized = resource.redact(report, secrets)
         if public is not None:
-            serialized = publish_artifacts(public, report, secrets, restart=restart, started=started)
+            serialized = publish_artifacts(public, report, secrets, restart=restart, started=started, allowed_names=allowed_names)
         if summary is not None:
             write_summary(summary, offset, serialized)
         deadline()
@@ -536,7 +590,7 @@ def finish_report(report, secrets, public, *, restart=False, started=None):
             finalization_failure(report, output_error)
         if public is not None and public.exists():
             try:
-                publish_artifacts(public, report, secrets, restart=restart)
+                publish_artifacts(public, report, secrets, restart=restart, allowed_names=allowed_names)
             except BaseException as publication_error:
                 finalization_failure(report, publication_error)
                 withdraw()
@@ -546,31 +600,37 @@ def finish_report(report, secrets, public, *, restart=False, started=None):
             summary.close()
 
 
-def main(*, restart_candidate=False):
+def main(*, restart_candidate=False, narrow_candidate=False):
     os.umask(0o077)
     report = dict(scope='FICTIONAL_PARK_SANDBOXED_REAL_CHROME_DOM', status='NOT_RUN', stage='HOST_GATE',
         screenshots=[], responses=[], violations=[], page_errors=[], expected_refusals=[],
         formal_source=False, formal_AT35=False, Windows=False, real_model_calls=0, real_browser=False,
         cancel_scope='SECOND_CASE_AFTER_REVIEW_CONFIRM_BEFORE_ADOPT_OR_DISPATCH')
-    secrets, public = [], None
+    assert not (restart_candidate and narrow_candidate)
+    bounded=restart_candidate or narrow_candidate
+    secrets, public, narrow = [], None, None
     started = time.monotonic()
     try:
-        report['source_sha'] = require_hosted(os.environ, run_number='8' if restart_candidate else '4')
+        report['source_sha'] = require_hosted(os.environ, run_number='9' if narrow_candidate else ('8' if restart_candidate else '4'))
         PRIVATE.mkdir(parents=True, mode=0o700, exist_ok=False)
         public = Path(os.environ['RUNNER_TEMP']) / 'parkweave-fictional-browser-candidate'
         public.mkdir(mode=0o700, exist_ok=False)
+        if narrow_candidate:
+            from scripts.fictional_park_narrow_browser_once import Narrow, CAPTURE_NAMES as narrow_capture_names, PUBLIC_FILES as narrow_public_files
+            narrow=Narrow(report,public,started)
         report['packages'] = {p: version(p) for p in ('playwright', 'pgserver', 'psycopg', 'fastapi')}
         env = dict(os.environ)
         for key, name in (('XDG_CONFIG_HOME', 'chrome-config'), ('XDG_CACHE_HOME', 'chrome-cache')):
             directory = PRIVATE / name
             directory.mkdir(mode=0o700)
             env[key] = str(directory)
-        if restart_candidate:
+        if bounded:
             from scripts import fictional_park_restart_browser_once as restart
-            report.update(scope='FICTIONAL_PARK_COLD_RESTART_CANDIDATE', cold_restart=False,
+            report.update(scope='FICTIONAL_PARK_NARROW_NEW_INPUT' if narrow_candidate else 'FICTIONAL_PARK_COLD_RESTART_CANDIDATE', cold_restart=False,
                 proposed_browser_step_seconds=360, proposed_job_seconds=600)
             report['stage'] = 'INSTALLED_CJK_PREFLIGHT'
-            env = restart.installed_font_environment(env, PRIVATE / 'installed-fonts', report)
+            env = restart.installed_font_environment(env, PRIVATE / 'installed-fonts', report,
+                **(dict(extra_text=narrow.fixed_input_text) if narrow is not None else {}))
         from playwright.sync_api import sync_playwright
         report['stage'] = 'CHROME_SANDBOX'
         with sync_playwright() as pw:
@@ -579,25 +639,28 @@ def main(*, restart_candidate=False):
                 report['chrome_version'] = browser.version
                 report['real_browser'] = True
                 resource.verify_sandbox(browser, report)
-                if restart_candidate:
+                if narrow is not None:
+                    walk(browser,report,secrets,public,narrow=narrow,capture_names=narrow_capture_names, page_ready=narrow.guide_ready)
+                    narrow.closing_reservation()
+                elif restart_candidate:
                     restart.candidate_flow(browser, report, secrets, public, started)
                     restart.Deadline(started).require(20, 'Chrome/context close and publication')
                 else:
                     walk(browser, report, secrets, public)
-                if restart_candidate:
+                if bounded:
                     chrome_close_started = time.monotonic()
-        if restart_candidate and time.monotonic() - chrome_close_started > 5:
+        if bounded and time.monotonic() - chrome_close_started > 5:
             raise RuntimeError('Chrome/driver close exceeded its 5s share of context/publication allowance')
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error_type=type(error).__name__, error=str(error))
         if hasattr(error, 'server_observation'):
             report['server_failure_observation'] = error.server_observation
-    if restart_candidate and time.monotonic() - started > 350:
+    if bounded and time.monotonic() - started > 350:
         finalization_failure(report, TimeoutError('absolute clock exhausted final publication reserve'))
     report['seconds'] = round(time.monotonic() - started, 3)
     return finish_report(report, secrets, public, restart=restart_candidate,
-        started=started if restart_candidate else None)
+        started=started if bounded else None, allowed_names=narrow_public_files if narrow is not None else None)
 
 
 if __name__ == '__main__':

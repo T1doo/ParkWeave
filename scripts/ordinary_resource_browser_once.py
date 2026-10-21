@@ -129,8 +129,12 @@ def click_post(page, selector, path, status):
     return observed.value.json()
 
 
-def resource_walk(page, boundary, scope, p, label):
+def resource_walk(page, boundary, scope, p, label, *, before_action=None):
     from playwright.sync_api import expect
+
+    def submit(selector,path,status):
+        if before_action is not None:before_action(page,selector)
+        return click_post(page,selector,path,status)
 
     boundary.allow_scope_writes(scope, p["preparation_id"])
     page.locator('[data-tab="resource"]').click()
@@ -150,10 +154,10 @@ def resource_walk(page, boundary, scope, p, label):
         page.locator("#resource-ttl").fill("120")
         page.locator("#resource-purpose").fill("SYNTHETIC browser " + label + " resource " + str(n))
         path = "/api/synthetic-resources/" + resource_id
-        click_post(page, "#resource-preview", path + "/preview", 200)
+        submit("#resource-preview", path + "/preview", 200)
         expect(page.locator("#resource-hold")).to_be_enabled()
         assert page.evaluate("resourcePreview.view.available") is True
-        created = click_post(page, "#resource-hold", path + "/holds", 201)
+        created = submit("#resource-hold", path + "/holds", 201)
         card = page.locator("#resource-current [data-hold-id]")
         expect(card).to_have_count(1)
         expect(card).to_have_attribute("data-hold-id", created["hold"]["id"])
@@ -164,7 +168,7 @@ def resource_walk(page, boundary, scope, p, label):
     for hold_id in hold_ids:
         page.locator('[data-combination-hold="' + hold_id + '"]').check()
     expect(page.locator("#combination-confirm")).to_be_enabled()
-    click_post(page, "#combination-confirm", "/api/resource-combinations", 201)
+    submit("#combination-confirm", "/api/resource-combinations", 201)
     group = page.locator("#combination-items [data-combination-id]")
     expect(group).to_have_attribute("data-state", "CONFIRMED")
     combination_id = group.get_attribute("data-combination-id")
@@ -173,7 +177,7 @@ def resource_walk(page, boundary, scope, p, label):
     assert page.evaluate("caseResourceView.current") is None
     page.locator("#case-resource-choice").select_option(combination_id)
     page.locator("#case-resource-reason").fill("SYNTHETIC browser explicit Case association " + label)
-    click_post(page, "#case-resource-form button", "/api/preparations/" + p["preparation_id"] + "/resource-link", 201)
+    submit("#case-resource-form button", "/api/preparations/" + p["preparation_id"] + "/resource-link", 201)
     page.wait_for_function("id => caseResourceView?.current?.combination.id === id && caseResourceView.link_revision === 1", arg=combination_id)
     expect(page.locator("#case-resource-summary")).to_contain_text("当前资料版本与资源关联有效")
     boundary.readonly()

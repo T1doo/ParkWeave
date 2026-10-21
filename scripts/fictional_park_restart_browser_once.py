@@ -192,13 +192,13 @@ def unpack_font_diagnostics(selected, *, require_complete=True):
     return json.loads(raw)
 
 
-def installed_font_environment(environment, directory, report):
+def installed_font_environment(environment, directory, report, *, extra_text=""):
     """Read system fonts and the exact earlier approved staging; no downloads here."""
     directory.mkdir(mode=0o700, exist_ok=False)
     font_env = dict(environment, XDG_CACHE_HOME=str(directory))
     text = ''.join((original.ROOT / f).read_text() for f in
         ('src/parkweave/web.html', 'src/parkweave/park_demo_web.html'))
-    points = ui_codepoints(text)
+    points = ui_codepoints(text + extra_text)
     selected = report['installed_CJK_font'] = dict(status='FONT_SET_PREFLIGHT_PENDING',
         coverage_mode='INSTALLED_SYSTEM_FALLBACK_SET', required_codepoints=sorted(points),
         downloads=0, installs=0, rendering_observed=False)
