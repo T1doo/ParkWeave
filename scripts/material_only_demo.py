@@ -99,7 +99,7 @@ def dsn(p, *, application=False, maintenance=False):
 
 
 @contextmanager
-def postgres(p):
+def postgres(p, *, observation=None):
     if (p / 'data/postmaster.pid').exists():
         raise Denied('existing postmaster marker; no adoption, signalling or repair')
     env = minimal_environment(os.environ)
@@ -107,6 +107,11 @@ def postgres(p):
         child = subprocess.Popen([pg_bin('postgres'), '-D', str(p / 'data'), '-h', '',
                                   '-k', str(p / 'socket'), '-p', '5432'], env=env,
                                  stdout=log, stderr=log)
+        facts = dict(role='postgres', pid=child.pid, exit_code=None)
+        if observation is not None:
+            observation['children'].append(facts)
+            observation['creation']['postgres'] = 'created'
+        primary_error = None
         try:
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
@@ -120,14 +125,32 @@ def postgres(p):
             else:
                 raise RuntimeError('owned postgres readiness timeout')
             yield child
+        except BaseException as error:
+            primary_error = error
+            raise
         finally:
-            if child.poll() is None:
-                child.send_signal(signal.SIGINT)
+            cleanup_errors=[]
             try:
-                child.wait(timeout=15)
-            except subprocess.TimeoutExpired:
-                (p / 'stop-unconfirmed').touch(exist_ok=True)
-                raise RuntimeError('owned postgres stop unconfirmed; state retained') from None
+                if child.poll() is None:
+                    child.send_signal(signal.SIGINT)
+                try:
+                    child.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    (p / 'stop-unconfirmed').touch(exist_ok=True)
+                    raise RuntimeError('owned postgres stop unconfirmed; state retained') from None
+            except BaseException as error:cleanup_errors.append(error)
+            if observation is not None:
+                try:facts['exit_code'] = child.poll()
+                except BaseException as error:cleanup_errors.append(error)
+            if cleanup_errors:
+                if observation is not None:
+                    for error in cleanup_errors:
+                        detail = dict(type=type(error).__name__)
+                        if type(getattr(error, 'errno', None)) is int:detail['errno'] = error.errno
+                        observation['cleanup_errors'].append(detail)
+                    raise BaseExceptionGroup('demo operation and owned postgres cleanup failed',
+                        ([primary_error] if primary_error is not None else [])+cleanup_errors) from None
+                raise cleanup_errors[0]
 
 
 def authority(c):

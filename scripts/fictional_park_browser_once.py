@@ -591,6 +591,8 @@ def main(*, restart_candidate=False):
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error_type=type(error).__name__, error=str(error))
+        if hasattr(error, 'server_observation'):
+            report['server_failure_observation'] = error.server_observation
     if restart_candidate and time.monotonic() - started > 350:
         finalization_failure(report, TimeoutError('absolute clock exhausted final publication reserve'))
     report['seconds'] = round(time.monotonic() - started, 3)

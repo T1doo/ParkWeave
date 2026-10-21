@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from uuid import uuid4
-import json,os,socket,subprocess,sys,time
+import errno,json,os,socket,subprocess,sys,time
 import httpx
 import psycopg
 import pytest
@@ -46,16 +46,80 @@ def demo_state(tmp_path):
     return p,marker,tokens
 
 
+def finish_server(child,p,selected_port,directory,primary,ready):
+    """Observe cleanup on success AND failure; never signal an unowned PID."""
+    errors=[]
+    record=dict(stage='SERVER_FINALLY', primary_error=demo.error_facts(primary) if primary is not None else None,
+        child_created=child is not None, child_exit_code=None, checks={}, cleanup_errors=[])
+    def failure(error):
+        errors.append(error);record['cleanup_errors'].append(demo.error_facts(error))
+    if child is not None:
+        try:
+            if child.poll() is None:child.terminate()
+            child.wait(timeout=40)
+        except BaseException as error:failure(error)
+        try:
+            record['child_exit_code']=child.poll()
+            record['checks']['CLI_exited']=record['child_exit_code'] is not None
+            if not record['checks']['CLI_exited']:raise RuntimeError('owned CLI exit unconfirmed')
+            if primary is None and child.returncode!=0:raise RuntimeError('owned CLI exited unsuccessfully')
+        except BaseException as error:failure(error)
+        for name,path in [('postmaster_marker_absent',p/'data/postmaster.pid'),('stop_unconfirmed_marker_absent',p/'stop-unconfirmed')]:
+            try:
+                record['checks'][name]=not path.exists()
+                if not record['checks'][name]:raise RuntimeError('retained owned stop marker requires inspection')
+            except BaseException as error:failure(error)
+        try:
+            with socket.create_connection(('127.0.0.1',selected_port),timeout=.3):
+                record['checks']['loopback_listener']='PRESENT_NOT_ADOPTED'
+            failure(RuntimeError('listener remains; no adoption or signalling'))
+        except OSError as error:
+            if error.errno==errno.ECONNREFUSED:record['checks']['loopback_listener']='CONNECTION_REFUSED'
+            else:
+                record['checks']['loopback_listener']='UNKNOWN';failure(error)
+        except BaseException as error:
+            record['checks']['loopback_listener']='UNKNOWN';failure(error)
+        try:
+            prefix='ORDINARY_SYNTHETIC_DEMO_DIAGNOSTIC '
+            lines=(directory/'serve.stderr').read_text().splitlines()
+            records=[json.loads(line[len(prefix):]) for line in lines if line.startswith(prefix)]
+            record['launcher_diagnostics']=records
+            if not records:raise RuntimeError('launcher child cleanup facts missing')
+            for item in records:
+                roles={row['role']:row for row in item['children']}
+                if len(roles)!=len(item['children']):raise RuntimeError('duplicate child role facts')
+                for role,status in item['creation'].items():
+                    if (status=='created')!=(role in roles):raise RuntimeError('child creation/exit facts disagree')
+                if ready is not None:
+                    for role in ('postgres','api','worker'):
+                        if roles.get(role,{}).get('pid')!=ready[role+'_pid']:raise RuntimeError('ready child identity absent from cleanup facts')
+                if item['cleanup_errors']:raise RuntimeError('launcher reported owned cleanup failure')
+                for row in item['children']:
+                    if type(row['exit_code']) is not int:raise RuntimeError('owned child exit code unconfirmed')
+        except BaseException as error:failure(error)
+    else:
+        record['checks']['CLI_exited']='NOT_CREATED'
+    record['cleanup_confirmed']=not errors
+    try:(directory/'server-cleanup.json').write_text(json.dumps(record,indent=2)+'\n')
+    except BaseException as error:failure(error);record['cleanup_confirmed']=False
+    if errors:
+        problem=BaseExceptionGroup('ordinary server operation and cleanup evidence failed',([primary] if primary is not None else [])+errors)
+        problem.server_observation=record
+        raise problem from None
+    if primary is not None:primary.server_observation=record
+
+
 @contextmanager
 def server(p,directory,selected_port=None,*,local_demo_config=None):
     directory.mkdir();selected_port=selected_port or port()
     with (directory/'serve.stdout').open('w') as out,(directory/'serve.stderr').open('w') as err:
         extra=['--local-demo-config',str(local_demo_config)] if local_demo_config is not None else []
-        child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port),*extra),cwd=ROOT,env=environment(),stdout=out,stderr=err)
+        child=None;primary=None;ready=None
         try:
+            child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port),*extra),cwd=ROOT,env=environment(),stdout=out,stderr=err)
             deadline=time.monotonic()+30;ready=None
             while time.monotonic()<deadline:
-                assert child.poll() is None,(directory/'serve.stderr').read_text()
+                assert child.poll() is None,'ordinary demo child exited before readiness; inspect safe launcher diagnostics'
                 rows=[json.loads(line) for line in (directory/'serve.stdout').read_text().splitlines() if line.startswith('{')]
                 if rows:ready=rows[-1];break
                 time.sleep(.05)
@@ -84,12 +148,11 @@ def server(p,directory,selected_port=None,*,local_demo_config=None):
                     except Exception as error:observed=dict(diagnostic_error_type=type(error).__name__)
                     (directory/'http-timeout-observation.json').write_text(json.dumps(observed,default=str,indent=2)+'\n')
                     raise
+        except BaseException as error:
+            primary=error
+            raise
         finally:
-            if child.poll() is None:child.terminate()
-            child.wait(timeout=40)
-    assert child.returncode==0 and not (p/'data/postmaster.pid').exists()
-    with pytest.raises(OSError):
-        with socket.create_connection(('127.0.0.1',selected_port),timeout=.3):pytest.fail('owned API listener remained live')
+            finish_server(child,p,selected_port,directory,primary,ready)
 
 
 def call(api,tokens,path,body=None,actor='enterprise',expected=200):

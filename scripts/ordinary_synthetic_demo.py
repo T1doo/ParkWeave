@@ -199,6 +199,54 @@ def setup(*,with_local_catalog=False):
     return p
 
 
+def error_facts(error, seen=None):
+    """Bounded diagnostic facts only: never exception text, args or environment."""
+    seen = set() if seen is None else seen
+    if id(error) in seen or len(seen) >= 8:
+        return dict(truncated=True)
+    seen.add(id(error))
+    result = dict(type=type(error).__name__)
+    number = getattr(error, 'errno', None)
+    if type(number) is int:result['errno'] = number
+    code = getattr(error, 'returncode', None)
+    if type(code) is int:result['exit_code'] = code
+    if isinstance(error, BaseExceptionGroup):
+        result['errors'] = [error_facts(item, seen) for item in error.exceptions[:8]]
+    elif error.__context__ is not None:
+        result['context'] = error_facts(error.__context__, seen)
+    return result
+
+
+def diagnostic_record(observation, error=None):
+    return dict(stage=observation['stage'], error=error_facts(error) if error is not None else None,
+        creation=observation.get('creation', {}), children=observation.get('children', []),
+        cleanup_errors=observation.get('cleanup_errors', []))
+
+
+def emit_diagnostic(record):
+    try:print('ORDINARY_SYNTHETIC_DEMO_DIAGNOSTIC ' + json.dumps(record), file=sys.stderr, flush=True)
+    except (OSError, ValueError):return False
+    return True
+
+
+def record_failure(error, observation, value=None):
+    """Write only to a validated owned private state; stderr also covers precheck."""
+    record = diagnostic_record(observation, error)
+    raw = (json.dumps(record) + '\n').encode()
+    try:
+        owned = private_state(_last_owned_state if _last_owned_state is not None else value) if value is not None or _last_owned_state is not None else None
+        if owned is not None:
+            flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK
+            with os.fdopen(os.open(owned/'failure.log', flags, 0o600), 'wb') as stream:
+                info = os.fstat(stream.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077 or info.st_nlink != 1 or info.st_size + len(raw) > 1048576:
+                    raise Denied('bounded private diagnostic file required')
+                stream.write(raw)
+    except Exception as logging_error:
+        record['recording_error'] = error_facts(logging_error)
+    emit_diagnostic(record)  # A failed output sink must not replace the primary failure.
+
+
 def check_port(port):
     if not 1024<=port<=65535:raise Denied('unprivileged loopback port required')
     with socket.socket() as probe:
@@ -222,18 +270,26 @@ def existing_local_demo_config(value):
     return raw.decode('utf-8')
 
 
-def serve(value,port,local_demo_config=None):
+def serve(value,port,local_demo_config=None,*,observation=None):
     global _last_owned_state
+    _last_owned_state = None
+    observation = {} if observation is None else observation
+    observation.update(stage='PORT_PRECHECK', children=[], cleanup_errors=[],
+        creation=dict(postgres='not_created', api='not_created', worker='not_created'))
     check_port(port)
+    observation['stage'] = 'PRIVATE_STATE_LOCK'
     with locked(value) as p:
         _last_owned_state=p
+        observation['stage'] = 'STATE_BINDING'
         if (p/'stop-unconfirmed').exists():raise Denied('previous owned stop unconfirmed; state retained')
         marker=json.loads((p/'state.json').read_text())
         if (marker.get('schema')!=SCHEMA or marker.get('source')!=source_binding() or marker.get('ids')!=IDS or
                 marker.get('scopes')!=SCOPES or
                 marker['sessions_sha256']!=sha256((p/'sessions.json').read_bytes()).hexdigest()):
             raise Denied('ordinary demo source/state binding changed')
-        with lifecycle.postgres(p) as pg:
+        observation['stage'] = 'POSTGRES_START'
+        with lifecycle.postgres(p, observation=observation) as pg:
+            observation['stage'] = 'DATABASE_READ_PREFLIGHT'
             with psycopg.connect(lifecycle.dsn(p),row_factory=dict_row) as c:
                 c.execute('SET TRANSACTION READ ONLY')
                 identity=c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
@@ -246,6 +302,7 @@ def serve(value,port,local_demo_config=None):
                 PARKWEAVE_DSN=lifecycle.dsn(p,application=True),PARKWEAVE_MODE='LOCAL',
                 PARKWEAVE_CASE_STEP_MODE='CURRENT_PREPARATION')
             if local_demo_config is not None:
+                observation['stage'] = 'LOCAL_DEMO_CONFIG_PREFLIGHT'
                 from parkweave.case_step_assignments import LOCAL_DEMO_MODE,from_environment
                 from parkweave.local_synthetic_demo import PROFILE
                 env.update(PARKWEAVE_CASE_STEP_MODE=LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=PROFILE,
@@ -253,9 +310,15 @@ def serve(value,port,local_demo_config=None):
                 from_environment(Store(env['PARKWEAVE_DSN']),env)  # Read-only preflight before either child starts.
             children=[]
             with (p/'logs/application.log').open('a') as log:
+                primary_error = None
                 try:
                     for command in (['uvicorn','parkweave.api:configured_app','--factory','--host','127.0.0.1','--port',str(port),'--no-access-log'],['parkweave.worker']):
+                        role = 'api' if command[0] == 'uvicorn' else 'worker'
+                        observation['stage'] = role.upper() + '_SPAWN'
                         children.append(subprocess.Popen([sys.executable,'-B','-m',*command],cwd=ROOT,env=env,stdout=log,stderr=log))
+                        observation['children'].append(dict(role=role, pid=children[-1].pid, exit_code=None))
+                        observation['creation'][role] = 'created'
+                    observation['stage'] = 'API_WORKER_READINESS'
                     deadline=time.monotonic()+20
                     while time.monotonic()<deadline:
                         if any(child.poll() is not None for child in children):raise RuntimeError('owned API/worker exited; inspect private logs')
@@ -270,16 +333,31 @@ def serve(value,port,local_demo_config=None):
                         mode=env['PARKWEAVE_CASE_STEP_MODE'],models='DISABLED',run_assignment_created=False,
                         available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()],
                         **(dict(demo_url=f'http://127.0.0.1:{port}/demo') if local_demo_config is not None else {}))),flush=True)
+                    observation['stage'] = 'READY_SERVING'
                     while all(child.poll() is None for child in children):time.sleep(.25)
                     raise RuntimeError('owned API/worker exited')
+                except BaseException as error:
+                    primary_error = error
+                    raise
                 finally:
+                    cleanup_errors=[]
                     try:stop_children(children)
-                    except BaseException:
-                        (p/'stop-unconfirmed').touch(exist_ok=True)
-                        raise
+                    except BaseException as error:cleanup_errors.append(error)
+                    for child, facts in zip(children, [row for row in observation['children'] if row['role'] != 'postgres']):
+                        try:facts['exit_code'] = child.poll()
+                        except BaseException as error:cleanup_errors.append(error)
+                    if cleanup_errors:
+                        try:(p/'stop-unconfirmed').touch(exist_ok=True)
+                        except BaseException as error:cleanup_errors.append(error)
+                        observation['cleanup_errors'].extend(error_facts(error) for error in cleanup_errors)
+                        raise BaseExceptionGroup('demo operation and owned child cleanup failed',
+                            ([primary_error] if primary_error is not None else [])+cleanup_errors) from None
+
 
 
 def main():
+    global _last_owned_state
+    _last_owned_state = None
     os.umask(0o077)
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=('setup','serve'));parser.add_argument('--state-dir');parser.add_argument('--port',type=int,default=8765)
@@ -290,18 +368,21 @@ def main():
     if args.command!='serve' and args.local_demo_config is not None:parser.error('local demo inputs are read only by serve')
     if args.command!='setup' and args.with_local_catalog:parser.error('catalog inputs are created only in a fresh setup')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
+    observation = dict(stage='SETUP', children=[], cleanup_errors=[])
     try:
         if args.command=='setup':
             p=setup(with_local_catalog=args.with_local_catalog)
             print(json.dumps(dict(state_dir=str(p),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED',
                 **(dict(local_demo_config=str(p/'local-demo/config.json')) if args.with_local_catalog else {}))),flush=True)
-        else:serve(args.state_dir,args.port,args.local_demo_config)
-    except KeyboardInterrupt:return 130 if args.command=='setup' else 0
-    except Exception as error:
-        if _last_owned_state is not None:
-            import traceback
-            with (_last_owned_state/'failure.log').open('a') as stream:stream.write(traceback.format_exc())
-        print('ORDINARY_SYNTHETIC_DEMO_BLOCKED: '+type(error).__name__+'; private state retained; no automatic retry',file=sys.stderr)
+        else:serve(args.state_dir,args.port,args.local_demo_config,observation=observation)
+    except KeyboardInterrupt:
+        if args.command == 'serve':
+            emit_diagnostic(diagnostic_record(observation))
+        return 130 if args.command=='setup' else 0
+    except (Exception, BaseExceptionGroup) as error:
+        record_failure(error, observation, args.state_dir)
+        try:print('ORDINARY_SYNTHETIC_DEMO_BLOCKED: '+type(error).__name__+'; private state retained; no automatic retry',file=sys.stderr)
+        except (OSError, ValueError):pass
         return 1
     return 0
 
