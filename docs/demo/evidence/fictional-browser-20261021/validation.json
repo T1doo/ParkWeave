@@ -1,0 +1,174 @@
+{
+  "status": "FULL_BROWSER_CHAIN_NOT_PASSED",
+  "kind": "SYNTHETIC",
+  "baseline_sha": "6004c3925ae7689f653d30b250c3fbfa84265041",
+  "executed_source_sha": "0e891ff58fa8b17d6c758095346718714502ff8e",
+  "run": {
+    "id": 39530979487,
+    "number": 3,
+    "attempt": 1,
+    "job_id": 118996536023,
+    "url": "https://github.com/T1doo/ParkWeave/actions/runs/39530979487",
+    "status": "FAIL",
+    "job_seconds": 96,
+    "browser_script_seconds": 52.649,
+    "stage": "FIRST_P4_P5_AND_DOWNLOAD",
+    "error_type": "TimeoutError",
+    "error": "Locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator(\"#case-record-pack-download\")\n    - locator resolved to <button disabled type=\"button\" class=\"secondary\" id=\"case-record-pack-download\">重新核对并下载 TXT</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    29 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n"
+  },
+  "authorization": {
+    "one_additional_free_CI_execution_explicitly_authorized": true,
+    "workflow_run_number_exactly": 3,
+    "driver_run_number_exactly": 3,
+    "run_attempt": 1,
+    "additional_executions_started": 1,
+    "automatic_retry": false,
+    "new_execution_after_failure": false
+  },
+  "preserved_controls": {
+    "public_github_hosted": "ubuntu-24.04",
+    "repository_permissions": "contents:read",
+    "job_timeout_minutes": 7,
+    "browser_step_timeout_minutes": 3,
+    "normal_Chrome_sandbox": true,
+    "chrome_version": "155.0.8059.84",
+    "loopback_only": true,
+    "GET_budget": 800,
+    "explicit_one_shot_POST_budgets_unchanged": true,
+    "artifact_max_files": 10,
+    "artifact_max_bytes": 8388608,
+    "artifact_retention_days": 1,
+    "full_synthetic_token_and_12_prefix_publication_checks": true
+  },
+  "real_browser_partial_scope": {
+    "CSP": "both roots retain frame-ancestors none; explicit top-level popup succeeds",
+    "preparation": "new Run/Case, two materials, REVIEW and CONFIRM",
+    "plan": "NO_MODEL selection and explicit ADOPT",
+    "P1_P2": "real two-resource holds, combination, Case association and VERIFY",
+    "dispatch": "OFFER then executor ACCEPT from fixed-title DOM list; exact identity assertion passed",
+    "receipt": "executor manual SUBMIT then enterprise ACKNOWLEDGE; LOCAL_ACKNOWLEDGED",
+    "P1_to_P5_result_state": "LOCAL_OUTPUTS_VERIFIED",
+    "each_result_states": [
+      "LOCAL_OUTPUT_VERIFIED",
+      "LOCAL_OUTPUT_VERIFIED",
+      "LOCAL_OUTPUT_VERIFIED",
+      "LOCAL_OUTPUT_VERIFIED",
+      "LOCAL_OUTPUT_VERIFIED"
+    ],
+    "case_goal_completed": false,
+    "manual_receipt_step_id": "6d853d75-8d6f-464e-816f-3866b0d6a5af",
+    "successful_POST_count": 26,
+    "POST_status_counts": {
+      "202": 1,
+      "201": 8,
+      "200": 17
+    },
+    "page_errors": [],
+    "route_violations": [],
+    "non_200_GETs": {
+      "count": 11,
+      "all_same_endpoint_suffix": "/fact-clarifications",
+      "status": 403,
+      "not_reclassified_as_success": true
+    }
+  },
+  "confirmed_failure": {
+    "type": "DRIVER_MISSING_REQUIRED_GENERATE_STEP",
+    "product_source": "src/parkweave/web.html renderCaseRecordPackControls and caseRecordPackAction",
+    "download_guard": "download remains disabled until caseRecordPackView exists; download action also refuses missing previous generation",
+    "driver_omission": "driver clicked download without clicking original generate control",
+    "actual_error": "disabled download button timed out after 15000ms",
+    "preparation_ready": true,
+    "pending_writes": 0,
+    "unused_positive_POST_budgets": 0,
+    "product_or_authority_failure_claimed": false,
+    "independent_diagnosis": "ACK_CONFIRMED_DRIVER_OMISSION"
+  },
+  "pending_driver_fix": {
+    "change": "original DOM generate click then wait for visible nonempty output and enabled download, then original download click",
+    "product_source_changed": false,
+    "business_POST_budget_changed": false,
+    "compile_passed": true,
+    "browser_executed": false,
+    "source_sha": "dc530a75f09ac9ebc243f9553e69572a7a43bd70",
+    "independent_static_review": "ACK_NO_NEW_P1_P2"
+  },
+  "actual_checks_this_slice": {
+    "browser_CI": "1 actual FAIL; not rerun",
+    "host_gate_checks": "12 PASS without browser/setup; exact run3 accepted, invalid run numbers/attempt/public/host/ref/SHA/config rejected",
+    "py_compile": "PASS",
+    "product_regression": "not rerun: src/tests bytes unchanged from the prior 9 PASS source 320dc123826f9f1bfccafc18e3ed1e2ac82e64a0",
+    "no_additive_test_count": true
+  },
+  "remaining_scope": {
+    "browser_not_reached": [
+      "TXT generation and download",
+      "second Case explicit material reuse",
+      "second Case REVIEW/CONFIRM then cancellation before ADOPT/OFFER",
+      "first history unchanged after second cancellation",
+      "390px mobile view"
+    ],
+    "not_in_driver": [
+      "physical cold restart"
+    ],
+    "post_walk_assertions_not_reached": [
+      "unchanged input files",
+      "owned services stopped assertion",
+      "final authority snapshot",
+      "no run assignments assertion"
+    ]
+  },
+  "artifact": {
+    "id": 12315865199,
+    "official_zip_sha256": "2039430b9846807175015a9dae24a89544dc1af901c35415a801ca99707d1ff5",
+    "downloaded_zip_matches_official_digest": true,
+    "original_CI_log_sha256": "97e0a6040718a471cfd4dbc6bd19bd54bba640cec68d28f05bf076fa5c124010",
+    "published_original_files": [
+      "result.json",
+      "ci-original.log",
+      "run-status.json",
+      "artifacts.json",
+      "01-fictional-guide.png",
+      "02-first-adopted-plan.png",
+      "03-first-acknowledged-receipt.png",
+      "failure-first-p4-p5-and-download.png"
+    ],
+    "byte_for_byte_unedited": true,
+    "checksums": "checksums.json"
+  },
+  "visual_limits": [
+    "original Chrome screenshots still render Chinese as missing CJK glyph boxes",
+    "Chinese typography/readability not accepted",
+    "mobile not reached"
+  ],
+  "unchanged_gates": {
+    "formal_source": false,
+    "formal_AT35": false,
+    "Windows_acceptance": false,
+    "owner_DACL_changes": false,
+    "native_migration_changes": false,
+    "real_model_calls": 0,
+    "deployment": false,
+    "paid_execution": false
+  },
+  "historical_evidence": "../fictional-browser-20261020/ (two FAILs preserved unchanged)",
+  "next_execution": "STOPPED_AFTER_FAILURE; diagnose and independent review completed; no fourth run started",
+  "source_binding_refresh": {
+    "source_sha": "dc530a75f09ac9ebc243f9553e69572a7a43bd70",
+    "bound_files": 604,
+    "HEAD_blob_and_raw_bytes_verified": true,
+    "changed_bound_files": [
+      ".github/workflows/fictional-park-browser-once.yml",
+      "docs/demo/OrdinarySyntheticDemo.md",
+      "scripts/fictional_park_browser_once.py"
+    ],
+    "collection_reexecuted": false,
+    "previous_actual_collection_source_sha": "98e6f2f3ac5675362bcb8f365eb8d4c2a275516f",
+    "prior_cases": 9367,
+    "prior_files": 395,
+    "no_new_PASS_claim": true,
+    "frozen_current_input_files": 927,
+    "frozen_current_input_HEAD_blob_drift": 0,
+    "frozen_current_input_snapshot_sha256": "c0281e4d33af44a9217824e5898403509f0d9822e1fc941a233df0010f6b38e3"
+  }
+}
