@@ -6,11 +6,13 @@ No workflow is changed here. Healthy timing estimates do not guarantee PASS.
 from hashlib import sha256
 from html import escape
 from datetime import datetime, timezone
+import base64
 import json
 from pathlib import Path
 import re
 import subprocess
 import time
+import zlib
 from urllib.parse import urlsplit
 
 from scripts import fictional_park_browser_once as original
@@ -20,7 +22,7 @@ CAPTURE_NAMES = frozenset(('01-fictional-guide', '03-first-acknowledged-receipt'
 PUBLIC_FILES = frozenset({name + '.png' for name in CAPTURE_NAMES} | {
     '08-restarted-first-record.png', '09-restarted-second-cancelled.png',
     'first-case-record-pack.txt', 'restarted-case-record-pack.txt', 'result.json'})
-DESIGN = dict(status='CANDIDATE_WIRED_NOT_EXECUTED', workflow_changed=False,
+DESIGN = dict(status='FONT_FALLBACK_SET_CANDIDATE_NOT_EXECUTED', workflow_changed=False,
     proposed_browser_step_seconds=360, proposed_job_seconds=600, measured_walk_seconds=72.912,
     measured_job_seconds=115, first_scenario_and_stop_seconds=180,
     first_scenario_work_seconds=130, first_context_close_reserved_seconds=10, first_stop_reserved_seconds=40,
@@ -33,15 +35,15 @@ DESIGN = dict(status='CANDIDATE_WIRED_NOT_EXECUTED', workflow_changed=False,
     planned_fresh_setup_calls=1, planned_setup_calls_during_recovery=0, recovery_business_POST_budget=0,
     GET_budget_shared_with_first_walk=800, artifact_max_files=10,
     artifact_max_bytes=8388608, selected_initial_screenshots=sorted(CAPTURE_NAMES),
-    font_policy='Only already installed system fonts covering actual UI CJK codepoints; otherwise block before setup',
-    runner_font_status='NOT_OBSERVED: previous hosted instance ended; image inventory is not fc-list evidence',
+    font_policy='Unchanged UI codepoints covered by trusted installed-font and actual fontconfig fallback unions; no installation',
+    runner_font_status='Run5 single-face filter failed; hosted fallback collection and glyph rendering not observed',
     references=dict(fontconfig='https://www.freedesktop.org/software/fontconfig/fontconfig-user.html',
         runner_image='https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md'),
     uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/tree/main/Sans',
         license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE',
         downloaded=False, installed=False, new_license_accepted=False),
-    pending_before_execution=['parent review of new limits, complete snapshot oracles and wiring',
-        'explicit workflow switch to exact run5 candidate with reviewed limits; not done in this slice'])
+    pending_before_execution=['parent review of font fallback candidate; no new CI in this slice',
+        'a future exact-run gate must be coordinated separately; run5 ended and will not be retried'])
 
 
 class BudgetRefused(RuntimeError):
@@ -73,7 +75,12 @@ class Deadline:
         return milliseconds  # Never shrink the original 15s/30s wait to fit.
 
 
-def covers(charset, codepoints):
+def ui_codepoints(text):
+    return {ord(c) for c in text if 0x3400 <= ord(c) <= 0x9fff or
+        0x3000 <= ord(c) <= 0x303f or 0xff00 <= ord(c) <= 0xffef}
+
+
+def charset_coverage(charset, codepoints):
     intervals = []
     for item in charset.split():
         ends = item.split('-')
@@ -83,64 +90,226 @@ def covers(charset, codepoints):
         if not 0 <= first <= last <= 0x10ffff:
             raise ValueError('invalid fontconfig range')
         intervals.append((first, last))
-    return bool(codepoints) and all(any(a <= point <= b for a, b in intervals) for point in codepoints)
+    return {point for point in codepoints if any(a <= point <= b for a, b in intervals)}
+
+
+def covers(charset, codepoints):
+    return bool(codepoints) and charset_coverage(charset, codepoints) == set(codepoints)
+
+
+FONT_FORMAT = '%{file}\t%{index}\t%{family}\t%{postscriptname}\t%{charset}\n'
+FONT_DIAGNOSTIC_LIMIT = 1024 * 1024  # Within the unchanged total 8MiB publication limit.
+FONT_DIAGNOSTIC_RAW_LIMIT = 16 * 1024 * 1024
+
+
+def font_candidates(text, points):
+    """Keep every row and rejection reason, including Unicode family names."""
+    rows = []
+    for raw in text.splitlines():
+        row = dict(raw=raw, eligible=False, exclusion_reason=None, covered_codepoints=[])
+        try:
+            file, index, families, postscript, charset = raw.split('\t')
+            row.update(file=file, index=index, families=families.split(','),
+                postscript_names=postscript.split(',') if postscript else [])
+            covered = charset_coverage(charset, points)
+            row['covered_codepoints'] = sorted(covered)
+            path = Path(file).resolve(strict=True)
+            if not any(path.is_relative_to(p) for p in (Path('/usr/share/fonts'), Path('/usr/local/share/fonts'))):
+                raise ValueError('outside trusted installed-system font roots')
+            if not path.is_file() or not index.isdecimal():
+                raise ValueError('not a regular font file or invalid face index')
+            if not families or any(not f or len(f) > 160 or any(ord(c) < 32 for c in f) for f in row['families']):
+                raise ValueError('invalid family metadata; Unicode names are allowed')
+            row.update(file=str(path), index=int(index), eligible=True)
+        except (ValueError, OSError) as error:
+            row['exclusion_reason'] = str(error)
+        row.update(covered_count=len(row['covered_codepoints']),
+            missing_codepoints=sorted(points - set(row['covered_codepoints'])))
+        rows.append(row)
+    return rows
+
+
+def fontconfig_read(argv, environment, directory, diagnostics, name):
+    """Preserve bounded public diagnostics and original private command bytes."""
+    record = diagnostics['commands'][name] = dict(argv=argv)
+    try:
+        result = subprocess.run(argv, env=environment, capture_output=True, timeout=3)
+        stdout, stderr = result.stdout, result.stderr
+        record['returncode'] = result.returncode
+    except subprocess.TimeoutExpired as error:
+        stdout, stderr = error.stdout or b'', error.stderr or b''
+        record['timed_out'] = True
+    for key, raw in (('stdout', stdout), ('stderr', stderr)):
+        path = directory / (name + '.' + key)
+        path.write_bytes(raw)
+        record[key + '_private_file'] = str(path)
+        record[key + '_bytes'] = len(raw)
+        record[key + '_sha256'] = sha256(raw).hexdigest()
+    record['raw_public_complete'] = all(len(raw) <= 2 * 1024 * 1024 for raw in (stdout, stderr))
+    invalid_utf8 = False
+    for key, raw in (('stdout', stdout), ('stderr', stderr)):
+        if len(raw) <= 2 * 1024 * 1024:
+            try:
+                record[key] = raw.decode('utf-8')
+            except UnicodeDecodeError:
+                record[key + '_base64'] = base64.b64encode(raw).decode('ascii')
+                invalid_utf8 = True
+    if any(len(raw) > 2 * 1024 * 1024 for raw in (stdout, stderr)):
+        raise RuntimeError('fontconfig output exceeds 2MiB; complete bytes retained privately, not claimed published')
+    if record.get('timed_out') or record['returncode'] != 0:
+        raise RuntimeError('fontconfig command failed; original output retained')
+    if invalid_utf8:
+        raise RuntimeError('fontconfig emitted invalid UTF8; both original byte streams retained without loss')
+    return record['stdout']
+
+
+def preserve_font_diagnostics(directory, diagnostics, selected):
+    raw = (json.dumps(diagnostics, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
+    path = directory / 'font-diagnostics.json'
+    path.write_bytes(raw)
+    packed = base64.b64encode(zlib.compress(raw)).decode('ascii')
+    fits = len(packed) <= FONT_DIAGNOSTIC_LIMIT and len(raw) <= FONT_DIAGNOSTIC_RAW_LIMIT
+    selected['diagnostics'] = dict(encoding='base64(zlib(UTF8 JSON))',
+        uncompressed_bytes=len(raw), sha256=sha256(raw).hexdigest(), private_original=str(path),
+        published_complete=fits and all(c.get('raw_public_complete', False) for c in diagnostics['commands'].values()))
+    if not fits:
+        selected['status'] = 'FONT_DIAGNOSTIC_PUBLICATION_LIMIT'
+        raise RuntimeError('font diagnostics exceed 1MiB packed/16MiB decoded allowance; complete original retained privately only')
+    selected['diagnostics']['data'] = packed
+
+
+def unpack_font_diagnostics(selected, *, require_complete=True):
+    meta = selected['diagnostics']
+    assert not require_complete or meta['published_complete']
+    assert 0 <= meta['uncompressed_bytes'] <= FONT_DIAGNOSTIC_RAW_LIMIT
+    decoder = zlib.decompressobj()
+    raw = decoder.decompress(base64.b64decode(meta['data'], validate=True), meta['uncompressed_bytes'] + 1)
+    assert decoder.eof and not decoder.unused_data and len(raw) == meta['uncompressed_bytes']
+    assert sha256(raw).hexdigest() == meta['sha256']
+    return json.loads(raw)
 
 
 def installed_font_environment(environment, directory, report):
     """Run before launching Chrome or setup. No downloads, installs or font copy."""
     directory.mkdir(mode=0o700, exist_ok=False)
     font_env = dict(environment, XDG_CACHE_HOME=str(directory))
-    result = subprocess.run(['fc-list', ':lang=zh-cn', '-f',
-        '%{file}\t%{index}\t%{family}\t%{charset}\n'], env=font_env,
-        capture_output=True, text=True, timeout=3, check=True)
-    if len(result.stdout.encode()) > 2 * 1024 * 1024:
-        raise RuntimeError('font inventory exceeds bound')
     text = ''.join((original.ROOT / f).read_text() for f in
         ('src/parkweave/web.html', 'src/parkweave/park_demo_web.html'))
-    points = {ord(c) for c in text if 0x3400 <= ord(c) <= 0x9fff or
-        0x3000 <= ord(c) <= 0x303f or 0xff00 <= ord(c) <= 0xffef}
-    choices = []
-    for line in result.stdout.splitlines():
-        fields = line.split('\t')
-        if len(fields) != 4:
-            raise RuntimeError('unrecognized installed-font inventory')
-        file, index, families, charset = fields
-        path = Path(file).resolve(strict=True)
-        if not any(path.is_relative_to(p) for p in (Path('/usr/share/fonts'), Path('/usr/local/share/fonts'))):
-            continue
-        family = families.split(',')[0]
-        if index.isdecimal() and re.fullmatch(r'[A-Za-z0-9 _-]{1,80}', family) and covers(charset, points):
-            choices.append((family != 'Noto Sans CJK SC', 'Regular' not in path.name, family, path, int(index)))
-    if not choices:
-        report['installed_CJK_font'] = dict(status='NO_INSTALLED_CJK_COVERAGE', downloads=0)
-        raise RuntimeError('no installed system font covers shipped UI CJK; no setup or download allowed')
-    _, _, family, path, index = sorted(choices)[0]
-    config = directory / 'fonts.conf'
-    aliases = ''.join('<alias><family>' + generic + '</family><prefer><family>' +
-        escape(family) + '</family></prefer></alias>' for generic in ('system-ui', 'sans-serif'))
-    config.write_text('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">'
-        '<fontconfig><include>/etc/fonts/fonts.conf</include>' + aliases + '</fontconfig>')
-    report['installed_CJK_font'] = dict(status='INSTALLED_CHARSET_COVERS_UI', family=family,
-        file=str(path), index=index, sha256=sha256(path.read_bytes()).hexdigest(),
-        required_codepoints=len(points), downloads=0, heading_font_observed=False,
-        rendering_observation_scope='h1 node only; not whole-page or all-codepoint visual acceptance')
-    return dict(environment, FONTCONFIG_FILE=str(config), XDG_CACHE_HOME=str(directory))
+    points = ui_codepoints(text)
+    selected = report['installed_CJK_font'] = dict(status='FONT_SET_PREFLIGHT_PENDING',
+        coverage_mode='INSTALLED_SYSTEM_FALLBACK_SET', required_codepoints=sorted(points),
+        downloads=0, installs=0, rendering_observed=False)
+    diagnostics = dict(required_codepoints=sorted(points), commands={})
+    try:
+        inventory = fontconfig_read(['fc-list', '-f', FONT_FORMAT], font_env, directory, diagnostics, 'inventory')
+        rows = diagnostics['candidates'] = font_candidates(inventory, points)
+        eligible = [row for row in rows if row['eligible']]
+        union = set().union(*(set(row['covered_codepoints']) for row in eligible))
+        missing = selected['missing_codepoints'] = sorted(points - union)
+        selected.update(candidate_count=len(rows), eligible_count=len(eligible), union_covered_count=len(union))
+        if missing:
+            selected['status'] = 'NO_INSTALLED_CJK_SET_COVERAGE'
+            raise RuntimeError('installed system font union misses required UI codepoints; no setup or download allowed')
+        remaining, chosen = set(points), []
+        while remaining:
+            row = min(eligible, key=lambda r: (-len(remaining.intersection(r['covered_codepoints'])),
+                r['families'][0] != 'Noto Sans CJK SC', 'Regular' not in r['file'], r['file'], r['index']))
+            chosen.append(row)
+            remaining.difference_update(row['covered_codepoints'])
+        families = list(dict.fromkeys(row['families'][0] for row in chosen))
+        config = directory / 'fonts.conf'
+        aliases = ''.join('<alias><family>' + generic + '</family><prefer>' +
+            ''.join('<family>' + escape(family) + '</family>' for family in families) +
+            '</prefer></alias>' for generic in ('system-ui', 'sans-serif'))
+        config.write_text('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">'
+            '<fontconfig><include>/etc/fonts/fonts.conf</include>' + aliases + '</fontconfig>')
+        diagnostics['config_xml'] = config.read_text()
+        resolved_env = dict(environment, FONTCONFIG_FILE=str(config), XDG_CACHE_HOME=str(directory))
+        selected['preferred_families'] = families
+        identities = {(r['file'], r['index'], tuple(r['postscript_names'])) for r in eligible}
+        selected['resolved'] = {}
+        for generic in ('system-ui', 'sans-serif'):
+            output = fontconfig_read(['fc-match', '-s', '-f', FONT_FORMAT, generic + ':lang=zh-cn'],
+                resolved_env, directory, diagnostics, generic)
+            resolved = diagnostics[generic] = font_candidates(output, points)
+            for row in resolved:
+                if row['eligible'] and (row['file'], row['index'], tuple(row['postscript_names'])) not in identities:
+                    row.update(eligible=False, exclusion_reason='resolved face absent from captured trusted inventory')
+            resolved_union = set().union(*(set(r['covered_codepoints']) for r in resolved if r['eligible']))
+            missing = sorted(points - resolved_union)
+            selected['resolved'][generic] = dict(covered_count=len(resolved_union), missing_codepoints=missing)
+            if missing:
+                selected['status'] = 'FONTCONFIG_RESOLVED_SET_MISSING_UI'
+                raise RuntimeError('actual fontconfig generic fallback misses required UI codepoints')
+        selected['status'] = 'INSTALLED_CHARSET_COVERS_UI'
+        return resolved_env
+    except BaseException as error:
+        selected['preflight_error'] = dict(type=type(error).__name__, message=str(error))
+        if selected['status'] == 'FONT_SET_PREFLIGHT_PENDING':
+            selected['status'] = 'FONT_SET_PREFLIGHT_FAILED'
+        raise
+    finally:
+        preserve_font_diagnostics(directory, diagnostics, selected)
 
 
 def verify_rendered_font(page, report):
-    """Inspect actual Chrome glyph usage, never replace screenshot pixels."""
+    """Read original visible guide nodes; never add glyph probes or alter pixels."""
     selected = report['installed_CJK_font']
-    assert any(0x3400 <= ord(c) <= 0x9fff for c in page.locator('h1').inner_text())
+    selected['rendering_observed'] = False
+    stop = time.monotonic() + 5
+    candidates = unpack_font_diagnostics(selected)['candidates']
+    nodes = page.evaluate("""() => {
+        const found=new Map(), walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+        const path=e=>e.id?'#'+CSS.escape(e.id):e===document.body?'body':path(e.parentElement)+' > '+e.tagName.toLowerCase()+':nth-child('+([...e.parentElement.children].indexOf(e)+1)+')';
+        for(let n; n=walk.nextNode();){
+            if(!/[\\u3400-\\u9fff\\u3000-\\u303f\\uff00-\\uffef]/u.test(n.data))continue;
+            const e=n.parentElement,s=getComputedStyle(e),r=document.createRange();r.selectNodeContents(n);
+            if(s.visibility!=='visible'||s.opacity==='0'||!Array.from(r.getClientRects()).some(b=>b.width&&b.height&&b.bottom>0&&b.right>0&&b.top<innerHeight&&b.left<innerWidth))continue;
+            const key=path(e);found.set(key,(found.get(key)||'')+n.data);
+        }return [...found].map(([selector,text])=>({selector,text}));} """)
+    observations = selected['visible_node_font_usage'] = []
+    selected['rendering_observation_scope'] = ('guide viewport text-node parents at page_ready only; CDP node-level font usage '
+        'and charset union, not glyph-to-codepoint attribution or all683 pixel acceptance; review original screenshot separately')
+    assert 0 < len(nodes) <= 256
     session = page.context.new_cdp_session(page)
+    file_hashes = {}
     try:
         session.send('DOM.enable'); session.send('CSS.enable')
         root = session.send('DOM.getDocument')['root']['nodeId']
-        node = session.send('DOM.querySelector', dict(nodeId=root, selector='h1'))['nodeId']
-        fonts = session.send('CSS.getPlatformFontsForNode', dict(nodeId=node))['fonts']
-        assert any(f['familyName'] == selected['family'] and f['glyphCount'] > 0 for f in fonts)
-        selected.update(heading_font_observed=True, observed_fonts=fonts)
+        for row in nodes:
+            if time.monotonic() > stop:
+                raise BudgetRefused('guide font usage inspection exceeded its5s share of unchanged first stage')
+            points = ui_codepoints(row['text'])
+            node = session.send('DOM.querySelector', dict(nodeId=root, selector=row['selector']))['nodeId']
+            fonts = session.send('CSS.getPlatformFontsForNode', dict(nodeId=node))['fonts']
+            observed = dict(selector=row['selector'], text_sha256=sha256(row['text'].encode()).hexdigest(),
+                required_codepoints=sorted(points), fonts=fonts, matched_faces=[], invalid_sources=[])
+            observations.append(observed)
+            union = set()
+            for font in fonts:
+                if font['glyphCount'] <= 0:
+                    continue
+                matches = [r for r in candidates if font['postScriptName'] in r.get('postscript_names', ())]
+                if font['isCustomFont'] or len(matches) != 1 or not matches[0]['eligible']:
+                    observed['invalid_sources'].append(dict(postscript_name=font['postScriptName'],
+                        custom=font['isCustomFont'], candidate_count=len(matches)))
+                    continue
+                face = matches[0]
+                union.update(face['covered_codepoints'])
+                if face['file'] not in file_hashes:
+                    file_hashes[face['file']] = sha256(Path(face['file']).read_bytes()).hexdigest()
+                observed['matched_faces'].append(dict(file=face['file'], index=face['index'],
+                    postscript_name=font['postScriptName'], sha256=file_hashes[face['file']]))
+            observed['missing_codepoints'] = sorted(points - union)
+            assert not observed['invalid_sources'], 'unknown, custom or ambiguous actual font face'
+            assert not observed['missing_codepoints'], 'actual participating font union misses visible node CJK'
+        if time.monotonic() > stop:
+            raise BudgetRefused('guide font usage inspection exceeded its5s share of unchanged first stage')
     finally:
         session.detach()
+    if time.monotonic() > stop:
+        raise BudgetRefused('guide font usage inspection including detach exceeded its5s share')
+    selected['rendering_observed'] = True
 
 
 def readonly_store(state):
