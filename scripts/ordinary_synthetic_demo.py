@@ -201,7 +201,11 @@ def setup(*,with_local_catalog=False):
 
 def check_port(port):
     if not 1024<=port<=65535:raise Denied('unprivileged loopback port required')
-    with socket.socket() as probe:probe.bind(('127.0.0.1',port))
+    with socket.socket() as probe:
+        # A stopped owned API can leave TIME_WAIT connections on this port.
+        # REUSEADDR permits restart; it does not share an active listener.
+        probe.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+        probe.bind(('127.0.0.1',port))
 
 
 def existing_local_demo_config(value):
