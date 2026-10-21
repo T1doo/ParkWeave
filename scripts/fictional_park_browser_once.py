@@ -21,11 +21,11 @@ BRANCH = 'refs/heads/dev/fictional-park-browser-once-20261020'
 PRIVATE = ROOT / '.runtime/fictional-park-browser-once'
 
 
-def require_hosted(environment):
+def require_hosted(environment, *, run_number='4'):
     expected = dict(PW_BROWSER_REPOSITORY='T1doo/ParkWeave', PW_BROWSER_REF=BRANCH,
         PW_BROWSER_EVENT='push', PW_BROWSER_ATTEMPT='1', PW_BROWSER_PUBLIC='true',
         RUNNER_ENVIRONMENT='github-hosted', RUNNER_OS='Linux')
-    if any(environment.get(k) != v for k, v in expected.items()) or environment.get('PW_BROWSER_NUMBER') != '4':
+    if any(environment.get(k) != v for k, v in expected.items()) or environment.get('PW_BROWSER_NUMBER') != run_number:
         raise RuntimeError('only the bounded public hosted branch push is authorized')
     if any(k.startswith('PARKWEAVE_') for k in environment):
         raise RuntimeError('inherited business configuration refused')
@@ -87,7 +87,7 @@ class Boundary:
         route.continue_() if allowed else route.abort()
 
 
-def walk(browser, report, secrets, public, *, before_stop=None, capture_names=None):
+def walk(browser, report, secrets, public, *, before_stop=None, capture_names=None, page_ready=None):
     from playwright.sync_api import expect
     from test_ordinary_synthetic_demo import command, environment, server
     from test_demo_original_page_intake_browser import settled, open_from_list, open_service_plan, verify
@@ -233,6 +233,8 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
             report['stage'] = 'SHIPPED_GUIDE'
             response = page.goto(base + '/demo', wait_until='load')
             assert response.status == 200 and response.body() == (ROOT / 'src/parkweave/park_demo_web.html').read_bytes()
+            if page_ready is not None:
+                page_ready(page, report)
             page.locator('#sessions').set_input_files(dict(name='invalid.json', mimeType='application/json', buffer=b'{}'))
             expect(page.locator('[data-role="enterprise"]')).to_be_disabled()
             expect(page.locator('#status')).to_contain_text('未上传')
@@ -410,7 +412,52 @@ def walk(browser, report, secrets, public, *, before_stop=None, capture_names=No
     assert report['owned_services_stopped']
 
 
-def main():
+def write_result(directory, report, secrets):
+    serialized = resource.redact(report, secrets)
+    raw = (serialized + '\n').encode()
+    assert not any(token.encode() in raw or token[:12].encode() in raw for token in secrets)
+    other_bytes = sum(p.stat().st_size for p in directory.iterdir() if p.name != 'result.json')
+    assert other_bytes + len(raw) <= 8 * 1024 * 1024
+    (directory / 'result.json').write_bytes(raw)
+    return serialized
+
+
+def publish_artifacts(public, report, secrets, *, restart=False, started=None):
+    serialized = write_result(public, report, secrets)
+    files = list(public.iterdir())
+    assert len(files) <= 10 and sum(p.stat().st_size for p in files) <= 8 * 1024 * 1024
+    text_names = ('result.json', 'first-case-record-pack.txt') + (('restarted-case-record-pack.txt',) if restart else ())
+    image_pattern = r'(?:0[1-9]-[a-z-]+|failure-[a-z0-9-]+)\.png' if restart else r'(?:0[1-7]-[a-z-]+|failure-[a-z0-9-]+)\.png'
+    for p in files:
+        if restart:
+            from scripts.fictional_park_restart_browser_once import PUBLIC_FILES
+            allowed = p.name in PUBLIC_FILES or re.fullmatch(r'failure-[a-z0-9-]+\.png', p.name)
+        else:
+            allowed = p.name in text_names or re.fullmatch(image_pattern, p.name)
+        assert allowed and not p.is_symlink()
+        assert not any(token.encode() in p.read_bytes() or token[:12].encode() in p.read_bytes() for token in secrets)
+    if started is not None:
+        elapsed = time.monotonic() - started
+        report.update(seconds=round(elapsed, 3),
+            seconds_scope='through artifact scan, before final result write and rename; final completion in FINAL_EXIT_BUDGET log')
+        if elapsed > 350:
+            report.update(status='FAIL', error_type='BudgetRefused',
+                error='publication exhausted the absolute-clock final margin')
+        serialized = write_result(public, report, secrets)
+    published = public.with_name('parkweave-fictional-browser-evidence')
+    public.rename(published)
+    if started is not None and time.monotonic() - started > 360:
+        report.update(status='FAIL', error_type='BudgetRefused', error='publication crossed absolute 360s deadline')
+        try:
+            serialized = write_result(published, report, secrets)
+        except BaseException:
+            # Preserve our own staged files, but do not expose a stale PASS.
+            published.rename(public)
+            raise
+    return serialized
+
+
+def main(*, restart_candidate=False):
     os.umask(0o077)
     report = dict(scope='FICTIONAL_PARK_SANDBOXED_REAL_CHROME_DOM', status='NOT_RUN', stage='HOST_GATE',
         screenshots=[], responses=[], violations=[], page_errors=[], expected_refusals=[],
@@ -419,7 +466,7 @@ def main():
     secrets, public = [], None
     started = time.monotonic()
     try:
-        report['source_sha'] = require_hosted(os.environ)
+        report['source_sha'] = require_hosted(os.environ, run_number='5' if restart_candidate else '4')
         PRIVATE.mkdir(parents=True, mode=0o700, exist_ok=False)
         public = Path(os.environ['RUNNER_TEMP']) / 'parkweave-fictional-browser-candidate'
         public.mkdir(mode=0o700, exist_ok=False)
@@ -429,6 +476,12 @@ def main():
             directory = PRIVATE / name
             directory.mkdir(mode=0o700)
             env[key] = str(directory)
+        if restart_candidate:
+            from scripts import fictional_park_restart_browser_once as restart
+            report.update(scope='FICTIONAL_PARK_COLD_RESTART_CANDIDATE', cold_restart=False,
+                proposed_browser_step_seconds=360, proposed_job_seconds=600)
+            report['stage'] = 'INSTALLED_CJK_PREFLIGHT'
+            env = restart.installed_font_environment(env, PRIVATE / 'installed-fonts', report)
         from playwright.sync_api import sync_playwright
         report['stage'] = 'CHROME_SANDBOX'
         with sync_playwright() as pw:
@@ -437,28 +490,44 @@ def main():
                 report['chrome_version'] = browser.version
                 report['real_browser'] = True
                 resource.verify_sandbox(browser, report)
-                walk(browser, report, secrets, public)
+                if restart_candidate:
+                    restart.candidate_flow(browser, report, secrets, public, started)
+                    restart.Deadline(started).require(20, 'Chrome/context close and publication')
+                else:
+                    walk(browser, report, secrets, public)
+                if restart_candidate:
+                    chrome_close_started = time.monotonic()
+        if restart_candidate and time.monotonic() - chrome_close_started > 5:
+            raise RuntimeError('Chrome/driver close exceeded its 5s share of context/publication allowance')
         report['status'] = 'PASS'
     except BaseException as error:
         report.update(status='FAIL', error_type=type(error).__name__, error=str(error))
+    if restart_candidate and time.monotonic() - started > 350:
+        report.update(status='FAIL', error_type='BudgetRefused', error='absolute clock exhausted final publication reserve')
     report['seconds'] = round(time.monotonic() - started, 3)
     serialized = resource.redact(report, secrets)
     if public is not None:
-        (public / 'result.json').write_text(serialized + '\n')
-        # Only these public files enter the artifact; raw logs, sessions, DB,
-        # profiles and traces remain outside. Reject excess or credential bytes.
-        files = list(public.iterdir())
-        assert len(files) <= 10 and sum(p.stat().st_size for p in files) <= 8 * 1024 * 1024
-        for p in files:
-            assert (p.name in ('result.json', 'first-case-record-pack.txt') or re.fullmatch(
-                r'(?:0[1-7]-[a-z-]+|failure-[a-z0-9-]+)\.png', p.name)) and not p.is_symlink()
-            assert not any(token.encode() in p.read_bytes() or token[:12].encode() in p.read_bytes() for token in secrets)
-        # Atomic publication only after validation, including on a failed walk.
-        public.rename(public.with_name('parkweave-fictional-browser-evidence'))
+        serialized = publish_artifacts(public, report, secrets, restart=restart_candidate,
+            started=started if restart_candidate else None)
     print(serialized, flush=True)
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as stream:
             stream.write('```json\n' + serialized + '\n```\n')
+    if restart_candidate:
+        completed = time.monotonic() - started
+        if completed > 360:
+            report.update(status='FAIL', error_type='BudgetRefused', error='final output crossed absolute 360s deadline')
+            if public is not None:
+                published = public.with_name('parkweave-fictional-browser-evidence')
+                try:
+                    serialized = write_result(published, report, secrets)
+                except BaseException:
+                    published.rename(public)
+                    raise
+                print(serialized, flush=True)
+        print('FINAL_EXIT_BUDGET ' + json.dumps(dict(status=report['status'],
+            completion_seconds=round(completed, 3), limit_seconds=360,
+            measurement_scope='after artifact publication, result output and step summary; before this exit log')), flush=True)
     return 0 if report['status'] == 'PASS' else 1
 
 

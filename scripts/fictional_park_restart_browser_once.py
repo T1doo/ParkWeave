@@ -1,8 +1,7 @@
-"""Review-only cold recovery draft. --describe never starts services or Chrome.
+"""Cold recovery candidate; workflow activation awaits review, not user permission.
 
-The existing workflow is deliberately unchanged. The current server helper's
-worst time allowances do not fit after the measured walk in a 180s step. No CI
-entry is provided until that timing contract is reviewed and closed.
+--describe is read-only. --candidate requires the exact public hosted run5 gate.
+No workflow is changed here. Healthy timing estimates do not guarantee PASS.
 """
 from hashlib import sha256
 from html import escape
@@ -18,13 +17,19 @@ from scripts import fictional_park_browser_once as original
 
 CAPTURE_NAMES = frozenset(('01-fictional-guide', '03-first-acknowledged-receipt',
     '06-again-cancelled', '07-mobile-first-history-retained'))
-DESIGN = dict(status='DRAFT_NOT_READY_FOR_CI', workflow_changed=False,
-    browser_step_seconds=180, job_seconds=420, measured_walk_seconds=72.912,
+PUBLIC_FILES = frozenset({name + '.png' for name in CAPTURE_NAMES} | {
+    '08-restarted-first-record.png', '09-restarted-second-cancelled.png',
+    'first-case-record-pack.txt', 'restarted-case-record-pack.txt', 'result.json'})
+DESIGN = dict(status='CANDIDATE_WIRED_NOT_EXECUTED', workflow_changed=False,
+    proposed_browser_step_seconds=360, proposed_job_seconds=600, measured_walk_seconds=72.912,
+    measured_job_seconds=115, first_scenario_and_stop_seconds=180,
+    first_scenario_work_seconds=130, first_context_close_reserved_seconds=10, first_stop_reserved_seconds=40,
     server_start_allowance_seconds=50, server_stop_allowance_seconds=40,
-    recovery_reads_allowance_seconds=30, publication_allowance_seconds=10,
-    remaining_after_measured_walk_seconds=107.088,
-    minimum_second_phase_reservation_seconds=130,
-    remaining_timing_gap='22.912s plus browser context close/serialization allowances not yet bounded',
+    recovery_reads_allowance_seconds=60, context_publication_seconds=20, margin_seconds=10,
+    second_phase_admission_reservation_seconds=180,
+    budget_sum='180 first + 50 restart + 60 recovery reads + 40 second stop + 20 context/publication + 10 margin = 360',
+    job_sum='180 existing dependency cap + 360 browser candidate + 60 checkout/artifact = 600',
+    budget_qualification='bounded failure windows, not a guarantee when every operation reaches its timeout',
     planned_fresh_setup_calls=1, planned_setup_calls_during_recovery=0, recovery_business_POST_budget=0,
     GET_budget_shared_with_first_walk=800, artifact_max_files=10,
     artifact_max_bytes=8388608, selected_initial_screenshots=sorted(CAPTURE_NAMES),
@@ -35,10 +40,8 @@ DESIGN = dict(status='DRAFT_NOT_READY_FOR_CI', workflow_changed=False,
     uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/tree/main/Sans',
         license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE',
         downloaded=False, installed=False, new_license_accepted=False),
-    pending_before_execution=['close the absolute timeout and cleanup/publication envelope',
-        'connect preflight returned FONTCONFIG_FILE to actual Chrome environment',
-        'wire final recovery result, fixed screenshots and bounded credential-scanned publication',
-        'freeze cold-before executor permission/dispatch view if broader equality is required'])
+    pending_before_execution=['parent review of new limits, complete snapshot oracles and wiring',
+        'explicit workflow switch to exact run5 candidate with reviewed limits; not done in this slice'])
 
 
 class BudgetRefused(RuntimeError):
@@ -48,19 +51,26 @@ class BudgetRefused(RuntimeError):
 class Deadline:
     """One absolute clock, including the first walk; never restart the clock."""
     def __init__(self, started):
-        self.end = started + 180
+        self.end = started + 360
+        self.phase_end = started + 130
 
     def require(self, seconds, phase):
         remaining = self.end - time.monotonic()
         if remaining < seconds:
             raise BudgetRefused(f'{phase}: {seconds}s reservation required; {remaining:.3f}s remains')
 
-    def ui_timeout(self):
-        # Reserve the existing 40s stop and 10s publication even on UI failure.
-        remaining = self.end - time.monotonic() - 50
-        if remaining <= 0:
-            raise BudgetRefused('recovery UI deadline reached; retain cleanup reservation')
-        return max(1, min(2500, int(remaining * 1000)))
+    def stage_require(self, seconds, phase):
+        remaining = self.phase_end - time.monotonic()
+        if remaining < seconds:
+            raise BudgetRefused(f'{phase}: full {seconds}s wait needs stage time; {remaining:.3f}s remains')
+
+    def recovery_phase(self):
+        self.phase_started = time.monotonic()
+        self.phase_end = min(self.phase_started + 60, self.end - 70)
+
+    def ui_timeout(self, milliseconds=15000):
+        self.stage_require(milliseconds / 1000, 'original UI wait')
+        return milliseconds  # Never shrink the original 15s/30s wait to fit.
 
 
 def covers(charset, codepoints):
@@ -141,10 +151,11 @@ def readonly_store(state):
         options='-c default_transaction_read_only=on -c statement_timeout=500 -c lock_timeout=200'))
 
 
-def checkpoint(details, page):
+def checkpoint(details, page, budget):
     """Called while the first owned server is alive, after both original Cases."""
     from service_release_acceptance_support import case_history
     saved = dict(details)
+    budget.stage_require(30, 'two Case history projections before first stop')
     saved['history'] = {key: case_history(readonly_store(details['state']), details[key]['preparation_id'])
         for key in ('first', 'second')}
     assert details['receipt']['assignment_valid_until']
@@ -152,27 +163,34 @@ def checkpoint(details, page):
         if e['payload'].get('material_reuse')]
     assert len(saved['reuse']) == 1
     assert page.evaluate('goalResultView') == details['results']
+    tokens = json.loads((details['state'] / 'sessions.json').read_text())
+    saved['roles'] = ReadUI(page, budget).role_views(tokens, details['first'])
+    assert saved['roles']['enterprise']['receipt']['assignment_valid_until'] == details['receipt']['assignment_valid_until']
     return saved
 
 
-def draft_flow(browser, report, secrets, public, started):
-    """Future caller must preflight fonts and use the returned Chrome env.
-
-    Deliberately not connected to main/workflow. The current budget reservation
-    may refuse after the first stop; that is a failure, never restart acceptance.
-    """
+def candidate_flow(browser, report, secrets, public, started):
+    """One setup/walk, actual stop, same-instance restart and new-context reads."""
     if report.get('installed_CJK_font', {}).get('status') != 'INSTALLED_CHARSET_COVERS_UI':
         raise RuntimeError('installed-font preflight required before fresh setup')
-    saved = {}
+    saved, budget = {}, Deadline(started)
 
     def capture(details, page):
-        verify_rendered_font(page, report)
-        saved.update(checkpoint(details, page))
+        report['stage'] = 'FIRST_COLD_CHECKPOINT'
+        saved.update(checkpoint(details, page, budget))
 
-    original.walk(browser, report, secrets, public, before_stop=capture, capture_names=CAPTURE_NAMES)
-    # The future caller must carry the original Boundary, not create/reset one.
+    original.walk(browser, report, secrets, public, before_stop=capture, capture_names=CAPTURE_NAMES,
+        page_ready=verify_rendered_font)
+    report['first_stage_seconds'] = round(time.monotonic() - started, 3)
+    report['stage'] = 'FIRST_CONFIRMED_STOP'
+    # walk returned only after its context closed, child exited, PG stopped and
+    # the original API port refused connections. Do not reset this clock.
+    if time.monotonic() - started > 180:
+        raise BudgetRefused('first scenario/checkpoint/stop exceeded its 180s stage')
+    budget.require(180, 'second-stage admission after confirmed stop')
     boundary = saved['boundary']
-    recover_retained(browser, saved, boundary, report, secrets, public, Deadline(started))
+    recover_retained(browser, saved, boundary, report, secrets, public, budget)
+    report['cold_restart'] = True
 
 
 class ReadUI:
@@ -182,8 +200,42 @@ class ReadUI:
     def click(self, selector):
         self.page.locator(selector).click(timeout=self.budget.ui_timeout())
 
-    def wait(self, expression, arg=None):
-        self.page.wait_for_function(expression, arg=arg, timeout=self.budget.ui_timeout())
+    def wait(self, expression, arg=None, milliseconds=15000):
+        self.page.wait_for_function(expression, arg=arg, timeout=self.budget.ui_timeout(milliseconds))
+
+    def login(self, token):
+        self.page.locator('#token').fill(token, timeout=self.budget.ui_timeout())
+        self.page.locator('#token').dispatch_event('change', timeout=self.budget.ui_timeout())
+
+    def receipt(self, parent):
+        from playwright.sync_api import expect
+        self.click('[data-tab="collaboration"]'); self.click('#receipt-list')
+        items = self.page.locator('#receipt-items button')
+        expect(items).to_have_count(1, timeout=self.budget.ui_timeout())
+        items.click(timeout=self.budget.ui_timeout())
+        self.wait('id=>receiptView?.step.id===id', parent['receipt_step_id'])
+        view = self.page.evaluate('receiptView')
+        assert all(view['step'][field] == parent[field] for field in ('preparation_id', 'case_id', 'run_id'))
+        return view
+
+    def dispatch(self, parent):
+        from playwright.sync_api import expect
+        self.click('[data-tab="collaboration"]'); self.click('#dispatch-list')
+        items = self.page.locator('#dispatch-items button')
+        expect(items).to_have_count(1, timeout=self.budget.ui_timeout())
+        items.click(timeout=self.budget.ui_timeout())
+        self.wait('id=>dispatchView?.dispatch_id===id', parent['dispatch_id'])
+        view = self.page.evaluate('dispatchView')
+        assert view['preparation_id'] == parent['preparation_id']
+        return view
+
+    def role_views(self, tokens, parent):
+        views = {}
+        for role in ('enterprise', 'executor'):
+            self.login(tokens[role])
+            views[role] = dict(dispatch=self.dispatch(parent), receipt=self.receipt(parent))
+        self.login(tokens['enterprise'])
+        return views
 
     def preparation(self, parent):
         from playwright.sync_api import expect
@@ -191,20 +243,20 @@ class ReadUI:
         item = self.page.locator('#prep-items button').filter(has_text=parent['goal'])
         expect(item).to_have_count(1, timeout=self.budget.ui_timeout())
         item.click(timeout=self.budget.ui_timeout())
-        self.wait('id=>preparationId===id&&preparationView!==null&&preparationReadReady()', parent['preparation_id'])
+        self.wait('id=>preparationId===id&&preparationView!==null&&preparationReadReady()', parent['preparation_id'], 30000)
         assert self.page.evaluate('preparationView.preparation.case_id') == parent['case_id']
         assert self.page.evaluate('preparationView.preparation.run_id') == parent['run_id']
 
 
 def recover_retained(browser, saved, boundary, report, secrets, public, budget):
-    """Review draft: the reservation currently refuses the measured 3m window."""
+    """All recovery business requests are reads against the original instance."""
     from playwright.sync_api import expect
     from service_release_acceptance_support import case_history
     from test_ordinary_synthetic_demo import server
     from scripts import ordinary_synthetic_demo as demo
 
     # This check is AFTER original.walk returned: first context/services stopped.
-    budget.require(DESIGN['minimum_second_phase_reservation_seconds'], 'cold server restart')
+    budget.require(DESIGN['second_phase_admission_reservation_seconds'], 'cold server restart')
     state, config = saved['state'], saved['config']
     assert not (state / 'data/postmaster.pid').exists() and not (state / 'stop-unconfirmed').exists()
     assert saved['input_hashes'] == {str(p): sha256(p.read_bytes()).hexdigest() for p in saved['inputs']}
@@ -212,12 +264,20 @@ def recover_retained(browser, saved, boundary, report, secrets, public, budget):
     assert set(tokens.values()).issubset(set(secrets))  # use exactly the original six private sessions
     boundary.readonly()
     port = urlsplit(saved['processes']['url']).port
+    report['stage'] = 'COLD_RESTART_SAME_STATE'
+    restart_started = time.monotonic()
     with server(state, original.PRIVATE / 'cold-server', selected_port=port, local_demo_config=config) as (api, launched):
+        report['cold_start_seconds'] = round(time.monotonic() - restart_started, 3)
+        if time.monotonic() - restart_started > 50:
+            raise BudgetRefused('cold start exceeded 50s allowance')
+        budget.recovery_phase()
+        report['cold_processes'] = launched
         assert all(launched[k] != saved['processes'][k] for k in ('api_pid', 'worker_pid', 'postgres_pid'))
         original_deadline = saved['receipt']['assignment_valid_until']
         if datetime.now(timezone.utc) >= datetime.fromisoformat(original_deadline):
             report['restart_deadline_outcome'] = 'ORIGINAL_DEADLINE_EXPIRED_NO_RENEWAL'
             raise RuntimeError('original assignment deadline expired; do not renew or retry business writes')
+        report['stage'] = 'COLD_NEW_BROWSER_CONTEXT'
         context = browser.new_context(service_workers='block', accept_downloads=True,
             viewport=dict(width=1440, height=1100))
         context.route('**/*', boundary.route)  # same GET counter; no new POST authorization
@@ -225,9 +285,17 @@ def recover_retained(browser, saved, boundary, report, secrets, public, budget):
         context.on('response', lambda r: report['responses'].append(dict(stage='COLD_READ_ONLY',
             method=r.request.method, path=urlsplit(r.url).path, status=r.status)))
         page = context.new_page(); ui = ReadUI(page, budget)
+
+        def shot(name):
+            budget.stage_require(10, 'masked recovery screenshot')
+            path = public / (name + '.png')
+            page.screenshot(path=str(path), full_page=False, timeout=10000, mask=[page.locator('#token')])
+            report['screenshots'].append(dict(file=path.name, sha256=sha256(path.read_bytes()).hexdigest()))
+
         try:
+            report['stage'] = 'COLD_READ_FIRST_RESULTS_AND_TXT'
             assert not context.cookies()
-            page.goto(str(api.base_url), timeout=budget.ui_timeout())
+            page.goto(str(api.base_url), timeout=budget.ui_timeout(30000))
             assert page.locator('#token').input_value() == ''
             assert page.evaluate('localStorage.length===0&&sessionStorage.length===0')
             page.locator('#token').fill(tokens['enterprise'], timeout=budget.ui_timeout())
@@ -242,53 +310,67 @@ def recover_retained(browser, saved, boundary, report, secrets, public, budget):
                 ui.click('#case-record-pack-download')
             downloaded.value.save_as(public / 'restarted-case-record-pack.txt')
             assert (public / 'restarted-case-record-pack.txt').read_bytes() == (public / 'first-case-record-pack.txt').read_bytes()
-            ui.click('[data-tab="collaboration"]'); ui.click('#receipt-list')
-            items = page.locator('#receipt-items button')
-            expect(items).to_have_count(1, timeout=budget.ui_timeout()); items.click(timeout=budget.ui_timeout())
-            ui.wait('id=>receiptView?.step.id===id', saved['first']['receipt_step_id'])
-            # Keep all dependency/permission/deadline fields: natural expiry must fail, never renew.
-            assert page.evaluate('receiptView') == saved['receipt']
-            page.locator('#token').fill(tokens['executor'], timeout=budget.ui_timeout())
-            page.locator('#token').dispatch_event('change', timeout=budget.ui_timeout())
-            ui.click('[data-tab="collaboration"]'); ui.click('#receipt-list')
-            items = page.locator('#receipt-items button')
-            expect(items).to_have_count(1, timeout=budget.ui_timeout()); items.click(timeout=budget.ui_timeout())
-            ui.wait('id=>receiptView?.step.id===id', saved['first']['receipt_step_id'])
-            executor_view = page.evaluate('receiptView')
-            assert executor_view['role'] == 'service_executor'
-            assert executor_view['assignment_valid_until'] == original_deadline
-            assert executor_view['step'] == saved['receipt']['step']
-            assert executor_view['current_receipt'] == saved['receipt']['current_receipt']
-            page.locator('#token').fill(tokens['enterprise'], timeout=budget.ui_timeout())
-            page.locator('#token').dispatch_event('change', timeout=budget.ui_timeout())
+            shot('08-restarted-first-record')
+            report['stage'] = 'COLD_READ_ORIGINAL_ROLES'
+            # Freeze and compare the complete same-role original UI views. Do
+            # not omit permissions, dependency flags or the original deadline.
+            roles = ui.role_views(tokens, saved['first'])
+            assert roles == saved['roles']
+            assert roles['executor']['receipt']['role'] == 'service_executor'
+            assert roles['executor']['receipt']['assignment_valid_until'] == original_deadline
+            report['stage'] = 'COLD_READ_SECOND_CANCEL_AND_REUSE'
             ui.preparation(saved['second'])
             assert page.evaluate('preparationView.case_cancelled') is True
             reuse = page.evaluate('preparationView.history.filter(e=>e.payload.material_reuse).map(e=>e.payload.material_reuse)')
             assert reuse == saved['reuse']
+            shot('09-restarted-second-cancelled')
             # Second Case never ADOPTed: do not invent a plan or treat its 404 as success.
             for key in ('first', 'second'):
-                budget.require(55, 'read-only history projection and final cleanup')
+                budget.stage_require(15, 'read-only Case history projection')
                 assert case_history(readonly_store(state), saved[key]['preparation_id']) == saved['history'][key]
             with readonly_store(state).connect() as connection:
                 assert demo.authority(connection) == saved['marker']['authority']
                 assert not connection.execute('SELECT 1 FROM run_assignments').fetchone()
             boundary.readonly()
             assert not report['violations'] and not report['page_errors']
+            budget.stage_require(0, 'cold-read stage completion')
+            report['cold_read_seconds'] = round(time.monotonic() - budget.phase_started, 3)
+        except BaseException:
+            try:
+                # Failure evidence uses the reserved file slot and is masked.
+                path = public / 'failure-cold-recovery.png'
+                page.screenshot(path=str(path), full_page=False, timeout=10000, mask=[page.locator('#token')])
+                report['screenshots'].append(dict(file=path.name, sha256=sha256(path.read_bytes()).hexdigest()))
+            except BaseException as error:
+                report['cold_failure_screenshot_error'] = type(error).__name__
+            raise
         finally:
+            report['stage_before_cold_stop'] = report['stage']
+            stop_started = time.monotonic()
             context.close()
+            report['cold_context_close_seconds'] = round(time.monotonic() - stop_started, 3)
+    report['cold_context_and_stop_seconds'] = round(time.monotonic() - stop_started, 3)
+    if report['cold_context_close_seconds'] > 5 or time.monotonic() - stop_started > 45:
+        raise BudgetRefused('cold context/owned stop exceeded 5s/40s allocated close/stop envelope')
     assert not (state / 'data/postmaster.pid').exists()
     assert saved['input_hashes'] == {str(p): sha256(p.read_bytes()).hexdigest() for p in saved['inputs']}
     report['restart_read_only'] = dict(input_files_unchanged=True, new_context=True,
         extra_business_POSTs=0, history_scope='existing two-Case case_history projection only',
         first_goalResultView_equal=True, first_TXT_bytes_equal=True,
-        executor_compared_fields=['role', 'step', 'current_receipt', 'assignment_valid_until'],
-        complete_executor_permission_or_dispatch_view_equality_claimed=False)
+        compared_views='complete enterprise/executor dispatchView and receiptView; no omitted fields',
+        complete_executor_permission_or_dispatch_view_equality_claimed=True,
+        snapshot_scope='only those views plus declared Case history projection, not all DB tables')
+    report['stage'] = 'COLD_RECOVERY_CONFIRMED_STOP'
 
 
 if __name__ == '__main__':
-    # No executable CI entry: not even --run can launch this review draft.
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--describe', action='store_true', required=True)
-    parser.parse_args()
-    print(json.dumps(DESIGN, ensure_ascii=False, indent=2))
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--describe', action='store_true')
+    mode.add_argument('--candidate', action='store_true', help='exact public hosted run5 only; workflow not activated')
+    args = parser.parse_args()
+    if args.describe:
+        print(json.dumps(DESIGN, ensure_ascii=False, indent=2))
+    else:
+        raise SystemExit(original.main(restart_candidate=True))
