@@ -1,6 +1,6 @@
 """Cold recovery candidate; workflow activation awaits review, not user permission.
 
---describe is read-only. --candidate requires the exact public hosted run7 gate.
+--describe is read-only. --candidate requires the exact public hosted run8 gate.
 No workflow is changed here. Healthy timing estimates do not guarantee PASS.
 """
 from hashlib import sha256
@@ -36,13 +36,13 @@ DESIGN = dict(status='FONT_FALLBACK_SET_CANDIDATE_NOT_EXECUTED', workflow_change
     GET_budget_shared_with_first_walk=800, artifact_max_files=10,
     artifact_max_bytes=8388608, selected_initial_screenshots=sorted(CAPTURE_NAMES),
     font_policy='Unchanged UI codepoints covered by trusted system fonts plus exactly verified approved original Noto file; private fontconfig only',
-    runner_font_status='Run6 fontconfig inventory had zero of683 required codepoints; approved pinned private font staging awaits run7',
+    runner_font_status='Run7 verified pinned font,683-codepoint chains and guide glyphs; cold startup failed with generic OSError; bounded run8 retry pending',
     references=dict(fontconfig='https://www.freedesktop.org/software/fontconfig/fontconfig-user.html',
         runner_image='https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md'),
     uninstalled_font_candidate=dict(source='https://github.com/notofonts/noto-cjk/blob/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf',
         license='SIL Open Font License 1.1', license_source='https://github.com/notofonts/noto-cjk/blob/f8d157532fbfaeda587e826d4cd5b21a49186f7c/Sans/LICENSE',
         downloaded=False, installed=False, new_license_accepted=True),
-    pending_before_execution=['This execution is gated to exact hosted run7/attempt1; no automatic retry',
+    pending_before_execution=['This execution is gated to exact hosted run8/attempt1; no automatic retry',
         'only the explicitly approved pinned font and original license may be staged privately; no system installation'])
 
 
@@ -551,7 +551,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--describe', action='store_true')
-    mode.add_argument('--candidate', action='store_true', help='exact public hosted run7/attempt1 only; no retry')
+    mode.add_argument('--candidate', action='store_true', help='exact public hosted run8/attempt1 only; no retry')
     args = parser.parse_args()
     if args.describe:
         print(json.dumps(DESIGN, ensure_ascii=False, indent=2))
