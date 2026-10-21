@@ -332,6 +332,10 @@ def walk(browser, report, secrets, public):
             report['results'] = result
             w.locator('#goal-results-source-read').click()
             expect(w.locator('#goal-results-source')).to_contain_text('NO_MODEL')
+            w.locator('#case-record-pack-generate').click()
+            expect(w.locator('#case-record-pack-output')).to_be_visible()
+            expect(w.locator('#case-record-pack-text')).not_to_have_value('')
+            expect(w.locator('#case-record-pack-download')).to_be_enabled()
             with w.expect_download() as downloaded:
                 w.locator('#case-record-pack-download').click()
             downloaded.value.save_as(public / 'first-case-record-pack.txt')
