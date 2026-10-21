@@ -4,7 +4,7 @@ const code=fs.readFileSync(process.argv[3]||'src/parkweave/web.html','utf8').mat
 let nextRequestKey=99;const mode=process.argv[2],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');let checks=0;
 const check=v=>{checks++;assert(v);};
 class Element{
- constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.options=[];this.listeners={};}
+ constructor(tag='div'){this.tagName=tag;this.children=[];const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.options=[];this.listeners={};}
  append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
  reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(){}
  closest(){return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
@@ -28,7 +28,7 @@ function projection(target,prep=id(3),receipt=id(4)){
 }
 async function queue(target,prep,receipt){const p=$('case-worklist-read').onclick();finish(calls.at(-1),200,projection(target,prep,receipt));await p;return $('case-worklist-items').children[0].children.find(e=>e.tagName==='button');}
 function material(){return {preparation:{id:id(3),case_id:id(1),run_id:id(2),owner_id:'fixture-a',state:'IN_PREPARATION',revision:1,goal:'PRIVATE_MATERIAL_A'},current_materials:[{id:id(6),slot:'need_summary',version:1,text:'PRIVATE_BODY_A',source_kind:'USER_STATEMENT',source_label:'SYNTHETIC'}],material_history:[],history:[]};}
-function receipt(){return {step:{id:id(4),preparation_id:id(5),case_id:id(7),run_id:id(8),state:'AWAITING_RECEIPT',revision:1,goal:'CURRENT_RECEIPT_B'},role:'enterprise_operator',dependency:'CURRENT',is_current_step:true,current_receipt:null,receipt_history:[],history:[],local_execution:{}};}
+function receipt(){return {step:{id:id(4),preparation_id:id(5),case_id:id(7),run_id:id(8),state:'AWAITING_RECEIPT',revision:1,preparation_revision:1,goal:'CURRENT_RECEIPT_B'},actor_ref:'b'.repeat(64),role:'enterprise_operator',can_submit:false,dependency:'CURRENT',is_current_step:true,current_receipt:null,receipt_history:[],history:[],local_execution:{}};}
 async function flushOtherGets(){for(let i=0;i<12;i++){for(const c of calls){if(!c.finished){c.finished=true;finish(c,500,{});}}await tick();}}
 // Owned ASGI bridge: execute original page entries; Python supplies actual API
 // responses from its existing PG fixture, never replacement entry functions.
@@ -38,7 +38,24 @@ if(mode==='intake_cold_asgi'){
  context.fetch=async(path,options={})=>{calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};};
 }
 (async()=>{
- if(mode==='intake_cold_asgi'){
+ if(mode.startsWith('duplicate_record_')){
+  const kind=mode.slice('duplicate_record_'.length),names={preparation:['prep-list','prep-items','/api/preparations'],dispatch:['dispatch-list','dispatch-items','/api/service-dispatches'],receipt:['receipt-list','receipt-items','/api/executor-receipts']},[list,items,path]=names[kind];
+  const rows=[{id:id(21),case_id:id(31),preparation_id:id(41),goal:'SYNTHETIC SAME GOAL <img src=x onerror=alert(1)>',state:'RECEIPT_RECORDED',revision:2},{id:id(22),case_id:id(32),preparation_id:id(42),goal:'SYNTHETIC SAME GOAL <img src=x onerror=alert(1)>',state:'RECEIPT_RECORDED',revision:2}];
+  for(const row of rows){if(kind==='preparation'){row.state='IN_PREPARATION';delete row.preparation_id;}else if(kind==='dispatch'){delete row.state;delete row.case_id;delete row.revision;}else{delete row.preparation_id;delete row.case_id;}}
+  const visible=e=>e.textContent+' '+e.children.map(visible).join(' ');
+  for(let chosen=0;chosen<2;chosen++){
+   const listing=$(list).onclick();check(calls.at(-1).path===path);finish(calls.at(-1),200,{role:'enterprise_operator',items:rows});await listing;
+   const buttons=$(items).children.filter(e=>e.tagName==='button');check(buttons.length===2);
+   for(let i=0;i<2;i++){
+    const text=visible(buttons[i]);check(text.includes(rows[i].goal));check(text.includes(rows[i].id));check(!text.includes(rows[1-i].id));
+    if(kind==='preparation')check(text.includes(rows[i].case_id));
+    if(kind==='dispatch')check(text.includes(rows[i].preparation_id));
+   }
+   const reading=buttons[chosen].onclick();await tick();const call=calls.at(-1);
+   const expected=kind==='dispatch'?'/api/preparations/'+rows[chosen].preparation_id+'/dispatch':'/api/'+(kind==='preparation'?'preparations':'executor-receipts')+'/'+rows[chosen].id;
+   check(call.path===expected);call.reject(Error('SYNTHETIC_READ_FAILURE_KEEP_ORIGINAL_ERROR_HANDLING'));await reading;
+  }
+ }else if(mode==='intake_cold_asgi'){
   $('goal').value='SYNTHETIC cold initial intake';await $('intake').onsubmit({preventDefault(){}});check(run('entryWriteRequests.size')===1);const firstRun=$('run').value;check(!!firstRun);
   await $('refresh').onclick();check(run('entryWriteRequests.size')===0);
   await $('case-worklist-read').onclick();const button=$('case-worklist-items').children[0].children.find(e=>e.tagName==='button');check(!!button);await button.onclick();check($('run').value===firstRun);
@@ -72,11 +89,20 @@ if(mode==='intake_cold_asgi'){
    const r3={...r2,step:{...r2.step,revision:3,state:'LOCAL_ACKNOWLEDGED'},event:{revision:3}};finish(second,200,r3);await tick();finish(calls.at(-1),200,r3);await corrected;check(run('entryWriteRequests.size')===0);check(calls.filter(c=>c.options.method==='POST').length===2);
   }
  }else if(mode.startsWith('receipt_form_')){
-  const r=receipt();r.role='service_executor';const load=run("loadReceipt('"+id(4)+"')");finish(calls.at(-1),200,r);await load;
+  const r=receipt();r.role='service_executor';r.can_submit=true;const load=run("loadReceipt('"+id(4)+"')");finish(calls.at(-1),200,r);await load;
   $('receipt-text').value='PRIVATE_FORM_TEXT';$('receipt-source').value='SYNTHETIC_FORM_SOURCE';const draft=run('receiptDraft()');
   const command=$('receipt-submit').onsubmit({preventDefault(){}}),post=calls.at(-1);check(post.options.method==='POST');const key=post.options.headers['Idempotency-Key'];
   if(mode.endsWith('unknown')){post.reject(Error('SYNTHETIC_LOST_RESPONSE'));await tick();await command;}
-  await tick();const count=calls.length;const list=$('receipt-list').onclick();await tick();check(calls.length===count);check(run('receiptDraft()')===draft);check(run('[...receiptRetries.values()].includes("'+key+'")'));await list;
+  await tick();const saved=run('receiptSubmitHandle');check(saved?.key===key);check(storage.getItem(saved.name)===saved.raw);check(JSON.parse(saved.raw).key===key);
+  const count=calls.length,list=$('receipt-list').onclick();await tick();
+  if(mode.endsWith('unknown')){
+   // A settled unknown SUBMIT permits original read-only navigation, while
+   // its opaque persisted handle continues to block new business writes.
+   check(calls.length===count+1);check(calls.at(-1).path==='/api/executor-receipts');check(calls.at(-1).options.method==='GET');
+   finish(calls.at(-1),200,{items:[],role:'service_executor'});await list;
+   check(storage.getItem(saved.name)===saved.raw);check($('receipt-current').children.length===0);check($('receipt-detail').hidden);check(run('receiptView===null'));
+   check(run('receiptSubmitStoredPending()'));check(run('originalStoredWritePending()'));
+  }else{check(calls.length===count);check(run('receiptDraft()')===draft);check(run('receiptSubmitHandle.key')===key);await list;}
   if(mode.endsWith('pending')){post.reject(Error('SYNTHETIC_LOST_RESPONSE'));await tick();await command;}check(calls.filter(c=>c.options.method==='POST').length===1);
  }else if(mode.startsWith('resource_write_')){
   const load=run("loadPreparation('"+id(3)+"',{role:'enterprise_operator'}).catch(prepError)");const m=material();m.preparation.state='LOCAL_CONFIRMED';finish(calls.at(-1),200,m);await flushOtherGets();await load;
@@ -95,14 +121,15 @@ if(mode==='intake_cold_asgi'){
   if(mode==='history_pending'){finish(old,200,x);await history;}check($('receipt-history-result').children.length===0);check($('page-feedback').textContent.includes('权限'));
  }else if(mode.startsWith('manual_receipt_')){
   const action=mode.split('_')[2],phase=mode.split('_')[3];
-  const load=run("loadReceipt('"+id(4)+"')");finish(calls.at(-1),200,receipt());await load;
+  const r=receipt();if(action==='SUBMIT'){r.role='service_executor';r.can_submit=true;}else{r.step.state='RECEIPT_RECORDED';r.current_receipt={source_sha256:'a'.repeat(64),version:1,text:'SYNTHETIC_RECEIPT',source_kind:'SYNTHETIC',source_label:'SYNTHETIC',actor_id:'fixture-executor',created_at:'SYNTHETIC'};}
+  const load=run("loadReceipt('"+id(4)+"')");finish(calls.at(-1),200,r);await load;
   $('receipt-text').value='PRIVATE_UNRESOLVED_TEXT';$('receipt-source').value='SYNTHETIC_SOURCE';$('receipt-reason').value='PRIVATE_UNRESOLVED_REASON';
   const button=await queue('run'),beforeDraft=run('receiptDraft()');
   const command=run("receiptCommand('"+action+"').catch(receiptError)"),post=calls.at(-1);check(post.options.method==='POST');
   const key=post.options.headers['Idempotency-Key'];check(!!key);
   if(phase==='unknown'){post.reject(Error('SYNTHETIC_LOST_RESPONSE'));await command;}
   const count=calls.length;const navigation=button.onclick();await tick();
-  check(calls.length===count);check(run('receiptDraft()')===beforeDraft);check(run('[...receiptRetries.values()].includes("'+key+'")'));check($('page-feedback').textContent.includes('原入口'));await navigation;
+  check(calls.length===count);check(run('receiptDraft()')===beforeDraft);if(action==='SUBMIT'){const saved=run('receiptSubmitHandle');check(saved?.key===key);check(storage.getItem(saved.name)===saved.raw);check(JSON.parse(saved.raw).key===key);}else check(run('[...receiptRetries.values()].includes("'+key+'")'));check($('page-feedback').textContent.includes('原入口'));await navigation;
   if(phase==='pending'){post.reject(Error('SYNTHETIC_LOST_RESPONSE'));await command;}
   check(calls.filter(c=>c.options.method==='POST').length===1);
  }else if(mode==='run_403'||mode==='run_403_invalid_json'||mode==='run_403_pending_reference'){
