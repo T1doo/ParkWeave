@@ -25,7 +25,7 @@ def require_hosted(environment):
     expected = dict(PW_BROWSER_REPOSITORY='T1doo/ParkWeave', PW_BROWSER_REF=BRANCH,
         PW_BROWSER_EVENT='push', PW_BROWSER_ATTEMPT='1', PW_BROWSER_PUBLIC='true',
         RUNNER_ENVIRONMENT='github-hosted', RUNNER_OS='Linux')
-    if any(environment.get(k) != v for k, v in expected.items()) or environment.get('PW_BROWSER_NUMBER') not in ('1', '2'):
+    if any(environment.get(k) != v for k, v in expected.items()) or environment.get('PW_BROWSER_NUMBER') != '3':
         raise RuntimeError('only the bounded public hosted branch push is authorized')
     if any(k.startswith('PARKWEAVE_') for k in environment):
         raise RuntimeError('inherited business configuration refused')
