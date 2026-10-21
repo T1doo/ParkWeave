@@ -1,0 +1,175 @@
+{
+  "source_sha": "WORKTREE_CANDIDATE",
+  "source_sha256": "119306aada067a4f5cf12bb25108763e810ec4f5e6f3a4a88babdf9eba9c9b76",
+  "results": [
+    {
+      "name": "normal_success",
+      "result": "PASS",
+      "exit_code": 0,
+      "artifact_status": "PASS",
+      "summary_status": "PASS",
+      "stdout_statuses": [
+        "PENDING_FINALIZATION",
+        "PENDING_FINALIZATION"
+      ],
+      "error_type": null,
+      "finalization_errors": []
+    },
+    {
+      "name": "deadline_after_PASS_summary_written",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [
+        "PENDING_FINALIZATION",
+        "PENDING_FINALIZATION",
+        "FAIL"
+      ],
+      "error_type": "TimeoutError",
+      "finalization_errors": [
+        {
+          "error_type": "TimeoutError",
+          "error": "finalization crossed absolute 360s deadline"
+        }
+      ]
+    },
+    {
+      "name": "deadline_after_summary_close",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [
+        "PENDING_FINALIZATION",
+        "PENDING_FINALIZATION",
+        "FAIL"
+      ],
+      "error_type": "TimeoutError",
+      "finalization_errors": [
+        {
+          "error_type": "TimeoutError",
+          "error": "finalization crossed absolute 360s deadline"
+        }
+      ]
+    },
+    {
+      "name": "stdout_exception",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [
+        "FAIL"
+      ],
+      "error_type": "BrokenPipeError",
+      "finalization_errors": [
+        {
+          "error_type": "BrokenPipeError",
+          "error": "controlled stdout failure"
+        }
+      ]
+    },
+    {
+      "name": "stdout_permanent_exception",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [],
+      "error_type": "BrokenPipeError",
+      "finalization_errors": [
+        {
+          "error_type": "BrokenPipeError",
+          "error": "controlled stdout failure"
+        },
+        {
+          "error_type": "BrokenPipeError",
+          "error": "controlled stdout failure"
+        }
+      ]
+    },
+    {
+      "name": "summary_exception_after_PASS_bytes_written",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [
+        "PENDING_FINALIZATION",
+        "PENDING_FINALIZATION",
+        "FAIL"
+      ],
+      "error_type": "OSError",
+      "finalization_errors": [
+        {
+          "error_type": "OSError",
+          "error": "controlled failure after summary bytes written"
+        }
+      ]
+    },
+    {
+      "name": "summary_permanent_exception_clears_own_section",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "PREFIX_ONLY",
+      "stdout_statuses": [
+        "PENDING_FINALIZATION",
+        "PENDING_FINALIZATION",
+        "FAIL"
+      ],
+      "error_type": "OSError",
+      "finalization_errors": [
+        {
+          "error_type": "OSError",
+          "error": "controlled failure after summary bytes written"
+        },
+        {
+          "error_type": "OSError",
+          "error": "controlled failure after summary bytes written"
+        }
+      ]
+    },
+    {
+      "name": "business_failure_retained_after_output_exception",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "FAIL",
+      "stdout_statuses": [],
+      "error_type": "OriginalBusinessFailure",
+      "finalization_errors": [
+        {
+          "error_type": "BrokenPipeError",
+          "error": "controlled stdout failure"
+        },
+        {
+          "error_type": "BrokenPipeError",
+          "error": "controlled stdout failure"
+        }
+      ]
+    },
+    {
+      "name": "opened_summary_initial_seek_failure_keeps_prefix",
+      "result": "PASS",
+      "exit_code": 1,
+      "artifact_status": "FAIL",
+      "summary_status": "PREFIX_ONLY",
+      "stdout_statuses": [
+        "FAIL"
+      ],
+      "error_type": "OSError",
+      "finalization_errors": [
+        {
+          "error_type": "OSError",
+          "error": "controlled initial summary seek failure"
+        }
+      ]
+    }
+  ],
+  "services_started": false,
+  "browser_started": false,
+  "CI_started": false,
+  "scope": "Dummy bytes, deterministic clock and injected output errors only; no runtime acceptance"
+}
