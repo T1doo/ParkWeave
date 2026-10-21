@@ -87,7 +87,7 @@ class Boundary:
         route.continue_() if allowed else route.abort()
 
 
-def walk(browser, report, secrets, public):
+def walk(browser, report, secrets, public, *, before_stop=None, capture_names=None):
     from playwright.sync_api import expect
     from test_ordinary_synthetic_demo import command, environment, server
     from test_demo_original_page_intake_browser import settled, open_from_list, open_service_plan, verify
@@ -135,6 +135,8 @@ def walk(browser, report, secrets, public):
         context.on('response', observed)
 
         def shot(name):
+            if capture_names is not None and name not in capture_names and not name.startswith('failure-'):
+                return
             path = public / (name + '.png')
             target = w if w is not None and not w.is_closed() else page
             masks = [target.locator('#token')] if target is w else [page.locator('#sessions')]
@@ -378,6 +380,10 @@ def walk(browser, report, secrets, public):
                 assert conn.execute('SELECT state FROM cases WHERE id=%s', (again['case_id'],)).fetchone()['state'] == 'CANCELLED'
             report.update(authority_unchanged=True, run_assignments=0, all_business_writes='REAL_BROWSER_DOM_ONLY',
                 JS_business_calls=0, API_business_writes=0, real_browser=True)
+            if before_stop is not None:
+                before_stop(dict(state=state, config=config, inputs=inputs, input_hashes=before,
+                    marker=marker, processes=launched, first=first, second=again,
+                    results=result, receipt=report['receipt'], boundary=boundary), w)
         except BaseException:
             report['remaining_write_budget'] = dict(boundary.remaining)
             if w is not None and not w.is_closed():
