@@ -439,15 +439,14 @@ def publish_artifacts(public, report, secrets, *, restart=False, started=None):
     if started is not None:
         elapsed = time.monotonic() - started
         report.update(seconds=round(elapsed, 3),
-            seconds_scope='through artifact scan, before final result write and rename; final completion in FINAL_EXIT_BUDGET log')
+            seconds_scope='through artifact scan; file/summary finalization and absolute deadline checks still follow')
         if elapsed > 350:
-            report.update(status='FAIL', error_type='BudgetRefused',
-                error='publication exhausted the absolute-clock final margin')
+            finalization_failure(report, TimeoutError('publication exhausted the absolute-clock final margin'))
         serialized = write_result(public, report, secrets)
     published = public.with_name('parkweave-fictional-browser-evidence')
     public.rename(published)
     if started is not None and time.monotonic() - started > 360:
-        report.update(status='FAIL', error_type='BudgetRefused', error='publication crossed absolute 360s deadline')
+        finalization_failure(report, TimeoutError('publication crossed absolute 360s deadline'))
         try:
             serialized = write_result(published, report, secrets)
         except BaseException:
@@ -455,6 +454,96 @@ def publish_artifacts(public, report, secrets, *, restart=False, started=None):
             published.rename(public)
             raise
     return serialized
+
+
+def finalization_failure(report, error):
+    """Keep the business failure, if any, alongside later evidence failures."""
+    detail = dict(error_type=type(error).__name__, error=str(error))
+    report.setdefault('error_type', detail['error_type'])
+    report.setdefault('error', detail['error'])
+    report.setdefault('finalization_errors', []).append(detail)
+    report['status'] = 'FAIL'
+
+
+def write_summary(stream, offset, serialized):
+    # Replace only this invocation's section, including a previous PASS. The
+    # unbuffered descriptor also permits truncation after a failed write.
+    stream.truncate(offset)
+    raw = ('```json\n' + serialized + '\n```\n').encode()
+    assert stream.write(raw) == len(raw)
+
+
+def finish_report(report, secrets, public, *, restart=False, started=None):
+    """No stdout PASS precedes fallible output or the final deadline check."""
+    summary, offset = None, None
+    summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
+    published = public.with_name('parkweave-fictional-browser-evidence') if public else None
+
+    def deadline():
+        elapsed = time.monotonic() - started if started is not None else None
+        if elapsed is not None and elapsed > 360:
+            raise TimeoutError('finalization crossed absolute 360s deadline')
+        return elapsed
+
+    def withdraw():
+        # Only our rename can leave candidate absent and published present.
+        if public is not None and not public.exists() and published.exists():
+            published.rename(public)
+
+    try:
+        if summary_path:
+            summary = Path(summary_path).open('a+b', buffering=0)
+            offset = summary.seek(0, 2)
+        observation = dict(report, status='PENDING_FINALIZATION',
+            observation_outcome=report['status'],
+            terminal_result='result.json and step summary after finalization; process exit is authoritative')
+        print(resource.redact(observation, secrets), flush=True)
+        elapsed = deadline()
+        if started is not None:
+            print('FINALIZATION_OUTPUT_CHECKPOINT ' + json.dumps(dict(status='PENDING_FINALIZATION',
+                completion_seconds=round(elapsed, 3), limit_seconds=360,
+                measurement_scope='output checkpoint; artifact/summary finalization and final deadline check still follow')), flush=True)
+        serialized = resource.redact(report, secrets)
+        if public is not None:
+            serialized = publish_artifacts(public, report, secrets, restart=restart, started=started)
+        if summary is not None:
+            write_summary(summary, offset, serialized)
+        deadline()
+        if summary is not None:
+            summary.close()
+        deadline()
+        return 0 if report['status'] == 'PASS' else 1
+    except BaseException as error:
+        finalization_failure(report, error)
+        withdraw()  # Withhold any previously published PASS before recovery IO.
+        if summary_path and summary is not None and offset is not None:
+            try:
+                if summary.closed:
+                    summary = Path(summary_path).open('a+b', buffering=0)
+                # Clear our entire previous section before attempting FAIL.
+                summary.truncate(offset)
+                write_summary(summary, offset, resource.redact(report, secrets))
+            except BaseException as summary_error:
+                finalization_failure(report, summary_error)
+                # A partial failure record must not retain the prior PASS.
+                try:
+                    summary.truncate(offset)
+                except BaseException as truncate_error:
+                    finalization_failure(report, truncate_error)
+        try:
+            print(resource.redact(report, secrets), flush=True)
+        except BaseException as output_error:
+            finalization_failure(report, output_error)
+        if public is not None and public.exists():
+            try:
+                publish_artifacts(public, report, secrets, restart=restart)
+            except BaseException as publication_error:
+                finalization_failure(report, publication_error)
+                withdraw()
+        return 1
+    finally:
+        if summary is not None and not summary.closed:
+            summary.close()
 
 
 def main(*, restart_candidate=False):
@@ -503,32 +592,10 @@ def main(*, restart_candidate=False):
     except BaseException as error:
         report.update(status='FAIL', error_type=type(error).__name__, error=str(error))
     if restart_candidate and time.monotonic() - started > 350:
-        report.update(status='FAIL', error_type='BudgetRefused', error='absolute clock exhausted final publication reserve')
+        finalization_failure(report, TimeoutError('absolute clock exhausted final publication reserve'))
     report['seconds'] = round(time.monotonic() - started, 3)
-    serialized = resource.redact(report, secrets)
-    if public is not None:
-        serialized = publish_artifacts(public, report, secrets, restart=restart_candidate,
-            started=started if restart_candidate else None)
-    print(serialized, flush=True)
-    if os.environ.get('GITHUB_STEP_SUMMARY'):
-        with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as stream:
-            stream.write('```json\n' + serialized + '\n```\n')
-    if restart_candidate:
-        completed = time.monotonic() - started
-        if completed > 360:
-            report.update(status='FAIL', error_type='BudgetRefused', error='final output crossed absolute 360s deadline')
-            if public is not None:
-                published = public.with_name('parkweave-fictional-browser-evidence')
-                try:
-                    serialized = write_result(published, report, secrets)
-                except BaseException:
-                    published.rename(public)
-                    raise
-                print(serialized, flush=True)
-        print('FINAL_EXIT_BUDGET ' + json.dumps(dict(status=report['status'],
-            completion_seconds=round(completed, 3), limit_seconds=360,
-            measurement_scope='after artifact publication, result output and step summary; before this exit log')), flush=True)
-    return 0 if report['status'] == 'PASS' else 1
+    return finish_report(report, secrets, public, restart=restart_candidate,
+        started=started if restart_candidate else None)
 
 
 if __name__ == '__main__':
