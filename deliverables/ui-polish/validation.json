@@ -1,38 +1,67 @@
 {
-  "base": "6c7b57fd13b48fc2bd0f118381c61e9e77c6b451",
+  "base": "e90e16dd0f2151efde4e7be6de6ebe98ffea43b8",
   "branch": "dev/ui-polish",
-  "integration_status": "PENDING_PARENT_SHARED_TEMPLATE_COORDINATION",
+  "integration_status": "APPLIED_TO_BOTH_PRODUCT_TEMPLATES_AFTER_PARENT_AUTHORIZATION",
   "shared_targets": [
     "src/parkweave/web.html:<style>",
     "src/parkweave/park_demo_web.html:<style>"
   ],
-  "source_templates_changed": false,
+  "source_templates_changed": true,
   "backend_changed": false,
   "CI_changed": false,
   "state_logic_changed": false,
   "browser": {
-    "status": "BLOCKED",
+    "status": "BLOCKED_ON_INTEGRATED_CURRENT_TREE",
     "attempt": "Playwright 1.62.0, /usr/bin/chromium, chromium_sandbox=True, headless=True",
     "reason": "The SUID sandbox helper binary was found, but is not configured correctly. Chromium aborted.",
     "screenshot_status": "NOT_CREATED_VISUALLY_UNVERIFIED",
     "sandbox_disabled": false,
-    "security_configuration_changed": false
+    "security_configuration_changed": false,
+    "details": "browser-attempt.json records actual current template SHA256. No old run12 screenshot reused."
   },
   "CI": {
     "status": "NOT_RUN",
-    "reason": "Existing workflows restrict exact original branches/run numbers; no allowed trigger on dev/ui-polish. No CI or security changes made."
+    "reason": "No compatible trigger for dev/ui-polish. Existing driver gates also bind old branch/run. No CI/source driver edits or extra permissions requested; no write-flow reproduction.",
+    "existing_routes": [
+      {
+        "path": ".github/workflows/readonly-browser-smoke.yml",
+        "runner": "ubuntu-24.04",
+        "job_timeout_minutes": 6,
+        "scope": "unauthenticated readonly original page",
+        "gate": "old exact branch + push + public repository + attempt1 + run_number6; no workflow_dispatch"
+      },
+      {
+        "path": ".github/workflows/fictional-park-browser-once.yml",
+        "runner": "ubuntu-24.04",
+        "job_timeout_minutes": 10,
+        "scope": "installed-wheel local approval write flow; excluded from visual-only check",
+        "gate": "old exact branch + push + public repository + attempt1 + run_number12; no workflow_dispatch"
+      }
+    ],
+    "executions": 0,
+    "actual_runner_minutes": 0
   },
   "tests": {
     "status": "PASS",
     "count": 56,
-    "scope": "Existing complete test_service_instance_cold_web.py and test_dispatch_notice_page_offline.py against temporary HTML with this exact CSS patch applied; Node VM DOM/fetch doubles and loopback HTTP; no browser or backend DB.",
-    "limitation": "Does not validate geometry, focus occlusion, computed cascade, real backend, actual approval flow, mobile rendering, glyph rendering or screenshots."
+    "scope": "Existing complete tests/test_service_instance_cold_web.py and tests/test_dispatch_notice_page_offline.py run in repository against the actual integrated product HTML; Node VM DOM/fetch doubles and loopback HTTP; no browser or backend DB.",
+    "limitation": "Does not validate geometry, focus occlusion, computed cascade, real backend, actual approval flow, mobile rendering, glyph rendering or screenshots.",
+    "seconds": 5.39,
+    "warnings": 1,
+    "warning": "Existing StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; no dependency or framework changes in repository."
   },
   "checks": {
-    "git_apply_check": "PASS",
+    "git_apply_check": "Reverse-check PASS against actual integrated templates; patch generated against e90e16dd.",
     "all_non_style_markup_and_scripts_equal_base": true,
     "css_parse": "PASS",
-    "contrast": "Six selected text/background pairs >=4.5:1; not full WCAG audit."
+    "contrast": "Six selected text/background pairs >=4.5:1; not full WCAG audit.",
+    "disabled_style_review_fix": "Secondary/destructive base colors exclude :disabled; three record card lists explicitly override disabled colors. Layout unchanged."
   },
-  "tool_setup": "Isolated /tmp venv: pytest 9.1.1, tinycss2 1.4.0, cssselect2 0.8.0; project dependencies untouched. First parser attempt failed because tinycss2 was absent; isolated installation resolved it."
+  "tool_setup": "Isolated /tmp venv: pytest 9.1.1, tinycss2 1.4.0, cssselect2 0.8.0; project dependencies untouched. First parser attempt failed because tinycss2 was absent; isolated installation resolved it. Repository test entry initially stopped on missing psycopg before collection; installed the repository-pinned requirements-linux-evidence.txt into the isolated /tmp venv, then ran all 56 successfully.",
+  "initial_base": "6c7b57fd13b48fc2bd0f118381c61e9e77c6b451",
+  "final_product_sha256": {
+    "web.html": "53080b3659b3cd1e555f5b4365a378c445dd39aa9e0e2a87dac23b479ca0fbb8",
+    "park_demo_web.html": "48dc8a8dec295b6fe11ec373ff18b90e4a1dab147a28c62ebe43f9385f12f402"
+  },
+  "independent_review": "PASS_STATIC_ONLY; final two template hashes match; disabled color findings closed; browser visual acceptance not performed."
 }
