@@ -151,3 +151,31 @@ def test_large_original_report_uses_bounded_summary_without_losing_terminal_stat
     raw=stream.getvalue();assert raw.startswith(b'PRIOR\n') and len(raw)<32*1024
     summary=json.loads(raw.decode().split('```json\n')[1].split('\n```')[0]);assert summary['status']==status and summary['stage']==original['stage'] and 'result.json' in summary['details']
     assert 'responses' not in summary and json.loads(serialized)==original
+
+
+def test_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing(tmp_path,monkeypatch):
+    """Controlled CDP mechanics, no actual font/browser or asset installation."""
+    from types import SimpleNamespace
+    font=tmp_path/'UNIT_PLACEHOLDER_NOT_FONT';font.write_bytes(b'UNIT_PLACEHOLDER_NOT_FONT')
+    text='培训大纲';points=fonts.ui_codepoints(text)
+    class CDP:
+        def send(self,name,params=None):
+            if name=='DOM.getDocument':return dict(root=dict(nodeId=1))
+            if name=='DOM.querySelector':return dict(nodeId=2)
+            if name=='CSS.getPlatformFontsForNode':return dict(fonts=[dict(postScriptName='CONTROLLED_FACE',glyphCount=4,isCustomFont=False)])
+            return {}
+        def detach(self):pass
+    page=SimpleNamespace(evaluate=lambda _: [dict(selector='#CONTROLLED_DYNAMIC_TEXT',text=text)],context=SimpleNamespace(new_cdp_session=lambda _:CDP()))
+    for missing in (False,True):
+        actual=points-({ord('训')} if missing else set())
+        row=dict(file=str(font),index=0,postscript_names=['CONTROLLED_FACE'],eligible=True,
+            covered_codepoints=[ord('中')],raw=str(font)+'\t0\tCONTROLLED\tCONTROLLED_FACE\t'+' '.join(f'{p:x}' for p in sorted(actual)))
+        monkeypatch.setattr(fonts,'unpack_font_diagnostics',lambda _,r=row:dict(candidates=[r]))
+        report=dict(installed_CJK_font={})
+        if missing:
+            with pytest.raises(AssertionError,match='actual participating font union misses'):fonts.verify_rendered_font(page,report)
+            assert report['installed_CJK_font']['visible_node_font_usage'][0]['missing_codepoints']==[ord('训')]
+        else:
+            fonts.verify_rendered_font(page,report)
+            assert report['installed_CJK_font']['rendering_observed'] is True
+            assert report['installed_CJK_font']['visible_node_font_usage'][0]['missing_codepoints']==[]

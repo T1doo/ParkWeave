@@ -320,11 +320,16 @@ def verify_rendered_font(page, report):
                         custom=font['isCustomFont'], candidate_count=len(matches)))
                     continue
                 face = matches[0]
-                union.update(face['covered_codepoints'])
+                # covered_codepoints is only the static preflight intersection.
+                # User-entered visible text can contain additional CJK; retain
+                # exact CDP face selection and test its original full charset.
+                covered = charset_coverage(face['raw'].split('\t')[4], points)
+                union.update(covered)
                 if face['file'] not in file_hashes:
                     file_hashes[face['file']] = sha256(Path(face['file']).read_bytes()).hexdigest()
                 observed['matched_faces'].append(dict(file=face['file'], index=face['index'],
-                    postscript_name=font['postScriptName'], sha256=file_hashes[face['file']]))
+                    postscript_name=font['postScriptName'], sha256=file_hashes[face['file']],
+                    covered_visible_codepoints=sorted(covered)))
             observed['missing_codepoints'] = sorted(points - union)
             assert not observed['invalid_sources'], 'unknown, custom or ambiguous actual font face'
             assert not observed['missing_codepoints'], 'actual participating font union misses visible node CJK'

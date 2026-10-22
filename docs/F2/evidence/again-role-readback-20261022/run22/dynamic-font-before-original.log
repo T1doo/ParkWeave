@@ -1,0 +1,94 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-5/test_dynamic_visible_font_cove0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc13a7f3d40>
+
+    def test_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing(tmp_path,monkeypatch):
+        """Controlled CDP mechanics, no actual font/browser or asset installation."""
+        from types import SimpleNamespace
+        font=tmp_path/'UNIT_PLACEHOLDER_NOT_FONT';font.write_bytes(b'UNIT_PLACEHOLDER_NOT_FONT')
+        text='培训大纲';points=fonts.ui_codepoints(text)
+        class CDP:
+            def send(self,name,params=None):
+                if name=='DOM.getDocument':return dict(root=dict(nodeId=1))
+                if name=='DOM.querySelector':return dict(nodeId=2)
+                if name=='CSS.getPlatformFontsForNode':return dict(fonts=[dict(postScriptName='CONTROLLED_FACE',glyphCount=4,isCustomFont=False)])
+                return {}
+            def detach(self):pass
+        page=SimpleNamespace(evaluate=lambda _: [dict(selector='#CONTROLLED_DYNAMIC_TEXT',text=text)],context=SimpleNamespace(new_cdp_session=lambda _:CDP()))
+        for missing in (False,True):
+            actual=points-({ord('训')} if missing else set())
+            row=dict(file=str(font),index=0,postscript_names=['CONTROLLED_FACE'],eligible=True,
+                covered_codepoints=[ord('中')],raw=str(font)+'\t0\tCONTROLLED\tCONTROLLED_FACE\t'+' '.join(f'{p:x}' for p in sorted(actual)))
+            monkeypatch.setattr(fonts,'unpack_font_diagnostics',lambda _,r=row:dict(candidates=[r]))
+            report=dict(installed_CJK_font={})
+            if missing:
+                with pytest.raises(AssertionError,match='actual participating font union misses'):fonts.verify_rendered_font(page,report)
+                assert report['installed_CJK_font']['visible_node_font_usage'][0]['missing_codepoints']==[ord('训')]
+            else:
+>               fonts.verify_rendered_font(page,report)
+
+tests/test_fictional_narrow_browser_contract.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = namespace(evaluate=<function test_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing.<local...st_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing.<locals>.<lambda> at 0x7fc13a73a520>))
+report = {'installed_CJK_font': {'rendering_observed': False, 'visible_node_font_usage': [{'selector': '#CONTROLLED_DYNAMIC_TEX..., not glyph-to-codepoint attribution or all target-codepoint pixel acceptance; review original screenshot separately'}}
+
+    def verify_rendered_font(page, report):
+        """Read original visible guide nodes; never add glyph probes or alter pixels."""
+        selected = report['installed_CJK_font']
+        selected['rendering_observed'] = False
+        stop = time.monotonic() + 5
+        candidates = unpack_font_diagnostics(selected)['candidates']
+        nodes = page.evaluate(VISIBLE_FONT_NODES_SCRIPT)
+        observations = selected['visible_node_font_usage'] = []
+        selected['rendering_observation_scope'] = ('actual named viewport painted text-node parents; closed native details content excluded; CDP node-level font usage '
+            'and charset union, not glyph-to-codepoint attribution or all target-codepoint pixel acceptance; review original screenshot separately')
+        assert 0 < len(nodes) <= 256
+        session = page.context.new_cdp_session(page)
+        file_hashes = {}
+        try:
+            session.send('DOM.enable'); session.send('CSS.enable')
+            root = session.send('DOM.getDocument')['root']['nodeId']
+            for row in nodes:
+                if time.monotonic() > stop:
+                    raise BudgetRefused('guide font usage inspection exceeded its5s share of unchanged first stage')
+                points = ui_codepoints(row['text'])
+                node = session.send('DOM.querySelector', dict(nodeId=root, selector=row['selector']))['nodeId']
+                fonts = session.send('CSS.getPlatformFontsForNode', dict(nodeId=node))['fonts']
+                observed = dict(selector=row['selector'], text_sha256=sha256(row['text'].encode()).hexdigest(),
+                    required_codepoints=sorted(points), fonts=fonts, matched_faces=[], invalid_sources=[])
+                observations.append(observed)
+                union = set()
+                for font in fonts:
+                    if font['glyphCount'] <= 0:
+                        continue
+                    matches = [r for r in candidates if font['postScriptName'] in r.get('postscript_names', ())]
+                    if font['isCustomFont'] or len(matches) != 1 or not matches[0]['eligible']:
+                        observed['invalid_sources'].append(dict(postscript_name=font['postScriptName'],
+                            custom=font['isCustomFont'], candidate_count=len(matches)))
+                        continue
+                    face = matches[0]
+                    union.update(face['covered_codepoints'])
+                    if face['file'] not in file_hashes:
+                        file_hashes[face['file']] = sha256(Path(face['file']).read_bytes()).hexdigest()
+                    observed['matched_faces'].append(dict(file=face['file'], index=face['index'],
+                        postscript_name=font['postScriptName'], sha256=file_hashes[face['file']]))
+                observed['missing_codepoints'] = sorted(points - union)
+                assert not observed['invalid_sources'], 'unknown, custom or ambiguous actual font face'
+>               assert not observed['missing_codepoints'], 'actual participating font union misses visible node CJK'
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: actual participating font union misses visible node CJK
+
+scripts/fictional_park_restart_browser_once.py:330: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_fictional_narrow_browser_contract.py::test_dynamic_visible_font_coverage_uses_original_charset_and_still_rejects_missing
+1 failed, 1 warning in 0.10s
