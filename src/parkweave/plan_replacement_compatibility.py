@@ -262,13 +262,13 @@ def verify_history(store,c,parent,link,receipt):
     _recovery_proofs, _history, binding(historical=True). None calls _view,
     delivery._verify, capacity confirmation or a current target publication.
     """
-    from .service_plan_approval import _ledger,verify_receipt,Proposal,REPLACEMENT_PURPOSE,REAPPROVAL_PURPOSE
+    from .service_plan_approval import _receipt_ledger,verify_receipt,Proposal,REPLACEMENT_PURPOSE,REAPPROVAL_PURPOSE
     from . import case_resources as cr
-    if not receipt.get('plan_approval'):return
-    from .local_resource_approval import SCOPE as LOCAL_SCOPE,verify_receipt as verify_local
-    if receipt['plan_approval'].get('scope')==LOCAL_SCOPE:
-        verify_local(parent,receipt,link_revision=link['revision']);return
-    _,items=_ledger(parent)
+    verify_receipt(parent,receipt,link['snapshot'].get('plan_approval'),link_revision=link['revision'])
+    if receipt.get('plan_approval') is None:return
+    from .local_resource_approval import SCOPE as LOCAL_SCOPE
+    local=receipt['plan_approval'].get('scope')==LOCAL_SCOPE
+    _,items=_receipt_ledger(parent,receipt)
     own=items[receipt['plan_approval']['id']]
     context=own['proposal']['binding']['context']
     # Preserve the existing source-only protocol; additionally prove chains
@@ -280,8 +280,9 @@ def verify_history(store,c,parent,link,receipt):
         if not isinstance(anchor,dict):break
         probe=anchor.get('previous_delivery_context',{})
         if not isinstance(probe,dict):break
-    if not contains_replacement:return
-    if store is None:raise Denied('original replacement history store required')
+    if local and contains_replacement:raise Conflict('local source history cannot contain plan replacement')
+    if not contains_replacement and not local:return
+    if contains_replacement and store is None:raise Denied('original replacement history store required')
     steps._recovery_proofs(parent)
     p=c.execute('SELECT * FROM principals WHERE id=%s',(parent['owner_id'],)).fetchone()
     if not p:raise Denied('original replacement owner proof required')

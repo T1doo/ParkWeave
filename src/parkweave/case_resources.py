@@ -103,8 +103,11 @@ def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None,plan_ap
     case=c.execute('SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone()
     if not case or case['run_id']!=parent['run_id']:raise Denied('Case Run binding unavailable')
     if old:return _view(c,p,parent,rows,old,store=store)
-    approval=getattr(store,'_isolated_plan_approval',None)
-    if rows and approval is not None and (getattr(approval,'source_reapproval_enabled',False) or getattr(approval,'plan_replacement_enabled',False)) and str(parent['id']) in approval.ids:
+    from .local_resource_approval import entered
+    local_enrolled=entered(parent)
+    from .case_resource_delivery import _approval
+    approval=_approval(store,parent) if rows and local_enrolled else getattr(store,'_isolated_plan_approval',None)
+    if rows and approval is not None and (getattr(approval,'source_reapproval_enabled',False) or getattr(approval,'plan_replacement_enabled',False)) and (local_enrolled or str(parent['id']) in approval.ids):
         approval._scope(c,p,parent)
         if delivery_binding is None or plan_approval is None:raise Conflict('explicit source reapproval delivery required')
         from .service_plan_approval import verify_receipt

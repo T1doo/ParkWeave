@@ -557,6 +557,18 @@ class IsolatedPlanApproval(_ApprovalOperations):
 
 
 
+def _receipt_ledger(parent,receipt):
+    """Historical provenance selects its exact namespace, never a live adapter."""
+    from . import local_resource_approval as local
+    proof=receipt.get('plan_approval')
+    if local.entered(parent) and (not isinstance(proof,dict) or proof.get('scope')!=local.SCOPE):
+        raise Conflict('original local approval receipt reference missing')
+    if not isinstance(proof,dict):raise Conflict('original plan Approval proof scope required')
+    if proof.get('scope')==local.SCOPE:return local.ledger(parent)
+    if proof.get('scope')!=SCOPE:raise Conflict('unknown original plan Approval proof scope')
+    return _ledger(parent)
+
+
 def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
     if link_revision is not None and (type(link_revision) is not int or not 1<=link_revision<=64):raise Conflict('original plan Approval association revision required')
     proof=receipt.get('plan_approval')
@@ -574,7 +586,7 @@ def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
                 raise Conflict('original plan Approval receipt reference missing')
         return
     if expected is not None and proof!=expected: raise Conflict('original plan Approval link reference mismatch')
-    _,items=_ledger(parent)
+    _,items=_receipt_ledger(parent,receipt)
     try:
         item=items[proof['id']]; event=item['consumption']; approval=item['approval']
         if link_revision is not None:

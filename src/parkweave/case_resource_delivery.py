@@ -88,12 +88,16 @@ def _source_reapproval(store,c,p,parent,data,context,*,consumed=None,historical=
     """Exact previous association and original local ADOPT; no new authority."""
     revision=getattr(data,'expected_link_revision',None)
     if revision is None:return context
-    approval=getattr(store,'_isolated_plan_approval',None)
+    approval=None if historical else _approval(store,parent)
     replacement=getattr(data,'expected_previous_plan_id',None) is not None
     if not historical and (not approval or not approval.enabled or not (approval.plan_replacement_enabled if replacement else approval.source_reapproval_enabled)):
         from .store import Denied
-        raise Denied('isolated source reapproval disabled')
-    if not historical:approval._scope(c,p,parent)
+        raise Denied('explicit source reapproval disabled')
+    if not historical:
+        approval._scope(c,p,parent)
+        from .local_resource_approval import selected
+        local=selected(store)
+        if local is approval:local._unstarted(c,parent)
     steps._recovery_proofs(parent)
     rows=cr._history(c,p,parent)
     anchors=[r for r in rows if r['revision']==revision]
@@ -259,8 +263,8 @@ def _verify(store, c, p, parent, receipt):
     if anchor is None:
         if link['revision']!=1:raise Conflict('first delivery proof cannot authorize a later association')
     else:
-        from .service_plan_approval import _ledger, REAPPROVAL_PURPOSE, REPLACEMENT_PURPOSE
-        item=_ledger(parent)[1].get(receipt.get('plan_approval',{}).get('id'))
+        from .service_plan_approval import _receipt_ledger, REAPPROVAL_PURPOSE, REPLACEMENT_PURPOSE
+        item=_receipt_ledger(parent,receipt)[1].get(receipt.get('plan_approval',{}).get('id'))
         if (not isinstance(anchor,dict) or type(anchor.get('link_revision')) is not int
             or link['revision']!=anchor['link_revision']+1 or not item
             or item['proposal']['binding']['purpose']!=(REPLACEMENT_PURPOSE if 'plan_replacement' in expected else REAPPROVAL_PURPOSE)):
@@ -270,8 +274,8 @@ def _verify(store, c, p, parent, receipt):
         raise Conflict('delivery Case claim mismatch')
     context, issues = _context(store, c, p, parent)
     if 'source_reapproval' in expected or 'plan_replacement' in expected:
-        from .service_plan_approval import _ledger
-        historical=Deliver.model_validate(_ledger(parent)[1][receipt['plan_approval']['id']]['proposal']['request']['delivery'])
+        from .service_plan_approval import _receipt_ledger
+        historical=Deliver.model_validate(_receipt_ledger(parent,receipt)[1][receipt['plan_approval']['id']]['proposal']['request']['delivery'])
         context=_source_reapproval(store,c,p,parent,historical,context,consumed=str(gid),historical=True,consumption_key=proof['request_key'])
         if 'plan_replacement' in expected and context.get('plan_replacement')!=expected['plan_replacement']:
             raise Conflict('original replacement immutable proof changed')

@@ -157,7 +157,8 @@ def test_fresh_owned_launcher_explicit_storage_and_configured_consumer(tmp_path)
         response=api.get('/api/plan-approval/status',headers={'Authorization':'Bearer '+token})
         assert response.status_code==200,response.text
         status=response.json();assert status['enabled'] is True and status['approval_scope']==local.SCOPE
-        assert all(status[k] is False for k in ('source_reapproval_enabled','plan_replacement_enabled','production_execution_enabled','formal_release'))
+        assert status['source_reapproval_enabled'] is True
+        assert all(status[k] is False for k in ('plan_replacement_enabled','production_execution_enabled','formal_release'))
         from test_ordinary_synthetic_demo import prepare_case,verify,call
         from test_local_demo_case_step_chain import selected_html
         tokens={actor:sessions[key] for actor,key in SCOPES['primary']['sessions'].items()}

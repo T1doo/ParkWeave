@@ -11,8 +11,9 @@ def test_dependency_preview_disabled_with_original_opportunity_controls(mode):
     assert p.returncode==0,p.stderr
     x=json.loads(p.stdout);assert x['mode']==mode and x['disabled']==(mode!='idle')
 
-def test_reapproval_client_exact_old_new_binding_and_first_delivery_shape():
-    p=subprocess.run(['node','tests/plan_reapproval_client_probes.js','body'],cwd=ROOT,capture_output=True,text=True,timeout=15)
+@pytest.mark.parametrize('mode',['body','local_body'])
+def test_reapproval_client_exact_old_new_binding_and_first_delivery_shape(mode):
+    p=subprocess.run(['node','tests/plan_reapproval_client_probes.js',mode],cwd=ROOT,capture_output=True,text=True,timeout=15)
     assert p.returncode==0,p.stderr
     x=json.loads(p.stdout);assert x['checks']==16 and x['HTTP']=='NOT_RUN'
 

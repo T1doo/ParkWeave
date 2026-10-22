@@ -21,7 +21,8 @@ if(mode==='local_scope'){
  context.$('delivery-reapproval').checked=false;context.$('delivery-reapproval').onchange();assert.equal(context.deliveryCurrent(original),false);
  const current=context.deliveryContext();context.$('delivery-case').value='case-b';context.$('delivery-case').oninput();context.$('delivery-case').value='case-a';context.$('delivery-case').oninput();assert.equal(context.deliveryCurrent(current),false);
  process.stdout.write(JSON.stringify({scope:'ACTUAL_DELIVERY_CONTEXT_AND_HANDLERS',checks:4,HTTP:'NOT_RUN'})+'\n');
-}else if(mode==='body'){
+}else if(mode==='body'||mode==='local_body'){
+ const approvalScope=mode==='local_body'?'LOCAL_CASE_RESOURCE_APPROVAL_V1':'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1';
  const context={};vm.createContext(context);vm.runInContext(section('function approvalBaseDeliveryBody(', 'function planApprovalControls('),context);
  const id='11111111-1111-4111-8111-111111111111',hash='a'.repeat(64);
  const c={reapproval:true,members:'[]'},q={synthetic_plan_approval_required:true,expected_link_revision:1,expected_preparation_revision:2,expected_plan_revision:9,source_sha256:hash,valid_until:'2099-01-01T00:00:00Z',context:{plan_id:id,source_reapproval:{link_id:id,link_revision:1,snapshot_sha256:hash,previous_delivery_context:{plan_id:id},previous_approved_plan_revision:3,approved_plan_revision:9,source_adoption_event_id:id,source_adoption_revision:8,source_adoption_sha256:hash,source_change_sha256:hash}}};
@@ -30,13 +31,13 @@ if(mode==='local_scope'){
  for(const mutate of mutations){const copy=structuredClone(q);mutate(copy);assert.throws(()=>context.approvalBaseDeliveryBody(c,copy));checks++;}
  assert.throws(()=>context.approvalBaseDeliveryBody({...c,reapproval:false},q));checks++;
  const first=structuredClone(q);delete first.expected_link_revision;delete first.context.source_reapproval;assert.equal(Object.hasOwn(context.approvalBaseDeliveryBody({...c,reapproval:false},first),'expected_link_revision'),false);checks++;
- Object.assign(context,{planApprovalScope:'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1',bundleActor:'owner',planApprovalView:null,planApprovalSelected:null,deliveryQuote:null,bundleControls:()=>{},$:()=>({replaceChildren(){},append(){}}),document:{createElement:()=>({append(){}})}});
+ Object.assign(context,{planApprovalScope:approvalScope,bundleActor:'owner',planApprovalView:null,planApprovalSelected:null,deliveryQuote:null,bundleControls:()=>{},$:()=>({replaceChildren(){},append(){}}),document:{createElement:()=>({append(){}})}});
  vm.runInContext(section('function planApprovalRender(', 'async function recoverPlanApproval('),context);
  const data=context.approvalBaseDeliveryBody(c,q),item={id,valid_until:q.valid_until,current:true,current_available:true,state:'APPROVED',purpose:'CASE_RESOURCE_REAPPROVAL',delivery:data,context:q.context,execution_identity:{actor_id:'owner',run:{id}},service_id:'service',service_version:1,plan_sha256:hash,materials:[],members:[]};
- context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1',revision:4,items:[item]},{...c,id});assert.equal(context.deliveryQuote.view.expected_link_revision,1);checks++;
+ context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:approvalScope,revision:4,items:[item]},{...c,id});assert.equal(context.deliveryQuote.view.expected_link_revision,1);checks++;
  assert.equal(context.approvalDeliveryBody(c,context.deliveryQuote.view).approval_id,id);checks++;
- assert.throws(()=>context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1',revision:4,items:[{...item,purpose:'CASE_RESOURCE_DELIVERY'}]},{...c,id}));checks++;
- for(const state of ['PROPOSED','APPROVED']){context.deliveryQuote=null;context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1',revision:4,items:[{...item,state}]},{...c,id,reapproval:false});assert.equal(context.deliveryQuote,null);assert.equal(context.planApprovalSelected.current,false);checks+=2;}
+ assert.throws(()=>context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:approvalScope,revision:4,items:[{...item,purpose:'CASE_RESOURCE_DELIVERY'}]},{...c,id}));checks++;
+ for(const state of ['PROPOSED','APPROVED']){context.deliveryQuote=null;context.planApprovalRender({actor_id:'owner',preparation_id:id,scope:approvalScope,revision:4,items:[{...item,state}]},{...c,id,reapproval:false});assert.equal(context.deliveryQuote,null);assert.equal(context.planApprovalSelected.current,false);checks+=2;}
  process.stdout.write(JSON.stringify({scope:'CONTROLLED_ACTUAL_CLIENT_FUNCTIONS_ONLY',checks,HTTP:'NOT_RUN',real_browser:'NOT_RUN'})+'\n');
 }else{
  const button={disabled:false},elements=new Map();const context={oppBusy:mode==='busy',oppBusyContext:null,opportunityPlanBusy:mode==='plan_busy',preparationId:'case-a',oppView:{can_write:mode!=='readonly',actor_id:'owner',current_basis:{catalog:[1]}},oppCurrent:()=>true,opportunityPlanControls:()=>{},oppHandles:()=>mode==='corrupt'?null:mode==='recovery'?[{id:'case-a',actor:'owner'}]:[],$:id=>{if(!elements.has(id))elements.set(id,{});return elements.get(id);},document:{querySelectorAll:selector=>selector.split(',').includes('[data-opp-dependency-preview]')?[button]:[]}};

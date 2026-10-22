@@ -100,7 +100,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from .local_resource_approval import selected
         candidate=selected(store) or getattr(store,'_isolated_plan_approval',None)
         return dict(enabled=candidate is not None,approval_scope=candidate.scope if candidate else None,
-            source_reapproval_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'source_reapproval_enabled',False) is True,
+            source_reapproval_enabled=getattr(candidate,'source_reapproval_enabled',False) is True,
             plan_replacement_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'plan_replacement_enabled',False) is True,
             known_not_started_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'known_not_started_enabled',False) is True,
             p3_closure_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'p3_closure_enabled',False) is True,

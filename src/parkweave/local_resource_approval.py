@@ -1,4 +1,4 @@
-"""Explicit local owner decisions for a first same-Case resource delivery.
+"""Explicit local owner decisions for same-Case first/source-only deliveries.
 
 This is an application-owned ledger, not an external approval source. Startup
 only validates existing storage; it never creates schema, identities or grants.
@@ -15,13 +15,13 @@ TRIGGER_BODY=core.TRIGGER_BODY.replace('candidate_plan_approvals',COLUMN).replac
 
 
 def ledger(parent):
+    if parent.get(core.COL) is not None or parent.get('candidate_plan_approval_head') is not None:
+        raise Conflict('local and isolated approval ledgers cannot mix')
     value,items=core._ledger(parent,column=COLUMN,head_column=HEAD,scope=SCOPE)
     for item in items.values():
         data=core.Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
-        if any(getattr(data,k) is not None for k in ('expected_link_revision','expected_previous_plan_id','replacement_frontier_profile')):
-            raise Conflict('local approval supports first delivery only')
-    if sum(item['consumption'] is not None for item in items.values())>1:
-        raise Conflict('local approval first delivery consumed once only')
+        if any(getattr(data,k) is not None for k in ('expected_previous_plan_id','replacement_frontier_profile')):
+            raise Conflict('local approval supports same-plan source continuation only')
     return value,items
 
 
@@ -45,7 +45,7 @@ def selected(store):
 class LocalResourceApproval(core._ApprovalOperations):
     scope=SCOPE;column=COLUMN;head_column=HEAD
     enabled=True
-    source_reapproval_enabled=False;plan_replacement_enabled=False
+    source_reapproval_enabled=True;plan_replacement_enabled=False
     known_not_started_enabled=False;p3_closure_enabled=False
 
     def __init__(self,store):
@@ -86,9 +86,30 @@ class LocalResourceApproval(core._ApprovalOperations):
     def scope_ids(self,parent):return [str(parent['id'])]
 
     def _source(self,store,c,p,parent,data,*,consumed=None):
-        if any(getattr(data,k) is not None for k in ('expected_link_revision','expected_previous_plan_id','replacement_frontier_profile')):
-            raise Denied('local approval supports first delivery only')
+        if any(getattr(data,k) is not None for k in ('expected_previous_plan_id','replacement_frontier_profile')):
+            raise Denied('local approval supports same-plan source continuation only')
         return super()._source(store,c,p,parent,data,consumed=consumed)
+
+    def _unstarted(self,c,parent):
+        """Conservative live-write exclusion, not an issued frontier qualification.
+
+        Original app writers serialize on this preparation's UPDATE lock. No
+        assertion is made against an administrator deleting its history.
+        """
+        from . import service_case_steps as steps
+        from .business_frontier import TABLES
+        steps._recovery_proofs(parent)
+        plan=parent['service_case_plan'];tail={s['id'] for s in plan['steps'] if s['adapter_id'] in ('P3','P4','P5')}
+        if any(e['step_id'] in tail and e['action'] in ('BEGIN','VERIFY','REPORT_FAILURE','RETRY') for e in plan['events']):
+            raise Conflict('local source continuation refuses started business coordination')
+        for table in TABLES:
+            if table in ('service_dispatches','service_receipt_steps','case_local_lifecycles','case_local_events'):
+                query='SELECT 1 FROM '+table+' WHERE preparation_id=%s LIMIT 1'
+            elif table in ('service_dispatch_offers','service_dispatch_events'):
+                query='SELECT 1 FROM '+table+' x JOIN service_dispatches d ON d.id=x.dispatch_id WHERE d.preparation_id=%s LIMIT 1'
+            else:query='SELECT 1 FROM '+table+' x JOIN service_receipt_steps s ON s.id=x.step_id WHERE s.preparation_id=%s LIMIT 1'
+            if c.execute(query,(parent['id'],)).fetchone():
+                raise Conflict('local source continuation refuses existing business history')
 
     def _guard(self,c,parent,aid,*,consumed=None,auth_only=False):
         if not hasattr(c,'_local_resource_approval_checks'):raise Denied('guarded local approval transaction required')
@@ -102,7 +123,9 @@ def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
     _,items=ledger(parent)
     try:
         item=items[proof['id']];event=item['consumption'];approval=item['approval']
-        if (link_revision not in (None,1) or isinstance(link_revision,bool)
+        original=core.Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
+        required_revision=original.expected_link_revision+1 if original.expected_link_revision is not None else 1
+        if ((link_revision is not None and (type(link_revision) is not int or not 1<=link_revision<=64 or link_revision!=required_revision))
                 or set(proof)!={'scope','id','approval_event_id','consumption_event_id','binding_sha256'}
                 or proof['scope']!=SCOPE or item['state']!='CONSUMED' or not event or not approval
                 or proof['approval_event_id']!=approval['id'] or proof['consumption_event_id']!=event['id']
