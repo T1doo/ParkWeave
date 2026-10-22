@@ -96,20 +96,8 @@ class LocalResourceApproval(core._ApprovalOperations):
         Original app writers serialize on this preparation's UPDATE lock. No
         assertion is made against an administrator deleting its history.
         """
-        from . import service_case_steps as steps
-        from .business_frontier import TABLES
-        steps._recovery_proofs(parent)
-        plan=parent['service_case_plan'];tail={s['id'] for s in plan['steps'] if s['adapter_id'] in ('P3','P4','P5')}
-        if any(e['step_id'] in tail and e['action'] in ('BEGIN','VERIFY','REPORT_FAILURE','RETRY') for e in plan['events']):
-            raise Conflict('local source continuation refuses started business coordination')
-        for table in TABLES:
-            if table in ('service_dispatches','service_receipt_steps','case_local_lifecycles','case_local_events'):
-                query='SELECT 1 FROM '+table+' WHERE preparation_id=%s LIMIT 1'
-            elif table in ('service_dispatch_offers','service_dispatch_events'):
-                query='SELECT 1 FROM '+table+' x JOIN service_dispatches d ON d.id=x.dispatch_id WHERE d.preparation_id=%s LIMIT 1'
-            else:query='SELECT 1 FROM '+table+' x JOIN service_receipt_steps s ON s.id=x.step_id WHERE s.preparation_id=%s LIMIT 1'
-            if c.execute(query,(parent['id'],)).fetchone():
-                raise Conflict('local source continuation refuses existing business history')
+        from .difference_observation import unstarted
+        unstarted(c,parent)
 
     def _guard(self,c,parent,aid,*,consumed=None,auth_only=False):
         if not hasattr(c,'_local_resource_approval_checks'):raise Denied('guarded local approval transaction required')

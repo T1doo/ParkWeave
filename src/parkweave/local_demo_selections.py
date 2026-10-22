@@ -13,6 +13,7 @@ from . import bounded_planning as bp, controlled_plans as cp, preparation as pre
 from . import service_selection as ss, service_selection_candidates as v4
 from . import service_plan_candidates as old
 from . import local_synthetic_demo as demo
+from . import difference_observation as observation
 from .store import Conflict, Denied
 from .intern_adapter import ModelBoundaryError
 
@@ -20,6 +21,7 @@ PROFILE = demo.PROFILE
 SCOPE = 'LOCAL_SYNTHETIC_DEMO_SELECTION_CANDIDATE'
 ORIGIN = demo.ORIGIN
 VALIDATOR = 'LOCAL_SYNTHETIC_DEMO_V1'
+OBSERVATION_VALIDATOR = 'LOCAL_SYNTHETIC_DEMO_V2'
 Capture, clock, binding = v4.Capture, v4.clock, v4.binding
 KEYS = v4.KEYS
 BASIS = ('validator_version','validated_contract_sha256','candidate_id','candidate_sha256',
@@ -29,6 +31,8 @@ BASIS = ('validator_version','validated_contract_sha256','candidate_id','candida
 def document(value):
     result = old.document(value)
     result.update(origin=ORIGIN,profile=PROFILE,binding=binding(value),selection=deepcopy(value['selection']))
+    if observation.version(value)==2:
+        result.update({k:deepcopy(value[k]) for k in (observation.VERSION,observation.FIELD)})
     return result
 
 
@@ -62,7 +66,16 @@ def current(store,c,p,parent,catalog,selection=None):
     base['source_unknowns'] = sorted(set(base['source_unknowns'])|set(oracle['unknowns']))
     if oracle['state'] not in ('UNIQUE','MULTIPLE'):
         base['state'] = 'UNKNOWN' if oracle['state']=='UNKNOWN' else 'SELECTION_BLOCKED'
-    if selection is not None: base = _apply(base,selection,now=clock(c))
+    base[observation.VERSION]=1
+    base[observation.FIELD]=None
+    if oracle['state']=='UNIQUE':
+        choice=dict(schema_version=1,binding=binding(base),selections=oracle['minimal_solutions'][0])
+        full=_apply(base,choice,now=clock(c))
+        base[observation.FIELD]=observation.capture(store,c,p,parent,full)
+    base['source_sha256']=observation.source_hash(base)
+    if selection is not None:
+        try:base = _apply(base,selection,now=clock(c))
+        except ModelBoundaryError:raise Conflict('local demo selection or observation source changed') from None
     return base
 
 
@@ -72,7 +85,8 @@ def _fingerprint(id,data):
 
 def _producer(record):
     base = record['base_document']; snapshot = base['catalog_snapshot']
-    return dict(schema_version='local-synthetic-demo-producer/1',origin=ORIGIN,mode='NO_MODEL',
+    version=observation.version(base)
+    return dict(schema_version='local-synthetic-demo-producer/'+str(version),origin=ORIGIN,mode='NO_MODEL',
         model=None,provider_enabled=False,real_model_calls=0,executed=False,
         selection_sha256=cp._hash(record['selection']),pack_sha256=snapshot['pack_sha256'],
         journal_sha256=snapshot['journal_sha256'],base_sha256=cp._hash(base),
@@ -85,12 +99,16 @@ def _proof(parent,record):
         doc,base = record['document'],record['base_document']
         frozen=record['frozen_registry']
         old._window(record)
+        version=observation.version(base)
+        if ((version==1 and 'difference_observation_record_version' in record) or
+            (version==2 and (type(record.get('difference_observation_record_version')) is not int or record['difference_observation_record_version']!=2))):
+            raise ValueError()
         if (record['profile'] != PROFILE or base['profile'] != PROFILE or base['selection'] is not None
                 or record['actor_id'] != parent['owner_id'] or doc['preparation_id'] != str(parent['id'])
                 or record['fingerprint'] != _fingerprint(parent['id'],data)
                 or set(frozen)!={'steps','actions'} or base['registry_sha256'] != cp._hash(frozen)
                 or base['capability_catalog_sha256'] != cp._hash(cp._normal(base['catalog_snapshot']))
-                or base['source_sha256'] != cp._hash(dict(legacy_source_sha256=base['legacy_source_sha256'],capability_catalog_sha256=base['capability_catalog_sha256']))
+                or base['source_sha256'] != observation.source_hash(base)
                 or data.expected_preparation_revision != base['preparation_revision']
                 or data.expected_source_sha256 != base['source_sha256']
                 or data.expected_capability_catalog_sha256 != base['capability_catalog_sha256']
@@ -103,6 +121,7 @@ def _proof(parent,record):
                 or record['selection']['selections'] != base['selection_oracle']['minimal_solutions'][0]):
             raise ValueError()
         expected = _apply(base,record['selection'],now=at,frozen=frozen)
+        observation.validate(expected,expected['steps'])
         expected.update(candidate_validity=record['validity'],candidate_producer=record['producer'])
         if (cp._hash(doc) != cp._hash(expected) or cp._hash(record['candidate']) != cp._hash(document(doc))
                 or record['candidate_sha256'] != cp._hash(record['candidate'])): raise ValueError()
@@ -125,7 +144,7 @@ def verify(parent,record,value,*,now,historical=False):
     window = record['validity']
     if now < old._time(window['created_at']): state='CLOCK_UNCERTAIN'
     elif now >= old._time(window['expires_at']): state='EXPIRED'
-    basis = dict(validator_version=VALIDATOR,validated_contract_sha256=cp._hash({k:v for k,v in expected.items() if k!='binding'}),
+    basis = dict(validator_version=OBSERVATION_VALIDATOR if observation.version(record['base_document'])==2 else VALIDATOR,validated_contract_sha256=cp._hash({k:v for k,v in expected.items() if k!='binding'}),
         candidate_id=record['id'],candidate_sha256=record['candidate_sha256'],current_source_sha256=value['source_sha256'],
         state=state,**{k:value[k] for k in KEYS if k!='source_sha256'},validity=deepcopy(window),producer_sha256=cp._hash(record['producer']))
     return dict(**basis,verification_sha256=cp._hash(basis),scope=SCOPE,profile=PROFILE,origin=ORIGIN,
@@ -173,6 +192,7 @@ def generate(store,token,id,key,data,*,catalog,planner):
         record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,
             fingerprint=fp,candidate_request=data.model_dump(),validity=window,base_document=deepcopy(value),selection=selection,
             frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+        record['difference_observation_record_version']=2
         record['producer']=_producer(record)
         saved=_apply(value,selection,now=now)
         saved.update(candidate_validity=window,candidate_producer=record['producer'])
@@ -223,6 +243,15 @@ def consumption_proof(parent,plan,request):
             raise ValueError()
         actual=[{k:s[k] for k in ('adapter_id','adapter','adapter_revision','depends_on','contract')} for s in plan['steps']]
         expected=[dict(adapter_id=s['id'],adapter=s['adapter'],adapter_revision=s['revision'],depends_on=s['depends_on'],contract=s) for s in plan['adoption_preview']['steps']]
-        if actual!=expected or proof!=consume(parent,plan['adoption_preview'],request,now=old._time(proof['accepted_at']),historical=True): raise ValueError()
+        expected_proof=consume(parent,plan['adoption_preview'],request,now=old._time(proof['accepted_at']),historical=True)
+        if observation.version(plan['adoption_preview'])==2:
+            expected_proof[observation.SEAL]=observation.seal(parent,plan,expected_proof)
+        if actual!=expected or proof!=expected_proof: raise ValueError()
     except (KeyError,TypeError,ValueError):
         raise Conflict('local demo original adoption provenance invalid') from None
+
+
+def seal_observation(parent,plan):
+    if observation.version(plan['adoption_preview'])==2:
+        proof=plan['candidate_consumption']
+        proof[observation.SEAL]=observation.seal(parent,plan,proof)

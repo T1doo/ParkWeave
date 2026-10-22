@@ -802,7 +802,11 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if candidate_proof is not None:
             # Recheck the database wall clock after every authority/source wait,
             # immediately before saving the original plan and its event together.
+            if candidates.PROFILE=='LOCAL_SYNTHETIC_DEMO':
+                final=candidates.current(store,c,p,parent,catalog,record['selection'])
+                if cp._hash(final)!=cp._hash(current):raise Conflict('local observation source changed during adoption')
             plan['candidate_consumption']=candidates.consume(parent,current,data,now=candidates.clock(c))
+            if candidates.PROFILE=='LOCAL_SYNTHETIC_DEMO':candidates.seal_observation(parent,plan)
             event['candidate_consumption_sha256']=cp._hash(plan['candidate_consumption'])
         _save(c,parent,plan)
         return _view(store,c,p,parent,plan,event)
