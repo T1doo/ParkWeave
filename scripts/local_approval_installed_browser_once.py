@@ -13,10 +13,10 @@ from scripts import fictional_park_browser_once as base
 from scripts import installed_wheel_support as installed
 
 PRIVATE=base.ROOT/'.runtime/installed-approval-browser-once'
-WHEEL=base.ROOT/'docs/demo/evidence/installed-approval-browser-candidate/parkweave-0.1.0-py3-none-any.whl'
+WHEEL_NAME='parkweave-0.1.0-py3-none-any.whl'
 NAMES=frozenset(('01-local-proposed.png','02-local-approved.png','03-local-committed-pending.png',
-    '04-local-consumed-recovered.png','05-local-revoked.png','06-local-read-denied.png'))
-PUBLIC_FILES=NAMES|{'result.json','installation-redacted.log',WHEEL.name}
+    '04-local-consumed-recovered.png','05-local-revoked.png','06-local-read-denied.png','07-guide-narrow.png'))
+PUBLIC_FILES=NAMES|{'result.json','installation-redacted.log',WHEEL_NAME}
 GOALS=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE',
     'LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK']
 
@@ -47,7 +47,7 @@ class Budget:
         request=route.request;url=urlsplit(request.url);origin=urlsplit(self.report['origin'])
         try:
             assert (url.scheme,url.netloc)==(origin.scheme,origin.netloc) and not url.username and not url.password
-            assert not url.query and (url.path in ('/','/favicon.ico') or url.path.startswith('/api/'))
+            assert not url.query and (url.path in ('/','/demo','/favicon.ico') or url.path.startswith('/api/'))
             if request.method=='POST':
                 assert self.expected is not None and url.path==self.expected[0]
                 if self.expected[1] is not None:assert request.post_data_json['action']==self.expected[1]
@@ -160,7 +160,13 @@ def prepare(run,index):
     capabilities=api_call(run,path+'/service-capabilities')
     selected=api_call(run,path+'/service-selections',dict(expected_preparation_revision=p['revision'],expected_source_sha256=capabilities['source_sha256'],expected_capability_catalog_sha256=capabilities['capability_catalog_sha256']),expected=201)
     assert selected['producer']['mode']=='NO_MODEL' and selected['producer']['real_model_calls']==0
+    assert selected['validator_version']=='LOCAL_SYNTHETIC_DEMO_V2' and selected['producer']['schema_version']=='local-synthetic-demo-producer/2'
     plan=api_call(run,path+'/service-case-plan',dict(expected_preparation_revision=p['revision'],expected_request_revision=capabilities['request_revision'],expected_plan_revision=0,expected_source_sha256=capabilities['source_sha256'],required_goals=GOALS,reason='SYNTHETIC 原NO_MODEL方案明确ADOPT',candidate_id=selected['candidate_id'],expected_candidate_sha256=selected['candidate_sha256'],expected_verification_sha256=selected['verification_sha256']),expected=201)
+    seal=plan['candidate_consumption']['difference_observation']
+    assert seal is not None and seal['scope']=='LOCAL_DIFFERENCE_OBSERVATION_BASELINE'
+    assert seal['candidate_id']==selected['candidate_id'] and seal['plan_id']==plan['plan_id']
+    assert [(s['adapter_id'],s['step_id']) for s in seal['steps']]==[(s['adapter_id'],s['id']) for s in plan['steps']]
+    run.report.setdefault('API_initial_candidate_proofs',[]).append(dict(candidate_id=selected['candidate_id'],validator=selected['validator_version'],producer=selected['producer']['schema_version'],plan_id=plan['plan_id'],baseline_sha256=seal['baseline_sha256'],initial_ADOPT_API_not_DOM=True))
     step=next(s for s in plan['steps'] if s['adapter_id']=='P1')
     plan=api_call(run,path+'/service-case-plan/commands',dict(action='VERIFY',step_id=step['id'],expected_revision=plan['revision'],expected_source_sha256=step['source_sha256'],reason='SYNTHETIC 原P1明确核验'))
     assert next(s for s in plan['steps'] if s['adapter_id']=='P1')['state']=='VERIFIED'
@@ -184,6 +190,21 @@ def business_snapshot(run):
     return dict(sha256=sha256(raw.encode()).hexdigest(),counts=counts,
         local_states={str(r['id']):[e['action'] for e in (r['local_resource_approvals'] or {}).get('events',[])] for r in ledgers},
         holds=[dict(id=str(h['id']),state=h['state'],combination_id=str(h['combination_id']) if h['combination_id'] else None) for h in holds])
+
+
+def current_wheel(run):
+    from importlib.metadata import version
+    require_work(run,120)
+    run.report['stage']='OFFLINE_BUILD_CURRENT_CHECKOUT'
+    assert version('setuptools')=='80.9.0','original pinned build tool required'
+    wheel=installed.build(run.private/'current-package')
+    assert wheel.name==WHEEL_NAME
+    metadata=dict(package_source_sha=run.report['source_sha'],file=wheel.name,bytes=wheel.stat().st_size,
+        sha256=sha256(wheel.read_bytes()).hexdigest(),build='setuptools80.9.0/no-index/no-deps/no-build-isolation',
+        dependency_downloads_during_wheel_build_and_install=0)
+    wheel.with_name('package-source.json').write_text(json.dumps(metadata,indent=2)+'\n')
+    run.report['current_checkout_build']=metadata
+    return wheel
 
 
 def installation(run,wheel):
@@ -269,6 +290,15 @@ def preflight(wheel,private):
     return report
 
 
+def close_guide(run,guide,primary):
+    try:guide.close()
+    except BaseException as cleanup:
+        run.report['guide_close_error']=dict(error_type=type(cleanup).__name__,error=str(cleanup))
+        if primary is not None:
+            raise BaseExceptionGroup('Guide body and owned close failures',[primary,cleanup]) from None
+        raise
+
+
 def browser_walk(run,browser):
     from playwright.sync_api import expect
     from scripts.fictional_park_restart_browser_once import verify_rendered_font
@@ -277,7 +307,7 @@ def browser_walk(run,browser):
     context.route('**/*',run.budget.route)
     context.on('response',lambda response:report['responses'].append(dict(stage=report['stage'],transport='BROWSER',method=response.request.method,path=urlsplit(response.url).path,status=response.status)))
     page=context.new_page();page.set_default_timeout(15000);page.on('pageerror',lambda error:report['page_errors'].append(str(error)))
-    click_offset=0;report['DOM_clicks']=[]
+    click_offset=0;report['DOM_clicks']=[];guide_written=False
     def harvest():
         nonlocal click_offset
         items=page.evaluate('window.__installedApprovalClicks||[]');report['DOM_clicks'].extend(items[click_offset:]);click_offset=len(items)
@@ -317,11 +347,19 @@ def browser_walk(run,browser):
             click('#resource-mine');page.wait_for_function('()=>bundleActor!==null&&!bundleBusy',timeout=30000)
             for hold in parent['holds']:page.locator('[data-combination-hold="'+hold['hold_id']+'"]').check()
             assert page.evaluate('combinationSelection.size')==3
-    def font_observation(label):
-        entry=dict(stage=label,nodes=[]);report.setdefault('font_observations',[]).append(entry)
+    def font_observation(label,target=None):
+        entry=dict(stage=label,nodes=[],scope='Visible text-node parents in this named viewport; CDP participating font union, not complete UI glyph/pixel acceptance',complete=False);report.setdefault('font_observations',[]).append(entry)
         selected=report['installed_CJK_font'];selected['visible_node_font_usage']=[];selected['rendering_observed']=False
-        try:verify_rendered_font(page,report)
-        finally:entry['nodes']=deepcopy(selected.get('visible_node_font_usage',[]))
+        try:verify_rendered_font(page if target is None else target,report)
+        finally:
+            entry['nodes']=deepcopy(selected.get('visible_node_font_usage',[]));entry['complete']=selected.get('rendering_observed') is True
+    def geometry(label,target=None):
+        target=page if target is None else target
+        value=target.evaluate('''() => ({width:innerWidth,height:innerHeight,documentWidth:document.documentElement.scrollWidth,
+          controls:[...document.querySelectorAll('button,input,select')].filter(e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return s.visibility==='visible'&&s.display!=='none'&&r.width&&r.height&&r.bottom>0&&r.top<innerHeight;}).map(e=>{const r=e.getBoundingClientRect();return {id:e.id,disabled:e.disabled,x:r.x,y:r.y,width:r.width,height:r.height};})})''')
+        assert value['documentWidth']<=value['width'],'current styled page horizontally overflows viewport'
+        assert all(c['x']>=-1 and c['x']+c['width']<=value['width']+1 for c in value['controls']),'visible control lies outside viewport'
+        report.setdefault('viewport_geometry',[]).append(dict(stage=label,**value))
     def enter(parent):
         open_page(parent);base_path='/api/preparations/'+parent['preparation_id']
         quote=post('#delivery-preview',base_path+'/resource-delivery/preview')
@@ -333,7 +371,7 @@ def browser_walk(run,browser):
     try:
         report['stage']='FIRST_LOCAL_PROPOSAL_DOM'
         first_path,proposed=enter(records[0]);first_item=proposed['items'][-1]
-        shot('01-local-proposed.png','#plan-approval-result');font_observation('ACTUAL_LOCAL_PROPOSAL_VIEW')
+        geometry('PROPOSED_DESKTOP');shot('01-local-proposed.png','#plan-approval-result');font_observation('ACTUAL_LOCAL_PROPOSAL_VIEW')
         report['stage']='FIRST_LOCAL_APPROVE_DOM'
         approved=post('#plan-approval-approve',first_path+'/plan-approval/commands','APPROVE')
         assert approved['items'][-1]['state']=='APPROVED';expect(page.locator('#delivery-confirm')).to_be_enabled()
@@ -354,6 +392,7 @@ def browser_walk(run,browser):
         page.wait_for_function('()=>deliveryHandles()?.length===0',timeout=30000)
         click('#plan-approval-read');page.wait_for_function('()=>planApprovalSelected?.state==="CONSUMED"',timeout=30000)
         assert page.evaluate('planApprovalSelected.id')==first_item['id']
+        page.set_viewport_size(dict(width=390,height=1000));geometry('CONSUMED_NARROW')
         shot('04-local-consumed-recovered.png','#plan-approval-result');font_observation('ACTUAL_CONSUMED_LOCAL_VIEW')
         before_repeat=business_snapshot(run);original=report['original_delivery_request']
         report['stage']='EXACT_ORIGINAL_POST_REPEAT_API_CHECK'
@@ -374,7 +413,7 @@ def browser_walk(run,browser):
         before_revoked=business_snapshot(run)
         api_call(run,second_path+'/resource-delivery',{**second_data,'approval_id':second_item['id']},expected=409,phase='NEGATIVE_AND_REPEAT')
         assert business_snapshot(run)==before_revoked
-        shot('05-local-revoked.png','#plan-approval-result')
+        geometry('REVOKED_NARROW');shot('05-local-revoked.png','#plan-approval-result')
         report['negative_checks']=dict(cross_case_approval_http=409,revoked_delivery_http=409,no_additional_business_effect=True)
         report['stage']='CURRENT_OWNER_READ_REVOKED_FIXTURE'
         require_work(run,35)
@@ -390,16 +429,39 @@ def browser_walk(run,browser):
         assert page.locator('#token').input_value()==token
         for selector in ('#plan-approval-result','#delivery-result','#resource-hold-items','#resource-catalog-view','#resource-current','#combination-items'):
             expect(page.locator(selector)).to_be_empty()
-        shot('06-local-read-denied.png','#page-feedback')
+        geometry('DENIED_NARROW');shot('06-local-read-denied.png','#page-feedback')
         report['READ403_cleared_private_views']=True
         report['final_business_snapshot']=business_snapshot(run)
         assert report['final_business_snapshot']==before_revoked
         assert report['final_business_snapshot']['local_states'][records[0]['preparation_id']]==['PROPOSE','APPROVE','CONSUME']
         assert report['final_business_snapshot']['local_states'][records[1]['preparation_id']]==['PROPOSE','APPROVE','REVOKE']
+        require_work(run,45)
+        report['stage']='INSTALLED_GUIDE_NARROW_READ_ONLY'
+        guide=context.new_page();guide.set_viewport_size(dict(width=390,height=1000));guide.set_default_timeout(15000)
+        guide.on('pageerror',lambda error:report['page_errors'].append(str(error)));guide_primary=None
+        try:
+            response=guide.goto(report['origin']+'/demo',wait_until='load')
+            assert response.status==200 and sha256(response.body()).hexdigest()==report['installation']['package_files']['parkweave/park_demo_web.html']
+            assert "frame-ancestors 'none'" in response.headers['content-security-policy']
+            expect(guide.locator('#workspace-open')).to_be_disabled()
+            assert guide.locator('#sessions').input_value()=='' and guide.evaluate('sessions===null&&workspaceWindow===null')
+            geometry('GUIDE_NARROW_READ_ONLY',guide);font_observation('ACTUAL_GUIDE_NARROW_VIEWPORT',guide)
+            path=run.public/'07-guide-narrow.png';guide_written=True;guide.screenshot(path=str(path),timeout=10000)
+            report['screenshots'].append(dict(file=path.name,sha256=sha256(path.read_bytes()).hexdigest()))
+            report['guide_visual_scope']='390px initial fictional guide, no session file, no workspace opened, no business write'
+        except BaseException as error:
+            guide_primary=error;report['guide_primary_error']=dict(error_type=type(error).__name__,error=str(error));raise
+        finally:close_guide(run,guide,guide_primary)
         assert not report['violations'] and not report['page_errors'];harvest();require_work(run)
         report['work_completion_seconds']=round(time.monotonic()-run.started,3)
         report['stage']='INSTALLED_WHEEL_LOCAL_APPROVAL_BROWSER_COMPLETE'
     except BaseException:
+        if guide_written:
+            try:
+                (run.public/'07-guide-narrow.png').unlink(missing_ok=True)
+                report['screenshots']=[x for x in report['screenshots'] if x['file']!='07-guide-narrow.png']
+                report['guide_screenshot_withdrawn_for_failure_budget']=True
+            except BaseException as cleanup:report['guide_screenshot_withdrawal_error']=type(cleanup).__name__
         try:
             path=run.public/'failure-installed-approval.png';page.screenshot(path=str(path),mask=[page.locator('#token')],timeout=10000)
         except BaseException as error:report['failure_screenshot_error']=type(error).__name__
@@ -409,7 +471,7 @@ def browser_walk(run,browser):
 
 def publish_logs(run):
     parts=[];metadata=[];total=0
-    paths=[run.private/'application/install.log',run.private/'setup.stdout',run.private/'setup.stderr',run.private/'serve.stdout',run.private/'serve.stderr']
+    paths=[run.private/'current-package/build.log',run.private/'application/install.log',run.private/'setup.stdout',run.private/'setup.stderr',run.private/'serve.stdout',run.private/'serve.stderr']
     paths.extend(sorted(run.private.glob('worker-*.log')))
     if hasattr(run,'state'):paths.append(run.state/'logs/installed-api.log')
     for path in paths:
@@ -431,10 +493,10 @@ def main():
     run=SimpleNamespace(started=started,report=report,secrets=[],public=None)
     run.budget=Budget(report)
     try:
-        report['source_sha']=base.require_hosted(os.environ,run_number='12')
+        report['source_sha']=base.require_hosted(os.environ,run_number='13')
         run.private=Path(tempfile.mkdtemp(prefix='parkweave-installed-browser-'))
         run.public=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';run.public.mkdir(mode=0o700,exist_ok=False)
-        installation(run,WHEEL)
+        installation(run,current_wheel(run))
         from scripts.fictional_park_restart_browser_once import installed_font_environment
         report['stage']='INSTALLED_CJK_PREFLIGHT'
         env=dict(os.environ)

@@ -1,7 +1,7 @@
 """Offline final-wheel installation using copies of existing pinned dependencies."""
 from hashlib import sha1,sha256
 from importlib.metadata import distribution
-import json,os,re,shutil,subprocess,sys,tempfile,venv,zipfile
+import json,os,re,shutil,subprocess,sys,tempfile,tomllib,venv,zipfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -35,10 +35,26 @@ def package_manifest(wheel):
     assert wheel.name==metadata['file'] and wheel.stat().st_size==metadata['bytes']
     assert sha256(wheel.read_bytes()).hexdigest()==metadata['sha256']
     assert re.fullmatch('[0-9a-f]{40}',metadata['package_source_sha'])
+    def git(*args):
+        try:return subprocess.check_output(['git',*args],cwd=ROOT,stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:raise AssertionError('exact package source Git object unavailable') from None
+    source=metadata['package_source_sha']
+    assert git('cat-file','-t',source).strip()==b'commit','package source must name its original commit'
+    assert git('rev-parse',source+':src/parkweave')==git('rev-parse',head+':src/parkweave'),'package source tree differs from checked-out package'
+    project=git('show',head+':pyproject.toml')
+    assert project==(ROOT/'pyproject.toml').read_bytes()==git('show',source+':pyproject.toml'),'package build declarations differ from original source'
+    declared=tomllib.loads(project.decode())['tool']['setuptools']['package-data']['parkweave']
+    assert isinstance(declared,list) and all(isinstance(name,str) and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*(?:/[A-Za-z0-9_][A-Za-z0-9_.-]*)*',name) for name in declared),'literal relative package resources required'
+    assert len(declared)==len(set(declared)),'duplicate package resource declaration'
     tree=subprocess.check_output(['git','ls-tree','-r',head,'--','src/parkweave'],cwd=ROOT,text=True)
     blobs={line.split('\t',1)[1]:line.split()[2] for line in tree.splitlines()}
+    expected={p.removeprefix('src/') for p in blobs if p.endswith('.py')}|{'parkweave/'+name for name in declared}
+    assert all('src/'+name in blobs for name in expected),'declared resource absent from original Git package'
     files={}
     with zipfile.ZipFile(wheel) as z:
+        names=z.namelist();assert len(names)==len(set(names)),'duplicate wheel member'
+        actual={info.filename for info in z.infolist() if info.filename.startswith('parkweave/') and not info.is_dir()}
+        assert actual==expected,'wheel package file set differs from committed Python and declared resources'
         for info in z.infolist():
             if info.filename.startswith('parkweave/') and not info.is_dir():
                 assert '..' not in Path(info.filename).parts and not info.filename.endswith(('.pyc','.pth'))
@@ -46,13 +62,13 @@ def package_manifest(wheel):
                 assert source.is_file() and not source.is_symlink() and raw==source.read_bytes()
                 assert sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest()==blobs['src/'+info.filename]
                 files[info.filename]=sha256(raw).hexdigest()
-    assert {p.relative_to(ROOT/'src').as_posix() for p in (ROOT/'src/parkweave').rglob('*.py')}=={p for p in files if p.endswith('.py')}
-    assert all('parkweave/'+name in files for name in ('local-resource-approval-schema.sql','schema.sql','web.html','local_resource_approval.py'))
+    assert set(files)==expected
     return files
 
 
 def install(wheel,directory):
     """Fresh venv, dependency files copied from explicit existing distributions."""
+    files=package_manifest(wheel)  # Reject incomplete/unknown packages before venv or pip.
     directory.mkdir(mode=0o700)
     env={k:os.environ[k] for k in ('PATH','LANG') if k in os.environ}
     env.update(PIP_NO_INDEX='1',PIP_CONFIG_FILE='/dev/null',PIP_DISABLE_PIP_VERSION_CHECK='1',PYTHONDONTWRITEBYTECODE='1')
@@ -100,7 +116,7 @@ def install(wheel,directory):
     manifest=dict(wheel_sha256=sha256(wheel.read_bytes()).hexdigest(),wheel_bytes=wheel.stat().st_size,
         frozen_package_source=json.loads(wheel.with_name('package-source.json').read_text()),
         checked_out_source_sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
-        package_files=package_manifest(wheel),python=str(python),prefix=str(target),purelib=str(pure),
+        package_files=files,python=str(python),prefix=str(target),purelib=str(pure),
         forbidden_roots=[str(ROOT),str(ROOT/'src')],dependency_versions=versions,dependency_copy_bytes=copied,
         dependency_copy_files=count,dependency_downloads=0,system_site_packages=False,
         entrypoint_sha256=sha256((harness/'entry.py').read_bytes()).hexdigest(),
