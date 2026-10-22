@@ -1,0 +1,62 @@
+{
+  "status": "LIMITED_PERSISTENT_CASE_REQUIREMENT_PASS",
+  "source_sha": "4e2f981c36318d657c3cbda0323bc000b42dea67",
+  "baseline_sha": "09ae66fd0970f35a57ef30fad80cddc4a9b33142",
+  "enrolment": "First successful PROPOSE creates immutable non-null per-Case local ledger/head;this persists across Store/factory/API restarts",
+  "fix": [
+    "Strict ledger/head validation for any enrolled Case",
+    "Preview/new delivery require exact configured LOCAL adapter after parent lock",
+    "Original-key replay remains before new-operation configuration guard",
+    "Receipt consumers require exact LOCAL proof in every enrolled state"
+  ],
+  "actual_tests": {
+    "red": "6 failed,26 deselected,4 warnings,8.46s;all6 unauthorized201 with effects[1,3,1,1,1],missingproofandunchangedledger",
+    "intermediate": "26 passed6 failed,4 warnings,38.83s;all6 correctly403/zeroeffects;test wrongly expected internal reason instead of generic privacy response",
+    "final": "77 passed,4 warnings,80.54s;two full modules;replaces intermediate,not added to prior windows"
+  },
+  "actual_scope": [
+    "PROPOSED/APPROVED/REVOKED × new Store/configured_app factory,omitted mode and approval_id",
+    "All4states requireLOCALproof;missing/old/unknownproof rejected",
+    "Corrupt local head strictly rejected",
+    "SameDB different never-enrolled Case retains old delivery/recovery",
+    "ConsumedLOCALoriginal-key POST and GET recovery remain strict and unchanged without mode",
+    "3actualAPIwarmCURRENT_OWNER stop/coldunconfiguredprocesspairs;samePGandDB;ownedAPIexitsobserved;noPGrestartclaim"
+  ],
+  "not_claimed": [
+    "Approval required for all independent resource/bare association endpoints",
+    "Persistence of merely enabled in-memory mode before first PROPOSE",
+    "New browser/CI or run11 transfer",
+    "Installed wheel runtime",
+    "Native Windows/ownerDACL/026–032/roles/seed",
+    "Formal external source/AT35/real model/physical fulfillment",
+    "WholeDB invariance or whole project acceptance"
+  ],
+  "schema_or_permission_changes": false,
+  "source_file_sha256": {
+    "docs/demo/OrdinarySyntheticDemo.md": "d3dcdd0c730c5c5a364565b754e5522fac791e2cd1ce9f92fe3f8466ac906120",
+    "scripts/windows_ci/diagnostic-catalog-v2/f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9/FOUNDATION_HOST.jsonl": "469928a04fe8321251f2dc976aa7044e8b03f1b823505e90b7af3a2827ca68b6",
+    "scripts/windows_ci/diagnostic-catalog-v2/f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9/MATERIAL.jsonl": "b7d7b5d12a0c550c885069d21da46de879b643fc40b190feb1c839c4c2b42cef",
+    "scripts/windows_ci/diagnostic-catalog-v2/f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9/PLAN_EXECUTION.jsonl": "f20cd664757ccf21fcbc5d3ed6fc9e0c891bf40c6dca8dbdeb4cb205df681dc1",
+    "scripts/windows_ci/diagnostic-catalog-v2/f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9/RESOURCE.jsonl": "eb77093bb0831d51f35d70ac0390675a02da0dfedd7576a415638c0e69847eb6",
+    "scripts/windows_ci/diagnostic-catalog-v2/f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9/WINDOWS_DIAGNOSTICS.jsonl": "721415177ace0484a5e09b925c2d63a8e98cd98822e8fa7dd45cb2fba9fd4315",
+    "scripts/windows_ci/diagnostic-test-ids.json": "980c4ded5202d6d50962cbd9c5ccd4c438ea634db9fa932f38ccc7957bfd442e",
+    "src/parkweave/case_resource_delivery.py": "5e002392be2965707c086ce1580ac751c78bbd55840bcb6c52fe901396e58b63",
+    "src/parkweave/local_resource_approval.py": "3ffe5aee5cad178a269d3daa5b495cc84180d971c15f5910056f96d5af5852f7",
+    "src/parkweave/service_plan_approval.py": "83feb82376ea468230a5c8cf23b09bac91e6bbf85562dc7e5e36de0713e4b43b",
+    "tests/test_local_resource_approval.py": "cf733b92a5003379d15d8cf59d43acc4f3656e0d605b03e136002e9c5a9fea28"
+  },
+  "collection": {
+    "source_sha": "4e2f981c36318d657c3cbda0323bc000b42dea67",
+    "cases": 9445,
+    "files": 399,
+    "shards": [
+      2393,
+      2309,
+      2403,
+      2340
+    ],
+    "raw_HEAD_bindings": 674,
+    "exact_global_piece_multiset": true,
+    "execution": "COLLECT_ONLY_NOT_PASS_NOT_NATIVE"
+  }
+}
