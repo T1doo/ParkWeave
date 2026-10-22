@@ -31,21 +31,22 @@ def source_adopt(f,p,page_directory=None):
     return stored(f,p)['events'][-1]
 
 
-def staged(f,directory):
+def staged(f,directory,goals=None):
     from test_request_intents import save
     from ordinary_case_step_support import worker_once
+    goals=GOALS if goals is None else goals
     run=f[3].post('/api/runs',headers=headers(f[2],key=uuid4().hex),json=dict(goal='SYNTHETIC NO_MODEL新输入完整候选来源变化'))
     assert run.status_code==202,run.text;worker_once(f,directory)
     response=f[3].post('/api/preparations',headers=headers(f[2],key=uuid4().hex),json=dict(run_id=run.json()['run_id'],service_id='synthetic-material-preparation',service_version=1,reviewer_id='prep-specialist-fixture-a'))
     assert response.status_code==201,response.text;p=response.json()
-    response=save(f,p,goals=GOALS,text='SYNTHETIC 本次NO_MODEL独立目标');assert response.status_code==200,response.text;p=response.json()
+    response=save(f,p,goals=goals,text='SYNTHETIC 本次NO_MODEL独立目标');assert response.status_code==200,response.text;p=response.json()
     p=add(f,p,text='SYNTHETIC 新诉求完整原文').json();p=add(f,p,'material_outline','SYNTHETIC 新材料目录原文').json()
     p=materials(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC 原专员独立审核').json()
     p=materials(f,p,'CONFIRM',reason='SYNTHETIC 本人确认').json()
     current,_,response=generate(f,p);assert response.status_code==201,response.text;candidate=response.json()
     assert candidate['producer']['mode']=='NO_MODEL' and candidate['producer']['real_model_calls']==0
     body=dict(expected_preparation_revision=p['revision'],expected_request_revision=current['request_revision'],expected_plan_revision=0,
-        expected_source_sha256=current['source_sha256'],required_goals=GOALS,reason='SYNTHETIC 明确采纳完整NO_MODEL候选',
+        expected_source_sha256=current['source_sha256'],required_goals=goals,reason='SYNTHETIC 明确采纳完整NO_MODEL候选',
         candidate_id=candidate['candidate_id'],expected_candidate_sha256=candidate['candidate_sha256'],expected_verification_sha256=candidate['verification_sha256'])
     return p,body,candidate
 
@@ -65,6 +66,82 @@ def tail_pending(plan):
     assert all(s['coordination_state']=='PENDING' and s['verified_sources'] is None and s['verified_sha256'] is None for s in plan['steps'] if s['adapter_id'] in ('P3','P4'))
     tail={s['id'] for s in plan['steps'] if s['adapter_id'] in ('P3','P4')}
     assert not any(e['action']=='VERIFY' and e['step_id'] in tail for e in plan['events'])
+
+
+def test_no_model_five_goal_local_approval_tail_actions_and_p5_prerequisites(ordinary_local,tmp_path):
+    from parkweave import controlled_plans as cp
+    from test_service_case_steps import GOALS as all_goals,read as plan_read
+    from test_service_dispatches import offer,command as dispatch_action
+    from test_executor_receipts import act as receipt_action
+    from test_case_lifecycle import read as local_read,act as local_action
+    from test_case_goal_results import get as goal_read,snapshot
+    from test_ordinary_case_goal_record_pack_process import html
+    from scripts.local_goal_txt_installed_browser_once import unpack
+    from service_release_acceptance_support import authority_snapshot
+    f,_,_=ordinary_local;p,body,candidate=staged(f,tmp_path/'worker',all_goals)
+    response=adopt(f,p,body);assert response.status_code==201,response.text
+    plan=stored(f,p);assert [s['adapter_id'] for s in plan['steps']]==['P1','P2','P3','P4','P5']
+    assert set(plan['adoption_preview'][observation.FIELD]['sources'])=={'P1','P2','P3','P4','P5'}
+    verified(f,p,'P1');_,members=bundle(f);data=quoted(f,p,members);item,_=first_approval(f,p,data)
+    delivered=submit(f,p,{**data,'approval_id':item['id']});assert delivered.status_code==201,delivered.text
+    verified(f,p,'P2');authority=authority_snapshot(f[1]);stages=[]
+
+    def goals(label,expected):
+        response=goal_read(f,p);assert response.status_code==200,response.text;value=response.json()
+        assert value['current_required_goals']==all_goals and [r['state'] for r in value['results']]==expected
+        assert value['state']==('LOCAL_OUTPUTS_VERIFIED' if all(s=='LOCAL_OUTPUT_VERIFIED' for s in expected) else 'UNVERIFIED')
+        assert not value['case_goal_completed'] and not value['automatically_verified']
+        trace=value['source_trace'];assert trace['candidate']['candidate_id']==candidate['candidate_id']
+        assert trace['candidate']['producer']['mode']=='NO_MODEL' and len(trace['steps'])==5
+        assert trace['trace_sha256']==cp._hash({k:v for k,v in trace.items() if k!='trace_sha256'})
+        assert all(r['result_sha256']==cp._hash({k:v for k,v in r.items() if k!='result_sha256'}) for r in value['results'])
+        stages.append(dict(stage=label,goal_results=value));return value
+
+    def rejected(response,before):
+        assert response.status_code==409,response.text
+        assert snapshot(f)==before
+
+    current=goals('P1_P2_PRECONDITIONS',['LOCAL_OUTPUT_VERIFIED']*2+['WAITING_OUTPUT','WAITING_DEPENDENCY','WAITING_DEPENDENCY'])
+    response=offer(f,p)[0];assert response.status_code==201,response.text
+    response=dispatch_action(f,response.json(),'ACCEPT');assert response.status_code==200,response.text;dispatch=response.json()
+    goals('P3_ACCEPT_IS_NOT_VERIFY',['LOCAL_OUTPUT_VERIFIED']*2+['AWAITING_OWNER_VERIFICATION','WAITING_DEPENDENCY','WAITING_DEPENDENCY'])
+    verified(f,p,'P3');local=local_read(f,p).json();before=snapshot(f)
+    rejected(local_action(f,p,local,'REVALIDATE'),before)
+    response=f[3].get('/api/executor-receipts/'+dispatch['receipt_step_id'],headers=headers(f[2],'executor-a'));assert response.status_code==200,response.text
+    receipt_text='SYNTHETIC 许辰为虚构云杉企业整理本次办理记录；仅本地合成记录，不证明外部履约。'
+    response=receipt_action(f,response.json(),'SUBMIT',text=receipt_text);assert response.status_code==200,response.text
+    submitted=response.json();assert submitted['current_receipt']['text']==receipt_text
+    goals('P4_SUBMIT_IS_NOT_ACK',['LOCAL_OUTPUT_VERIFIED']*3+['WAITING_OUTPUT','WAITING_DEPENDENCY'])
+    response=receipt_action(f,submitted,'ACKNOWLEDGE');assert response.status_code==200,response.text;receipt=response.json()
+    goals('P4_ACK_IS_NOT_VERIFY',['LOCAL_OUTPUT_VERIFIED']*3+['AWAITING_OWNER_VERIFICATION','WAITING_DEPENDENCY'])
+    verified(f,p,'P4');missing=goals('P5_REVALIDATE_REQUIRED',['LOCAL_OUTPUT_VERIFIED']*4+['WAITING_OUTPUT'])
+    local=local_read(f,p).json();assert local['local_record_state']=='NOT_STARTED' and local['can_revalidate'] and not local['can_close_local_record']
+    before=snapshot(f);rejected(step_command(f,p,'P5'),before)
+    before=snapshot(f);rejected(local_action(f,p,local,'CLOSE_LOCAL_RECORD'),before)
+    pending=html(f,tmp_path/'p5-missing',p,plan['id'],'UNVERIFIED',goal_count=5,capture_truth=True)
+    assert unpack((tmp_path/'p5-missing/download.txt').read_text(),pending['goal_results'])==pending['pack']
+    assert pending['goal_results']==missing
+    response=local_action(f,p,local,'REVALIDATE');assert response.status_code==200,response.text;local=response.json()
+    goals('P5_REVALIDATE_IS_NOT_VERIFY',['LOCAL_OUTPUT_VERIFIED']*4+['AWAITING_OWNER_VERIFICATION'])
+    response=local_action(f,p,local,'CLOSE_LOCAL_RECORD');assert response.status_code==200,response.text
+    goals('P5_CLOSE_IS_NOT_VERIFY',['LOCAL_OUTPUT_VERIFIED']*4+['AWAITING_OWNER_VERIFICATION'])
+    verified(f,p,'P5');complete=goals('P5_EXPLICIT_VERIFY',['LOCAL_OUTPUT_VERIFIED']*5)
+    before=snapshot(f);finished=html(f,tmp_path/'p5-verified',p,plan['id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=5,capture_truth=True)
+    assert snapshot(f)==before and finished['goal_results']==complete
+    assert unpack((tmp_path/'p5-verified/download.txt').read_text(),complete)==finished['pack']
+    outputs={row['adapter_id']:row['actual_output'] for row in complete['results']}
+    assert outputs['P3']['offer_id']==dispatch['current_offer']['id']
+    assert outputs['P4']['receipt_id']==receipt['current_receipt']['id'] and outputs['P4']['receipt_version']==1
+    assert outputs['P5']['local_record_state']=='LOCAL_RECORD_CLOSED' and outputs['P5']['revalidation_event_id']
+    assert authority_snapshot(f[1])==authority and ledger(f,p)['revision']==3
+    fresh=plan_read(f,p).json();assert fresh['current_case_step_scope']==dict(contract='CASE_STEP_ASSIGNMENT_V1',run_access_granted=False)
+    with f[1].connect() as c:
+        assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+        assert c.execute('SELECT count(*) n FROM case_local_events WHERE preparation_id=%s',(p['preparation_id'],)).fetchone()['n']==2
+    (tmp_path/'tail-combination.json').write_text(json.dumps(dict(preparation_id=p['preparation_id'],case_id=p['case_id'],run_id=p['run_id'],
+        candidate_id=candidate['candidate_id'],stages=stages,dispatch=dispatch,receipt=receipt,pending_pack=pending,finished_pack=finished,
+        rejected_actions=['REVALIDATE_BEFORE_P4','P5_VERIFY_WITHOUT_REVALIDATE','CLOSE_WITHOUT_REVALIDATE'],
+        real_model_calls=0,real_browser=False,external_fulfillment=False),ensure_ascii=False,indent=2)+'\n')
 
 
 def test_no_model_current_goals_txt_and_fresh_context_original_keys(ordinary_local,tmp_path):
