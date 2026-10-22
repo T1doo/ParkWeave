@@ -1,8 +1,8 @@
-"""Exact run24/attempt1: real sandboxed Chrome CSS states, synthetic GET replay only."""
+"""Exact run25/attempt1: real sandboxed Chrome CSS states, synthetic GET replay only."""
 import hashlib,json,os,signal,socket,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from scripts import fictional_park_browser_once as base
-from scripts.fictional_park_restart_browser_once import installed_font_environment, verify_rendered_font
+from scripts.fictional_park_restart_browser_once import installed_font_environment, verify_rendered_font, ui_codepoints
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlsplit
@@ -68,16 +68,23 @@ def metrics(page,label,empty):
     else:
         assert m['text'] and m['height']>28 and m['borderLeft']=='3px' and m['paddingTop']=='14px',m
         assert m['scrollHeight']<=m['clientHeight']+1 and m['withinViewport'] and m['verticallyVisible'] and not m['pageOverflow'],m
+        verify_rendered_font(page,REPORT)
+        nodes=REPORT['installed_CJK_font']['visible_node_font_usage']
+        target=[node for node in nodes if node['selector']=='#receipt-submit-status']
+        assert len(target)==1 and target[0]['required_codepoints']==sorted(ui_codepoints(m['text']))
+        assert target[0]['text_sha256']==hashlib.sha256(m['text'].encode()).hexdigest()
+        assert not target[0]['missing_codepoints'] and not target[0]['invalid_sources']
+        REPORT.setdefault('font_observations',[]).append(dict(label=label,width=page.viewport_size['width'],
+            nodes=nodes))
     return m
 def screenshot(page,name):
     page.locator('#receipt-submit-status' if page.locator('#receipt-submit-status').text_content() else '#receipt-summary').scroll_into_view_if_needed(timeout=15000)
-    if name=='03-after-unknown-narrow.png':verify_rendered_font(page,REPORT)
     page.screenshot(path=str(OUT/name))
 def open_receipt(browser,base,variant,width):
     global MODE,LAST_PAGE
     MODE='initial';context=browser.new_context(viewport=dict(width=width,height=1000),service_workers='block')
     def boundary(route):
-        request=route.request;p=urlsplit(request.url);allowed=p.netloc==urlsplit(base).netloc and request.method=='GET' and len(REPORT['browser_requests'])<40
+        request=route.request;p=urlsplit(request.url);origin=urlsplit(base);allowed=(p.scheme,p.netloc)==(origin.scheme,origin.netloc) and request.method=='GET' and len(REPORT['browser_requests'])<40
         REPORT['browser_requests'].append(dict(method=request.method,path=p.path,allowed=allowed))
         if allowed:route.continue_()
         else:
@@ -121,7 +128,7 @@ def main():
     os.umask(0o077);START=time.monotonic()
     server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='24')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='25')
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-css-replay-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         after=(ROOT/'src/parkweave/web.html').read_bytes();rule=b'#receipt-submit-status:empty{margin:0;padding:0;border:0;background:transparent}\n'
         assert after.count(rule)==1;before=after.replace(rule,b'',1)
@@ -163,6 +170,8 @@ def main():
                 if width==390:screenshot(page,'05-after-cleared-narrow.png')
                 context.close()
             assert REPORT['business_POSTs']==0 and not REPORT['browser_errors'] and not REPORT.get('unexpected_GET') and not REPORT.get('violations')
+            assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
+            assert [(v['width'],v['label']) for v in REPORT['font_observations']]==[(w,label) for w in (1200,390) for label in ('after-unknown','after-recovered')]
             assert time.monotonic()-START<90
             REPORT['status']='PASS';REPORT['stage']='COMPLETE'
     except BaseException as e:
@@ -177,6 +186,8 @@ def main():
                 except ConnectionRefusedError:REPORT['listener_after_cleanup']='REFUSED'
             except Exception as e:REPORT['cleanup_errors'].append('server:'+type(e).__name__)
         if REPORT['cleanup_errors']:REPORT['status']='FAIL'
+        if REPORT['status']=='PASS' and (REPORT.get('browser_close')!='CLOSED' or REPORT.get('listener_after_cleanup')!='REFUSED'):
+            REPORT['status']='FAIL';REPORT['cleanup_errors'].append('terminal cleanup proof missing')
         REPORT['elapsed_seconds']=time.monotonic()-START
         if REPORT['elapsed_seconds']>90:
             REPORT['status']='FAIL';REPORT['deadline_exceeded']=True
