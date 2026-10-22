@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="6.323" timestamp="2026-10-22T07:42:55.788508+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_no_model_difference_observation" name="test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending" time="6.094"><failure message="AssertionError: {'blockers': ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED'], 'unknown_reasons': ['U... 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}, {'adapter': 'P4', 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}]}&#10;assert False">ordinary_local = ((&lt;parkweave.store.Store object at 0x7f62471f8c80&gt;, &lt;parkweave.store.Store object at 0x7f62478fae40&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/639d97fd-8b32-438a-b5cb-494cae87f18c/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-23/test_new_no_model_fixed_releas0')
+
+    def test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending(ordinary_local,tmp_path):
+        f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker');before=stored(f,p);prefix=deepcopy(ledger(f,p)['events'])
+&gt;       tail_pending(before);event=source_adopt(f,p);tail_pending(stored(f,p))
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f62471f8c80&gt;, &lt;parkweave.store.Store object at 0x7f62478fae40&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7f62478529c0&gt;)
+p = {'preparation_id': '639d97fd-8b32-438a-b5cb-494cae87f18c', 'case_id': '01423eef-684c-4a61-be09-f97c17c425e7', 'run_id': '38c50730-f4a9-4156-8ce5-ece58f6b6f9b', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview
+        response=preview(f,p,changed(f,p));assert response.status_code==200,response.text
+        value=response.json()
+        if not value['can_adopt']:
+            graph=value['source_impact']
+&gt;           assert False,dict(blockers=value['blocking_reasons'],unknown_reasons=graph['unknown_reasons'],unknown_nodes=[dict(adapter=n['adapter_id'],facet=n['facet'],fields=n['fields']) for n in graph['nodes'] if not n['known']])
+E           AssertionError: {'blockers': ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED'], 'unknown_reasons': ['U... 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}, {'adapter': 'P4', 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}]}
+E           assert False
+
+tests/test_no_model_difference_observation.py:26: AssertionError</failure></testcase></testsuite></testsuites>

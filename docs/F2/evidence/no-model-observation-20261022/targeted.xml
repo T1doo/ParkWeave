@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="11" time="52.046" timestamp="2026-10-22T07:40:04.974882+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_no_model_difference_observation" name="test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending" time="6.189"><failure message="AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']&#10;assert False">ordinary_local = ((&lt;parkweave.store.Store object at 0x7fe908d7baa0&gt;, &lt;parkweave.store.Store object at 0x7fe908a879b0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/373283db-13d1-49f9-849c-237e7a318c48/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_new_no_model_fixed_releas0')
+
+    def test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending(ordinary_local,tmp_path):
+        f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker');before=stored(f,p);prefix=deepcopy(ledger(f,p)['events'])
+&gt;       tail_pending(before);event=source_adopt(f,p);tail_pending(stored(f,p))
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7fe908d7baa0&gt;, &lt;parkweave.store.Store object at 0x7fe908a879b0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7fe907b4bc50&gt;)
+p = {'preparation_id': '373283db-13d1-49f9-849c-237e7a318c48', 'case_id': '3fd01874-a5cd-4afc-8ee6-4e4a1a5b420d', 'run_id': '26845293-66aa-4268-827d-2150e41533c6', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+&gt;       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError</failure></testcase><testcase classname="tests.test_no_model_difference_observation" name="test_second_source_adopt_cannot_wash_observation_lineage_after_start[OFFER]" time="5.785"><failure message="AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']&#10;assert False">ordinary_local = ((&lt;parkweave.store.Store object at 0x7fe9066b9e20&gt;, &lt;parkweave.store.Store object at 0x7fe907d31460&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/fca85369-90d1-4237-aa3c-a014ec87de67/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_second_source_adopt_canno0')
+started = 'OFFER'
+
+    @pytest.mark.parametrize('started',['OFFER','BEGIN'])
+    def test_second_source_adopt_cannot_wash_observation_lineage_after_start(ordinary_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_source_change_adoption import changed,preview
+&gt;       f,_,_=ordinary_local;p,_,old,_=first(f,tmp_path/'worker');source_adopt(f,p)
+                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7fe9066b9e20&gt;, &lt;parkweave.store.Store object at 0x7fe907d31460&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7fe9063bcad0&gt;)
+p = {'preparation_id': 'fca85369-90d1-4237-aa3c-a014ec87de67', 'case_id': '14f9ad20-925a-4346-8ddd-a0300d93b664', 'run_id': '38d69dfb-313e-497e-af0f-2b786d4d2edf', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+&gt;       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError</failure></testcase><testcase classname="tests.test_no_model_difference_observation" name="test_second_source_adopt_cannot_wash_observation_lineage_after_start[BEGIN]" time="5.725"><failure message="AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']&#10;assert False">ordinary_local = ((&lt;parkweave.store.Store object at 0x7fe9064863c0&gt;, &lt;parkweave.store.Store object at 0x7fe906426fc0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/ba3278f4-6a80-427c-8b57-fa397e7ca464/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_second_source_adopt_canno1')
+started = 'BEGIN'
+
+    @pytest.mark.parametrize('started',['OFFER','BEGIN'])
+    def test_second_source_adopt_cannot_wash_observation_lineage_after_start(ordinary_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_source_change_adoption import changed,preview
+&gt;       f,_,_=ordinary_local;p,_,old,_=first(f,tmp_path/'worker');source_adopt(f,p)
+                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7fe9064863c0&gt;, &lt;parkweave.store.Store object at 0x7fe906426fc0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7fe9062d29c0&gt;)
+p = {'preparation_id': 'ba3278f4-6a80-427c-8b57-fa397e7ca464', 'case_id': 'f39bbbc8-6248-479b-bd03-942c0819de39', 'run_id': 'cb35463d-c1d1-4f76-9e63-a79f97b048e0', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+&gt;       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError</failure></testcase><testcase classname="tests.test_no_model_difference_observation" name="test_rehashed_seal_changes_or_downgrade_refuse_original_history[PLAN]" time="5.407" /><testcase classname="tests.test_no_model_difference_observation" name="test_rehashed_seal_changes_or_downgrade_refuse_original_history[STEP]" time="5.538" /><testcase classname="tests.test_no_model_difference_observation" name="test_rehashed_seal_changes_or_downgrade_refuse_original_history[CANDIDATE]" time="5.670" /><testcase classname="tests.test_no_model_difference_observation" name="test_rehashed_seal_changes_or_downgrade_refuse_original_history[STRIP]" time="5.618" /><testcase classname="tests.test_no_model_difference_observation" name="test_rehashed_seal_changes_or_downgrade_refuse_original_history[VERSION]" time="5.507" /><testcase classname="tests.test_no_model_difference_observation" name="test_resource_grant_aba_invalidates_unconsumed_candidate_observation" time="1.673"><failure message="AssertionError: Internal Server Error&#10;assert 500 == 409&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">ordinary_local = ((&lt;parkweave.store.Store object at 0x7fe905e4c500&gt;, &lt;parkweave.store.Store object at 0x7fe9063c0ef0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/92cfca6d-5786-403c-a15f-2b30b7a283d7/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_resource_grant_aba_invali0')
+
+    def test_resource_grant_aba_invalidates_unconsumed_candidate_observation(ordinary_local,tmp_path):
+        f,_,_=ordinary_local;p,body,_=staged(f,tmp_path/'worker')
+        with f[1].connect() as c:c.execute("UPDATE synthetic_resource_grants SET active=false WHERE principal_id='fixture-a' AND capability='HOLD'")
+        with f[1].connect() as c:c.execute("UPDATE synthetic_resource_grants SET active=true WHERE principal_id='fixture-a' AND capability='HOLD'")
+&gt;       result=adopt(f,p,body);assert result.status_code==409,result.text
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Internal Server Error
+E       assert 500 == 409
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/test_no_model_difference_observation.py:114: AssertionError</failure></testcase><testcase classname="tests.test_no_model_difference_observation" name="test_foreign_case_candidate_cannot_supply_observation_baseline" time="2.470" /><testcase classname="tests.test_no_model_difference_observation" name="test_initial_seal_failure_rolls_back_plan_and_original_key_can_commit_once" time="2.168" /></testsuite></testsuites>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.804" timestamp="2026-10-22T07:35:12.519272+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_synthetic_demo" name="test_ordinary_factory_original_full_chain_and_cold_recovery" time="3.629"><failure message="KeyError: 'producer'">demo_inputs = ((&lt;parkweave.store.Store object at 0x7fedb55fa750&gt;, &lt;parkweave.store.Store object at 0x7fedb55fa6c0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': {'name': 'fixture_f994c377b6f040aaa5654e42a82ec21f', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-21/test_ordinary_factory_original0')
+
+    def test_ordinary_factory_original_full_chain_and_cold_recovery(demo_inputs,tmp_path):
+        initial,cfg,value,journal=demo_inputs
+        before=authority_snapshot(initial[1])
+        with TestClient(configured_app()) as api:
+            f=(*initial[:3],api)
+            assert authority_snapshot(f[1])==before
+            # New Run/preparation/material inputs all enter through ordinary APIs.
+            p=prepared(f)
+            ok(api.get('/api/service-instance-configurations',headers=headers(f[2])),403)
+            # Required original Run assignment is explicit TEST initial state,
+            # outside the loader, and never presented as a startup capability.
+            f[1].assign_status('executor-a',UUID(p['run_id']),active=True)
+            baseline=authority_snapshot(f[1])
+            assert len(baseline['run_assignments'])==len(before['run_assignments'])+1
+            key=uuid4().hex
+            current,capture,response=generate(f,p,key);candidate=ok(response,201)
+            assert current['profile']==demo.PROFILE and current['selection_oracle']['state']=='UNIQUE'
+            assert candidate['can_adopt'] and candidate['producer']['mode']=='NO_MODEL'
+            assert candidate['producer']['model'] is None and candidate['producer']['real_model_calls']==0
+            assert not {'usage','call_id','response_raw','budget_record'}&amp;candidate['producer'].keys()
+            assert all('source_review' not in r for r in current['catalog_snapshot']['releases'])
+            path='/api/preparations/'+p['preparation_id']
+            original=case_history(f[1],p['preparation_id'])
+            replay=ok(api.post(path+'/service-selections',headers=headers(f[2],key=key),json=capture),201)
+            assert replay==candidate and case_history(f[1],p['preparation_id'])==original
+            recovered=ok(api.get(path+'/service-selections/recovery',headers=headers(f[2],key=key)))
+            assert recovered['status']=='COMMITTED' and recovered['items'][0]==candidate
+            ok(api.get(path+'/service-plan-candidates',headers=headers(f[2])))
+            body=dict(expected_preparation_revision=p['revision'],expected_request_revision=current['request_revision'],expected_plan_revision=0,
+                expected_source_sha256=current['source_sha256'],required_goals=GOALS,reason='SYNTHETIC explicit NO_MODEL candidate adoption',
+                candidate_id=candidate['candidate_id'],expected_candidate_sha256=candidate['candidate_sha256'],expected_verification_sha256=candidate['verification_sha256'])
+            adopted=ok(api.post(path+'/service-case-plan',headers=headers(f[2],key=uuid4().hex),json=body),201)
+            assert [s['adapter_id'] for s in adopted['steps']]==['P1','P2','P3','P4','P5']
+            def verify(adapter):
+                reply=ok(plan_command(f,p,adapter))
+                assert next(s for s in reply['steps'] if s['adapter_id']==adapter)['state']=='VERIFIED'
+            verify('P1')
+            from test_case_resources import group,post as link
+            combination=group(f);ok(link(f,p,combination),201);verify('P2')
+            dispatch=ok(offer(f,p)[0],201)
+            dispatch=ok(dispatch_command(f,dispatch,'ACCEPT'));verify('P3')
+            receipt=ok(api.get('/api/executor-receipts/'+dispatch['receipt_step_id'],headers=headers(f[2],'executor-a')))
+            receipt=ok(receipt_command(f,receipt,'SUBMIT'))
+            ok(receipt_command(f,receipt,'ACKNOWLEDGE'));verify('P4')
+            local=ok(local_read(f,p));ok(local_command(f,p,local,'REVALIDATE'));verify('P5')
+            results=ok(api.get(path+'/goal-results',headers=headers(f[2])))
+            assert results['state']=='LOCAL_OUTPUTS_VERIFIED' and len(results['results'])==6
+            assert not results['case_goal_completed']
+&gt;           assert results['source_trace']['candidate']['producer']['mode']=='NO_MODEL'
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'producer'
+
+tests/test_local_synthetic_demo.py:141: KeyError</failure></testcase></testsuite></testsuites>

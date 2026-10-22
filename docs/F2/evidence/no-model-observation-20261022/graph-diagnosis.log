@@ -1,0 +1,50 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending __
+
+ordinary_local = ((<parkweave.store.Store object at 0x7f62471f8c80>, <parkweave.store.Store object at 0x7f62478fae40>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/639d97fd-8b32-438a-b5cb-494cae87f18c/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-23/test_new_no_model_fixed_releas0')
+
+    def test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending(ordinary_local,tmp_path):
+        f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker');before=stored(f,p);prefix=deepcopy(ledger(f,p)['events'])
+>       tail_pending(before);event=source_adopt(f,p);tail_pending(stored(f,p))
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:69: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7f62471f8c80>, <parkweave.store.Store object at 0x7f62478fae40>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7f62478529c0>)
+p = {'preparation_id': '639d97fd-8b32-438a-b5cb-494cae87f18c', 'case_id': '01423eef-684c-4a61-be09-f97c17c425e7', 'run_id': '38c50730-f4a9-4156-8ce5-ece58f6b6f9b', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview
+        response=preview(f,p,changed(f,p));assert response.status_code==200,response.text
+        value=response.json()
+        if not value['can_adopt']:
+            graph=value['source_impact']
+>           assert False,dict(blockers=value['blocking_reasons'],unknown_reasons=graph['unknown_reasons'],unknown_nodes=[dict(adapter=n['adapter_id'],facet=n['facet'],fields=n['fields']) for n in graph['nodes'] if not n['known']])
+E           AssertionError: {'blockers': ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED'], 'unknown_reasons': ['U... 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}, {'adapter': 'P4', 'facet': 'UNMAPPED_SOURCE_FIELDS', 'fields': []}]}
+E           assert False
+
+tests/test_no_model_difference_observation.py:26: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+1 failed, 4 warnings in 6.32s

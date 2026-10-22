@@ -25,7 +25,8 @@ class OpportunityProof(BaseModel):
 def evidence_sources(parent,plan,events=None):
     """Reconstruct accepted source bases from original owner VERIFY/ADOPT events."""
     from .service_case_steps import Command
-    values={};by_id={s['id']:s['adapter_id'] for s in plan['steps']}
+    from .difference_observation import tail_sources
+    values=tail_sources(parent,plan);by_id={s['id']:s['adapter_id'] for s in plan['steps']}
     for event in plan['events'] if events is None else events:
         if event['action']=='VERIFY':
             command=Command(action='VERIFY',step_id=event['step_id'],expected_revision=event['revision']-1,
@@ -116,6 +117,8 @@ def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None,dep
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:raise Conflict('existing registered plan required')
     service._recovery_proofs(parent)
+    from .difference_observation import pending_adapters,unstarted
+    if pending_adapters(parent,plan):unstarted(c,parent)
     value,card=current_card(parent,card_id)
     basis,basis_sha=op.sources(c,parent)
     if card['basis_sha256']!=basis_sha or not any(x['version']==card['entry']['catalog_version'] for x in basis['catalog']):
@@ -129,7 +132,8 @@ def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None,dep
     dependency_basis,dependency_affected,unknown=service.dependency_impact(store,c,parent,plan)
     affected|=dependency_affected
     from . import typed_source_impact
-    typed_graph=typed_source_impact.build(parent,plan,before,sources,plan.get('dependency_manifest'),dependency_basis)
+    compiler=typed_source_impact.build_v1 if fact_provenance_scope is not None or dependency_scope is not None else typed_source_impact.build
+    typed_graph=compiler(parent,plan,before,sources,plan.get('dependency_manifest'),dependency_basis)
     expected_ids=[s['id'] for s in plan['steps'] if s['adapter_id'] in affected]
     expected_preserved=[s['id'] for s in plan['steps'] if s['adapter_id'] not in affected]
     if not typed_graph['unknown_scope'] and (typed_graph['affected']!=expected_ids or typed_graph['preserved']!=expected_preserved):
@@ -300,9 +304,10 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
     if version==2:
         from . import typed_source_impact
         graph=change['source_impact']
-        if not isinstance(graph,dict) or type(graph.get('schema')) is not int or graph['schema']!=1:
+        if not isinstance(graph,dict) or type(graph.get('schema')) is not int or graph['schema'] not in (1,2):
             raise ValueError('typed source graph schema unsupported')
-        expected_graph=typed_source_impact.build_v1(parent,plan,before,change['current_sources'],previous_dependencies,current_dependencies)
+        compiler=typed_source_impact.build_v1 if graph['schema']==1 else typed_source_impact.build_v2
+        expected_graph=compiler(parent,plan,before,change['current_sources'],previous_dependencies,current_dependencies)
         if change['source_impact']!=expected_graph or expected_graph['unknown_scope']:
             raise ValueError('typed source graph proof invalid')
         if set(expected_graph['affected'])!={s['id'] for s in plan['steps'] if s['adapter_id'] in affected}:

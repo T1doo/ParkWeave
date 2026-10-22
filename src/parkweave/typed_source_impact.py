@@ -120,7 +120,7 @@ def _node_v1(binding,plan,step,facet,type,kind,fields,before,current,*,known=Tru
     return node,edge
 
 
-def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies):
+def _build(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies,*,groups_by_adapter,schema):
     """Pure, reproducible graph from retained original proofs and current reads."""
     binding=op.binding(parent);nodes=[];edges=[];reasons=set();roots=set()
     selected={s['adapter_id'] for s in plan['steps']}
@@ -130,11 +130,11 @@ def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,cu
     current_sources=current_sources if isinstance(current_sources,dict) else {}
     for step in plan['steps']:
         adapter=step['adapter_id']
-        if adapter not in GROUPS_V1:raise Conflict('registered source adapter unavailable')
+        if adapter not in groups_by_adapter:raise Conflict('registered source adapter unavailable')
         before,b_valid=_flatten_v1(adapter,before_sources.get(adapter));current,c_valid=_flatten_v1(adapter,current_sources.get(adapter))
         present=adapter in before_sources and adapter in current_sources and b_valid and c_valid
         if not present:reasons.add('SOURCE_BASE_UNAVAILABLE')
-        groups={**GROUPS_V1[adapter],**COMMON_V1};known_fields={field for _,_,fields in groups.values() for field in fields}
+        groups={**groups_by_adapter[adapter],**COMMON_V1};known_fields={field for _,_,fields in groups.values() for field in fields}
         unrecognized=(set(before)|set(current))-known_fields
         if unrecognized:reasons.add('UNMAPPED_SOURCE_FIELDS')
         for facet,(type,kind,fields) in groups.items():
@@ -147,6 +147,12 @@ def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,cu
                         if not (value is None and nullable) and (not isinstance(value,list) or len(value)>256 or any(not isinstance(r,dict) for r in value)):shape=False
                     if field.split('.')[-1] in ('resource_collection','run_access_collection') and field in values:
                         if not isinstance(value,dict) or value.get('known') is not True:shape=False
+            if schema==2 and facet=='CASE_STEP_ASSIGNMENT':
+                for values in (before,current):
+                    item=values.get('case_step_assignment')
+                    if (not isinstance(item,dict) or set(item)!={'contract','contract_id','marker','current'}
+                        or item['contract']!='CASE_STEP_ASSIGNMENT_V1' or item['contract_id']!=str(parent['id'])
+                        or item['marker'] is not None or item['current'] is not False):shape=False
             if not shape:reasons.add('SOURCE_GROUP_SHAPE_UNAVAILABLE')
             node,edge=_node_v1(binding,plan,step,facet,type,kind,fields,before,current,known=present and shape)
             nodes.append(node);edges.append(edge)
@@ -187,7 +193,7 @@ def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,cu
         original_affected=deps.closure(plan['steps'],original_roots)|dependency_affected
         if candidate!=original_affected:reasons.add('SOURCE_PARTITION_UNEXPLAINED')
     affected=set(selected) if reasons else candidate
-    graph=dict(schema=1,scope=SCOPE,binding=binding,plan_id=plan['id'],nodes=nodes,edges=edges,
+    graph=dict(schema=schema,scope=SCOPE,binding=binding,plan_id=plan['id'],nodes=nodes,edges=edges,
         step_endpoints=[dict(id=s['id'],type='PLAN_STEP',adapter_id=s['adapter_id']) for s in plan['steps']],
         changed_node_ids=[n['id'] for n in nodes if n['changed']],affected=[s['id'] for s in plan['steps'] if s['adapter_id'] in affected],
         preserved=[s['id'] for s in plan['steps'] if s['adapter_id'] not in affected],
@@ -195,9 +201,28 @@ def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,cu
     return {**graph,'sha256':cp._hash(graph)}
 
 
+def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies):
+    """Frozen original source groups and schema, including unknown fields."""
+    return _build(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies,
+                  groups_by_adapter=GROUPS_V1,schema=1)
+
+
+def build_v2(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies):
+    """Pure LOCAL observation mapping; never reads today's business state."""
+    from .difference_observation import tail_sources
+    if not tail_sources(parent,plan):raise Conflict('original LOCAL tail observation required for source graph schema 2')
+    groups=deepcopy(GROUPS_V1)
+    for adapter in ('P3','P4'):
+        groups[adapter]['CASE_STEP_ASSIGNMENT']=('SOURCE','PRECEDES',('case_step_assignment',))
+    return _build(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies,
+                  groups_by_adapter=groups,schema=2)
+
+
 def build(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies):
-    """Current compiler. Saved schema 1 always calls frozen build_v1."""
-    return build_v1(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies)
+    """New LOCAL baseline only; saved schemas use their exact compiler."""
+    from .difference_observation import tail_sources
+    compiler=build_v2 if tail_sources(parent,plan) else build_v1
+    return compiler(parent,plan,before_sources,current_sources,previous_dependencies,current_dependencies)
 
 
 @er.bounded
