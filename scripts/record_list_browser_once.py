@@ -1,5 +1,5 @@
-"""Exact hosted run10: real read-only list UI over owned synthetic initial data."""
-from contextlib import redirect_stdout, redirect_stderr
+"""Exact hosted run11: real read-only list UI over owned synthetic initial data."""
+from contextlib import contextmanager,redirect_stdout,redirect_stderr
 from copy import deepcopy
 from hashlib import sha256
 import json
@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import socket
 import time
+import tempfile
 from urllib.parse import urlsplit
 
 from scripts import fictional_park_browser_once as base
@@ -15,7 +16,51 @@ PRIVATE=base.ROOT/'.runtime/record-list-browser-once'
 NAMES=frozenset(f'{n:02}-{kind}-{width}.png' for n,kind,width in
     [(1,'preparation',390),(2,'dispatch',390),(3,'receipt',390),
      (4,'preparation',1200),(5,'dispatch',1200),(6,'receipt',1200)])|{'07-read-denied.png'}
-PUBLIC_FILES=NAMES|{'result.json'}
+PUBLIC_FILES=NAMES|{'result.json','pytest-redacted.log'}
+
+
+@contextmanager
+def observe_owned_fixture_pg(run):
+    """Observe the real factory before later fixture validation can fail."""
+    import pgserver
+    from unittest.mock import patch
+    root=run.pytest_root
+    assert root.is_absolute() and root==root.resolve() and not root.is_symlink()
+    assert root.stat().st_mode&0o777==0o700 and root.stat().st_uid==os.getuid()
+    original=pgserver.get_server
+    def observed(pgdata,*args,**kwargs):
+        supplied=Path(pgdata);path=supplied.resolve()
+        assert supplied.is_absolute() and supplied==path and not supplied.is_symlink()
+        assert path!=root and path.is_relative_to(root) and not (path/'PG_VERSION').exists()
+        assert kwargs.get('cleanup_mode')=='delete' and run.pg is None
+        run.report['pg_creation']='ATTEMPTED_NOT_CAPTURED'
+        server=original(pgdata,*args,**kwargs)
+        run.pg=server;run.report['pg_creation']='OWNED_SERVER_CAPTURED'
+        return server
+    with patch.object(pgserver,'get_server',observed):yield
+
+
+def stop_owned_fixture_pg(run):
+    if run.pg is not None:
+        process=run.pg._postmaster_info.process
+        run.pg.cleanup()
+        assert not (run.pg.pgdata/'postmaster.pid').exists()
+        import psutil
+        assert not process.is_running() or process.status()==psutil.STATUS_ZOMBIE
+        run.report['owned_fixture_postgres_stopped']=True
+
+
+def publish_pytest_log(run):
+    path=PRIVATE/'pytest-original.log'
+    if run.public is None or not path.is_file():return
+    raw=path.read_bytes();assert len(raw)<=1024*1024
+    public=raw;replacements=0
+    for secret in run.secrets:
+        for value in (secret.encode(),secret[:12].encode()):
+            replacements+=public.count(value);public=public.replace(value,b'[REDACTED_SYNTHETIC_SESSION]')
+    (run.public/'pytest-redacted.log').write_bytes(public)
+    run.report['pytest_log']=dict(original_bytes=len(raw),original_sha256=sha256(raw).hexdigest(),
+        public_bytes=len(public),public_sha256=sha256(public).hexdigest(),literal_session_replacements=replacements)
 
 
 def require_time(run,seconds=45):
@@ -192,9 +237,11 @@ def main():
                     error=str(call.excinfo.value),frames=[dict(file=str(frame.path),line=frame.lineno+1,name=frame.name) for frame in call.excinfo.traceback]))
     run=Run();run.report=report;run.secrets=[];run.public=None;run.pg=None;run.started=time.monotonic()
     try:
-        report['source_sha']=base.require_hosted(os.environ,run_number='10')
+        report['source_sha']=base.require_hosted(os.environ,run_number='11')
         PRIVATE.mkdir(mode=0o700,parents=True,exist_ok=False)
         run.public=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';run.public.mkdir(mode=0o700,exist_ok=False)
+        run.pytest_root=Path(tempfile.mkdtemp(prefix='parkweave-list-browser-')).resolve()
+        assert run.pytest_root.is_relative_to(Path(tempfile.gettempdir()).resolve())
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             path=PRIVATE/name;path.mkdir(mode=0o700);env[key]=str(path)
@@ -208,23 +255,19 @@ def main():
                 run.browser=browser;report.update(real_browser=True,chrome_version=browser.version)
                 base.resource.verify_sandbox(browser,report)
                 report['stage']='PYTEST_FIXTURE_AND_PAGE_WALK'
-                with (PRIVATE/'pytest.stdout').open('w') as out,(PRIVATE/'pytest.stderr').open('w') as err,redirect_stdout(out),redirect_stderr(err):
-                    code=pytest.main(['-q','--tb=short','--disable-warnings','--basetemp',str(PRIVATE/'pytest'),str(base.ROOT/'tests/test_record_list_actual_browser.py')],plugins=[run])
+                with (PRIVATE/'pytest-original.log').open('w') as log,redirect_stdout(log),redirect_stderr(log),observe_owned_fixture_pg(run):
+                    code=pytest.main(['-q','--tb=short','--disable-warnings','--basetemp',str(run.pytest_root/'pytest'),str(base.ROOT/'tests/test_record_list_actual_browser.py')],plugins=[run])
                 report['focused_pytest_exit']=int(code)
                 assert code==0,'focused browser test failed;original private pytest output retained'
         report['status']='PASS'
     except BaseException as error:report.update(status='FAIL',error_type=type(error).__name__,error=str(error))
     finally:
-        if run.pg is not None:
-            try:
-                report['cleanup_stage']='OWNED_FIXTURE_POSTGRES_STOP'
-                process=run.pg._postmaster_info.process
-                run.pg.cleanup()
-                assert not (run.pg.pgdata/'postmaster.pid').exists()
-                import psutil
-                assert not process.is_running() or process.status()==psutil.STATUS_ZOMBIE
-                report['owned_fixture_postgres_stopped']=True
-            except BaseException as error:base.finalization_failure(report,error)
+        try:
+            report['cleanup_stage']='OWNED_FIXTURE_POSTGRES_STOP'
+            stop_owned_fixture_pg(run)
+        except BaseException as error:base.finalization_failure(report,error)
+        try:publish_pytest_log(run)
+        except BaseException as error:base.finalization_failure(report,error)
     report['seconds']=round(time.monotonic()-run.started,3)
     return base.finish_report(report,run.secrets,run.public,started=run.started,allowed_names=PUBLIC_FILES)
 
