@@ -3154,8 +3154,15 @@ async function recoverPlanApproval(c=deliveryContext(),selected=null){planApprov
  }catch(e){if(deliveryCurrent(c)){planApprovalView=null;planApprovalSelected=null;deliveryQuote=null;$('plan-approval-result').replaceChildren();$('delivery-result').replaceChildren();$('plan-approval-error').textContent=e.message;}resourceError(e);throw e;
  }finally{if(deliveryCurrent(c)){planApprovalBusy=false;bundleControls();}}}
 async function writePlanApproval(action){if(bundleLocked())return;const c=deliveryContext();let phase='SAVE',name=null;planApprovalBusy=true;planApprovalBusyContext=c;bundleControls();try{
+ let proposal=null;if(action==='PROPOSE'){const quote=deliveryQuote;if(!quote||!deliveryCurrent(quote.context))throw Error('请先预检当前Case与占位');const q=quote.view;proposal={quote,actor:bundleActor,scope:planApprovalScope,delivery:approvalBaseDeliveryBody(c,q),preparation_id:q.context?.preparation_id,case_id:q.context?.case_id,run_id:q.context?.run_id};}
  await bundleIdentify(c.resource);requireDeliveryCurrent(c);if(!planApprovalEnabled)throw Error('当前环境未启用合成方案批准');if(c.frontierProfile&&!replacementFrontierProfileEnabled(c.frontierProfile))throw Error('原有限资格协议当前未启用，请保留原句柄只读核对');let data;
- if(action==='PROPOSE'){if(!deliveryQuote||!deliveryCurrent(deliveryQuote.context))throw Error('请先预检当前Case与占位');const q=deliveryQuote.view;data={expected_revision:planApprovalView?.revision||0,delivery:approvalBaseDeliveryBody(c,q)};}
+ if(action==='PROPOSE'){
+  if(proposal.actor!==bundleActor||proposal.scope!==planApprovalScope)throw Error('原预检身份或批准来源已变化，请重新核对');
+  const current=await deliveryCall('/api/preparations/'+c.id+'/plan-approval','GET',undefined,undefined,c);requireDeliveryCurrent(c);
+  if(current.actor_id!==proposal.actor||current.preparation_id!==c.id||proposal.preparation_id!==c.id||current.case_id!==proposal.case_id||current.run_id!==proposal.run_id||current.scope!==proposal.scope||!Array.isArray(current.items)||current.items.length>8||!Number.isSafeInteger(current.revision)||current.revision<0||current.revision>64)throw Error('原Case批准历史版本不可核对，请重新读取');
+  if(deliveryQuote!==proposal.quote||!deliveryCurrent(deliveryQuote.context)||!approvalSameDelivery(proposal.delivery,approvalBaseDeliveryBody(c,deliveryQuote.view)))throw Error('原交付预检已变化，请重新核对');
+  data={expected_revision:current.revision,delivery:proposal.delivery};
+ }
  else{const item=planApprovalSelected;if(!item||!planApprovalView)throw Error('请先读取原方案批准');data={action,approval_id:item.id,expected_revision:planApprovalView.revision,expected_binding_sha256:item.binding_sha256,reason:'SYNTHETIC 页面明确 '+action};}
  const hs=planApprovalHandles();if(!hs||hs.length>=8||hs.some(h=>h.actor===bundleActor))throw Error('请先核对已有原操作');const started=Date.now(),h={v:1,actor:bundleActor,id:c.id,key:crypto.randomUUID(),action,approval_id:action==='PROPOSE'?null:planApprovalSelected.id,revision:data.expected_revision,started,expires:started+86400000};name=planApprovalStorage+h.actor+'.'+h.key;const raw=JSON.stringify(h);localStorage.setItem(name,raw);if(localStorage.getItem(name)!==raw)throw Error('恢复句柄未保存，尚未发送');phase='POST';
  await deliveryCall('/api/preparations/'+c.id+'/plan-approval/'+(action==='PROPOSE'?'proposals':'commands'),'POST',data,h.key,c);phase='RECOVERY';planApprovalBusy=false;await recoverPlanApproval(c,{name,raw,...h});

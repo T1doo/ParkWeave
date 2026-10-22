@@ -22,3 +22,11 @@ def test_reapproval_mode_and_case_aba_cannot_revive_old_context():
     p=subprocess.run(['node','tests/plan_reapproval_client_probes.js','aba'],cwd=ROOT,capture_output=True,text=True,timeout=15)
     assert p.returncode==0,p.stderr
     x=json.loads(p.stdout);assert x['checks']==4 and x['HTTP']=='NOT_RUN'
+
+
+@pytest.mark.parametrize('mode',['first','existing','actor_mismatch','case_mismatch','run_mismatch','scope_mismatch','bad_revision','oversize_revision','read403','quote_change','identify_quote_change','ABA','concurrent409'])
+def test_explicit_proposal_reads_original_ledger_without_replacing_quote_or_retry(mode):
+    p=subprocess.run(['node','tests/plan_approval_proposal_oracle.js',mode],cwd=ROOT,capture_output=True,text=True,timeout=15)
+    assert p.returncode==0,p.stderr
+    x=json.loads(p.stdout)
+    assert x['HTTP']=='NOT_RUN' and x['automatic_APPROVE']==0 and x['automatic_retry']==0
