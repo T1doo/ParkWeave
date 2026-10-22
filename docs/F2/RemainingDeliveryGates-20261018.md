@@ -24,6 +24,8 @@
 
 正式五证明为 EXISTING_PREPARATION／CASE／RUN／ADOPTED_PLAN／CURRENT_SOURCE_SUBJECT_AUTHORITY；NativeRunAccess permit／writer 默认拒绝，已有资源方案批准读取尚不可消费。IsolatedPlanApproval 只属隔离测试。仅给凭据不能补来源合同与专用代码；不要发送token、私钥、密码或DSN。
 
+2026-10-22：新增普通本地 `LOCAL_CASE_RESOURCE_APPROVAL_V1`，由已有owner明确提出、批准／撤销，再由首次同Case资源交付事务消费一次；实际普通API、独立启动器与局部页面函数已验，见[源码与原始测试回执](evidence/local-owner-resource-approval-20261022/validation.json)。它是本项目本地决定来源，数据仍为明示合成；不替代上表外部正式来源、资格或审批合同。新增链真实浏览器、安装态wheel与Windows未验。
+
 ## C0 独立提交门
 
 C0依据原计划不依赖F4–F6；当前也不能把方案文档包叫作正式单PDF交付。
