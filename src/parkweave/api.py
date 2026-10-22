@@ -12,7 +12,7 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None, local_resource_approval=None) -> FastAPI:
     if case_step_assignments is not None:
         from .case_step_assignments import validate_dependency,local_demo_pair
         validate_dependency(case_step_assignments,store)
@@ -80,8 +80,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
 
     from . import service_plan_approval as plan_approval
 
+    if local_resource_approval is not None:
+        from .local_resource_approval import LocalResourceApproval
+        if type(local_resource_approval) is not LocalResourceApproval:
+            raise Denied('exact local approval dependency required')
+        local_resource_approval.attach_store(store)
+
     def approval_candidate():
-        candidate = getattr(store, '_isolated_plan_approval', None)
+        from .local_resource_approval import selected
+        candidate = selected(store) or getattr(store, '_isolated_plan_approval', None)
         if candidate is None: raise Denied('isolated plan Approval disabled')
         return candidate
 
@@ -90,7 +97,9 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         with store.connect() as c:
             p=store.auth(c,token(authorization),lock=True)
             store.check_capability(c,p,'READ')
-        return dict(enabled=getattr(store,'_isolated_plan_approval',None) is not None,
+        from .local_resource_approval import selected
+        candidate=selected(store) or getattr(store,'_isolated_plan_approval',None)
+        return dict(enabled=candidate is not None,approval_scope=candidate.scope if candidate else None,
             source_reapproval_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'source_reapproval_enabled',False) is True,
             plan_replacement_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'plan_replacement_enabled',False) is True,
             known_not_started_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'known_not_started_enabled',False) is True,
@@ -1178,7 +1187,9 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     demo=getattr(case_steps,'local_synthetic_demo',None)
     if demo is None:
         demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+    from .local_resource_approval import configure as configure_local_approval
+    local_approval=configure_local_approval(store,os.environ.get('PARKWEAVE_LOCAL_RESOURCE_APPROVAL_MODE'))
     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
         formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
         formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier,
-        local_synthetic_demo=demo,case_step_assignments=case_steps)
+        local_synthetic_demo=demo,case_step_assignments=case_steps,local_resource_approval=local_approval)

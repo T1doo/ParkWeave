@@ -11,7 +11,7 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from psycopg.types.json import Jsonb
-from psycopg.sql import SQL, Literal as SQLLiteral
+from psycopg.sql import SQL, Identifier, Literal as SQLLiteral
 
 from . import case_fact_clarifications as facts, case_resource_delivery as delivery
 from . import case_resources as cr, controlled_plans as cp, preparation as prep
@@ -77,16 +77,16 @@ def _install_schema(c):
     _approval_schema(c)
 
 
-def _approval_schema(c):
+def _approval_schema(c, *, column=COL, head_column="candidate_plan_approval_head", trigger="candidate_plan_approval_prefix", body=TRIGGER_BODY):
     row = c.execute("""SELECT f.prosrc,t.tgenabled,t.tgtype,
         t.tgattr::text=a.attnum::text||' '||h.attnum::text correct_column, f.proowner=r.relowner correct_owner,
         f.prosecdef, f.proconfig, l.lanname
         FROM pg_trigger t JOIN pg_proc f ON f.oid=t.tgfoid JOIN pg_class r ON r.oid=t.tgrelid
-        JOIN pg_attribute a ON a.attrelid=r.oid AND a.attname='candidate_plan_approvals'
-        JOIN pg_attribute h ON h.attrelid=r.oid AND h.attname='candidate_plan_approval_head'
+        JOIN pg_attribute a ON a.attrelid=r.oid AND a.attname=%s
+        JOIN pg_attribute h ON h.attrelid=r.oid AND h.attname=%s
         JOIN pg_language l ON l.oid=f.prolang
-        WHERE t.tgrelid='preparations'::regclass AND t.tgname='candidate_plan_approval_prefix' AND NOT t.tgisinternal""").fetchone()
-    if (not row or row['prosrc'] != TRIGGER_BODY or row['tgenabled'] != 'O' or row['tgtype'] != 19
+        WHERE t.tgrelid='preparations'::regclass AND t.tgname=%s AND NOT t.tgisinternal""",(column,head_column,trigger)).fetchone()
+    if (not row or row['prosrc'] != body or row['tgenabled'] != 'O' or row['tgtype'] != 19
         or not row['correct_column'] or not row['correct_owner'] or row['prosecdef']
         or row['proconfig'] is not None or row['lanname']!='plpgsql'):
         raise Denied('immutable candidate Approval schema required')
@@ -126,14 +126,14 @@ def _fingerprint(id, request):
     return cp._hash(dict(preparation_id=str(id), request=request))
 
 
-def _ledger(parent):
-    value = parent.get(COL)
-    head = parent.get('candidate_plan_approval_head')
+def _ledger(parent, *, column=COL, head_column='candidate_plan_approval_head', scope=SCOPE):
+    value = parent.get(column)
+    head = parent.get(head_column)
     if value is None:
         if head is not None: raise Conflict('candidate Approval original head required')
-        return dict(namespace=SCOPE, version=1, revision=0, events=[]), {}
+        return dict(namespace=scope, version=1, revision=0, events=[]), {}
     if (not isinstance(value, dict) or set(value) != {'namespace', 'version', 'revision', 'events'}
-        or value['namespace'] != SCOPE or type(value['version']) is not int or value['version'] != 1
+        or value['namespace'] != scope or type(value['version']) is not int or value['version'] != 1
         or type(value['revision']) is not int or not 1 <= value['revision'] <= LIMIT
         or not isinstance(value['events'], list) or len(value['events']) != value['revision']):
         raise Conflict('candidate Approval ledger malformed')
@@ -162,7 +162,7 @@ def _ledger(parent):
                     or not isinstance(e['binding'], dict)): raise ValueError()
                 b = e['binding']
                 if (set(b) != {'scope','purpose','context','plan_revision','execution_identity','authority','authority_sha256','materials','members','resource_revisions','source_versions','valid_until','contract_scope_ids'}
-                    or b.get('purpose') != purpose(data.delivery) or b.get('scope') != SCOPE
+                    or b.get('purpose') != purpose(data.delivery) or b.get('scope') != scope
                     or b['authority_sha256'] != cp._hash(b['authority'])
                     or b['valid_until'] != data.delivery.valid_until.isoformat()
                     or b['plan_revision'] != data.delivery.expected_plan_revision
@@ -225,7 +225,248 @@ def _ledger(parent):
     return value, items
 
 
-class IsolatedPlanApproval:
+class _ApprovalOperations:
+    """Shared exact proposal/decision/consumption mechanics; no source authority."""
+    def _authority(self,store,c,p,parent,hs):
+        participant_ids=[p['id'],parent['reviewer_id']]
+        principal = c.execute('SELECT id,park_id,org_id,role,active,xmin::text row_version FROM principals WHERE id=ANY(%s) ORDER BY id', (participant_ids,)).fetchall()
+        capabilities = c.execute("SELECT principal_id,park_id,org_id,capability,active,revision FROM capability_grants WHERE principal_id=ANY(%s) AND capability IN ('READ','EXECUTE') ORDER BY principal_id,capability", (participant_ids,)).fetchall()
+        prepares = c.execute("SELECT principal_id,park_id,org_id,capability,active,xmin::text row_version FROM preparation_grants WHERE principal_id=ANY(%s) ORDER BY principal_id,capability", ([p['id'],parent['reviewer_id']],)).fetchall()
+        resources = c.execute('SELECT principal_id,resource_id,park_id,org_id,capability,active,xmin::text row_version FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=ANY(%s) ORDER BY resource_id,capability', (p['id'],[h['resource_id'] for h in hs])).fetchall()
+        run = store.scoped_run(c,p,parent['run_id'])
+        identity = {k:run[k] for k in ('id','principal_id','park_id','org_id','revision','state','fence','worker_id','namespace')}
+        return cp._normal(dict(principal=principal,capabilities=capabilities,preparations=prepares,resources=resources)), cp._normal(dict(kind='ORIGINAL_OWNER_HTTP',actor_id=p['id'],role=p['role'],run=identity))
+
+    def _source(self,store,c,p,parent,data,*,consumed=None):
+        self._scope(c,p,parent)
+        from . import catalog_publication as catalogs
+        publication=getattr(self,'_catalog_publication',None)
+        if publication is None:
+            catalogs.lock(c,catalogs.key_of(parent))
+            catalog_row=catalogs.row(c,catalogs.key_of(parent))
+            if catalog_row is None:raise Conflict('current catalog source required')
+            if catalog_row.get(catalogs.COL) is not None:
+                raise Denied('explicit matching cooperative catalog protocol required')
+            catalog_proof=None
+        else:catalog_proof=publication.acquire(c,parent)
+        if consumed is None:
+            context, candidate_sha, hs, now = delivery._candidate(store,c,p,parent,data,observe=False)
+            if (parent['revision'] != data.expected_preparation_revision
+                or parent['service_case_plan']['revision'] != data.expected_plan_revision
+                or cp._hash(dict(source=candidate_sha,valid_until=data.valid_until.isoformat())) != data.expected_source_sha256):
+                raise Conflict('Approval original preview changed')
+        else:
+            hs = [rh._own(c,p,m.hold_id) for m in data.members]
+            rc._scope_lock(c,p,hs,write=True)
+            hs = [rh._own(c,p,m.hold_id,lock=True) for m in data.members]
+            if any(h['state'] != 'CONFIRMED' or str(h['combination_id']) != consumed for h in hs):
+                raise Conflict('Approval actual delivery members mismatch')
+            context, issues = delivery._context(store,c,p,parent)
+            if issues: raise Conflict('Approval prerequisite changed before commit')
+            if data.expected_link_revision is not None:
+                context=delivery._source_reapproval(store,c,p,parent,data,context,consumed=consumed)
+            hs = [dict(h,state='HELD',combination_id=None) for h in hs]
+            if parent['service_case_plan']['revision'] != data.expected_plan_revision:
+                raise Conflict('Approval plan changed before commit')
+        rules = rc._scope_lock(c,p,hs,write=True)
+        store.check_capability(c,p,'EXECUTE'); prep.grant(store,c,p,'PREPARE')
+        authority, identity = self._authority(store,c,p,parent,hs)
+        # Take the time after every possible source/authority lock wait.
+        now = rh._now(c)
+        if not now < data.valid_until <= now + timedelta(seconds=120):
+            raise Conflict('Approval expired')
+        if any(now >= h['expires_at'] or data.valid_until > h['expires_at'] for h in hs):
+            raise Conflict('Approval original hold expired')
+        slots = [{k:e[k] for k in ('id','slot','version','source_sha256')} for e in prep.latest(c,parent['id'])]
+        versions=dict(catalog=c.execute('SELECT xmin::text row_version FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
+            (parent['park_id'],parent['service_id'],parent['service_version'])).fetchone(),
+            resources=c.execute('SELECT id,xmin::text row_version FROM synthetic_resources WHERE id=ANY(%s) ORDER BY id',
+                ([h['resource_id'] for h in hs],)).fetchall(),
+            run=c.execute('SELECT id,xmin::text row_version FROM runs WHERE id=%s',(parent['run_id'],)).fetchone())
+        if catalog_proof is not None:versions['cooperative_catalog']=catalog_proof
+        return cp._normal(dict(scope=self.scope,purpose=purpose(data),context=context,
+            plan_revision=parent['service_case_plan']['revision'],execution_identity=identity,
+            authority=authority,authority_sha256=cp._hash(authority),materials=slots,
+            members=hs,resource_revisions=[rules[k] for k in sorted(rules,key=str)],source_versions=versions,
+            valid_until=data.valid_until.isoformat(),contract_scope_ids=self.scope_ids(parent))), now
+
+    def _append(self,c,p,parent,key,request,aid,*,binding=None,receipt=None,event_id=None):
+        ledger, items = self._ledger(parent); ledger=deepcopy(ledger)
+        active = sum(i['state'] in ('PROPOSED','APPROVED') for i in items.values())
+        remaining = active + (1 if request['action']=='PROPOSE' else -1 if request['action'] in ('REVOKE','CONSUME') else 0)
+        if ledger['revision']+1+remaining > LIMIT: raise Conflict('Approval history reserves explicit withdrawal capacity')
+        e = cp._normal(dict(id=event_id or uuid4(),revision=ledger['revision']+1,approval_id=aid,
+            action=request['action'],actor_id=p['id'],key=key,fingerprint=_fingerprint(parent['id'],request),
+            request=request,binding=binding,receipt=receipt,at=rh._now(c),
+            previous_sha256=ledger['events'][-1]['sha256'] if ledger['events'] else None))
+        e['sha256']=cp._hash(e); ledger['events'].append(e); ledger['revision']+=1
+        old=parent.get(self.column)
+        row=c.execute(SQL('UPDATE preparations SET {}=%s WHERE id=%s AND {} IS NOT DISTINCT FROM %s RETURNING *').format(Identifier(self.column),Identifier(self.column)), (Jsonb(ledger),parent['id'],Jsonb(old) if old is not None else None)).fetchone()
+        if row is None: raise Conflict('Approval CAS changed')
+        self._ledger(row)
+        return row,e
+
+    def _replay(self,parent,key,request):
+        ledger,_=self._ledger(parent)
+        e=next((e for e in ledger['events'] if e['key']==key),None)
+        if e and e['fingerprint'] != _fingerprint(parent['id'],request): raise Conflict('Approval original key fingerprint mismatch')
+        return e
+
+    def _key(self,c,p,parent,key):
+        if not isinstance(key,str) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',key):
+            raise Conflict('bounded original Approval key required')
+        rh._key(c,p,key)
+        other=c.execute(SQL('SELECT id FROM preparations WHERE owner_id=%s AND park_id=%s AND org_id=%s AND id<>%s AND {} @> %s LIMIT 1').format(Identifier(self.column)),
+            (p['id'],p['park_id'],p['org_id'],parent['id'],Jsonb({'events':[{'actor_id':p['id'],'key':key}]}))).fetchone()
+        if other: raise Conflict('Approval original key belongs to another Case')
+
+    def _guard(self,c,parent,aid,*,consumed=None,auth_only=False):
+        if not hasattr(c,'_plan_approval_checks'): raise Denied('guarded Approval transaction required')
+        check=dict(id=str(parent['id']),approval_id=str(aid),consumed=consumed,auth_only=auth_only)
+        if check not in c._plan_approval_checks: c._plan_approval_checks.append(check)
+
+    def recheck(self,store,c,check):
+        parent=c.execute('SELECT * FROM preparations WHERE id=%s',(UUID(check['id']),)).fetchone()
+        p=c.execute('SELECT * FROM principals WHERE id=%s',(parent['owner_id'],)).fetchone()
+        if not p or not p['active']: raise Denied('current Approval owner required')
+        self._scope(c,p,parent); store.check_capability(c,p,'READ'); prep.grant(store,c,p,'PREPARE')
+        if check['auth_only']:
+            _,items=self._ledger(parent)
+            for item in items.values():
+                for h in item['proposal']['binding']['members']: rh._scope(c,p,UUID(h['resource_id']))
+            return
+        store.check_capability(c,p,'EXECUTE')
+        _,items=self._ledger(parent); item=items[check['approval_id']]
+        data=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
+        actual,now=self._source(store,c,p,parent,data,consumed=check['consumed'])
+        if actual != item['proposal']['binding']: raise Conflict('Approval source or authority changed before completion')
+
+    def _view(self,store,c,p,parent,event=None,*,recovery=False):
+        ledger,items=self._ledger(parent); result=[]
+        for item in items.values():
+            e=item['proposal']; b=e['binding']; current=False; reason=item['state']
+            for h in b['members']: rh._scope(c,p,UUID(h['resource_id']))
+            if item['state']=='CONSUMED':
+                r=c.execute('SELECT payload,fingerprint FROM synthetic_resource_combination_receipts WHERE actor_id=%s AND request_key=%s',
+                    (p['id'],item['consumption']['key'])).fetchone()
+                if not r or r['fingerprint']!=item['consumption']['receipt']['fingerprint']:
+                    raise Conflict('Approval original consumption receipt required')
+                link=c.execute('SELECT revision FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',(parent['id'],p['id'],item['consumption']['key'])).fetchone()
+                if link is None:raise Conflict('Approval original consumption association required')
+                verify_receipt(parent,r['payload'],link_revision=link['revision'])
+                from .plan_replacement_compatibility import verify_history
+                original_link=c.execute('SELECT * FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',
+                    (parent['id'],p['id'],item['consumption']['key'])).fetchone()
+                verify_history(store,c,parent,original_link,r['payload'])
+            if item['state'] in ('PROPOSED','APPROVED'):
+                data=Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery
+                try:
+                    actual,_=self._source(store,c,p,parent,data)
+                    if actual != b: reason='SOURCE_OR_AUTHORITY_CHANGED'
+                    else:
+                        current=True; reason='CURRENT'
+                        self._guard(c,parent,item['id'])
+                except Denied: reason='CURRENT_AUTHORITY_REQUIRED'
+                except Conflict: reason='SOURCE_OR_PREREQUISITE_CHANGED_OR_EXPIRED'
+            result.append(dict(id=item['id'],state=item['state'],current=current,current_available=current and item['state']=='APPROVED',reason=reason,
+                purpose=b['purpose'],plan_id=b['context']['plan_id'],plan_sha256=b['context']['plan_definition_sha256'],
+                binding_sha256=cp._hash(b),authority_sha256=b['authority_sha256'],execution_identity=b['execution_identity'],
+                service_id=b['context']['service_id'],service_version=b['context']['service_version'],catalog_sha256=b['context']['catalog_sha256'],
+                materials=b['materials'],valid_until=b['valid_until'],members=[{k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity')} for h in b['members']],
+                proposal_event_id=e['id'],approval_event_id=item['approval']['id'] if item['approval'] else None,
+                consumption_event_id=item['consumption']['id'] if item['consumption'] else None))
+            result[-1]['delivery']=body(Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery) if current else None
+            result[-1]['context']=b['context'] if current else None
+        proof={k:event[k] for k in ('id','revision','approval_id','action','actor_id')} if event else None
+        if proof: proof['request_key']=event['key']
+        return dict(scope=self.scope,purpose=PURPOSE,enabled=True,production_execution_enabled=False,formal_release=False,
+            actor_id=p['id'],preparation_id=parent['id'],case_id=parent['case_id'],run_id=parent['run_id'],
+            revision=ledger['revision'],items=result,event=proof,status='COMMITTED' if event else 'NOT_OBSERVED' if recovery else 'READ_ONLY',
+            automatically_replayed=False,historical_only=recovery,server_time=rh._now(c))
+
+    def read(self,store,token,id,key=None):
+        with store.connect() as c:
+            p,parent=cr._parent(store,c,token,id); self._scope(c,p,parent)
+            if key is not None: self._key(c,p,parent,key)
+            ledger,_=self._ledger(parent)
+            event=next((e for e in ledger['events'] if e['key']==key),None) if key else None
+            self._guard(c,parent,event['approval_id'] if event else UUID(int=0),auth_only=True)
+            return self._view(store,c,p,parent,event,recovery=key is not None)
+
+    def _write_connection(self,store):
+        if self.plan_replacement_enabled:
+            checker=self.plan_replacement_preflight
+            if checker.store is not store:raise Denied('same original preflight store required')
+            return checker.catalog.connection()
+        return store.connect()
+
+    def propose(self,store,token,id,key,data):
+        request=dict(action='PROPOSE',**body(data))
+        with self._write_connection(store) as c:
+            p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
+            self._key(c,p,parent,key)
+            event=self._replay(parent,key,request)
+            if event: return self._view(store,c,p,parent,event)
+            ledger,items=self._ledger(parent)
+            if ledger['revision'] != data.expected_revision or len(items)>=OBJECT_LIMIT:
+                raise Conflict('Approval revision or bounded object limit changed')
+            snapshot,_=self._source(store,c,p,parent,data.delivery)
+            parent,event=self._append(c,p,parent,key,request,uuid4(),binding=snapshot)
+            self._guard(c,parent,event['approval_id'])
+            return self._view(store,c,p,parent,event)
+
+    def command(self,store,token,id,key,data):
+        request=body(data)
+        with self._write_connection(store) as c:
+            p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
+            self._key(c,p,parent,key)
+            event=self._replay(parent,key,request)
+            if event: return self._view(store,c,p,parent,event)
+            ledger,items=self._ledger(parent); item=items.get(str(data.approval_id))
+            if (ledger['revision'] != data.expected_revision or item is None
+                or cp._hash(item['proposal']['binding']) != data.expected_binding_sha256
+                or item['state'] not in ('PROPOSED','APPROVED')):
+                raise Conflict('Approval current object or revision changed')
+            if data.action=='APPROVE':
+                if item['state']!='PROPOSED': raise Conflict('Approval already decided')
+                original=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
+                snapshot,_=self._source(store,c,p,parent,original)
+                if snapshot!=item['proposal']['binding']: raise Conflict('Approval original source or authority changed')
+            parent,event=self._append(c,p,parent,key,request,data.approval_id)
+            self._guard(c,parent,data.approval_id,auth_only=data.action=='REVOKE')
+            return self._view(store,c,p,parent,event)
+
+    def before_delivery(self,store,c,p,parent,key,data,fp):
+        self._scope(c,p,parent); self._key(c,p,parent,key)
+        if self._replay(parent,key,dict(action='CONSUME',delivery=body(data))):
+            raise Conflict('Approval consumption requires its original delivery receipt')
+        _,items=self._ledger(parent)
+        item=items.get(str(data.approval_id))
+        if item is None or item['state']!='APPROVED': raise Conflict('current exact plan Approval required')
+        original=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
+        if {k:v for k,v in body(data).items() if k!='approval_id'} != body(original):
+            raise Conflict('Approval exact delivery command changed')
+        snapshot,_=self._source(store,c,p,parent,original)
+        if snapshot!=item['proposal']['binding']: raise Conflict('Approval source or authority changed')
+        return dict(scope=self.scope,id=item['id'],approval_event_id=item['approval']['id'],
+            consumption_event_id=str(uuid4()),binding_sha256=cp._hash(snapshot))
+
+    def consume(self,store,c,p,parent,key,data,fp,proof,receipt):
+        parent,event=self._append(c,p,parent,key,dict(action='CONSUME',delivery=body(data)),data.approval_id,
+            receipt=dict(combination_id=receipt['combination_id'],request_key=key,fingerprint=fp,receipt_sha256=cp._hash(receipt)),
+            event_id=UUID(proof['consumption_event_id']))
+        self._guard(c,parent,data.approval_id,consumed=receipt['combination_id'])
+        return parent
+
+
+class IsolatedPlanApproval(_ApprovalOperations):
+    scope=SCOPE
+    column=COL
+    head_column='candidate_plan_approval_head'
+
+    def _ledger(self,parent):return _ledger(parent)
+    def scope_ids(self,parent):return sorted(self.ids)
+
     def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None, enabled_for_known_not_started_tests=False, known_not_started_frontier=None, enabled_for_p3_closure_tests=False, p3_closure_frontier=None):
         self.enabled = enabled_for_isolated_tests is True
         self.source_reapproval_enabled=enabled_for_source_reapproval_tests is True
@@ -314,242 +555,19 @@ class IsolatedPlanApproval:
             or p['id'] != parent['owner_id'] or parent['namespace'] != 'SYNTHETIC'):
             raise Denied('original candidate Case owner required')
 
-    def _authority(self,store,c,p,parent,hs):
-        participant_ids=[p['id'],parent['reviewer_id']]
-        principal = c.execute('SELECT id,park_id,org_id,role,active,xmin::text row_version FROM principals WHERE id=ANY(%s) ORDER BY id', (participant_ids,)).fetchall()
-        capabilities = c.execute("SELECT principal_id,park_id,org_id,capability,active,revision FROM capability_grants WHERE principal_id=ANY(%s) AND capability IN ('READ','EXECUTE') ORDER BY principal_id,capability", (participant_ids,)).fetchall()
-        prepares = c.execute("SELECT principal_id,park_id,org_id,capability,active,xmin::text row_version FROM preparation_grants WHERE principal_id=ANY(%s) ORDER BY principal_id,capability", ([p['id'],parent['reviewer_id']],)).fetchall()
-        resources = c.execute('SELECT principal_id,resource_id,park_id,org_id,capability,active,xmin::text row_version FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=ANY(%s) ORDER BY resource_id,capability', (p['id'],[h['resource_id'] for h in hs])).fetchall()
-        run = store.scoped_run(c,p,parent['run_id'])
-        identity = {k:run[k] for k in ('id','principal_id','park_id','org_id','revision','state','fence','worker_id','namespace')}
-        return cp._normal(dict(principal=principal,capabilities=capabilities,preparations=prepares,resources=resources)), cp._normal(dict(kind='ORIGINAL_OWNER_HTTP',actor_id=p['id'],role=p['role'],run=identity))
-
-    def _source(self,store,c,p,parent,data,*,consumed=None):
-        self._scope(c,p,parent)
-        from . import catalog_publication as catalogs
-        publication=getattr(self,'_catalog_publication',None)
-        if publication is None:
-            catalogs.lock(c,catalogs.key_of(parent))
-            catalog_row=catalogs.row(c,catalogs.key_of(parent))
-            if catalog_row is None:raise Conflict('current catalog source required')
-            if catalog_row.get(catalogs.COL) is not None:
-                raise Denied('explicit matching cooperative catalog protocol required')
-            catalog_proof=None
-        else:catalog_proof=publication.acquire(c,parent)
-        if consumed is None:
-            context, candidate_sha, hs, now = delivery._candidate(store,c,p,parent,data,observe=False)
-            if (parent['revision'] != data.expected_preparation_revision
-                or parent['service_case_plan']['revision'] != data.expected_plan_revision
-                or cp._hash(dict(source=candidate_sha,valid_until=data.valid_until.isoformat())) != data.expected_source_sha256):
-                raise Conflict('Approval original preview changed')
-        else:
-            hs = [rh._own(c,p,m.hold_id) for m in data.members]
-            rc._scope_lock(c,p,hs,write=True)
-            hs = [rh._own(c,p,m.hold_id,lock=True) for m in data.members]
-            if any(h['state'] != 'CONFIRMED' or str(h['combination_id']) != consumed for h in hs):
-                raise Conflict('Approval actual delivery members mismatch')
-            context, issues = delivery._context(store,c,p,parent)
-            if issues: raise Conflict('Approval prerequisite changed before commit')
-            if data.expected_link_revision is not None:
-                context=delivery._source_reapproval(store,c,p,parent,data,context,consumed=consumed)
-            hs = [dict(h,state='HELD',combination_id=None) for h in hs]
-            if parent['service_case_plan']['revision'] != data.expected_plan_revision:
-                raise Conflict('Approval plan changed before commit')
-        rules = rc._scope_lock(c,p,hs,write=True)
-        store.check_capability(c,p,'EXECUTE'); prep.grant(store,c,p,'PREPARE')
-        authority, identity = self._authority(store,c,p,parent,hs)
-        # Take the time after every possible source/authority lock wait.
-        now = rh._now(c)
-        if not now < data.valid_until <= now + timedelta(seconds=120):
-            raise Conflict('Approval expired')
-        if any(now >= h['expires_at'] or data.valid_until > h['expires_at'] for h in hs):
-            raise Conflict('Approval original hold expired')
-        slots = [{k:e[k] for k in ('id','slot','version','source_sha256')} for e in prep.latest(c,parent['id'])]
-        versions=dict(catalog=c.execute('SELECT xmin::text row_version FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
-            (parent['park_id'],parent['service_id'],parent['service_version'])).fetchone(),
-            resources=c.execute('SELECT id,xmin::text row_version FROM synthetic_resources WHERE id=ANY(%s) ORDER BY id',
-                ([h['resource_id'] for h in hs],)).fetchall(),
-            run=c.execute('SELECT id,xmin::text row_version FROM runs WHERE id=%s',(parent['run_id'],)).fetchone())
-        if catalog_proof is not None:versions['cooperative_catalog']=catalog_proof
-        return cp._normal(dict(scope=SCOPE,purpose=purpose(data),context=context,
-            plan_revision=parent['service_case_plan']['revision'],execution_identity=identity,
-            authority=authority,authority_sha256=cp._hash(authority),materials=slots,
-            members=hs,resource_revisions=[rules[k] for k in sorted(rules,key=str)],source_versions=versions,
-            valid_until=data.valid_until.isoformat(),contract_scope_ids=sorted(self.ids))), now
-
-    def _append(self,c,p,parent,key,request,aid,*,binding=None,receipt=None,event_id=None):
-        ledger, items = _ledger(parent); ledger=deepcopy(ledger)
-        active = sum(i['state'] in ('PROPOSED','APPROVED') for i in items.values())
-        remaining = active + (1 if request['action']=='PROPOSE' else -1 if request['action'] in ('REVOKE','CONSUME') else 0)
-        if ledger['revision']+1+remaining > LIMIT: raise Conflict('Approval history reserves explicit withdrawal capacity')
-        e = cp._normal(dict(id=event_id or uuid4(),revision=ledger['revision']+1,approval_id=aid,
-            action=request['action'],actor_id=p['id'],key=key,fingerprint=_fingerprint(parent['id'],request),
-            request=request,binding=binding,receipt=receipt,at=rh._now(c),
-            previous_sha256=ledger['events'][-1]['sha256'] if ledger['events'] else None))
-        e['sha256']=cp._hash(e); ledger['events'].append(e); ledger['revision']+=1
-        old=parent.get(COL)
-        row=c.execute('UPDATE preparations SET candidate_plan_approvals=%s WHERE id=%s AND candidate_plan_approvals IS NOT DISTINCT FROM %s RETURNING *', (Jsonb(ledger),parent['id'],Jsonb(old) if old is not None else None)).fetchone()
-        if row is None: raise Conflict('Approval CAS changed')
-        _ledger(row)
-        return row,e
-
-    def _replay(self,parent,key,request):
-        ledger,_=_ledger(parent)
-        e=next((e for e in ledger['events'] if e['key']==key),None)
-        if e and e['fingerprint'] != _fingerprint(parent['id'],request): raise Conflict('Approval original key fingerprint mismatch')
-        return e
-
-    def _key(self,c,p,parent,key):
-        if not isinstance(key,str) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',key):
-            raise Conflict('bounded original Approval key required')
-        rh._key(c,p,key)
-        other=c.execute('SELECT id FROM preparations WHERE owner_id=%s AND park_id=%s AND org_id=%s AND id<>%s AND candidate_plan_approvals @> %s LIMIT 1',
-            (p['id'],p['park_id'],p['org_id'],parent['id'],Jsonb({'events':[{'actor_id':p['id'],'key':key}]}))).fetchone()
-        if other: raise Conflict('Approval original key belongs to another Case')
-
-    def _guard(self,c,parent,aid,*,consumed=None,auth_only=False):
-        if not hasattr(c,'_plan_approval_checks'): raise Denied('guarded Approval transaction required')
-        check=dict(id=str(parent['id']),approval_id=str(aid),consumed=consumed,auth_only=auth_only)
-        if check not in c._plan_approval_checks: c._plan_approval_checks.append(check)
-
-    def recheck(self,store,c,check):
-        parent=c.execute('SELECT * FROM preparations WHERE id=%s',(UUID(check['id']),)).fetchone()
-        p=c.execute('SELECT * FROM principals WHERE id=%s',(parent['owner_id'],)).fetchone()
-        if not p or not p['active']: raise Denied('current Approval owner required')
-        self._scope(c,p,parent); store.check_capability(c,p,'READ'); prep.grant(store,c,p,'PREPARE')
-        if check['auth_only']:
-            _,items=_ledger(parent)
-            for item in items.values():
-                for h in item['proposal']['binding']['members']: rh._scope(c,p,UUID(h['resource_id']))
-            return
-        store.check_capability(c,p,'EXECUTE')
-        _,items=_ledger(parent); item=items[check['approval_id']]
-        data=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
-        actual,now=self._source(store,c,p,parent,data,consumed=check['consumed'])
-        if actual != item['proposal']['binding']: raise Conflict('Approval source or authority changed before completion')
-
-    def _view(self,store,c,p,parent,event=None,*,recovery=False):
-        ledger,items=_ledger(parent); result=[]
-        for item in items.values():
-            e=item['proposal']; b=e['binding']; current=False; reason=item['state']
-            for h in b['members']: rh._scope(c,p,UUID(h['resource_id']))
-            if item['state']=='CONSUMED':
-                r=c.execute('SELECT payload,fingerprint FROM synthetic_resource_combination_receipts WHERE actor_id=%s AND request_key=%s',
-                    (p['id'],item['consumption']['key'])).fetchone()
-                if not r or r['fingerprint']!=item['consumption']['receipt']['fingerprint']:
-                    raise Conflict('Approval original consumption receipt required')
-                link=c.execute('SELECT revision FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',(parent['id'],p['id'],item['consumption']['key'])).fetchone()
-                if link is None:raise Conflict('Approval original consumption association required')
-                verify_receipt(parent,r['payload'],link_revision=link['revision'])
-                from .plan_replacement_compatibility import verify_history
-                original_link=c.execute('SELECT * FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',
-                    (parent['id'],p['id'],item['consumption']['key'])).fetchone()
-                verify_history(store,c,parent,original_link,r['payload'])
-            if item['state'] in ('PROPOSED','APPROVED'):
-                data=Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery
-                try:
-                    actual,_=self._source(store,c,p,parent,data)
-                    if actual != b: reason='SOURCE_OR_AUTHORITY_CHANGED'
-                    else:
-                        current=True; reason='CURRENT'
-                        self._guard(c,parent,item['id'])
-                except Denied: reason='CURRENT_AUTHORITY_REQUIRED'
-                except Conflict: reason='SOURCE_OR_PREREQUISITE_CHANGED_OR_EXPIRED'
-            result.append(dict(id=item['id'],state=item['state'],current=current,current_available=current and item['state']=='APPROVED',reason=reason,
-                purpose=b['purpose'],plan_id=b['context']['plan_id'],plan_sha256=b['context']['plan_definition_sha256'],
-                binding_sha256=cp._hash(b),authority_sha256=b['authority_sha256'],execution_identity=b['execution_identity'],
-                service_id=b['context']['service_id'],service_version=b['context']['service_version'],catalog_sha256=b['context']['catalog_sha256'],
-                materials=b['materials'],valid_until=b['valid_until'],members=[{k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity')} for h in b['members']],
-                proposal_event_id=e['id'],approval_event_id=item['approval']['id'] if item['approval'] else None,
-                consumption_event_id=item['consumption']['id'] if item['consumption'] else None))
-            result[-1]['delivery']=body(Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery) if current else None
-            result[-1]['context']=b['context'] if current else None
-        proof={k:event[k] for k in ('id','revision','approval_id','action','actor_id')} if event else None
-        if proof: proof['request_key']=event['key']
-        return dict(scope=SCOPE,purpose=PURPOSE,enabled=True,production_execution_enabled=False,formal_release=False,
-            actor_id=p['id'],preparation_id=parent['id'],case_id=parent['case_id'],run_id=parent['run_id'],
-            revision=ledger['revision'],items=result,event=proof,status='COMMITTED' if event else 'NOT_OBSERVED' if recovery else 'READ_ONLY',
-            automatically_replayed=False,historical_only=recovery,server_time=rh._now(c))
-
-    def read(self,store,token,id,key=None):
-        with store.connect() as c:
-            p,parent=cr._parent(store,c,token,id); self._scope(c,p,parent)
-            if key is not None: self._key(c,p,parent,key)
-            ledger,_=_ledger(parent)
-            event=next((e for e in ledger['events'] if e['key']==key),None) if key else None
-            self._guard(c,parent,event['approval_id'] if event else UUID(int=0),auth_only=True)
-            return self._view(store,c,p,parent,event,recovery=key is not None)
-
-    def _write_connection(self,store):
-        if self.plan_replacement_enabled:
-            checker=self.plan_replacement_preflight
-            if checker.store is not store:raise Denied('same original preflight store required')
-            return checker.catalog.connection()
-        return store.connect()
-
-    def propose(self,store,token,id,key,data):
-        request=dict(action='PROPOSE',**body(data))
-        with self._write_connection(store) as c:
-            p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
-            self._key(c,p,parent,key)
-            event=self._replay(parent,key,request)
-            if event: return self._view(store,c,p,parent,event)
-            ledger,items=_ledger(parent)
-            if ledger['revision'] != data.expected_revision or len(items)>=OBJECT_LIMIT:
-                raise Conflict('Approval revision or bounded object limit changed')
-            snapshot,_=self._source(store,c,p,parent,data.delivery)
-            parent,event=self._append(c,p,parent,key,request,uuid4(),binding=snapshot)
-            self._guard(c,parent,event['approval_id'])
-            return self._view(store,c,p,parent,event)
-
-    def command(self,store,token,id,key,data):
-        request=body(data)
-        with self._write_connection(store) as c:
-            p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
-            self._key(c,p,parent,key)
-            event=self._replay(parent,key,request)
-            if event: return self._view(store,c,p,parent,event)
-            ledger,items=_ledger(parent); item=items.get(str(data.approval_id))
-            if (ledger['revision'] != data.expected_revision or item is None
-                or cp._hash(item['proposal']['binding']) != data.expected_binding_sha256
-                or item['state'] not in ('PROPOSED','APPROVED')):
-                raise Conflict('Approval current object or revision changed')
-            if data.action=='APPROVE':
-                if item['state']!='PROPOSED': raise Conflict('Approval already decided')
-                original=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
-                snapshot,_=self._source(store,c,p,parent,original)
-                if snapshot!=item['proposal']['binding']: raise Conflict('Approval original source or authority changed')
-            parent,event=self._append(c,p,parent,key,request,data.approval_id)
-            self._guard(c,parent,data.approval_id,auth_only=data.action=='REVOKE')
-            return self._view(store,c,p,parent,event)
-
-    def before_delivery(self,store,c,p,parent,key,data,fp):
-        self._scope(c,p,parent); self._key(c,p,parent,key)
-        if self._replay(parent,key,dict(action='CONSUME',delivery=body(data))):
-            raise Conflict('Approval consumption requires its original delivery receipt')
-        _,items=_ledger(parent)
-        item=items.get(str(data.approval_id))
-        if item is None or item['state']!='APPROVED': raise Conflict('current exact plan Approval required')
-        original=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
-        if {k:v for k,v in body(data).items() if k!='approval_id'} != body(original):
-            raise Conflict('Approval exact delivery command changed')
-        snapshot,_=self._source(store,c,p,parent,original)
-        if snapshot!=item['proposal']['binding']: raise Conflict('Approval source or authority changed')
-        return dict(scope=SCOPE,id=item['id'],approval_event_id=item['approval']['id'],
-            consumption_event_id=str(uuid4()),binding_sha256=cp._hash(snapshot))
-
-    def consume(self,store,c,p,parent,key,data,fp,proof,receipt):
-        parent,event=self._append(c,p,parent,key,dict(action='CONSUME',delivery=body(data)),data.approval_id,
-            receipt=dict(combination_id=receipt['combination_id'],request_key=key,fingerprint=fp,receipt_sha256=cp._hash(receipt)),
-            event_id=UUID(proof['consumption_event_id']))
-        self._guard(c,parent,data.approval_id,consumed=receipt['combination_id'])
-        return parent
 
 
 def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
     if link_revision is not None and (type(link_revision) is not int or not 1<=link_revision<=64):raise Conflict('original plan Approval association revision required')
     proof=receipt.get('plan_approval')
+    from . import local_resource_approval as local
+    if isinstance(proof,dict) and proof.get('scope')==local.SCOPE:
+        return local.verify_receipt(parent,receipt,expected,link_revision=link_revision)
     if proof is None:
+        if parent.get(local.COLUMN) is not None or parent.get(local.HEAD) is not None:
+            _,local_items=local.ledger(parent)
+            if any(i['consumption'] and i['consumption']['receipt']['combination_id']==receipt.get('combination_id') for i in local_items.values()):
+                raise Conflict('original local approval receipt reference missing')
         if link_revision not in (None,1):raise Conflict('later delivery association requires original plan Approval')
         if expected is not None: raise Conflict('original plan Approval receipt reference required')
         if parent.get(COL) is not None or parent.get('candidate_plan_approval_head') is not None:

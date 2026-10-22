@@ -182,6 +182,11 @@ def _candidate(store, c, p, parent, data, *, observe=True):
     return context, cp._hash(source), hs, now
 
 
+def _approval(store):
+    from .local_resource_approval import selected
+    return selected(store) or getattr(store,'_isolated_plan_approval',None)
+
+
 def _delivery_connection(store,data):
     if data.expected_previous_plan_id is None:return store.connect()
     from .service_release_preflight import ServiceReleasePreflight
@@ -205,7 +210,7 @@ def preview(store, token, id, data):
             expected_preparation_revision=parent['revision'], expected_plan_revision=parent['service_case_plan']['revision'],
             source_sha256=cp._hash(dict(source=sha,valid_until=expiry.isoformat())), valid_until=expiry,
             members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False,
-            synthetic_plan_approval_required=getattr(store,'_isolated_plan_approval',None) is not None,
+            synthetic_plan_approval_required=_approval(store) is not None,
             **({'expected_link_revision':data.expected_link_revision} if getattr(data,'expected_link_revision',None) is not None else {}),
             **({'expected_previous_plan_id':str(data.expected_previous_plan_id)} if data.expected_previous_plan_id is not None else {}),
             **({'replacement_frontier_profile':data.replacement_frontier_profile} if data.replacement_frontier_profile is not None else {}))
@@ -286,7 +291,7 @@ def deliver(store, token, id, key, data):
         rh._key(c, p, key)
         prior = rh._replay(c, p, key, fp)
         if prior: return _verify(store, c, p, parent, prior)
-        approval = getattr(store, '_isolated_plan_approval', None)
+        approval = _approval(store)
         if approval is None and data.approval_id is not None:
             from .store import Denied
             raise Denied('isolated plan Approval disabled')

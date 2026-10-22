@@ -265,6 +265,9 @@ def verify_history(store,c,parent,link,receipt):
     from .service_plan_approval import _ledger,verify_receipt,Proposal,REPLACEMENT_PURPOSE,REAPPROVAL_PURPOSE
     from . import case_resources as cr
     if not receipt.get('plan_approval'):return
+    from .local_resource_approval import SCOPE as LOCAL_SCOPE,verify_receipt as verify_local
+    if receipt['plan_approval'].get('scope')==LOCAL_SCOPE:
+        verify_local(parent,receipt,link_revision=link['revision']);return
     _,items=_ledger(parent)
     own=items[receipt['plan_approval']['id']]
     context=own['proposal']['binding']['context']

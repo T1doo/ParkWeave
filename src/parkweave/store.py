@@ -25,6 +25,8 @@ class _AccessConnection(psycopg.Connection):
             for bridge,actor_id,action in getattr(self,'_writer_checks',()):
                 from .native_run_access_writer import recheck
                 recheck(bridge,self,actor_id,action)
+            for check in getattr(self,'_local_resource_approval_checks',()):
+                self._approval_store._local_resource_approval.recheck(self._approval_store,self,check)
             for check in getattr(self, '_plan_approval_checks', ()):
                 self._approval_store._isolated_plan_approval.recheck(self._approval_store, self, check)
             for principal_id, run_id in getattr(self, '_managed_checks', ()):
@@ -45,6 +47,7 @@ class _AccessConnection(psycopg.Connection):
         finally:
             self._managed_checks = set()
             self._plan_approval_checks = []
+            self._local_resource_approval_checks = []
             self._writer_checks = []
             self._release_template_sources()
 
@@ -54,6 +57,7 @@ class _AccessConnection(psycopg.Connection):
         finally:
             self._managed_checks = set()
             self._plan_approval_checks = []
+            self._local_resource_approval_checks = []
             self._writer_checks = []
             self._release_template_sources()
 
@@ -82,7 +86,7 @@ class Store:
 
     def connect(self):
         if all(getattr(self, name, None) is None for name in
-               ('_isolated_run_access','_isolated_plan_approval','_native_run_access','_isolated_template_migration_checker')):
+               ('_isolated_run_access','_isolated_plan_approval','_local_resource_approval','_native_run_access','_isolated_template_migration_checker')):
             return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
         return self._guarded_connect()
 
@@ -92,6 +96,7 @@ class Store:
         c._managed_checks = set()
         c._approval_store = self
         c._plan_approval_checks = []
+        c._local_resource_approval_checks = []
         return c
 
     def assignment_allowed(self, c, p, run_id, assignment=None, *, track=True):
@@ -351,6 +356,17 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             receipt.authorize_migration(c)
             c.execute(Path(__file__).with_name('migration-033.sql').read_text(encoding='utf-8'))
+
+    def migrate_local_resource_approval_fixture(self):
+        """Explicit owned Linux storage extension; never ordinary startup/native DDL."""
+        from .case_fact_clarifications import FixtureDatabaseEvidence
+        receipt=getattr(self,'_case_fact_fixture_receipt',None)
+        if type(receipt) is not FixtureDatabaseEvidence:
+            raise Denied('issued Linux fixture creation evidence required for local approval storage')
+        with self.connect() as c:
+            c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
+            receipt.authorize_migration(c)
+            c.execute(Path(__file__).with_name('local-resource-approval-schema.sql').read_text(encoding='utf-8'))
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""

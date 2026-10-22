@@ -157,7 +157,7 @@ def initialize(owner,tokens):
         for rights,tables in SQL_RIGHTS.items():c.execute('GRANT '+rights+' ON '+','.join(tables)+' TO parkweave_app')
 
 
-def setup(*,with_local_catalog=False):
+def setup(*,with_local_catalog=False,with_local_resource_approval=False):
     global _last_owned_state
     if sys.platform!='linux' or os.geteuid()==0:raise Denied('existing unprivileged Linux environment required')
     p=Path(tempfile.mkdtemp(prefix=PREFIX,dir='/tmp'));_last_owned_state=p
@@ -179,6 +179,7 @@ def setup(*,with_local_catalog=False):
         owner._case_fact_fixture_receipt=receipt
         lifecycle.dump(p/'creation-observation.json',asdict(receipt))
         owner.migrate()
+        if with_local_resource_approval:owner.migrate_local_resource_approval_fixture()
         tokens={key:secrets.token_urlsafe(32) for scope in SCOPES.values() for key in scope['sessions'].values()}
         initialize(owner,tokens)
         with owner.connect() as c:
@@ -195,7 +196,7 @@ def setup(*,with_local_catalog=False):
             create(p,lifecycle.dsn(p,application=True),SCOPES['primary'])
         lifecycle.dump(p/'sessions.json',tokens)
         lifecycle.dump(p/'state.json',dict(schema=SCHEMA,source=source_binding(),system_identifier=identity['system_identifier'],
-            database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,scopes=SCOPES,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
+            database_oid=oid,schema_version=32,local_resource_approval=with_local_resource_approval,authority=snapshot,ids=IDS,scopes=SCOPES,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
     return p
 
 
@@ -301,6 +302,12 @@ def serve(value,port,local_demo_config=None,*,observation=None):
             env=minimal_environment(os.environ,PYTHONPATH=str(ROOT/'src'),PYTHONDONTWRITEBYTECODE='1',
                 PARKWEAVE_DSN=lifecycle.dsn(p,application=True),PARKWEAVE_MODE='LOCAL',
                 PARKWEAVE_CASE_STEP_MODE='CURRENT_PREPARATION')
+            local_approval_mode=marker.get('local_resource_approval',False)
+            if type(local_approval_mode) is not bool:raise Denied('exact retained local approval setup mode required')
+            if local_approval_mode:
+                from parkweave.local_resource_approval import configure
+                env['PARKWEAVE_LOCAL_RESOURCE_APPROVAL_MODE']='CURRENT_OWNER'
+                configure(Store(env['PARKWEAVE_DSN']),'CURRENT_OWNER')  # Existing schema only, no DDL or new authority.
             if local_demo_config is not None:
                 observation['stage'] = 'LOCAL_DEMO_CONFIG_PREFLIGHT'
                 from parkweave.case_step_assignments import LOCAL_DEMO_MODE,from_environment
@@ -363,15 +370,17 @@ def main():
     parser.add_argument('command',choices=('setup','serve'));parser.add_argument('--state-dir');parser.add_argument('--port',type=int,default=8765)
     parser.add_argument('--local-demo-config',help='serve only: existing absolute hash-pinned SYNTHETIC input config')
     parser.add_argument('--with-local-catalog',action='store_true',help='setup only: create fictional SYNTHETIC catalog inputs in the new private state')
+    parser.add_argument('--with-local-resource-approval',action='store_true',help='setup only: install local owner resource decision storage in this new owned synthetic instance')
     args=parser.parse_args()
     if (args.command=='serve')!=bool(args.state_dir):parser.error('serve requires existing --state-dir; setup creates only a fresh private directory')
     if args.command!='serve' and args.local_demo_config is not None:parser.error('local demo inputs are read only by serve')
     if args.command!='setup' and args.with_local_catalog:parser.error('catalog inputs are created only in a fresh setup')
+    if args.command!='setup' and args.with_local_resource_approval:parser.error('local approval storage is created only in a fresh setup')
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     observation = dict(stage='SETUP', children=[], cleanup_errors=[])
     try:
         if args.command=='setup':
-            p=setup(with_local_catalog=args.with_local_catalog)
+            p=setup(with_local_catalog=args.with_local_catalog,with_local_resource_approval=args.with_local_resource_approval)
             print(json.dumps(dict(state_dir=str(p),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED',
                 **(dict(local_demo_config=str(p/'local-demo/config.json')) if args.with_local_catalog else {}))),flush=True)
         else:serve(args.state_dir,args.port,args.local_demo_config,observation=observation)
