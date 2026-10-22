@@ -11,3 +11,5 @@ summary修复只将原完整result的导航摘要收敛到32KiB以内，错误�
 沿原10min免费job／270s工作／360s绝对收尾，40POST／26API／8DOM／400GET／2worker、正常sandbox、固定Noto/OFL私有字体与191包文件安装门。五视口图＋result／wheel／组件日志共8件，预留失败图，10文件／8MiB及凭据扫描不变。无新依赖版本、权限、凭据、费用或真实模型。Windows原生、LIVE、C0实际材料与正式来源仍分别未验。
 
 首候选9520项／405文件、修后9521项／405文件（754指纹）的全局与四片collection仅收集，不是9520PASS。新单例归既有S3、既有文件分片不动；749原字节指纹、全局/各片精确身份多重集合已核，见[collection原日志](collection-original.log)。原失败为测试fixture、DTO字段、依赖显示状态与UUID归档错误，私有原日志保全，不冒充产品红例。驱动独审发现的合同错配修复后才可运行候选，不自动CI重试。
+
+后续已获准一次同范围补跑：[run23当前安装态完整候选限定PASS](run23/README.md)，受测完整SHA `c34668fe8d6dc2448917642b24800d5e337e6903`。新实例完整重走29POST，三个全新角色context0POST读回，执行者A真实空回执可读／Bdispatch和entry403，导航后四view空，运行时两Case命名投影比较通过；未另存独立after快照。run22FAIL原件不覆盖；只签本次工程子门，不签B全部履约、正式AT35、冷重启或Windows/LIVE。

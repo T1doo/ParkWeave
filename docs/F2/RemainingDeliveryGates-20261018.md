@@ -51,3 +51,5 @@ C0依据原计划不依赖F4–F6；当前也不能把方案文档包叫作正�
 2026-10-22 接续：原三份release支持的新NO_MODEL五目标→LOCAL明确批准→原角色P3接责／本人SYNTHETIC回执P4／原本地P5重新校验与关闭→owner逐项显式VERIFY→两阶段TXT，已由[run21安装态真实浏览器原件](evidence/no-model-tail-20261022/run21/README.md)限定通过，受测完整SHA `dbc66b066b592d8eeb2da705472f326893e8fa72`。三个缺条件409保全命名投影无写；没有自动VERIFY、Run授权或外部履约。五目标虽LOCAL_OUTPUTS_VERIFIED，Case仍未全部履约；P5必要条件为原REVALIDATE而非必须CLOSE。单API／PG代次结束清理，不是服务冷重启。没有为本片改产品源码，完整原合同可复用，不重跑旧P1/P2或TXT验收；正式来源／Windows／LIVE／正式AT总验收边界保持。
 
 2026-10-22 AT35再次使用工程子门：[run22完整失败原件及修复](evidence/again-role-readback-20261022/run22/README.md)。当前安装态两份不同新输入NO_MODEL采纳、owner／专员各两记录持久读回完成；专员动态正文触发字体oracle假阴性，executor新context及最终双投影未执行。原charset已证覆盖，最小修复按真实CDP face完整charset核实际节点；受控1FAIL→1PASS不转签浏览器，未自动重跑。原首办P1/P2/TXT通过窗口未重复加计，正式AT35／Windows／LIVE／C0真实材料及各自权限门保持。
+
+2026-10-22 接续：[run23完整同候选安装态浏览器原件](evidence/again-role-readback-20261022/run23/README.md)限定PASS，受测SHA `c34668fe8d6dc2448917642b24800d5e337e6903`。两份不同新输入NO_MODEL采纳后，三个全新角色context只读恢复：owner／专员各两材料，executor A真实空回执／B真实dispatch与entry403；导航后四view空、原deadline不续、0POST，末尾命名投影相等由源码运行时重取比较，未另存post快照，不扩成全DB不变。字体修复的当前真实节点检查通过，run22FAIL仍保留；B全履约、正式AT35、冷重启／Windows／LIVE／C0原条件保持。
