@@ -446,7 +446,7 @@ def main():
     report=dict(status='NOT_RUN',stage='HOST_GATE',scope='INSTALLED_LOCAL_SOURCE_REAPPROVAL_TRUE_RESTART_BROWSER',responses=[],screenshots=[],violations=[],page_errors=[],real_model_calls=0,formal_source=False,formal_AT35=False,Windows=False)
     run=SimpleNamespace(started=started,report=report,secrets=[],public=None);run.budget=old.Budget(report)
     try:
-        report['source_sha']=base.require_hosted(os.environ,run_number='16')
+        report['source_sha']=base.require_hosted(os.environ,run_number='17')
         run.private=Path(tempfile.mkdtemp(prefix='parkweave-installed-source-restart-'))
         run.public=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';run.public.mkdir(mode=0o700,exist_ok=False)
         old.installation(run,old.current_wheel(run))
