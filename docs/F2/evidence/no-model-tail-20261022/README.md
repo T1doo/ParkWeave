@@ -6,6 +6,6 @@
 
 随后原入口 REVALIDATE→CLOSE_LOCAL_RECORD，各自仍不自动VERIFY；owner显式VERIFY P5后，五目标为LOCAL_OUTPUTS_VERIFIED，原Case仍未全部履约、资格未判定、外部未提交。P5必要条件是原重新校验证据，READY本可核验，不能声称必须先CLOSE。两阶段原TXT及全row/trace指纹、完整字面导出白名单已核对；前四原证明、原接责deadline及回执保留，没有新增Run assignment或权限。
 
-原候选绑定19；实际[run20在步骤前跳过](run20-skipped/README.md)，无浏览器执行。仅三处编号门重绑定后，候选为run21，尚未执行；设计与两处驱动修复已独审限定ACK。正常ACCEPT/SUBMIT后的带参原键GET保持精确Case/Run/offer/step/版本/key/主体绑定，不禁用恢复门；dispatch响应只按既有合同隐藏内部marker，SQL原payload保全，不修改服务端证明。离线marker检验使用明确受控字面样本，不冒充实际SQL。事件证明只称原key到原事件/actor/action/payload，不称独立从正文重算fingerprint。
+原候选绑定19；实际[run20在步骤前跳过](run20-skipped/README.md)，无浏览器执行。仅三处编号门重绑定后，[run21安装态真实浏览器实际限定PASS](run21/README.md)：六次原页面办理、P3/P4/P5各自原API显式VERIFY、三个409与两份实际TXT均闭合；完整原件、请求／视觉／清理边界分别记录。设计与两处驱动修复已独审限定ACK。正常ACCEPT/SUBMIT后的带参原键GET保持精确Case/Run/offer/step/版本/key/主体绑定，不禁用恢复门；dispatch响应只按既有合同隐藏内部marker，SQL原payload保全，不修改服务端证明。离线marker检验使用明确受控字面样本，不冒充实际SQL。事件证明只称原key到原事件/actor/action/payload，不称独立从正文重算fingerprint。
 
-一次候选仍30POST=21API正例＋6原页面办理＋3负例；270s工作/360s绝对收尾、10min免费job、原GET与worker门、四图两TXT加wheel/log/result9件和失败图1件预留均保留。固定Noto/OFL只原私有临时使用，无新许可/系统安装。先前测试元数据断言错误和独审发现的驱动问题未当作产品红例，私有原日志保全。正式来源/Windows/LIVE、外部履约与全项目完成不在本片。
+一次实际执行30POST=21API正例＋6原页面办理＋3负例；270s工作/360s绝对收尾、10min免费job、原GET与worker门、四图两TXT加wheel/log/result9件和失败图1件预留均保留。固定Noto/OFL只原私有临时使用，无新许可/系统安装。先前测试元数据断言错误和独审发现的驱动问题未当作产品红例，私有原日志保全。正式来源/Windows/LIVE、外部履约与全项目完成不在本片。

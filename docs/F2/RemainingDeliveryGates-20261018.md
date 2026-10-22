@@ -47,3 +47,5 @@ C0依据原计划不依赖F4–F6；当前也不能把方案文档包叫作正�
 2026-10-22 后续：NO_MODEL 固定 P1–P4 的未开始尾步组合缺口已由独立“差异观察基线”接线，源码 `24d59c4bd668e258a819b2f62d707242e38851a8`、实际30P及原HTML消费者证据见[本片原件与边界](evidence/no-model-observation-20261022/README.md)。真实新输入→候选→初始ADOPT→P1/P2→实际来源变化→明确局部ADOPT→新批准交付时，P3/P4仍PENDING未VERIFY；后来原接单/回执后冷读两代旧回执亦通过。旧缺基线不回填，未知/权限缺失不当空，已开始迁移仍拒绝。本源码未跑browser/wheel/P5/TXT/正式AT35，不转签run12；外部合同与Windows/LIVE门未解除。此前171P对应原f130整树，已等价正常发布8646/6c7，非未推送。
 
 2026-10-22 接续：当前NO_MODEL固定四步骤／两必需目标与LOCAL来源再批准后的目标结果→TXT→新context原键只读恢复组合已由[run18安装态真实浏览器原件](evidence/goal-txt-combination-20261022/run18/README.md)限定通过，受测SHA `76e06a89891dea94fe2c49db29a9ee60ddb754e7`。两个最终TXT逐字相等，P3/P4仍未VERIFY，Case未全部履约；该片不含P5、新数据库冷重启、正式来源或Windows。此前本地1P30.64s与9516项collection分别单列，不加算为正式总验收。
+
+2026-10-22 接续：原三份release支持的新NO_MODEL五目标→LOCAL明确批准→原角色P3接责／本人SYNTHETIC回执P4／原本地P5重新校验与关闭→owner逐项显式VERIFY→两阶段TXT，已由[run21安装态真实浏览器原件](evidence/no-model-tail-20261022/run21/README.md)限定通过，受测完整SHA `dbc66b066b592d8eeb2da705472f326893e8fa72`。三个缺条件409保全命名投影无写；没有自动VERIFY、Run授权或外部履约。五目标虽LOCAL_OUTPUTS_VERIFIED，Case仍未全部履约；P5必要条件为原REVALIDATE而非必须CLOSE。单API／PG代次结束清理，不是服务冷重启。没有为本片改产品源码，完整原合同可复用，不重跑旧P1/P2或TXT验收；正式来源／Windows／LIVE／正式AT总验收边界保持。
