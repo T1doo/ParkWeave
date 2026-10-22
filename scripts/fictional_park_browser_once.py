@@ -523,7 +523,22 @@ def write_summary(stream, offset, serialized):
     # Replace only this invocation's section, including a previous PASS. The
     # unbuffered descriptor also permits truncation after a failed write.
     stream.truncate(offset)
-    raw = ('```json\n' + serialized + '\n```\n').encode()
+    # Full raw observations stay in result.json/stdout. GitHub refuses summaries
+    # above 1 MiB even when the local write succeeds (observed in run21).
+    value = json.loads(serialized)
+    compact = {key: value[key] for key in (
+        'status', 'stage', 'scope', 'source_sha', 'error_type', 'error',
+        'finalization_errors', 'real_model_calls', 'formal_source', 'formal_AT35',
+        'Windows', 'PG_restart', 'request_budget', 'work_completion_seconds',
+    ) if key in value}
+    # Errors can include large upstream bodies; retain their exact originals in
+    # the artifact and bound only this explicitly labelled navigation summary.
+    for key in ('error', 'finalization_errors'):
+        if key in compact and len(json.dumps(compact[key], ensure_ascii=False)) > 4096:
+            compact[key] = {'detail': 'See exact result.json', 'summary_truncated': True}
+    compact['details'] = 'Full result.json and original logs are in the uploaded artifact; this is a bounded summary.'
+    raw = ('```json\n' + json.dumps(compact, ensure_ascii=False, indent=2) + '\n```\n').encode()
+    assert len(raw) <= 32 * 1024, 'summary projection exceeds 32KiB'
     assert stream.write(raw) == len(raw)
 
 

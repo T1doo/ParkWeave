@@ -31,16 +31,17 @@ def source_adopt(f,p,page_directory=None):
     return stored(f,p)['events'][-1]
 
 
-def staged(f,directory,goals=None):
+def staged(f,directory,goals=None,inputs=None):
     from test_request_intents import save
     from ordinary_case_step_support import worker_once
     goals=GOALS if goals is None else goals
-    run=f[3].post('/api/runs',headers=headers(f[2],key=uuid4().hex),json=dict(goal='SYNTHETIC NO_MODEL新输入完整候选来源变化'))
+    inputs=inputs or dict(goal='SYNTHETIC NO_MODEL新输入完整候选来源变化',request='SYNTHETIC 本次NO_MODEL独立目标',need_summary='SYNTHETIC 新诉求完整原文',material_outline='SYNTHETIC 新材料目录原文')
+    run=f[3].post('/api/runs',headers=headers(f[2],key=uuid4().hex),json=dict(goal=inputs['goal']))
     assert run.status_code==202,run.text;worker_once(f,directory)
     response=f[3].post('/api/preparations',headers=headers(f[2],key=uuid4().hex),json=dict(run_id=run.json()['run_id'],service_id='synthetic-material-preparation',service_version=1,reviewer_id='prep-specialist-fixture-a'))
     assert response.status_code==201,response.text;p=response.json()
-    response=save(f,p,goals=goals,text='SYNTHETIC 本次NO_MODEL独立目标');assert response.status_code==200,response.text;p=response.json()
-    p=add(f,p,text='SYNTHETIC 新诉求完整原文').json();p=add(f,p,'material_outline','SYNTHETIC 新材料目录原文').json()
+    response=save(f,p,goals=goals,text=inputs['request']);assert response.status_code==200,response.text;p=response.json()
+    p=add(f,p,text=inputs['need_summary']).json();p=add(f,p,'material_outline',inputs['material_outline']).json()
     p=materials(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC 原专员独立审核').json()
     p=materials(f,p,'CONFIRM',reason='SYNTHETIC 本人确认').json()
     current,_,response=generate(f,p);assert response.status_code==201,response.text;candidate=response.json()

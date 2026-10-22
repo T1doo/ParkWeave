@@ -140,3 +140,14 @@ def test_narrow_single_clock_preserves_work_and_cleanup_reservations(tmp_path,mo
     with pytest.raises(AssertionError):observer.require(15)
     monkeypatch.setattr(narrow.time,'monotonic',lambda:341)
     with pytest.raises(AssertionError):observer.closing_reservation()
+
+
+@pytest.mark.parametrize('status',['PASS','FAIL'])
+def test_large_original_report_uses_bounded_summary_without_losing_terminal_status(tmp_path,status):
+    from io import BytesIO
+    original=dict(status=status,stage='UNIT_PLACEHOLDER',scope='UNIT_ONLY',responses=[dict(body='中'*600000)],error='x'*200000 if status=='FAIL' else '')
+    serialized=json.dumps(original,ensure_ascii=False);assert len(serialized.encode())>1024*1024
+    stream=BytesIO();stream.write(b'PRIOR\n');base.write_summary(stream,len(b'PRIOR\n'),serialized)
+    raw=stream.getvalue();assert raw.startswith(b'PRIOR\n') and len(raw)<32*1024
+    summary=json.loads(raw.decode().split('```json\n')[1].split('\n```')[0]);assert summary['status']==status and summary['stage']==original['stage'] and 'result.json' in summary['details']
+    assert 'responses' not in summary and json.loads(serialized)==original

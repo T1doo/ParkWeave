@@ -1,6 +1,6 @@
 # run21：原 P3→P4→P5 安装态真实浏览器闭环
 
-[官方 run21](https://github.com/T1doo/ParkWeave/actions/runs/39777380048)，job `119819665446`，attempt1，受测完整SHA `dbc66b066b592d8eeb2da705472f326893e8fa72`。唯一实际业务浏览器执行：job／全部step成功，最终[result.json](result.json)为PASS，无finalization_errors／violation／page_error；stdout先输出PENDING_FINALIZATION，不将它当终态。step summary正文未独立读取。此前run20无步骤跳过原件[另存](../run20-skipped/README.md)，无浏览器结果，未重跑。
+[官方 run21](https://github.com/T1doo/ParkWeave/actions/runs/39777380048)，job `119819665446`，attempt1，受测完整SHA `dbc66b066b592d8eeb2da705472f326893e8fa72`。唯一实际业务浏览器执行：job／全部step成功，最终[result.json](result.json)为PASS，无finalization_errors／violation／page_error；stdout先输出PENDING_FINALIZATION，不将它当终态。官方原日志12:20:54.8278311Z明确记录 `$GITHUB_STEP_SUMMARY upload aborted`：内容1685k超过1024k上限，summary未上传，不能称全部最终化成功；原ZIP／完整job日志与job成功证据仍在。此前run20无步骤跳过原件[另存](../run20-skipped/README.md)，无浏览器结果，未重跑。
 
 没有修改产品源码：三份既有合成release已支持五步骤。本次独立新输入→NO_MODEL候选→ADOPT→LOCAL明确批准→P1/P2原API前置，随后真实页面六次业务提交：原专员OFFER→原执行者ACCEPT→本人全文SYNTHETIC回执SUBMIT→owner ACK→原REVALIDATE→CLOSE_LOCAL_RECORD。owner通过原API分别显式VERIFY P3、P4、P5；接责、提交、确认、重校验及本地关闭都没有自动VERIFY。原角色／期限保留，无Run assignment或新增权限。
 
