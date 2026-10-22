@@ -1,5 +1,6 @@
 """Exact run24/attempt1: real sandboxed Chrome CSS states, synthetic GET replay only."""
 import hashlib,json,os,signal,socket,sys,tempfile,threading,time,traceback
+from contextlib import contextmanager
 from scripts import fictional_park_browser_once as base
 from scripts.fictional_park_restart_browser_once import installed_font_environment, verify_rendered_font
 from pathlib import Path
@@ -39,6 +40,8 @@ class Handler(BaseHTTPRequestHandler):
         if len(REPORT['requests'])>40:raise RuntimeError('40 GET replay allowance exhausted')
         if path in ('/before','/after'):
             content=(PRIVATE/(path[1:]+'.html')).read_bytes();kind='text/html; charset=utf-8';code=200
+        elif path=='/api/run-access/status':
+            content=b'{"enabled":false,"read_available":false,"scope":"SYNTHETIC_CSS_GET_REPLAY_DISABLED"}';kind='application/json';code=200
         elif path=='/api/executor-receipts/'+H['step']+'/submit-recovery':
             value=PROOF if MODE=='committed' else {**PROOF,'status':'NOT_OBSERVED','event':None}
             content=json.dumps(value,ensure_ascii=False).encode();kind='application/json';code=200
@@ -95,10 +98,28 @@ def fill_handle(page):
 
 PUBLIC_FILES=frozenset(('01-before-empty-desktop.png','02-after-empty-desktop.png','03-after-unknown-narrow.png','04-after-recovered-narrow.png','05-after-cleared-narrow.png','failure-receipt-status.png','result.json'))
 
+@contextmanager
+def browser_session(font_env):
+    # Capture and close while the Playwright transport is still alive. Preserve
+    # the primary error even if either evidence capture or browser close fails.
+    with sync_playwright() as pw:
+        REPORT['stage']='SANDBOXED_BROWSER_LAUNCH'
+        browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
+        try:
+            yield browser
+        except BaseException:
+            if OUT is not None and LAST_PAGE is not None and not LAST_PAGE.is_closed():
+                try:LAST_PAGE.screenshot(path=str(OUT/'failure-receipt-status.png'),timeout=5000)
+                except BaseException as shot_error:REPORT['failure_screenshot_error']=type(shot_error).__name__
+            raise
+        finally:
+            try:browser.close();REPORT['browser_close']='CLOSED'
+            except Exception as e:REPORT['cleanup_errors'].append('browser:'+type(e).__name__)
+
 def main():
     global OUT,PRIVATE,LAST_PAGE,START,MODE
     os.umask(0o077);START=time.monotonic()
-    server=None;thread=None;browser=None
+    server=None;thread=None
     try:
         REPORT['source_sha']=base.require_hosted(os.environ,run_number='24')
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-css-replay-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
@@ -116,9 +137,7 @@ def main():
         signal.signal(signal.SIGALRM,expired);signal.alarm(max(1,int(90-(time.monotonic()-START))))
         REPORT['stage']='LOOPBACK_SERVER';server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
         origin='http://127.0.0.1:'+str(server.server_port)
-        with sync_playwright() as pw:
-            REPORT['stage']='SANDBOXED_BROWSER_LAUNCH'
-            browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
+        with browser_session(font_env) as browser:
             base.resource.verify_sandbox(browser,REPORT)
             REPORT['browser_version']=browser.version
             REPORT['real_browser']=True
@@ -129,13 +148,13 @@ def main():
                 REPORT['stage']='AFTER_'+str(width);context,page=open_receipt(browser,origin,'after',width)
                 metrics(page,'after-empty',True)
                 if width==1200:screenshot(page,'02-after-empty-desktop.png')
-                fill_handle(page);page.locator('#receipt-submit-recover').click();page.wait_for_function('!receiptSubmitBusy',timeout=15000)
+                fill_handle(page);page.locator('#receipt-submit-recover').click();page.wait_for_function('() => !receiptSubmitBusy',timeout=15000)
                 assert page.evaluate('receiptSubmitProof===null&&receiptSubmitHandle!==null')
                 assert '待核对' in metrics(page,'after-unknown',False)['text']
                 if width==390:screenshot(page,'03-after-unknown-narrow.png')
-                MODE='committed';page.locator('#receipt-submit-recover').click();page.wait_for_function('!receiptSubmitBusy',timeout=15000)
+                MODE='committed';page.locator('#receipt-submit-recover').click();page.wait_for_function('() => !receiptSubmitBusy',timeout=15000)
                 assert page.evaluate('receiptSubmitProof!==null')
-                page.locator('#receipt-submit-release').click();page.wait_for_function('!receiptSubmitBusy',timeout=15000)
+                page.locator('#receipt-submit-release').click();page.wait_for_function('() => !receiptSubmitBusy',timeout=15000)
                 assert page.evaluate('receiptSubmitHandle===null&&!receiptSubmitStoredPending()')
                 assert metrics(page,'after-recovered',False)['text']=='已核对原人工提交并读取当前回执；未重发提交、核对或步骤验证。'
                 if width==390:screenshot(page,'04-after-recovered-narrow.png')
@@ -146,17 +165,10 @@ def main():
             assert REPORT['business_POSTs']==0 and not REPORT['browser_errors'] and not REPORT.get('unexpected_GET') and not REPORT.get('violations')
             assert time.monotonic()-START<90
             REPORT['status']='PASS';REPORT['stage']='COMPLETE'
-            browser.close();browser=None
     except BaseException as e:
         REPORT['status']='FAIL';REPORT['error_type']=type(e).__name__;REPORT['error']=str(e);traceback.print_exc()
-        if OUT is not None and LAST_PAGE is not None and not LAST_PAGE.is_closed():
-            try:LAST_PAGE.screenshot(path=str(OUT/'failure-receipt-status.png'),timeout=5000)
-            except BaseException as shot_error:REPORT['failure_screenshot_error']=type(shot_error).__name__
     finally:
         signal.alarm(0)
-        if browser:
-            try:browser.close()
-            except Exception as e:REPORT['cleanup_errors'].append('browser:'+type(e).__name__)
         if server:
             try:
                 port=server.server_port;server.shutdown();server.server_close();thread.join(timeout=5);assert not thread.is_alive()
