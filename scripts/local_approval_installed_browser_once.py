@@ -145,14 +145,14 @@ def worker_once(run,index):
     assert len(run.report['installed_worker_exits'])<=2
 
 
-def prepare(run,index):
+def prepare(run,index,*,goals=GOALS):
     run.report['stage']='API_PREPARATION_'+str(index)
     label=f'SYNTHETIC 安装包本地批准事项{index}'
     created=api_call(run,'/api/runs',dict(goal=label),expected=202);worker_once(run,index)
     row=api_call(run,'/api/runs/'+created['run_id']);assert row['state']=='SUCCEEDED'
     p=api_call(run,'/api/preparations',dict(run_id=created['run_id'],service_id='synthetic-material-preparation',service_version=1,reviewer_id='ordinary-demo-specialist'),expected=201)
     path='/api/preparations/'+p['preparation_id']
-    p=api_call(run,path+'/request-intent',dict(expected_preparation_revision=p['revision'],request_text=label+' 独立新诉求；全部虚构',required_goals=GOALS))
+    p=api_call(run,path+'/request-intent',dict(expected_preparation_revision=p['revision'],request_text=label+' 独立新诉求；全部虚构',required_goals=goals))
     for slot in ('need_summary','material_outline'):
         p=api_call(run,path+'/commands',dict(action='ADD_EVIDENCE',expected_revision=p['revision'],slot=slot,text=label+' '+slot,source_kind='USER_STATEMENT',source_label='SYNTHETIC 安装包初态'))
     for actor,action in (('specialist','REVIEW'),('enterprise','CONFIRM')):
@@ -161,7 +161,7 @@ def prepare(run,index):
     selected=api_call(run,path+'/service-selections',dict(expected_preparation_revision=p['revision'],expected_source_sha256=capabilities['source_sha256'],expected_capability_catalog_sha256=capabilities['capability_catalog_sha256']),expected=201)
     assert selected['producer']['mode']=='NO_MODEL' and selected['producer']['real_model_calls']==0
     assert selected['validator_version']=='LOCAL_SYNTHETIC_DEMO_V2' and selected['producer']['schema_version']=='local-synthetic-demo-producer/2'
-    plan=api_call(run,path+'/service-case-plan',dict(expected_preparation_revision=p['revision'],expected_request_revision=capabilities['request_revision'],expected_plan_revision=0,expected_source_sha256=capabilities['source_sha256'],required_goals=GOALS,reason='SYNTHETIC 原NO_MODEL方案明确ADOPT',candidate_id=selected['candidate_id'],expected_candidate_sha256=selected['candidate_sha256'],expected_verification_sha256=selected['verification_sha256']),expected=201)
+    plan=api_call(run,path+'/service-case-plan',dict(expected_preparation_revision=p['revision'],expected_request_revision=capabilities['request_revision'],expected_plan_revision=0,expected_source_sha256=capabilities['source_sha256'],required_goals=goals,reason='SYNTHETIC 原NO_MODEL方案明确ADOPT',candidate_id=selected['candidate_id'],expected_candidate_sha256=selected['candidate_sha256'],expected_verification_sha256=selected['verification_sha256']),expected=201)
     seal=plan['candidate_consumption']['difference_observation']
     assert seal is not None and seal['scope']=='LOCAL_DIFFERENCE_OBSERVATION_BASELINE'
     assert seal['candidate_id']==selected['candidate_id'] and seal['plan_id']==plan['plan_id']

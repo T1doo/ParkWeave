@@ -106,7 +106,11 @@ def serve():
     from scripts import ordinary_synthetic_demo as demo
     from parkweave.process_env import minimal_environment
     import urllib.request
-    state=Path(sys.argv[2]);port=int(sys.argv[3]);observation=dict(children=[],creation={},cleanup_errors=[])
+    state=Path(sys.argv[2]);port=int(sys.argv[3]);readiness_limit=int(sys.argv[4]) if len(sys.argv)>4 else 40
+    assert 1<=readiness_limit<=40,'bounded cumulative readiness allowance required'
+    generation=sys.argv[5] if len(sys.argv)>5 else 'legacy'
+    assert generation in ('legacy','first','restarted')
+    observation=dict(children=[],creation={},cleanup_errors=[],wrapper_pid=os.getpid(),state_dir=str(state),generation=generation)
     child=None;readiness_attempts=0;primary=None;cleanup=[]
     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
     try:
@@ -123,7 +127,7 @@ def serve():
                     observation['children'].append(dict(role='api',pid=child.pid,exit_code=None))
                     deadline=time.monotonic()+20
                     while time.monotonic()<deadline:
-                        assert readiness_attempts<40,'installed API readiness request40 exhausted'
+                        assert readiness_attempts<readiness_limit,'installed API remaining readiness allowance exhausted'
                         assert child.poll() is None,'installed API exited before readiness'
                         try:
                             readiness_attempts+=1
