@@ -145,7 +145,7 @@ def main():
     os.umask(0o077);started=time.monotonic();report=dict(status='NOT_RUN',stage='HOST_GATE',scope='INSTALLED_NO_MODEL_DISTINCT_INPUT_ADOPTIONS_FRESH_ROLE_READS',responses=[],screenshots=[],violations=[],page_errors=[],real_model_calls=0,formal_source=False,formal_AT35=False,Windows=False,PG_restart=False)
     run=SimpleNamespace(started=started,report=report,secrets=[],public=None);run.budget=old.Budget(report)
     try:
-        report['source_sha']=base.require_hosted(os.environ,run_number='22')
+        report['source_sha']=base.require_hosted(os.environ,run_number='23')
         run.private=Path(tempfile.mkdtemp(prefix='parkweave-installed-again-'));run.public=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';run.public.mkdir(mode=0o700,exist_ok=False)
         old.installation(run,old.current_wheel(run))
         from scripts.fictional_park_restart_browser_once import installed_font_environment
