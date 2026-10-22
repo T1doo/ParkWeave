@@ -17,3 +17,5 @@
 [完整decoded API job日志](ci-original.log)、[官方ZIP](artifact.zip)、[run](run-api.json)／[job](job-api.json)／[artifact](artifact-metadata.json)元数据、[离线核验脚本](archive_run22.py)、[限定回执](validation.json)、[源码等价映射](source-publication-map.json)、[校验和](checksums.sha256)均保留。原ZIP1567900B、7成员，SHA256 `1d1cc4bad9e84838e1efa9a00799aeb778dbfd704caac538a213c7d96e2edd31`；原日志811595B，SHA256 `2b1f30b067674bc7c05912f36398d6a3252678189226bf147b955251bca6f3c2`。stdout PENDING规范化与最终FAIL相等，不当PASS。旧summary超限报错本轮未出现，但summary正文／上传未独读，不能以无该报错冒充完整最终化验收。
 
 正式外部来源、Windows原生、LIVE／真实模型、真实线下履约、C0材料与正式总验收仍分别未验；不把本地来源或合成两输入当外部系统成功。
+
+修后冻结源 `fe0e5f098214d584f9f187f89f4085dede76080e` 的精确collection为9521项／405文件，四片2420／2323／2438／2340，754原字节指纹与稳定身份多重集合精确吻合，见[修后collection原日志](font-fix-collection-original.log)。仅collect，不是9521PASS或新浏览器执行。
