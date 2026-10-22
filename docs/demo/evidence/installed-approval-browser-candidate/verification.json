@@ -1,0 +1,466 @@
+{
+  "status": "PASS_INSTALLED_API_AND_GUARDS_ONLY_NOT_BROWSER",
+  "harness_frozen_source_sha": "f97a2aec3654b34b1b9592606bea8bda771160f2",
+  "package_source_sha": "8944bb31cb8755b693b534f0d78605cc62455ead",
+  "api_execution_checked_out_sha": "8944bb31cb8755b693b534f0d78605cc62455ead",
+  "harness_raw_sha256": {
+    "scripts/installed_wheel_support.py": "1dbc26ffc0f7875e7954e63dadb021477bc8024033f7203eec2e126d525c7a2d",
+    "scripts/installed_wheel_entry.py": "34cf80447725c3fa3e0ea77ca9d4ed44266991f8ac7d2aa76600ccc59086fd25",
+    "scripts/local_approval_installed_browser_once.py": "510cfd947cafa8974e0d968e937654200c083dbfec36a7c593dde0d10ce9ce33"
+  },
+  "tests": {
+    "final_installed_API_preflight": "PASS_API_ONLY_NOT_BROWSER",
+    "deterministic_guard_checks": 6,
+    "POST": 30,
+    "GET_HEAD_including_readiness": 22,
+    "earlier_attempts": [
+      "config JSON harness error before readiness",
+      "snapshot SQL column harness error after delivery",
+      "missing API final attestation after delivery",
+      "API-only PASS before setup cleanup hardening",
+      "final API-only PASS after reviewed hardening"
+    ]
+  },
+  "cleanup": {
+    "setup": {
+      "children": [
+        {
+          "role": "postgres",
+          "pid": 28152,
+          "exit_code": 0
+        }
+      ],
+      "creation": {
+        "postgres": "created"
+      },
+      "cleanup_errors": [],
+      "state_dir": "/tmp/parkweave-ordinary-demo-i48gbvsv",
+      "postgres_marker_absent": true
+    },
+    "server": {
+      "children": [
+        {
+          "role": "postgres",
+          "pid": 28170,
+          "exit_code": 0
+        },
+        {
+          "role": "api",
+          "pid": 28178,
+          "exit_code": 0
+        }
+      ],
+      "creation": {
+        "postgres": "created"
+      },
+      "cleanup_errors": [],
+      "readiness_attempts": 15,
+      "postgres_marker_absent": true
+    },
+    "listener_refused": true
+  },
+  "runtime_provenance": {
+    "package_files": 190,
+    "all_match_wheel_and_frozen_HEAD": true,
+    "isolated_process_roles": [
+      "setup",
+      "api",
+      "worker-0",
+      "worker-1"
+    ],
+    "actual_SQL_and_web_opened": true,
+    "dependency_downloads_during_build_install": 0
+  },
+  "browser": {
+    "status": "NOT_RUN",
+    "intended_run_number": 12,
+    "workflow_unchanged": true,
+    "font_gate_unchanged": true,
+    "blocking_clarification": "Existing hosted bootstrap downloads pinned dependencies; clarify whether no-download applies only to wheel build/install or whole job. No CI started."
+  },
+  "limits": {
+    "work_seconds": 270,
+    "absolute_seconds": 360,
+    "job_minutes": 10,
+    "GET_HEAD": 400,
+    "POST": 40,
+    "planned_POST": 37,
+    "worker_once": 2,
+    "negative_owner_SQL": 1,
+    "artifact_files": 10,
+    "artifact_bytes": 8388608
+  },
+  "formal_source": false,
+  "formal_AT35": false,
+  "Windows": false,
+  "real_model_calls": 0,
+  "preserved_raw_components": {
+    "attempt1/install.log": {
+      "bytes": 465,
+      "sha256": "18083393b3f9518b324844e96c78d323a2a029d30e9d896beee40f8ecaa26cf0"
+    },
+    "attempt1/installed-api.log": {
+      "bytes": 1307,
+      "sha256": "fa47dad38c792d4ea38d0c2e71e4dea039d2e7d97487065f81d720369bea2de8"
+    },
+    "attempt1/owned-processes.json": {
+      "bytes": 283,
+      "sha256": "cdfe636b7d66afc174faeee1867d762eeb88d91a38cbe41cef841e1a0924ed7b"
+    },
+    "attempt1/preflight-result.json": {
+      "bytes": 21925,
+      "sha256": "03e350555c521bb58662245208f06592fa744aabb19127162d38facd010b1f8d"
+    },
+    "attempt1/serve.stderr": {
+      "bytes": 707,
+      "sha256": "dc1ab6e71702136d74e6d163aaff5e8485025c29a58d09954d4ac54467e6deed"
+    },
+    "attempt1/serve.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt1/setup-attestation.json": {
+      "bytes": 6527,
+      "sha256": "4f4b754e2360501b4ddd4404a895ecc5cec8f9c21bb28b0eb9d7c00b5bfa68df"
+    },
+    "attempt1/setup.stderr": {
+      "bytes": 233,
+      "sha256": "293dc79fc8217902b669a685932a27f66e31369c668b040702ce9272169a41af"
+    },
+    "attempt1/setup.stdout": {
+      "bytes": 256,
+      "sha256": "5fc80181e0bd1ccbb2bbe734f1bdbd7f8e4c90719731b4d4854f174b0f082325"
+    },
+    "attempt2/api-attestation.json": {
+      "bytes": 7457,
+      "sha256": "f13966222e9efd3e41cc61a6c4cb691c8158c0e59c25e7b2a0868d9a429ecd49"
+    },
+    "attempt2/install.log": {
+      "bytes": 402,
+      "sha256": "2a80b95a022acd695ed88250cf8fdc9e61342af83bc029dbe0bf34d7fd069811"
+    },
+    "attempt2/installed-api.log": {
+      "bytes": 500,
+      "sha256": "3b5526ef21a75a88d9d19a9249e47a6a3100f647380c0ebe28c2c13dbd5b026d"
+    },
+    "attempt2/owned-processes.json": {
+      "bytes": 313,
+      "sha256": "dc7db3656c2e35cae1778c002c7af7a691820e876ce8ef3aa3a9a1aaf49d0a80"
+    },
+    "attempt2/preflight-result.json": {
+      "bytes": 29299,
+      "sha256": "a832ab6c5db236c1facb7efff461134513783065c8ed04d3fd57efbcb7f1fe09"
+    },
+    "attempt2/serve.stderr": {
+      "bytes": 233,
+      "sha256": "fb989feecd45b2981df942f9865b90684eac63850e6877c4aef34240dbac6638"
+    },
+    "attempt2/serve.stdout": {
+      "bytes": 155,
+      "sha256": "1debf2383ff9ca03d2142f4a79906e04fe775c8f20567559e420b8b75de2481d"
+    },
+    "attempt2/setup-attestation.json": {
+      "bytes": 7518,
+      "sha256": "61dbe7656ecd9f9811cec046b4626419332b766c4d6eedd273f29877cbeaf144"
+    },
+    "attempt2/setup.stderr": {
+      "bytes": 233,
+      "sha256": "fb989feecd45b2981df942f9865b90684eac63850e6877c4aef34240dbac6638"
+    },
+    "attempt2/setup.stdout": {
+      "bytes": 256,
+      "sha256": "dcb3aa4964626184484dd9e2c8b862f812a5225e1f70cd94e64c04174598b4c1"
+    },
+    "attempt2/worker-0-attestation.json": {
+      "bytes": 6852,
+      "sha256": "0d1b8ad6f2dad1a9df282da1726462a0f5c320cba525e18fa78f3aebc4382940"
+    },
+    "attempt2/worker-0.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt2/worker-1-attestation.json": {
+      "bytes": 6852,
+      "sha256": "e1f97e33c6f3c905db2f9968fb906e25ca91e52153ffa99d7e97d33ca751581d"
+    },
+    "attempt2/worker-1.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt3/api-attestation.json": {
+      "bytes": 7457,
+      "sha256": "1c55e04be1b3fcecf76499fa57c9703115899d388f22aa05b60099f122f30dd5"
+    },
+    "attempt3/install.log": {
+      "bytes": 402,
+      "sha256": "2a80b95a022acd695ed88250cf8fdc9e61342af83bc029dbe0bf34d7fd069811"
+    },
+    "attempt3/installed-api.log": {
+      "bytes": 500,
+      "sha256": "537330af24a3ab4a61145822e12ffd8f2316c15dc9554df2553126db00730155"
+    },
+    "attempt3/owned-processes.json": {
+      "bytes": 313,
+      "sha256": "7753cae4178d6641a670bcec5e8904cae4144beac7127e2ce38598a0fa5e987d"
+    },
+    "attempt3/preflight-result.json": {
+      "bytes": 56899,
+      "sha256": "63054c383893f5830a99a8dbea17f88ac538f383d81aab5e9b15dc99338c7404"
+    },
+    "attempt3/serve.stderr": {
+      "bytes": 233,
+      "sha256": "7cb54add4abd14da074c867ac3e156b3cb6c4168bee851668baa050731f181bc"
+    },
+    "attempt3/serve.stdout": {
+      "bytes": 155,
+      "sha256": "d3fc01f87c470a20b3868f9e587b7c35bdd22154b856421ff93a6e08d3dc050b"
+    },
+    "attempt3/setup-attestation.json": {
+      "bytes": 7518,
+      "sha256": "a66466fc16237bcc53e35a4f0ae034b1795cd9b2e8f8acaef9d38733a8049ba0"
+    },
+    "attempt3/setup.stderr": {
+      "bytes": 233,
+      "sha256": "7cb54add4abd14da074c867ac3e156b3cb6c4168bee851668baa050731f181bc"
+    },
+    "attempt3/setup.stdout": {
+      "bytes": 256,
+      "sha256": "947e04ece7da366b241f0414acab7670f86978a52833d9fcb7bf5f0d3fc39794"
+    },
+    "attempt3/worker-0-attestation.json": {
+      "bytes": 6852,
+      "sha256": "2414625a40157bef8b39e84f3532b5b14477f308c5b6deab10da981002af17d0"
+    },
+    "attempt3/worker-0.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt3/worker-1-attestation.json": {
+      "bytes": 6852,
+      "sha256": "bb584cc97aea96944e8aac944260a96601341e251ef41bda251d8b84c1f5fea9"
+    },
+    "attempt3/worker-1.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt4/api-attestation.json": {
+      "bytes": 15268,
+      "sha256": "40b8e1d2a2c0a749ee0ce80c019751d95e4a7ef6f441387298091c6f7d055d3b"
+    },
+    "attempt4/install.log": {
+      "bytes": 402,
+      "sha256": "2a80b95a022acd695ed88250cf8fdc9e61342af83bc029dbe0bf34d7fd069811"
+    },
+    "attempt4/installed-api.log": {
+      "bytes": 500,
+      "sha256": "094439dda8a8afd03cea10b035a63f40652d21ead790cb62253508d1b67da3f0"
+    },
+    "attempt4/owned-processes.json": {
+      "bytes": 311,
+      "sha256": "4c8148f3cb0bb47be229c0d5bcc642e0f41540a292c06a9fa6659d52525d4a09"
+    },
+    "attempt4/preflight-result.json": {
+      "bytes": 64058,
+      "sha256": "aadde3894e8c3b7703830100f6e121c152fe4b3d9cc17b7e5f1bc98d99caf3a0"
+    },
+    "attempt4/serve.stderr": {
+      "bytes": 233,
+      "sha256": "8902f6c0d636855e366259f70bea4b3fe26255a8de04e5e14f2a5d65a1b8b0de"
+    },
+    "attempt4/serve.stdout": {
+      "bytes": 155,
+      "sha256": "f6058163a2170e4e85cb282c021780689943d78c716afa7ede0e0688467e62fb"
+    },
+    "attempt4/setup-attestation.json": {
+      "bytes": 7518,
+      "sha256": "142da1cec13b79252e96f3a6f4c090f68e3a512cae6b0a2982ba6d76b51c53b8"
+    },
+    "attempt4/setup.stderr": {
+      "bytes": 233,
+      "sha256": "8902f6c0d636855e366259f70bea4b3fe26255a8de04e5e14f2a5d65a1b8b0de"
+    },
+    "attempt4/setup.stdout": {
+      "bytes": 256,
+      "sha256": "a80c92ef85049e21fdb8ec447bfd3fcdb750366baebd7b7606b011a77cdcc24a"
+    },
+    "attempt4/worker-0-attestation.json": {
+      "bytes": 6852,
+      "sha256": "3678f723e6e91b7560abb2f2cc44a1acbd5ada9c8c826d752fd1882d69de303f"
+    },
+    "attempt4/worker-0.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt4/worker-1-attestation.json": {
+      "bytes": 6852,
+      "sha256": "5a0d46e6c2063df3c6279834832f8094f55c0a42db99828caff9bdadca1ce49f"
+    },
+    "attempt4/worker-1.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt5/api-attestation.json": {
+      "bytes": 15268,
+      "sha256": "efd3008b4dfcbe4e44e412729bc72ff82e73b40e80facbd1f8950859e08d3a8a"
+    },
+    "attempt5/install.log": {
+      "bytes": 402,
+      "sha256": "2a80b95a022acd695ed88250cf8fdc9e61342af83bc029dbe0bf34d7fd069811"
+    },
+    "attempt5/installed-api.log": {
+      "bytes": 500,
+      "sha256": "bfc0f60632f6281c1c5c9e8d74fd1cd77da73433b05f26208df72e38ca0681cc"
+    },
+    "attempt5/owned-processes.json": {
+      "bytes": 311,
+      "sha256": "779e05a6fc8f533e3e8832161669bbe34b4adcabafad01586dd187716bb299d7"
+    },
+    "attempt5/preflight-result.json": {
+      "bytes": 64507,
+      "sha256": "b48c920c0fa8671c43bd2fed1114df447dfd392bed00e43d901233e40ad18469"
+    },
+    "attempt5/serve.stderr": {
+      "bytes": 233,
+      "sha256": "168062920dd8bac59fe864a1b4c6611ff2f78123a88ef38e167bf1ba46e4db14"
+    },
+    "attempt5/serve.stdout": {
+      "bytes": 155,
+      "sha256": "e8532021d3fcd279cc0ebd97c3d8a74867a78db5536d73ef3736c90bb8a2abde"
+    },
+    "attempt5/setup-attestation.json": {
+      "bytes": 7518,
+      "sha256": "c5c7b174a4841c77416f0ebe1d39bc1ca53642a82c6a0561afadde4b6880134a"
+    },
+    "attempt5/setup-owned-processes.json": {
+      "bytes": 264,
+      "sha256": "649665e8b3310ce4886a38eff048945e2f8a2c52b4b804d10e9e521b4ccab278"
+    },
+    "attempt5/setup.stderr": {
+      "bytes": 233,
+      "sha256": "168062920dd8bac59fe864a1b4c6611ff2f78123a88ef38e167bf1ba46e4db14"
+    },
+    "attempt5/setup.stdout": {
+      "bytes": 256,
+      "sha256": "1911d60ba91f17e944c892064ecd376ea65c4ea6e19389593d63c82b10a3b754"
+    },
+    "attempt5/worker-0-attestation.json": {
+      "bytes": 6852,
+      "sha256": "ae1ccb54f171c56b58d2694027f79b48b4e5d82ec851f7d643f47c3de4c5fc9c"
+    },
+    "attempt5/worker-0.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "attempt5/worker-1-attestation.json": {
+      "bytes": 6852,
+      "sha256": "d0d76fcd681420fac0e4dafc500e943b5b4d711accf2bc1c368f4bb6cd88c68b"
+    },
+    "attempt5/worker-1.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "guard-checks-original.log": {
+      "bytes": 883,
+      "sha256": "d615f31bbe9d0559a148dfe859a84b9ed6b574c2e8d0b5f29b387aa58ae90bf0"
+    },
+    "guard_checks.py": {
+      "bytes": 5439,
+      "sha256": "97f92aa77317ba5613b84cad400fe59e168702185f9f7daf33a01d0b47815957"
+    },
+    "installed-setup.stderr": {
+      "bytes": 227,
+      "sha256": "405b596202e57fb726f0f21a365acf5db625e61efced3f29bf61c59535532a4b"
+    },
+    "installed-setup.stdout": {
+      "bytes": 256,
+      "sha256": "b483502c18bcafcf9741b70f6da9bb531b574d94ba0f7e046f82d3150407e6cd"
+    },
+    "local-offline-package.log": {
+      "bytes": 144,
+      "sha256": "9071b787337b4eec6bc9fc442b7547f42cf09e5ee52daa94f9c7bf8f1f5e3550"
+    },
+    "preflight-final-candidate.log": {
+      "bytes": 1293,
+      "sha256": "7bed8a5039dac13dd6d8668cf2b44342dcdea978ad93714fa320606240a316cf"
+    },
+    "preflight-fixed.log": {
+      "bytes": 973,
+      "sha256": "d9eec818a8123268436d51eb84fb2f91fcfa8e58dbb893aec7f1a1d965fca82a"
+    },
+    "preflight-graceful-proof.log": {
+      "bytes": 73494,
+      "sha256": "55d76dbb63d64842f69aece0d3da8678fe81eaaaeed7c12299caf89a7f5fd921"
+    },
+    "preflight-original.log": {
+      "bytes": 730,
+      "sha256": "911ca3556deecfc60bf737428211a79e69a5c1eba54ed3919bc0e1c5e678082f"
+    },
+    "preflight-snapshot-fixed.log": {
+      "bytes": 734,
+      "sha256": "48e31d383e8600d92e4bb5728c205604297908ea9cd0d544ae5608f8fc8efee4"
+    }
+  },
+  "collection": {
+    "current_cases": 9445,
+    "current_files": 399,
+    "actual_collection_source_sha": "f97a2aec3654b34b1b9592606bea8bda771160f2",
+    "current_stable_collection_sha256": "150f54d99a76cbbb4a47e906cc6efdb1101cd519f2dadfe3b65ce975b3c2f9c4",
+    "global_private_collection_sha256": "62071f0c479db88bf40fc3e763d625ddb341811457d2d291786eb669e2ce5d7c",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 2393,
+        "files": 99,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "ff8c68abfcdc67cc890b6e250e4dccb0323368af9f5411d0b98fcfef48d654e6"
+      },
+      {
+        "shard": "S2",
+        "cases": 2309,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "c0c5612b6ba87353b8a740208cc29960f2802797d83761da4f2f1bdc7def6c76"
+      },
+      {
+        "shard": "S3",
+        "cases": 2403,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "0189e251e3594ee3708580b39c7c79031d7e5d1c51df0e0313cfe9e7843fcd35"
+      },
+      {
+        "shard": "S4",
+        "cases": 2340,
+        "files": 100,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "c70b26337a4c161e46fcdb0ac7541524db2ed9be5512e3589d1e82e47d48ff6d"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "source_bytes_unchanged_during_collection": true,
+    "head_blob_raw_sha256_binding_verified": true,
+    "diagnostic_catalog_ast_completeness_claimed": true,
+    "diagnostic_catalog_ids": 3582,
+    "diagnostic_catalog_generation": "f3f3f12d2da1b4ff0fbceccdc9116b060ccb676539735bdf30185412f3d36fe9",
+    "windows_dependency_and_fixture_compatibility_claimed": false
+  },
+  "api_harness_byte_source_sha": "f29c711cf6cb2d4e9dd5163d6eb41e8e64557f08",
+  "api_harness_executed_raw_sha256": {
+    "scripts/installed_wheel_support.py": "1dbc26ffc0f7875e7954e63dadb021477bc8024033f7203eec2e126d525c7a2d",
+    "scripts/installed_wheel_entry.py": "34cf80447725c3fa3e0ea77ca9d4ed44266991f8ac7d2aa76600ccc59086fd25",
+    "scripts/local_approval_installed_browser_once.py": "abd9b5650ddc9151d104e34c0f71e0094f8def8562030cc53bd9f3697d2092e8"
+  },
+  "post_preflight_change": {
+    "source_sha": "f97a2aec3654b34b1b9592606bea8bda771160f2",
+    "change": "One additional bound child exit0 terminal assertion",
+    "verification": "Same six pure guard checks include wrapper0/child1 rejection;API not reexecuted after this one-line change"
+  }
+}
