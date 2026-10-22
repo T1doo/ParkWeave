@@ -1,6 +1,6 @@
 # 同事项目标结果与 TXT：NO_MODEL 组合切片
 
-源审未发现产品算法缺陷，本片补原固定 P1–P4 / 两必需目标与 LOCAL 来源再批准之后的消费者组合。当前本地实际 **1P，30.64s**，为自有 HTTP/PostgreSQL 与完整原页面 Node 环境，非浏览器。设计与源码已由只读独审限定 ACK；安装态正常 sandbox 浏览器 run18 尚未执行，不能转签 run17。
+源审未发现产品算法缺陷，本片补原固定 P1–P4 / 两必需目标与 LOCAL 来源再批准之后的消费者组合。当前本地实际 **1P，30.64s**，为自有 HTTP/PostgreSQL 与完整原页面 Node 环境，非浏览器。设计与源码已由只读独审限定 ACK；随后同树安装态正常 sandbox 浏览器 [run18 限定通过](run18/README.md)，官方日志、四原图、两个最终TXT与完整wheel ZIP均保留；不转签run17。
 
 首次候选 / ADOPT / P1、P2 → 实际合成来源变化 / 明确局部 ADOPT → 当前目标 UNVERIFIED、P2 NEEDS_RECHECK → 新明确 PROPOSE / APPROVE / 交付 / P2 VERIFY → 两目标 LOCAL_OUTPUTS_VERIFIED。P3、P4 原协调仍 PENDING、无 VERIFY；最终页面显示 P3 PENDING / P4 BLOCKED，不称全计划完成。原来源完整四步骤历史保留。
 
