@@ -48,4 +48,8 @@
 
 ## 当前发布状态
 
-功能测试与只读独审已完成。提交前原 CLI `GH_TOKEN` 失效，认证 fetch 和 gh API 分别报认证错误 /401，**尚未发起 push**；不是策略审批拒绝，也不是产品测试失败。已有 GitHub 连接读取及公开无凭据 fetch 均核远端仍为 `7a84772a1ae29e1e9c791943769c4cf4ad6d5e1b`。本地完整源码 / 证据提交与 Git bundle 保留，待恢复原已授权写入通道后按原分支正常快进推送；不新增凭据、权限或改写原受测提交元数据。本状态详见 publication-status.json；最终本地 evidence SHA 和 bundle hash由交接回执另列。
+原 CLI 认证失败后，已使用既有授权 GitHub 连接正常快进发布，回读成功：远端 `6c7b57fd13b48fc2bd0f118381c61e9e77c6b451`，父提交 `8646f40dccc1989a7092f5ea693468b9e5ea9c42`，未改 main、未强推。
+
+接口不能指定原 author/date，故原源码 `f1309ab0baa455970c7909eb1c1d3bb57f786368` 对应新 `8646f40dccc1989a7092f5ea693468b9e5ea9c42`，整树同为 `7c99c2c89abdea6fc02f175eab98406369a2b9e1`；原证据 `54e1b299f3edf33ab496e3a883123afd248ed6a4` 对应新 `6c7b57fd13b48fc2bd0f118381c61e9e77c6b451`，整树同为 `45cf087887ef7d4806348f32523002b9a6adcd65`。171P 是原 f130 整树的实际成绩，未因元数据等价发布重复运行。原分支与 bundle 保留。
+
+[publication-completed.json](publication-completed.json) 为成功回执的最小字段投影，列原件哈希、整树映射、`force=false/expected_sha` 和远端回读。旧 `publication-status.json` 仍保留当时 PENDING 的历史事实，不能作为现在尚未发布的状态。上文“下一缺口”属于该受测版本；接续差异观察基线产品切片另见 [后续证据](../no-model-observation-20261022/README.md)。

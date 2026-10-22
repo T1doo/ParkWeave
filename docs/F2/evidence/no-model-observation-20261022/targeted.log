@@ -1,0 +1,326 @@
+FFF.....F..                                                              [100%]
+=================================== FAILURES ===================================
+__ test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending __
+
+ordinary_local = ((<parkweave.store.Store object at 0x7fe908d7baa0>, <parkweave.store.Store object at 0x7fe908a879b0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/373283db-13d1-49f9-849c-237e7a318c48/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_new_no_model_fixed_releas0')
+
+    def test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending(ordinary_local,tmp_path):
+        f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker');before=stored(f,p);prefix=deepcopy(ledger(f,p)['events'])
+>       tail_pending(before);event=source_adopt(f,p);tail_pending(stored(f,p))
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:58: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fe908d7baa0>, <parkweave.store.Store object at 0x7fe908a879b0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7fe907b4bc50>)
+p = {'preparation_id': '373283db-13d1-49f9-849c-237e7a318c48', 'case_id': '3fd01874-a5cd-4afc-8ee6-4e4a1a5b420d', 'run_id': '26845293-66aa-4268-827d-2150e41533c6', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+>       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError
+_ test_second_source_adopt_cannot_wash_observation_lineage_after_start[OFFER] __
+
+ordinary_local = ((<parkweave.store.Store object at 0x7fe9066b9e20>, <parkweave.store.Store object at 0x7fe907d31460>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/fca85369-90d1-4237-aa3c-a014ec87de67/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_second_source_adopt_canno0')
+started = 'OFFER'
+
+    @pytest.mark.parametrize('started',['OFFER','BEGIN'])
+    def test_second_source_adopt_cannot_wash_observation_lineage_after_start(ordinary_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_source_change_adoption import changed,preview
+>       f,_,_=ordinary_local;p,_,old,_=first(f,tmp_path/'worker');source_adopt(f,p)
+                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fe9066b9e20>, <parkweave.store.Store object at 0x7fe907d31460>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7fe9063bcad0>)
+p = {'preparation_id': 'fca85369-90d1-4237-aa3c-a014ec87de67', 'case_id': '14f9ad20-925a-4346-8ddd-a0300d93b664', 'run_id': '38d69dfb-313e-497e-af0f-2b786d4d2edf', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+>       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError
+_ test_second_source_adopt_cannot_wash_observation_lineage_after_start[BEGIN] __
+
+ordinary_local = ((<parkweave.store.Store object at 0x7fe9064863c0>, <parkweave.store.Store object at 0x7fe906426fc0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/ba3278f4-6a80-427c-8b57-fa397e7ca464/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_second_source_adopt_canno1')
+started = 'BEGIN'
+
+    @pytest.mark.parametrize('started',['OFFER','BEGIN'])
+    def test_second_source_adopt_cannot_wash_observation_lineage_after_start(ordinary_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_source_change_adoption import changed,preview
+>       f,_,_=ordinary_local;p,_,old,_=first(f,tmp_path/'worker');source_adopt(f,p)
+                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_no_model_difference_observation.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fe9064863c0>, <parkweave.store.Store object at 0x7fe906426fc0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7fe9062d29c0>)
+p = {'preparation_id': 'ba3278f4-6a80-427c-8b57-fa397e7ca464', 'case_id': 'f39bbbc8-6248-479b-bd03-942c0819de39', 'run_id': 'cb35463d-c1d1-4f76-9e63-a79f97b048e0', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        from test_source_change_adoption import changed,preview as source_preview
+        from test_service_case_steps import adopt
+        response=source_preview(f,p,changed(f,p));assert response.status_code==200,response.text
+>       value=response.json();assert value['can_adopt'],value['blocking_reasons']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ['AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK', 'KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED']
+E       assert False
+
+tests/test_local_resource_reapproval.py:24: AssertionError
+_____ test_resource_grant_aba_invalidates_unconsumed_candidate_observation _____
+
+ordinary_local = ((<parkweave.store.Store object at 0x7fe905e4c500>, <parkweave.store.Store object at 0x7fe9063c0ef0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/92cfca6d-5786-403c-a15f-2b30b7a283d7/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_resource_grant_aba_invali0')
+
+    def test_resource_grant_aba_invalidates_unconsumed_candidate_observation(ordinary_local,tmp_path):
+        f,_,_=ordinary_local;p,body,_=staged(f,tmp_path/'worker')
+        with f[1].connect() as c:c.execute("UPDATE synthetic_resource_grants SET active=false WHERE principal_id='fixture-a' AND capability='HOLD'")
+        with f[1].connect() as c:c.execute("UPDATE synthetic_resource_grants SET active=true WHERE principal_id='fixture-a' AND capability='HOLD'")
+>       result=adopt(f,p,body);assert result.status_code==409,result.text
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Internal Server Error
+E       assert 500 == 409
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+tests/test_no_model_difference_observation.py:114: AssertionError
+----------------------------- Captured stderr call -----------------------------
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/src/parkweave/service_selection.py", line 59, in parse_selection
+    raise ValueError()
+ValueError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 230, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 689, in service_case_plan_adopt
+    return service_steps.adopt(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/executor_receipts.py", line 19, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/service_case_steps.py", line 733, in adopt
+    current=candidates.current(store,c,p,parent,catalog,record['selection'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/local_demo_selections.py", line 76, in current
+    if selection is not None: base = _apply(base,selection,now=clock(c))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/local_demo_selections.py", line 43, in _apply
+    parsed = ss.parse_selection(demo.contract.canonical(selection),binding(value))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/service_selection.py", line 79, in parse_selection
+    raise SelectionError() from None
+parkweave.service_selection.SelectionError: INVALID_SERVICE_SELECTION
+------------------------------ Captured log call -------------------------------
+ERROR    uvicorn.error:h11_impl.py:416 Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/src/parkweave/service_selection.py", line 59, in parse_selection
+    raise ValueError()
+ValueError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 230, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 689, in service_case_plan_adopt
+    return service_steps.adopt(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/executor_receipts.py", line 19, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/service_case_steps.py", line 733, in adopt
+    current=candidates.current(store,c,p,parent,catalog,record['selection'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/local_demo_selections.py", line 76, in current
+    if selection is not None: base = _apply(base,selection,now=clock(c))
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/local_demo_selections.py", line 43, in _apply
+    parsed = ss.parse_selection(demo.contract.canonical(selection),binding(value))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/service_selection.py", line 79, in parse_selection
+    raise SelectionError() from None
+parkweave.service_selection.SelectionError: INVALID_SERVICE_SELECTION
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_no_model_difference_observation.py::test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending
+FAILED tests/test_no_model_difference_observation.py::test_second_source_adopt_cannot_wash_observation_lineage_after_start[OFFER]
+FAILED tests/test_no_model_difference_observation.py::test_second_source_adopt_cannot_wash_observation_lineage_after_start[BEGIN]
+FAILED tests/test_no_model_difference_observation.py::test_resource_grant_aba_invalidates_unconsumed_candidate_observation
+4 failed, 7 passed, 4 warnings in 52.05s
