@@ -561,13 +561,11 @@ def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
     if link_revision is not None and (type(link_revision) is not int or not 1<=link_revision<=64):raise Conflict('original plan Approval association revision required')
     proof=receipt.get('plan_approval')
     from . import local_resource_approval as local
+    if local.entered(parent) and (not isinstance(proof,dict) or proof.get('scope')!=local.SCOPE):
+        raise Conflict('original local approval receipt reference missing')
     if isinstance(proof,dict) and proof.get('scope')==local.SCOPE:
         return local.verify_receipt(parent,receipt,expected,link_revision=link_revision)
     if proof is None:
-        if parent.get(local.COLUMN) is not None or parent.get(local.HEAD) is not None:
-            _,local_items=local.ledger(parent)
-            if any(i['consumption'] and i['consumption']['receipt']['combination_id']==receipt.get('combination_id') for i in local_items.values()):
-                raise Conflict('original local approval receipt reference missing')
         if link_revision not in (None,1):raise Conflict('later delivery association requires original plan Approval')
         if expected is not None: raise Conflict('original plan Approval receipt reference required')
         if parent.get(COL) is not None or parent.get('candidate_plan_approval_head') is not None:

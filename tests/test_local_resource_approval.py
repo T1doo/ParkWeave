@@ -188,3 +188,122 @@ def test_corrupt_local_head_never_downgrades_a_missing_proof_to_legacy():
     parent={local.COLUMN:None,local.HEAD:dict(revision=1,sha256='a'*64)}
     with pytest.raises(Conflict,match='original head required'):core.verify_receipt(parent,{},link_revision=1)
     core.verify_receipt({local.COLUMN:None,local.HEAD:None},{},link_revision=1)
+
+
+def cold_without_local_approval(f,consumer,monkeypatch):
+    """Same existing database, new application object; no runtime local mode."""
+    if consumer=='new-store':
+        from parkweave.case_step_assignments import OrdinaryCaseStepAssignments
+        cold=Store(f[0].dsn)
+        return create_app(cold,case_step_assignments=OrdinaryCaseStepAssignments(cold))
+    from parkweave.api import configured_app
+    from test_ordinary_case_steps import CONFIGS
+    for name in CONFIGS:monkeypatch.delenv(name,raising=False)
+    monkeypatch.delenv('PARKWEAVE_LOCAL_RESOURCE_APPROVAL_MODE',raising=False)
+    monkeypatch.setenv('PARKWEAVE_DSN',f[0].dsn);monkeypatch.setenv('PARKWEAVE_MODE','LOCAL')
+    monkeypatch.setenv('PARKWEAVE_CASE_STEP_MODE','CURRENT_PREPARATION')
+    return configured_app()
+
+
+def enter_local_state(f,p,data,state):
+    x=propose(f,p,data);assert x.status_code==201,x.text
+    x=x.json();item=x['items'][0]
+    if state!='PROPOSED':
+        x=decide(f,p,item,x['revision']);assert x.status_code==200,x.text
+        x=x.json();item=x['items'][0]
+    if state=='REVOKED':
+        x=decide(f,p,item,x['revision'],'REVOKE');assert x.status_code==200,x.text
+    return item
+
+
+@pytest.mark.parametrize('state',['PROPOSED','APPROVED','REVOKED'])
+@pytest.mark.parametrize('consumer',['new-store','configured-app'])
+def test_entered_local_case_cannot_downgrade_after_cold_missing_mode(local_fixture,monkeypatch,state,consumer):
+    f,_,p,hs,data=setup(local_fixture);enter_local_state(f,p,data,state)
+    original=deepcopy(ledger(f,p));app=cold_without_local_approval(f,consumer,monkeypatch)
+    with TestClient(app) as api:
+        fresh=(*f[:3],api)
+        response=submit(fresh,p,data)  # Intentionally omit approval_id.
+        import os,json
+        from pathlib import Path
+        evidence=os.environ.get('PARKWEAVE_LOCAL_APPROVAL_DOWNGRADE_EVIDENCE')
+        if evidence:
+            out=Path(evidence);out.mkdir(parents=True,exist_ok=True)
+            (out/(consumer+'-'+state+'.json')).write_text(json.dumps(dict(state=state,consumer=consumer,http_status=response.status_code,
+                effects=effects(f),hold_states=states(f,hs),receipt_has_plan_approval=bool(response.json().get('receipt',{}).get('plan_approval')),
+                ledger_unchanged=ledger(f,p)==original),indent=2)+'\n')
+        assert response.status_code==403,response.text
+        assert response.json()=={'detail':'record unavailable or authorization denied'}
+        preview=api.post('/api/preparations/'+p['preparation_id']+'/resource-delivery/preview',headers=headers(f[2]),json=dict(members=data['members']))
+        assert preview.status_code==403,preview.text
+    assert ledger(f,p)==original and effects(f)==[0]*5 and states(f,hs)==['HELD']*3
+
+
+@pytest.mark.parametrize('state',['PROPOSED','APPROVED','REVOKED','CONSUMED'])
+def test_any_entered_local_history_requires_exact_local_proof(local_fixture,state):
+    f,_,p,_,data=setup(local_fixture);item=enter_local_state(f,p,data,state)
+    if state=='CONSUMED':assert submit(f,p,{**data,'approval_id':item['id']}).status_code==201
+    with f[1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+    for proof in (None,dict(scope=core.SCOPE),dict(scope='UNKNOWN')):
+        receipt=dict(combination_id=str(uuid4()))
+        if proof is not None:receipt['plan_approval']=proof
+        with pytest.raises(Conflict,match='local approval receipt reference missing'):
+            core.verify_receipt(parent,receipt,link_revision=1)
+    broken=deepcopy(parent);broken[local.COLUMN]=None
+    with pytest.raises(Conflict,match='original head required'):
+        delivery._approval(Store(f[0].dsn),broken)
+
+
+@pytest.mark.parametrize('consumer',['new-store','configured-app'])
+def test_unentered_legacy_case_in_same_database_keeps_original_delivery(local_fixture,monkeypatch,consumer):
+    f,_,enrolled,_,enrolled_data=setup(local_fixture)
+    enter_local_state(f,enrolled,enrolled_data,'PROPOSED');original=deepcopy(ledger(f,enrolled))
+    p=start(f,goals=[GOALS[1]]);verified(f,p,'P1');hs,members=bundle(f);data=quoted(f,p,members)
+    assert ledger(f,p) is None
+    with TestClient(cold_without_local_approval(f,consumer,monkeypatch)) as api:
+        fresh=(*f[:3],api);key=uuid4().hex
+        result=submit(fresh,p,data,key);assert result.status_code==201,result.text
+        assert result.json()['receipt'].get('plan_approval') is None
+        assert recover(fresh,p,key).json()['receipt']==result.json()['receipt']
+    assert ledger(f,enrolled)==original and ledger(f,p) is None and states(f,hs)==['CONFIRMED']*3
+
+
+@pytest.mark.parametrize('consumer',['new-store','configured-app'])
+def test_consumed_local_original_receipt_survives_cold_missing_mode(local_fixture,monkeypatch,consumer):
+    f,_,p,hs,data=setup(local_fixture);item=enter_local_state(f,p,data,'APPROVED')
+    key=uuid4().hex;actual={**data,'approval_id':item['id']}
+    result=submit(f,p,actual,key);assert result.status_code==201,result.text
+    receipt=result.json()['receipt'];original=deepcopy(ledger(f,p));before=effects(f)
+    with TestClient(cold_without_local_approval(f,consumer,monkeypatch)) as api:
+        fresh=(*f[:3],api)
+        recovered=recover(fresh,p,key);assert recovered.status_code==200,recovered.text
+        assert recovered.json()['receipt']==receipt
+        repeated=submit(fresh,p,actual,key);assert repeated.status_code==201,repeated.text
+        assert repeated.json()['receipt']==receipt
+        assert submit(fresh,p,data).status_code==403
+    assert ledger(f,p)==original and effects(f)==before and states(f,hs)==['CONFIRMED']*3
+
+
+@pytest.mark.parametrize('state',['PROPOSED','APPROVED','REVOKED'])
+def test_same_database_actual_api_restart_without_local_mode_is_closed(local_fixture,tmp_path,monkeypatch,state):
+    import json
+    import ordinary_case_step_support as support
+    f,_,p,hs,data=setup(local_fixture);original_environment=support.environment
+    with monkeypatch.context() as patch:
+        patch.setattr(support,'environment',lambda fixture:{**original_environment(fixture),'PARKWEAVE_LOCAL_RESOURCE_APPROVAL_MODE':'CURRENT_OWNER'})
+        with support.ordinary_api(f,tmp_path/'warm') as api:
+            fresh=(*f[:3],api)
+            status=api.get('/api/plan-approval/status',headers=headers(f[2])).json()
+            assert status['enabled'] and status['approval_scope']==local.SCOPE
+            enter_local_state(fresh,p,data,state)
+    original=deepcopy(ledger(f,p))
+    with support.ordinary_api(f,tmp_path/'cold') as api:
+        fresh=(*f[:3],api)
+        assert api.get('/api/plan-approval/status',headers=headers(f[2])).json()['enabled'] is False
+        result=submit(fresh,p,data);assert result.status_code==403,result.text
+        preview=api.post('/api/preparations/'+p['preparation_id']+'/resource-delivery/preview',headers=headers(f[2]),json=dict(members=data['members']))
+        assert preview.status_code==403,preview.text
+    warm=json.loads((tmp_path/'warm/process.json').read_text());cold=json.loads((tmp_path/'cold/process.json').read_text())
+    assert warm[0]['api_pid']!=cold[0]['api_pid']
+    assert warm[-1]['owned_child_exit'] is not None and cold[-1]['owned_child_exit'] is not None
+    assert ledger(f,p)==original and effects(f)==[0]*5 and states(f,hs)==['HELD']*3

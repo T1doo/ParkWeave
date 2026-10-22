@@ -25,6 +25,13 @@ def ledger(parent):
     return value,items
 
 
+def entered(parent):
+    """The immutable Case ledger persists enrolment across application restarts."""
+    if parent.get(COLUMN) is None and parent.get(HEAD) is None:return False
+    ledger(parent)  # Never downgrade a malformed or partially restored ledger.
+    return True
+
+
 def selected(store):
     local=getattr(store,'_local_resource_approval',None)
     if local is not None:

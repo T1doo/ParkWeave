@@ -182,9 +182,13 @@ def _candidate(store, c, p, parent, data, *, observe=True):
     return context, cp._hash(source), hs, now
 
 
-def _approval(store):
-    from .local_resource_approval import selected
-    return selected(store) or getattr(store,'_isolated_plan_approval',None)
+def _approval(store,parent=None):
+    from .local_resource_approval import selected,entered
+    from .store import Denied
+    local=selected(store)
+    if parent is not None and entered(parent) and local is None:
+        raise Denied('current local approval adapter required for this enrolled Case')
+    return local or getattr(store,'_isolated_plan_approval',None)
 
 
 def _delivery_connection(store,data):
@@ -204,13 +208,14 @@ def _delivery_connection(store,data):
 def preview(store, token, id, data):
     with _delivery_connection(store,data) as c:
         p, parent = cr._parent(store, c, token, id, write=True)
+        approval = _approval(store,parent)
         context, sha, hs, now = _candidate(store, c, p, parent, data)
         expiry = min(now+timedelta(seconds=120), *[h['expires_at'] for h in hs])
         return _boundary(actor_id=p['id'], context=context,
             expected_preparation_revision=parent['revision'], expected_plan_revision=parent['service_case_plan']['revision'],
             source_sha256=cp._hash(dict(source=sha,valid_until=expiry.isoformat())), valid_until=expiry,
             members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False,
-            synthetic_plan_approval_required=_approval(store) is not None,
+            synthetic_plan_approval_required=approval is not None,
             **({'expected_link_revision':data.expected_link_revision} if getattr(data,'expected_link_revision',None) is not None else {}),
             **({'expected_previous_plan_id':str(data.expected_previous_plan_id)} if data.expected_previous_plan_id is not None else {}),
             **({'replacement_frontier_profile':data.replacement_frontier_profile} if data.replacement_frontier_profile is not None else {}))
@@ -291,7 +296,7 @@ def deliver(store, token, id, key, data):
         rh._key(c, p, key)
         prior = rh._replay(c, p, key, fp)
         if prior: return _verify(store, c, p, parent, prior)
-        approval = _approval(store)
+        approval = _approval(store,parent)
         if approval is None and data.approval_id is not None:
             from .store import Denied
             raise Denied('isolated plan Approval disabled')
