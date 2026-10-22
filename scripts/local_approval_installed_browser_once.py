@@ -118,6 +118,7 @@ def server(run):
                     with socket.socket() as sock:assert sock.connect_ex(('127.0.0.1',port))==111
                     run.report['owned_API_listener_refused_after_stop']=True
                     assert child.returncode==0 and 'primary_error' not in observation,'owned service failed;cleanup confirmation is not runtime success'
+                    assert all(x['exit_code']==0 for x in observation['children']),'owned child abnormal exit;stopped is not runtime success'
                 except BaseException as cleanup:
                     run.report['server_cleanup_error']=dict(error_type=type(cleanup).__name__,error=str(cleanup))
                     if primary is not None:raise BaseExceptionGroup('Installed server primary and cleanup failures',[primary,cleanup]) from None
