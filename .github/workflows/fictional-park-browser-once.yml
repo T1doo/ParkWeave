@@ -9,6 +9,8 @@ on:
       - scripts/fictional_park_restart_browser_once.py
       - scripts/fictional_park_font_once.py
       - scripts/fictional_park_narrow_browser_once.py
+      - scripts/record_list_browser_once.py
+      - tests/test_record_list_actual_browser.py
       - scripts/ordinary_resource_browser_once.py
       - scripts/local_demo_inputs.py
       - scripts/ordinary_synthetic_demo.py
@@ -28,7 +30,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/dev/fictional-park-browser-once-20261020' &&
       github.event.repository.private == false &&
-      github.run_attempt == 1 && github.run_number == 9
+      github.run_attempt == 1 && github.run_number == 10
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -61,7 +63,7 @@ jobs:
             RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
             GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
             .runtime/fictional-browser-venv/bin/python -B -m scripts.fictional_park_font_once
-      - name: Actual390px new-input fictional flow without cold replay
+      - name: Actual same-named list browser read-only verification
         timeout-minutes: 6
         env:
           PW_BROWSER_SHA: ${{ github.sha }}
@@ -79,7 +81,7 @@ jobs:
             PW_BROWSER_NUMBER="$PW_BROWSER_NUMBER" PW_BROWSER_PUBLIC="$PW_BROWSER_PUBLIC" \
             RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
             ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
-            .runtime/fictional-browser-venv/bin/python -B -m scripts.fictional_park_narrow_browser_once
+            .runtime/fictional-browser-venv/bin/python -B -m scripts.record_list_browser_once
       - name: Preserve only masked screenshots and synthetic result
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
