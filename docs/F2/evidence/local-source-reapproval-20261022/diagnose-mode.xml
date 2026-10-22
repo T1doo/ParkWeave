@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="10.743" timestamp="2026-10-22T05:40:38.312407+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[new-store]" time="3.621"><failure message="parkweave.store.Denied: original replacement history store required">local_fixture = ((&lt;parkweave.store.Store object at 0x7faf8b615fd0&gt;, &lt;parkweave.store.Store object at 0x7faf8b615f40&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7faf8a514b90&gt;
+consumer = 'new-store'
+
+    @pytest.mark.parametrize('consumer',['new-store','configured-app'])
+    def test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery(local_fixture,monkeypatch,consumer):
+        from test_local_resource_approval import cold_without_local_approval
+        f,bridge,p,old_holds,old,hs,data,item,_=continuation(local_fixture)
+        body=deepcopy(ledger(f,p)['events'][2]['request']['delivery']);key=old['delivery_binding']['request_key'];before=deepcopy(ledger(f,p))
+        assert direct_bind(f,p,old['combination'],revision=1).status_code==409
+        app=cold_without_local_approval(f,consumer,monkeypatch)
+        with TestClient(app) as api:
+            cold=(*f[:3],api)
+            assert preview(cold,p,dict(members=data['members'],expected_link_revision=1)).status_code==403
+            assert submit(cold,p,{**data,'approval_id':item['id']}).status_code==403
+            assert direct_bind(cold,p,old['combination'],revision=1).status_code==403
+            recovered=recover(cold,p,key)
+            if recovered.status_code!=200:
+                from parkweave.case_step_assignments import OrdinaryCaseStepAssignments
+                diagnostic=Store(f[0].dsn);create=__import__('parkweave.api',fromlist=['create_app']).create_app
+                create(diagnostic,case_step_assignments=OrdinaryCaseStepAssignments(diagnostic))
+&gt;               delivery.recover(diagnostic,f[2]['fixture-a'],UUID(p['preparation_id']),key)
+
+tests/test_local_resource_reapproval.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/executor_receipts.py:19: in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:357: in recover
+    if row: return _verify(store,c,p,parent,row['payload'])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:275: in _verify
+    context, issues = _context(store, c, p, parent)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:68: in _context
+    changed, prerequisites, sources, actual, states, bad = steps._inspect(store, c, parent, plan, observe=False)
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:354: in _inspect
+    issues,sources,actual=current_sources(store,c,parent,plan)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:215: in current_sources
+    issues,sources=cp._sources(store,c,parent)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/controlled_plans.py:157: in _sources
+    issues,snap,group,holds,rules=life._sources(store,c,owner,parent,case_step=case_step)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_lifecycle.py:108: in _sources
+    decision=catalog_decision(c,parent,link)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/resource_plan_binding.py:114: in catalog_decision
+    verify_history(getattr(c,'_access_store',None),c,parent,link,receipts[0]['payload'])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = None, c = &lt;psycopg.Connection [BAD] at 0x7faf73f50680&gt;
+parent = {'id': UUID('a01dff20-a5ed-43ab-896c-0dcf746d3de1'), 'run_id': UUID('8ef49c43-bc06-4a96-b802-69c362a38fbc'), 'case_id': UUID('a1e459ec-f2f0-434f-9a72-959e8ae6fc08'), 'owner_id': 'fixture-a', ...}
+link = {'id': UUID('def74905-3c69-4c95-bc2f-c5b28338ddb6'), 'preparation_id': UUID('a01dff20-a5ed-43ab-896c-0dcf746d3de1'), 'case_id': UUID('a1e459ec-f2f0-434f-9a72-959e8ae6fc08'), 'run_id': UUID('8ef49c43-bc06-4a96-b802-69c362a38fbc'), ...}
+receipt = {'at': '2026-10-22T05:40:40.089653+00:00', 'scope': 'LOCAL_SYNTHETIC_BOUNDED_RESOURCE_BUNDLE_ONLY', 'action': 'CONFIRM...ds_at': '2026-10-22T07:40:39.732824+00:00', 'quantity': 1, 'starts_at': '2026-10-22T06:40:39.732824+00:00', ...}], ...}
+
+    def verify_history(store,c,parent,link,receipt):
+        """Read-only actual receipt/link/plan reconstruction, strictly descending.
+    
+        catalog_decision / Approval._view -&gt; this helper -&gt; _ledger,
+        _recovery_proofs, _history, binding(historical=True). None calls _view,
+        delivery._verify, capacity confirmation or a current target publication.
+        """
+        from .service_plan_approval import _receipt_ledger,verify_receipt,Proposal,REPLACEMENT_PURPOSE,REAPPROVAL_PURPOSE
+        from . import case_resources as cr
+        verify_receipt(parent,receipt,link['snapshot'].get('plan_approval'),link_revision=link['revision'])
+        if receipt.get('plan_approval') is None:return
+        from .local_resource_approval import SCOPE as LOCAL_SCOPE
+        local=receipt['plan_approval'].get('scope')==LOCAL_SCOPE
+        _,items=_receipt_ledger(parent,receipt)
+        own=items[receipt['plan_approval']['id']]
+        context=own['proposal']['binding']['context']
+        # Preserve the existing source-only protocol; additionally prove chains
+        # which contain this new replacement profile, including later local ADOPT.
+        probe=context;contains_replacement=False
+        for _ in range(64):
+            if 'plan_replacement' in probe:contains_replacement=True;break
+            anchor=probe.get('source_reapproval')
+            if not isinstance(anchor,dict):break
+            probe=anchor.get('previous_delivery_context',{})
+            if not isinstance(probe,dict):break
+        if local and contains_replacement:raise Conflict('local source history cannot contain plan replacement')
+        if not contains_replacement and not local:return
+&gt;       if store is None:raise Denied('original replacement history store required')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       parkweave.store.Denied: original replacement history store required
+
+src/parkweave/plan_replacement_compatibility.py:285: Denied</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[configured-app]" time="3.221"><failure message="parkweave.store.Denied: original replacement history store required">local_fixture = ((&lt;parkweave.store.Store object at 0x7faf8b615c70&gt;, &lt;parkweave.store.Store object at 0x7faf8b615e20&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7faf73d1d460&gt;
+consumer = 'configured-app'
+
+    @pytest.mark.parametrize('consumer',['new-store','configured-app'])
+    def test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery(local_fixture,monkeypatch,consumer):
+        from test_local_resource_approval import cold_without_local_approval
+        f,bridge,p,old_holds,old,hs,data,item,_=continuation(local_fixture)
+        body=deepcopy(ledger(f,p)['events'][2]['request']['delivery']);key=old['delivery_binding']['request_key'];before=deepcopy(ledger(f,p))
+        assert direct_bind(f,p,old['combination'],revision=1).status_code==409
+        app=cold_without_local_approval(f,consumer,monkeypatch)
+        with TestClient(app) as api:
+            cold=(*f[:3],api)
+            assert preview(cold,p,dict(members=data['members'],expected_link_revision=1)).status_code==403
+            assert submit(cold,p,{**data,'approval_id':item['id']}).status_code==403
+            assert direct_bind(cold,p,old['combination'],revision=1).status_code==403
+            recovered=recover(cold,p,key)
+            if recovered.status_code!=200:
+                from parkweave.case_step_assignments import OrdinaryCaseStepAssignments
+                diagnostic=Store(f[0].dsn);create=__import__('parkweave.api',fromlist=['create_app']).create_app
+                create(diagnostic,case_step_assignments=OrdinaryCaseStepAssignments(diagnostic))
+&gt;               delivery.recover(diagnostic,f[2]['fixture-a'],UUID(p['preparation_id']),key)
+
+tests/test_local_resource_reapproval.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/executor_receipts.py:19: in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:357: in recover
+    if row: return _verify(store,c,p,parent,row['payload'])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:275: in _verify
+    context, issues = _context(store, c, p, parent)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_resource_delivery.py:68: in _context
+    changed, prerequisites, sources, actual, states, bad = steps._inspect(store, c, parent, plan, observe=False)
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:354: in _inspect
+    issues,sources,actual=current_sources(store,c,parent,plan)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:215: in current_sources
+    issues,sources=cp._sources(store,c,parent)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/controlled_plans.py:157: in _sources
+    issues,snap,group,holds,rules=life._sources(store,c,owner,parent,case_step=case_step)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_lifecycle.py:108: in _sources
+    decision=catalog_decision(c,parent,link)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/resource_plan_binding.py:114: in catalog_decision
+    verify_history(getattr(c,'_access_store',None),c,parent,link,receipts[0]['payload'])
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = None, c = &lt;psycopg.Connection [BAD] at 0x7faf8b41be60&gt;
+parent = {'id': UUID('1b45137b-b2a6-4078-a878-b2e82293b294'), 'run_id': UUID('ac449817-8d89-4186-bb54-09fba3dd35fb'), 'case_id': UUID('a6f08a39-7a62-4471-b3d7-3ae6bf43c4da'), 'owner_id': 'fixture-a', ...}
+link = {'id': UUID('303f54d1-7a71-4fa2-a3d8-3c09ca7d5f32'), 'preparation_id': UUID('1b45137b-b2a6-4078-a878-b2e82293b294'), 'case_id': UUID('a6f08a39-7a62-4471-b3d7-3ae6bf43c4da'), 'run_id': UUID('ac449817-8d89-4186-bb54-09fba3dd35fb'), ...}
+receipt = {'at': '2026-10-22T05:40:43.411391+00:00', 'scope': 'LOCAL_SYNTHETIC_BOUNDED_RESOURCE_BUNDLE_ONLY', 'action': 'CONFIRM...ds_at': '2026-10-22T10:40:43.047969+00:00', 'quantity': 1, 'starts_at': '2026-10-22T09:40:43.047969+00:00', ...}], ...}
+
+    def verify_history(store,c,parent,link,receipt):
+        """Read-only actual receipt/link/plan reconstruction, strictly descending.
+    
+        catalog_decision / Approval._view -&gt; this helper -&gt; _ledger,
+        _recovery_proofs, _history, binding(historical=True). None calls _view,
+        delivery._verify, capacity confirmation or a current target publication.
+        """
+        from .service_plan_approval import _receipt_ledger,verify_receipt,Proposal,REPLACEMENT_PURPOSE,REAPPROVAL_PURPOSE
+        from . import case_resources as cr
+        verify_receipt(parent,receipt,link['snapshot'].get('plan_approval'),link_revision=link['revision'])
+        if receipt.get('plan_approval') is None:return
+        from .local_resource_approval import SCOPE as LOCAL_SCOPE
+        local=receipt['plan_approval'].get('scope')==LOCAL_SCOPE
+        _,items=_receipt_ledger(parent,receipt)
+        own=items[receipt['plan_approval']['id']]
+        context=own['proposal']['binding']['context']
+        # Preserve the existing source-only protocol; additionally prove chains
+        # which contain this new replacement profile, including later local ADOPT.
+        probe=context;contains_replacement=False
+        for _ in range(64):
+            if 'plan_replacement' in probe:contains_replacement=True;break
+            anchor=probe.get('source_reapproval')
+            if not isinstance(anchor,dict):break
+            probe=anchor.get('previous_delivery_context',{})
+            if not isinstance(probe,dict):break
+        if local and contains_replacement:raise Conflict('local source history cannot contain plan replacement')
+        if not contains_replacement and not local:return
+&gt;       if store is None:raise Denied('original replacement history store required')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       parkweave.store.Denied: original replacement history store required
+
+src/parkweave/plan_replacement_compatibility.py:285: Denied</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_cross_case_scope_and_changed_profile_cannot_borrow_approval" time="3.491" /></testsuite></testsuites>

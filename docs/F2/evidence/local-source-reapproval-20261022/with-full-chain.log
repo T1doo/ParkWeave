@@ -1,0 +1,101 @@
+.............FFF                                                         [100%]
+=================================== FAILURES ===================================
+_ test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f15a0b958e0>, <parkweave.store.Store object at 0x7f15a0b97ef0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/d06e31d8-ee47-49f2-ad7d-0e49c81f06f4/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_no_model_new_input_same_p0')
+
+    def test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt(no_model_local,tmp_path):
+        from test_service_dispatches import offer,command as decision
+        from test_executor_receipts import act
+        from test_case_lifecycle import read as local_read,act as local_command
+        from test_ordinary_case_goal_record_pack_process import html
+        from service_release_acceptance_support import authority_snapshot
+        import json
+        f,bridge,requests=no_model_local;authority=authority_snapshot(f[1]);p,old_holds,old=selected_case(f,tmp_path/'worker')
+>       assert lock(f,p,'P1').status_code==200;before=stored(f,p);original_prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+                                                                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7f15a0b958e0>, <parkweave.store.Store object at 0x7f15a0b97ef0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7f15a225b440>)
+p = {'preparation_id': 'd06e31d8-ee47-49f2-ad7d-0e49c81f06f4', 'case_id': 'bb3acd2a-6f3a-49df-af7b-1ad3310a7bd7', 'run_id': '18fa4c5a-c371-4cca-9985-8215986bc6b6', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        card=changed(f,p);q=source_preview(f,p,card);assert q.status_code==200,q.text
+>       assert q.json()['can_adopt'],q.json()
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': 'd06e31d8-ee47-49f2-ad7d-0e49c81f06f4', 'case_id': 'bb3acd2a-6f3a-49df-af7b-1ad3310a7bd7', ...}
+E       assert False
+
+tests/test_plan_source_reapproval.py:36: AssertionError
+_ test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN] _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f15a1e62870>, <parkweave.store.Store object at 0x7f15a7ccd6d0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/5b5f4522-582c-4363-9446-55a193828fa5/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_live_source_reapproval_re0')
+started = 'PLAN_BEGIN'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker')
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN')
+        else:response=offer(f,p)[0]
+>       assert response.status_code in (200,201),response.text
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert 403 in (200, 201)
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+
+tests/test_local_resource_reapproval.py:233: AssertionError
+_ test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED] _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f15a43e5490>, <parkweave.store.Store object at 0x7f15a10c5d30>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/648fd648-331a-4050-ada4-2da900865bf2/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_live_source_reapproval_re1')
+started = 'OFFERED'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker')
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN')
+        else:response=offer(f,p)[0]
+        assert response.status_code in (200,201),response.text
+>       source_adopt(f,p);hs,members=bundle(f);prefix=deepcopy(ledger(f,p));before=effects(f)
+        ^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7f15a43e5490>, <parkweave.store.Store object at 0x7f15a10c5d30>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7f15a7c8d8b0>)
+p = {'preparation_id': '648fd648-331a-4050-ada4-2da900865bf2', 'case_id': 'fb6cdf7b-fcbb-474d-b82b-eaf06ca0bf32', 'run_id': '5385b084-0e20-4b65-b7a4-49576efb07be', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        card=changed(f,p);q=source_preview(f,p,card);assert q.status_code==200,q.text
+>       assert q.json()['can_adopt'],q.json()
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '648fd648-331a-4050-ada4-2da900865bf2', 'case_id': 'fb6cdf7b-fcbb-474d-b82b-eaf06ca0bf32', ...}
+E       assert False
+
+tests/test_plan_source_reapproval.py:36: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_local_resource_reapproval.py::test_local_same_plan_source_adopt_reapproval_preserves_original_consumption
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_local_resource_reapproval.py::test_local_same_plan_source_adopt_reapproval_preserves_original_consumption
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_local_resource_reapproval.py::test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt
+FAILED tests/test_local_resource_reapproval.py::test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN]
+FAILED tests/test_local_resource_reapproval.py::test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED]
+3 failed, 13 passed, 4 warnings in 63.62s (0:01:03)

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="16" time="63.619" timestamp="2026-10-22T05:43:12.504205+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_resource_reapproval" name="test_local_same_plan_source_adopt_reapproval_preserves_original_consumption" time="5.535" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[revoke]" time="3.003" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[stale_adopt]" time="3.541" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[grant]" time="2.933" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[expired]" time="2.850" /><testcase classname="tests.test_local_resource_reapproval" name="test_commit_exception_rolls_back_new_consumption_capacity_and_association" time="3.183" /><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[new-store]" time="3.301" /><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[configured-app]" time="3.417" /><testcase classname="tests.test_local_resource_reapproval" name="test_cross_case_scope_and_changed_profile_cannot_borrow_approval" time="3.203" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[STRIP_PROFILE]" time="3.746" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[SELF_ANCHOR]" time="3.625" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[STRIP_PROOFS]" time="3.781" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[UNKNOWN_SCOPE]" time="3.911" /><testcase classname="tests.test_local_resource_reapproval" name="test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt" time="6.443"><failure message="AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': 'd06e31d8-ee47-49f2-ad7d-0e49c81f06f4', 'case_id': 'bb3acd2a-6f3a-49df-af7b-1ad3310a7bd7', ...}&#10;assert False">no_model_local = ((&lt;parkweave.store.Store object at 0x7f15a0b958e0&gt;, &lt;parkweave.store.Store object at 0x7f15a0b97ef0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/d06e31d8-ee47-49f2-ad7d-0e49c81f06f4/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_no_model_new_input_same_p0')
+
+    def test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt(no_model_local,tmp_path):
+        from test_service_dispatches import offer,command as decision
+        from test_executor_receipts import act
+        from test_case_lifecycle import read as local_read,act as local_command
+        from test_ordinary_case_goal_record_pack_process import html
+        from service_release_acceptance_support import authority_snapshot
+        import json
+        f,bridge,requests=no_model_local;authority=authority_snapshot(f[1]);p,old_holds,old=selected_case(f,tmp_path/'worker')
+&gt;       assert lock(f,p,'P1').status_code==200;before=stored(f,p);original_prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+                                                                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f15a0b958e0&gt;, &lt;parkweave.store.Store object at 0x7f15a0b97ef0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7f15a225b440&gt;)
+p = {'preparation_id': 'd06e31d8-ee47-49f2-ad7d-0e49c81f06f4', 'case_id': 'bb3acd2a-6f3a-49df-af7b-1ad3310a7bd7', 'run_id': '18fa4c5a-c371-4cca-9985-8215986bc6b6', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        card=changed(f,p);q=source_preview(f,p,card);assert q.status_code==200,q.text
+&gt;       assert q.json()['can_adopt'],q.json()
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': 'd06e31d8-ee47-49f2-ad7d-0e49c81f06f4', 'case_id': 'bb3acd2a-6f3a-49df-af7b-1ad3310a7bd7', ...}
+E       assert False
+
+tests/test_plan_source_reapproval.py:36: AssertionError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN]" time="5.242"><failure message="AssertionError: {&quot;detail&quot;:&quot;record unavailable or authorization denied&quot;}&#10;assert 403 in (200, 201)&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">no_model_local = ((&lt;parkweave.store.Store object at 0x7f15a1e62870&gt;, &lt;parkweave.store.Store object at 0x7f15a7ccd6d0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/5b5f4522-582c-4363-9446-55a193828fa5/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_live_source_reapproval_re0')
+started = 'PLAN_BEGIN'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker')
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN')
+        else:response=offer(f,p)[0]
+&gt;       assert response.status_code in (200,201),response.text
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert 403 in (200, 201)
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_local_resource_reapproval.py:233: AssertionError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED]" time="5.635"><failure message="AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '648fd648-331a-4050-ada4-2da900865bf2', 'case_id': 'fb6cdf7b-fcbb-474d-b82b-eaf06ca0bf32', ...}&#10;assert False">no_model_local = ((&lt;parkweave.store.Store object at 0x7f15a43e5490&gt;, &lt;parkweave.store.Store object at 0x7f15a10c5d30&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/648fd648-331a-4050-ada4-2da900865bf2/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_live_source_reapproval_re1')
+started = 'OFFERED'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker')
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN')
+        else:response=offer(f,p)[0]
+        assert response.status_code in (200,201),response.text
+&gt;       source_adopt(f,p);hs,members=bundle(f);prefix=deepcopy(ledger(f,p));before=effects(f)
+        ^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:234: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f15a43e5490&gt;, &lt;parkweave.store.Store object at 0x7f15a10c5d30&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;httpx.Client object at 0x7f15a7c8d8b0&gt;)
+p = {'preparation_id': '648fd648-331a-4050-ada4-2da900865bf2', 'case_id': 'fb6cdf7b-fcbb-474d-b82b-eaf06ca0bf32', 'run_id': '5385b084-0e20-4b65-b7a4-49576efb07be', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        card=changed(f,p);q=source_preview(f,p,card);assert q.status_code==200,q.text
+&gt;       assert q.json()['can_adopt'],q.json()
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '648fd648-331a-4050-ada4-2da900865bf2', 'case_id': 'fb6cdf7b-fcbb-474d-b82b-eaf06ca0bf32', ...}
+E       assert False
+
+tests/test_plan_source_reapproval.py:36: AssertionError</failure></testcase></testsuite></testsuites>

@@ -26,6 +26,9 @@
 
 2026-10-22：新增普通本地 `LOCAL_CASE_RESOURCE_APPROVAL_V1`，由已有owner明确提出、批准／撤销，再由首次同Case资源交付事务消费一次；实际普通API、独立启动器与局部页面函数已验，见[源码与原始测试回执](evidence/local-owner-resource-approval-20261022/validation.json)。它是本项目本地决定来源，数据仍为明示合成；不替代上表外部正式来源、资格或审批合同。新增链真实浏览器、安装态wheel与Windows未验。 后续[持久Case审批修复](evidence/local-approval-persistence-20261022/validation.json)保留六个漏配置201红例，补同DB新Store／configured_app及真实API进程停启漏模式拒绝；从首次PROPOSE起由持久账本决定此交付与证明消费门，旧Case兼容和已消费原键恢复分别实测。
 
+
+2026-10-22 接续：此前首次 LOCAL 审批链的安装态 wheel / 真实 Chromium 限定通过见 [run12 原件](../demo/evidence/installed-approval-browser-20261022-run12/README.md)，仅属于原受测版本。本次 F2-T03/T05 扩展为 **原 registered 计划同稳定 ID、实际 P2 来源 ADOPT 后重新明确批准**，两代资源、消费与回执可审计，漏模式拒绝新写、原键可恢复，见[本片源码/171P及真实两目标产物证据](evidence/local-source-reapproval-20261022/README.md)。本片正例无 candidate，未新跑浏览器或 wheel；不转签 run12。NO_MODEL 固定资源服务 release 含 P1–P4，来源 ADOPT 的全 adopted-step VERIFY 基线门与未开始迁移范围尚不能组合；没有裁剪 release、补写虚假尾部来源或打开在途迁移。该组合是下一实质缺口，其他外部来源 / Windows / LIVE 条件保持原表。
+
 ## C0 独立提交门
 
 C0依据原计划不依赖F4–F6；当前也不能把方案文档包叫作正式单PDF交付。

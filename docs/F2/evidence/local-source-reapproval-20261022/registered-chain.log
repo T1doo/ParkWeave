@@ -1,0 +1,57 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt _
+
+ordinary_local = ((<parkweave.store.Store object at 0x7f87e4c13e00>, <parkweave.store.Store object at 0x7f87e5086690>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/e5dbbb30-a90e-4bf9-b56c-073fcbe474eb/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-19/test_registered_new_input_same0')
+
+    def test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt(ordinary_local,tmp_path):
+        from test_ordinary_case_goal_record_pack_process import html
+        from service_release_acceptance_support import authority_snapshot
+        import json
+        f,bridge,requests=ordinary_local;authority=authority_snapshot(f[1]);p,old_holds,old=selected_case(f,tmp_path/'worker')
+        assert lock(f,p,'P1').status_code==200;before=stored(f,p);original_prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+        hs,members=bundle(f);data=quoted(f,p,{**members,'expected_link_revision':1});item,_=approved(f,p,data);key=uuid4().hex
+        # Deliberately discard the successful command response, then recover by GET.
+        result=submit(f,p,{**data,'approval_id':item['id']},key);assert result.status_code==201,result.text
+        original=result.json()['receipt'];del result
+        restored=recover(f,p,key);assert restored.status_code==200,restored.text;assert restored.json()['receipt']==original
+        verified(f,p,'P2')
+        results=f[3].get('/api/preparations/'+p['preparation_id']+'/goal-results',headers=headers(f[2]));assert results.status_code==200,results.text;results=results.json()
+        assert results['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert results['source_trace'].get('candidate') is None
+        assert not results['case_goal_completed'] and len(results['results'])==2
+        pack=html(f,tmp_path/'actual-original-txt',p,before['id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=2)
+        assert states(f,old_holds)==states(f,hs)==['CONFIRMED']*3
+        assert stored(f,p)['id']==before['id'] and stored(f,p)['steps'][0]==before['steps'][0]
+        assert ledger(f,p)['events'][:3]==original_prefix and effects(f)==[2,6,2,2,2]
+>       assert authority_snapshot(f[1])==authority
+E       AssertionError: assert {'principals'....}, ...], ...} == {'principals'....}, ...], ...}
+E         
+E         Omitting 6 identical items, use -vv to show
+E         Differing items:
+E         {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('bb9815c6-65b8-40e8-8bec-8edf2e0dc539...re-a', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-a', ...}, ...]} != {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('fa161ea0-b665-4ec5-b345-a070bfec764d...re-b', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-b', ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_local_resource_reapproval.py:231: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_local_resource_reapproval.py::test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_local_resource_reapproval.py::test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_local_resource_reapproval.py::test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt
+1 failed, 2 passed, 13 deselected, 4 warnings in 18.25s

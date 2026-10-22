@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="18.249" timestamp="2026-10-22T05:53:54.255095+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_resource_reapproval" name="test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt" time="9.413"><failure message="AssertionError: assert {'principals'....}, ...], ...} == {'principals'....}, ...], ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Differing items:&#10;  {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('bb9815c6-65b8-40e8-8bec-8edf2e0dc539...re-a', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-a', ...}, ...]} != {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('fa161ea0-b665-4ec5-b345-a070bfec764d...re-b', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-b', ...}, ...]}&#10;  Use -v to get more diff">ordinary_local = ((&lt;parkweave.store.Store object at 0x7f87e4c13e00&gt;, &lt;parkweave.store.Store object at 0x7f87e5086690&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/e5dbbb30-a90e-4bf9-b56c-073fcbe474eb/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-19/test_registered_new_input_same0')
+
+    def test_registered_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt(ordinary_local,tmp_path):
+        from test_ordinary_case_goal_record_pack_process import html
+        from service_release_acceptance_support import authority_snapshot
+        import json
+        f,bridge,requests=ordinary_local;authority=authority_snapshot(f[1]);p,old_holds,old=selected_case(f,tmp_path/'worker')
+        assert lock(f,p,'P1').status_code==200;before=stored(f,p);original_prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+        hs,members=bundle(f);data=quoted(f,p,{**members,'expected_link_revision':1});item,_=approved(f,p,data);key=uuid4().hex
+        # Deliberately discard the successful command response, then recover by GET.
+        result=submit(f,p,{**data,'approval_id':item['id']},key);assert result.status_code==201,result.text
+        original=result.json()['receipt'];del result
+        restored=recover(f,p,key);assert restored.status_code==200,restored.text;assert restored.json()['receipt']==original
+        verified(f,p,'P2')
+        results=f[3].get('/api/preparations/'+p['preparation_id']+'/goal-results',headers=headers(f[2]));assert results.status_code==200,results.text;results=results.json()
+        assert results['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert results['source_trace'].get('candidate') is None
+        assert not results['case_goal_completed'] and len(results['results'])==2
+        pack=html(f,tmp_path/'actual-original-txt',p,before['id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=2)
+        assert states(f,old_holds)==states(f,hs)==['CONFIRMED']*3
+        assert stored(f,p)['id']==before['id'] and stored(f,p)['steps'][0]==before['steps'][0]
+        assert ledger(f,p)['events'][:3]==original_prefix and effects(f)==[2,6,2,2,2]
+&gt;       assert authority_snapshot(f[1])==authority
+E       AssertionError: assert {'principals'....}, ...], ...} == {'principals'....}, ...], ...}
+E         
+E         Omitting 6 identical items, use -vv to show
+E         Differing items:
+E         {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('bb9815c6-65b8-40e8-8bec-8edf2e0dc539...re-a', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-a', ...}, ...]} != {'synthetic_resource_grants': [{'principal_id': 'fixture-a', 'resource_id': UUID('fa161ea0-b665-4ec5-b345-a070bfec764d...re-b', 'resource_id': UUID('fb161ea0-b665-4ec5-b345-a070bfec764d'), 'park_id': 'park-a', 'org_id': 'org-b', ...}, ...]}
+E         Use -v to get more diff
+
+tests/test_local_resource_reapproval.py:231: AssertionError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN]" time="4.683" /><testcase classname="tests.test_local_resource_reapproval" name="test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED]" time="3.928" /></testsuite></testsuites>

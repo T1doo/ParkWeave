@@ -1,0 +1,101 @@
+.............FFF                                                         [100%]
+=================================== FAILURES ===================================
+_ test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f90e6e30200>, <parkweave.store.Store object at 0x7f90d76bafc0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/621de7d8-6976-4830-be1e-ece01e934071/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_no_model_new_input_same_p0')
+
+    def test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt(no_model_local,tmp_path):
+        from test_ordinary_case_goal_record_pack_process import html
+        from service_release_acceptance_support import authority_snapshot
+        import json
+        f,bridge,requests=no_model_local;authority=authority_snapshot(f[1]);p,old_holds,old=selected_case(f,tmp_path/'worker')
+>       assert lock(f,p,'P1').status_code==200;before=stored(f,p);original_prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+                                                                                                                  ^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7f90e6e30200>, <parkweave.store.Store object at 0x7f90d76bafc0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, <httpx.Client object at 0x7f90e6cfbda0>)
+p = {'preparation_id': '621de7d8-6976-4830-be1e-ece01e934071', 'case_id': 'cc97836e-35cd-469e-8a6a-b8579cc2ff98', 'run_id': '111ce441-76c9-4d4a-8b00-fdcfe144631b', 'revision': 6, ...}
+
+    def source_adopt(f,p):
+        card=changed(f,p);q=source_preview(f,p,card);assert q.status_code==200,q.text
+>       assert q.json()['can_adopt'],q.json()
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '621de7d8-6976-4830-be1e-ece01e934071', 'case_id': 'cc97836e-35cd-469e-8a6a-b8579cc2ff98', ...}
+E       assert False
+
+tests/test_plan_source_reapproval.py:36: AssertionError
+_ test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN] _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f90d76f8560>, <parkweave.store.Store object at 0x7f90e4532c00>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/ad32c710-f22b-42ca-a13e-9f40ee4c6cb8/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_live_source_reapproval_re0')
+started = 'PLAN_BEGIN'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_local_synthetic_demo import GOALS
+        from test_source_change_adoption import changed,preview as source_preview
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker',GOALS)
+        # Existing source ADOPT requires verified bases for the unexecuted tail;
+        # this slice keeps that contract, and tests the earlier live-write guard.
+        source=source_preview(f,p,changed(f,p));assert source.status_code==200,source.text
+        assert not source.json()['can_adopt']
+        assert 'CURRENT_VERIFIED_SOURCE_BASE_REQUIRED' in source.json()['blocking_reasons']
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN',user='prep-specialist-fixture-a')
+        else:response=offer(f,p)[0]
+>       assert response.status_code in (200,201),response.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 in (200, 201)
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_local_resource_reapproval.py:239: AssertionError
+_ test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED] _
+
+no_model_local = ((<parkweave.store.Store object at 0x7f90e470d790>, <parkweave.store.Store object at 0x7f90e470f8f0>, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]'}, {'method': 'POST', 'path': '/api/preparations/1ddd12c2-ced3-4ac9-ada1-2e06961b4d64/commands'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_live_source_reapproval_re1')
+started = 'OFFERED'
+
+    @pytest.mark.parametrize('started',['PLAN_BEGIN','OFFERED'])
+    def test_live_source_reapproval_refuses_started_coordination_without_touching_history(no_model_local,tmp_path,started):
+        from test_service_dispatches import offer
+        from test_local_synthetic_demo import GOALS
+        from test_source_change_adoption import changed,preview as source_preview
+        f,bridge,_=no_model_local;p,old_holds,old=selected_case(f,tmp_path/'worker',GOALS)
+        # Existing source ADOPT requires verified bases for the unexecuted tail;
+        # this slice keeps that contract, and tests the earlier live-write guard.
+        source=source_preview(f,p,changed(f,p));assert source.status_code==200,source.text
+        assert not source.json()['can_adopt']
+        assert 'CURRENT_VERIFIED_SOURCE_BASE_REQUIRED' in source.json()['blocking_reasons']
+        if started=='PLAN_BEGIN':response=step_command(f,p,'P3','BEGIN',user='prep-specialist-fixture-a')
+        else:response=offer(f,p)[0]
+>       assert response.status_code in (200,201),response.text
+E       AssertionError: {"detail":"adopted service plan prerequisites need explicit verification"}
+E       assert 409 in (200, 201)
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_local_resource_reapproval.py:239: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/parkweave-venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_local_resource_reapproval.py::test_local_same_plan_source_adopt_reapproval_preserves_original_consumption
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_local_resource_reapproval.py::test_local_same_plan_source_adopt_reapproval_preserves_original_consumption
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_local_resource_reapproval.py::test_no_model_new_input_same_plan_reapproval_to_original_stage_outputs_and_txt
+FAILED tests/test_local_resource_reapproval.py::test_live_source_reapproval_refuses_started_coordination_without_touching_history[PLAN_BEGIN]
+FAILED tests/test_local_resource_reapproval.py::test_live_source_reapproval_refuses_started_coordination_without_touching_history[OFFERED]
+3 failed, 13 passed, 4 warnings in 64.09s (0:01:04)

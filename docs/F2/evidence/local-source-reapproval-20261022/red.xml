@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.839" timestamp="2026-10-22T05:34:32.897262+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_resource_reapproval" name="test_local_same_plan_source_adopt_reapproval_preserves_original_consumption" time="2.646"><failure message="AssertionError: {&quot;detail&quot;:&quot;record unavailable or authorization denied&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">local_fixture = ((&lt;parkweave.store.Store object at 0x7fa4bc812c60&gt;, &lt;parkweave.store.Store object at 0x7fa4bc812f00&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+
+    def test_local_same_plan_source_adopt_reapproval_preserves_original_consumption(local_fixture):
+        f,bridge,p,old_holds,old=first(local_fixture)
+        assert lock(f,p,'P1').status_code==200
+        original_plan=stored(f,p);prefix=deepcopy(ledger(f,p)['events']);event=source_adopt(f,p)
+        hs,members=bundle(f)
+        response=preview(f,p,{**members,'expected_link_revision':1})
+&gt;       assert response.status_code==200,response.text
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_local_resource_reapproval.py:39: AssertionError</failure></testcase></testsuite></testsuites>

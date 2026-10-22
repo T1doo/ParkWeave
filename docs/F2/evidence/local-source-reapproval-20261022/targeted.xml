@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="13" time="45.747" timestamp="2026-10-22T05:38:40.472641+00:00" hostname="a2dc479d2f87"><testcase classname="tests.test_local_resource_reapproval" name="test_local_same_plan_source_adopt_reapproval_preserves_original_consumption" time="5.149" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[revoke]" time="3.244" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[stale_adopt]" time="3.578" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[grant]" time="2.882" /><testcase classname="tests.test_local_resource_reapproval" name="test_reapproval_changed_decision_source_or_authority_has_no_partial_effect[expired]" time="3.188" /><testcase classname="tests.test_local_resource_reapproval" name="test_commit_exception_rolls_back_new_consumption_capacity_and_association" time="3.416" /><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[new-store]" time="3.114"><failure message="KeyError: 'receipt'">local_fixture = ((&lt;parkweave.store.Store object at 0x7fdb6f417d70&gt;, &lt;parkweave.store.Store object at 0x7fdb755fa3c0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fdb6f219730&gt;
+consumer = 'new-store'
+
+    @pytest.mark.parametrize('consumer',['new-store','configured-app'])
+    def test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery(local_fixture,monkeypatch,consumer):
+        from test_local_resource_approval import cold_without_local_approval
+        f,bridge,p,old_holds,old,hs,data,item,_=continuation(local_fixture)
+        body=deepcopy(ledger(f,p)['events'][2]['request']['delivery']);key=old['delivery_binding']['request_key'];before=deepcopy(ledger(f,p))
+        assert direct_bind(f,p,old['combination'],revision=1).status_code==409
+        app=cold_without_local_approval(f,consumer,monkeypatch)
+        with TestClient(app) as api:
+            cold=(*f[:3],api)
+            assert preview(cold,p,dict(members=data['members'],expected_link_revision=1)).status_code==403
+            assert submit(cold,p,{**data,'approval_id':item['id']}).status_code==403
+            assert direct_bind(cold,p,old['combination'],revision=1).status_code==403
+&gt;           assert recover(cold,p,key).json()['receipt']==old['receipt']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'receipt'
+
+tests/test_local_resource_reapproval.py:98: KeyError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery[configured-app]" time="3.128"><failure message="KeyError: 'receipt'">local_fixture = ((&lt;parkweave.store.Store object at 0x7fdb6f06b920&gt;, &lt;parkweave.store.Store object at 0x7fdb755e0cb0&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fdb6e22f650&gt;
+consumer = 'configured-app'
+
+    @pytest.mark.parametrize('consumer',['new-store','configured-app'])
+    def test_missing_mode_refuses_new_later_and_plain_bind_but_preserves_original_recovery(local_fixture,monkeypatch,consumer):
+        from test_local_resource_approval import cold_without_local_approval
+        f,bridge,p,old_holds,old,hs,data,item,_=continuation(local_fixture)
+        body=deepcopy(ledger(f,p)['events'][2]['request']['delivery']);key=old['delivery_binding']['request_key'];before=deepcopy(ledger(f,p))
+        assert direct_bind(f,p,old['combination'],revision=1).status_code==409
+        app=cold_without_local_approval(f,consumer,monkeypatch)
+        with TestClient(app) as api:
+            cold=(*f[:3],api)
+            assert preview(cold,p,dict(members=data['members'],expected_link_revision=1)).status_code==403
+            assert submit(cold,p,{**data,'approval_id':item['id']}).status_code==403
+            assert direct_bind(cold,p,old['combination'],revision=1).status_code==403
+&gt;           assert recover(cold,p,key).json()['receipt']==old['receipt']
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'receipt'
+
+tests/test_local_resource_reapproval.py:98: KeyError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_cross_case_scope_and_changed_profile_cannot_borrow_approval" time="3.221"><failure message="AssertionError: {&quot;detail&quot;:&quot;synthetic resource capacity conflict&quot;}&#10;assert 409 == 201&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">local_fixture = ((&lt;parkweave.store.Store object at 0x7fdb6e2cb2c0&gt;, &lt;parkweave.store.Store object at 0x7fdb6e573a40&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]
+
+    def test_cross_case_scope_and_changed_profile_cannot_borrow_approval(local_fixture):
+        f,bridge,p,old_holds,old,hs,data,item,_=continuation(local_fixture)
+&gt;       _,_,other,_,other_data=setup(local_fixture);before=effects(f);history=deepcopy(ledger(f,p))
+                               ^^^^^^^^^^^^^^^^^^^^
+
+tests/test_local_resource_reapproval.py:105: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_local_resource_approval.py:31: in setup
+    f,bridge=local_fixture;p=start(f,goals=[GOALS[1]]);verified(f,p,'P1');hs,members=bundle(f);data=quoted(f,p,members)
+                                                                                     ^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7fdb6e2cb2c0&gt;, &lt;parkweave.store.Store object at 0x7fdb6e573a40&gt;, {'fixture-a': '[REDACTED_FIXTURE_TOKEN]': '[REDACTED_SESSION_TOKEN]', ...}, &lt;starlette.testclient.TestClient object at 0x7fdb6f0093d0&gt;)
+n = 3, user = 'fixture-a', key = None, quantity = 1
+
+    def bundle(f,n=3,user='fixture-a',key=None,quantity=1):
+        base=body(f,ttl=300,quantity=quantity);start=datetime.fromisoformat(base['starts_at']);hs=[]
+        for i in range(n):
+            data={**base,'starts_at':(start+timedelta(hours=i*3)).isoformat(),'ends_at':(start+timedelta(hours=i*3+1)).isoformat(),
+                  'purpose':'SYNTHETIC private session '+str(i)}
+            r=hold(f,rh.RESOURCE_ID if i%2==0 else rc.SECOND_RESOURCE_ID,data,user=user)
+&gt;           assert r.status_code==201,r.text;hs.append(r.json()['hold'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"detail":"synthetic resource capacity conflict"}
+E           assert 409 == 201
+E            +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_resource_bundles.py:24: AssertionError</failure></testcase><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[STRIP_PROFILE]" time="3.596" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[SELF_ANCHOR]" time="3.754" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[STRIP_PROOFS]" time="3.599" /><testcase classname="tests.test_local_resource_reapproval" name="test_owned_rehashed_history_cannot_remove_profile_or_use_self_anchor_or_other_scope[UNKNOWN_SCOPE]" time="3.563" /></testsuite></testsuites>
