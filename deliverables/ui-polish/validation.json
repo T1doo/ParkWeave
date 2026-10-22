@@ -1,0 +1,38 @@
+{
+  "base": "6c7b57fd13b48fc2bd0f118381c61e9e77c6b451",
+  "branch": "dev/ui-polish",
+  "integration_status": "PENDING_PARENT_SHARED_TEMPLATE_COORDINATION",
+  "shared_targets": [
+    "src/parkweave/web.html:<style>",
+    "src/parkweave/park_demo_web.html:<style>"
+  ],
+  "source_templates_changed": false,
+  "backend_changed": false,
+  "CI_changed": false,
+  "state_logic_changed": false,
+  "browser": {
+    "status": "BLOCKED",
+    "attempt": "Playwright 1.62.0, /usr/bin/chromium, chromium_sandbox=True, headless=True",
+    "reason": "The SUID sandbox helper binary was found, but is not configured correctly. Chromium aborted.",
+    "screenshot_status": "NOT_CREATED_VISUALLY_UNVERIFIED",
+    "sandbox_disabled": false,
+    "security_configuration_changed": false
+  },
+  "CI": {
+    "status": "NOT_RUN",
+    "reason": "Existing workflows restrict exact original branches/run numbers; no allowed trigger on dev/ui-polish. No CI or security changes made."
+  },
+  "tests": {
+    "status": "PASS",
+    "count": 56,
+    "scope": "Existing complete test_service_instance_cold_web.py and test_dispatch_notice_page_offline.py against temporary HTML with this exact CSS patch applied; Node VM DOM/fetch doubles and loopback HTTP; no browser or backend DB.",
+    "limitation": "Does not validate geometry, focus occlusion, computed cascade, real backend, actual approval flow, mobile rendering, glyph rendering or screenshots."
+  },
+  "checks": {
+    "git_apply_check": "PASS",
+    "all_non_style_markup_and_scripts_equal_base": true,
+    "css_parse": "PASS",
+    "contrast": "Six selected text/background pairs >=4.5:1; not full WCAG audit."
+  },
+  "tool_setup": "Isolated /tmp venv: pytest 9.1.1, tinycss2 1.4.0, cssselect2 0.8.0; project dependencies untouched. First parser attempt failed because tinycss2 was absent; isolated installation resolved it."
+}
