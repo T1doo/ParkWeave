@@ -99,6 +99,19 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
  check(owner.run('servicePlanView.current_case_step_scope.contract')==='CASE_STEP_ASSIGNMENT_V1','explicit ordinary display metadata');
  check(textOf(owner.$('service-plan-coverage')).includes('受限步骤核对接单'),'ordinary current scope distinguishes original Run contract text');
  check(calls.every(c=>c.method==='GET'),'navigation is GET only');
+ const originalReads=[];
+ if(config.original_links){
+  await owner.$('case-resource-load').click();
+  for(const original of config.original_links){
+   owner.$('case-resource-recovery-kind').value='LINK';owner.$('case-resource-recovery-key').value=original.key;
+   owner.$('case-resource-recovery-fingerprint').value='';
+   await owner.$('case-resource-recovery-read').click();
+   const text=textOf(owner.$('case-resource-recovery-result'));
+   check(text.includes('COMMITTED')&&text.includes(original.link_id)&&text.includes(original.fingerprint),'original LINK key and exact historical identity');
+   originalReads.push({key:original.key,text});
+  }
+  await owner.$('service-plan-prepare').click();
+ }
  if(config.verify){
   owner.$('service-plan-reason').value='SYNTHETIC owner explicitly verifies original ordinary output';
   for(const adapter of ['P3','P4']){
@@ -152,5 +165,6 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
  const canonical=owner.run('coldCanonical'),sha=require('crypto').createHash('sha256').update(canonical(pack)).digest('hex');
  check(text.includes('核对数据 SHA256：'+sha),'download canonical hash');
  console.log(JSON.stringify({scope:'ORDINARY_CASE_GOAL_RECORD_PACK_REAL_HTML',checks,calls,pack_sha256:sha,pack,
-   downloaded_bytes:Buffer.byteLength(text),text,real_browser:false}));process.exit(0);
+   downloaded_bytes:Buffer.byteLength(text),text,real_browser:false,
+   ...(config.capture_truth?{goal_results:view,step_states:owner.run('servicePlanView.steps.map(s=>({adapter_id:s.adapter_id,state:s.state}))'),original_reads:originalReads}: {})}));process.exit(0);
 })().catch(e=>{console.error(e.stack);console.error(JSON.stringify(diagnostics));process.exit(1);});

@@ -67,6 +67,91 @@ def tail_pending(plan):
     assert not any(e['action']=='VERIFY' and e['step_id'] in tail for e in plan['events'])
 
 
+def test_no_model_current_goals_txt_and_fresh_context_original_keys(ordinary_local,tmp_path):
+    """Two requested goals may verify while the fixed four-step tail stays pending.
+
+    This is real owned HTTP/PostgreSQL plus the complete shipped page in Node;
+    fresh JavaScript contexts are not a browser or a PostgreSQL restart.
+    """
+    from hashlib import sha256
+    from parkweave import controlled_plans as cp
+    from test_ordinary_case_goal_record_pack_process import html
+    from test_case_goal_results import snapshot
+    from service_release_acceptance_support import authority_snapshot
+    from scripts.local_goal_txt_installed_browser_once import truth,unpack
+    f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker')
+    initial=stored(f,p);prefix=deepcopy(ledger(f,p)['events']);source_adopt(f,p)
+    authority=authority_snapshot(f[1])
+
+    def export(name,state,expected,original_links=None):
+        before=snapshot(f);history=deepcopy(stored(f,p));approvals=deepcopy(ledger(f,p));start=len(requests)
+        row=html(f,tmp_path/name,p,initial['id'],state,goal_count=2,capture_truth=True,original_links=original_links)
+        value=row['goal_results'];assert value['state']==state and value['current_required_goals']==GOALS
+        assert [r['state'] for r in value['results']]==expected
+        assert [r['goal'] for r in value['results']]==GOALS
+        expected_steps=('VERIFIED','VERIFIED','PENDING','BLOCKED') if state=='LOCAL_OUTPUTS_VERIFIED' else ('VERIFIED','NEEDS_RECHECK','BLOCKED','BLOCKED')
+        assert row['step_states']==[dict(adapter_id=a,state=s) for a,s in zip(('P1','P2','P3','P4'),expected_steps)]
+        trace=value['source_trace'];assert trace['candidate']['candidate_id']==candidate['candidate_id']
+        assert trace['candidate']['producer']['mode']=='NO_MODEL'
+        assert trace['trace_sha256']==cp._hash({k:v for k,v in trace.items() if k!='trace_sha256'})
+        assert [s['adapter_id'] for s in trace['steps']]==['P1','P2','P3','P4']
+        pack=row['pack'];assert pack['historical_adoption_source']['trace_sha256']==trace['trace_sha256']
+        for raw,projected in zip(value['results'],pack['results']):
+            assert raw['result_sha256']==cp._hash({k:v for k,v in raw.items() if k!='result_sha256'})
+            for field in ('goal','adapter_id','state','issues','next_action','historical_verification','result_sha256'):
+                assert projected[field]==raw[field]
+            if raw['actual_output']:
+                assert projected['actual_output']==raw['actual_output']
+        assert not pack['case_goal_completed'] and pack['read_only'] and not pack['automatically_verified']
+        assert pack['snapshot_limits'].startswith('ALLOWED_READ_PROJECTION_ONLY;')
+        text=(tmp_path/name/'download.txt').read_text()
+        truth(value,dict(preparation_id=p['preparation_id'],case_id=p['case_id'],run_id=p['run_id'],plan_id=initial['id']),state)
+        assert unpack(text,value)==pack
+        encoded=json.dumps(pack,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
+        assert row['pack_sha256']==sha256(encoded).hexdigest() and '核对数据 SHA256：'+row['pack_sha256'] in text
+        assert all(c['method']=='GET' for c in row['calls'])
+        assert all(r['method']=='GET' for r in requests[start:])
+        assert snapshot(f)==before and stored(f,p)==history and ledger(f,p)==approvals
+        assert authority_snapshot(f[1])==authority;tail_pending(history)
+        return row,text
+
+    pending,_=export('unverified','UNVERIFIED',['LOCAL_OUTPUT_VERIFIED','NEEDS_RECHECK'])
+    assert pending['pack']['results'][1]['historical_verification']['current'] is False
+    hs,members=bundle(f);data=quoted(f,p,{**members,'expected_link_revision':1});item,_=approved(f,p,data);key=uuid4().hex
+    response=submit(f,p,{**data,'approval_id':item['id']},key);assert response.status_code==201,response.text
+    current=response.json();verified(f,p,'P2')
+    hot,text=export('hot','LOCAL_OUTPUTS_VERIFIED',['LOCAL_OUTPUT_VERIFIED']*2)
+    # Rehashing a corrupted export must not hide a wrong whitelist projection.
+    for fault in ('adoption','candidate','service','history','template','row-extra'):
+        bad=deepcopy(hot['pack'])
+        trace=bad['historical_adoption_source']
+        if fault=='adoption':trace['adoption']['fingerprint']='a'*64
+        elif fault=='candidate':trace['candidate']['verification_sha256']='a'*64
+        elif fault=='service':trace['selected_service_refs'][0]['config_sha256']='a'*64
+        elif fault=='history':bad['historical_plans']=[dict(id=str(uuid4()),revision=1,goals=GOALS)]
+        elif fault=='template':bad['template_availability']=dict(current=True,reasons=[])
+        else:bad['results'][0]['unexpected_private_body']='SYNTHETIC forbidden extra field'
+        marker='核对数据（UTF-8 JSON，原文按JSON转义；不包含读取凭据）：\n'
+        text_prefix=text.split(marker)[0].replace(hot['pack_sha256'],cp._hash(bad))
+        with pytest.raises(AssertionError,match='literal export whitelist'):
+            unpack(text_prefix+marker+json.dumps(bad,ensure_ascii=False),hot['goal_results'])
+    originals=[dict(key=d['delivery_binding']['request_key'],link_id=d['link']['id'],fingerprint=d['delivery_binding']['fingerprint']) for d in (old,current)]
+    fresh,restored=export('fresh-context','LOCAL_OUTPUTS_VERIFIED',['LOCAL_OUTPUT_VERIFIED']*2,originals)
+    assert restored==text and fresh['pack_sha256']==hot['pack_sha256'] and fresh['goal_results']==hot['goal_results']
+    assert (tmp_path/'fresh-context/download.txt').read_bytes()==(tmp_path/'hot/download.txt').read_bytes()
+    assert [r['key'] for r in fresh['original_reads']]==[r['key'] for r in originals]
+    before=snapshot(f)
+    for d in (old,current):
+        response=recover(f,p,d['delivery_binding']['request_key']);assert response.status_code==200,response.text
+        assert response.json()['receipt']==d['receipt']
+    assert snapshot(f)==before and states(f,hs)==states(f,old_holds)==['CONFIRMED']*3
+    assert ledger(f,p)['events'][:3]==prefix and effects(f)==[2,6,2,2,2]
+    (tmp_path/'combination.json').write_text(json.dumps(dict(preparation_id=p['preparation_id'],case_id=p['case_id'],run_id=p['run_id'],
+        candidate_id=candidate['candidate_id'],plan_id=initial['id'],pending=pending,hot=hot,fresh=fresh,
+        TXT_bytes_equal=True,old_receipt=old['receipt'],new_receipt=current['receipt'],real_browser=False,
+        new_JS_context=True,PG_restart=False,real_model_calls=0),ensure_ascii=False,indent=2)+'\n')
+
+
 def test_new_no_model_fixed_release_source_adopt_reapproval_keeps_tail_pending(ordinary_local,tmp_path):
     f,_,requests=ordinary_local;p,old_holds,old,candidate=first(f,tmp_path/'worker');before=stored(f,p);prefix=deepcopy(ledger(f,p)['events'])
     tail_pending(before);event=source_adopt(f,p,tmp_path);tail_pending(stored(f,p))
