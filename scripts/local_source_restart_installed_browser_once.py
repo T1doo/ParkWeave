@@ -249,6 +249,16 @@ class Flow:
         assert all(x['x']>=-1 and x['x']+x['width']<=geometry['width']+1 for x in geometry['controls'])
         p=self.run.public/name;self.page.screenshot(path=str(p),mask=[self.page.locator('#token')],timeout=10000)
         self.run.report['screenshots'].append(dict(file=name,sha256=sha256(p.read_bytes()).hexdigest(),geometry=geometry))
+    def read_consumed_approvals(self):
+        # Navigation clears resource identity; re-read it through the original UI.
+        self.run.report['stage']='RESTARTED_APPROVAL_HISTORY_READ' if self.cold else 'HOT_APPROVAL_HISTORY_READ'
+        self.click('[data-tab="resource"]');self.click('#resource-catalog')
+        self.page.wait_for_function('()=>bundleActor!==null&&planApprovalEnabled===true',timeout=30000)
+        self.idle()
+        self.page.locator('#delivery-case').fill(self.run.record['preparation_id'])
+        self.click('#plan-approval-read')
+        self.page.wait_for_function('()=>planApprovalView?.items.length===2&&planApprovalView.items.every(x=>x.state==="CONSUMED")',timeout=30000)
+
     def font(self,stage):
         from scripts.fictional_park_restart_browser_once import verify_rendered_font
         selected=self.run.report['installed_CJK_font'];selected['visible_node_font_usage']=[];selected['rendering_observed']=False
@@ -320,8 +330,7 @@ def source_browser(run,browser):
         assert repeated['receipt']==result['receipt'] and snapshot(run)==after
         flow.click('[data-tab="service"]');flow.existing();flow.click('#service-plan-prepare');flow.page.wait_for_function('()=>servicePlanView?.plan_id',timeout=30000)
         run.report['sealed_hot_plan_UI']=flow.page.evaluate('(keys)=>Object.fromEntries(keys.map(k=>[k,servicePlanView[k]]))',list(PLAN_FIELDS))
-        flow.click('[data-tab="resource"]');flow.page.locator('#delivery-case').fill(run.record['preparation_id'])
-        flow.click('#plan-approval-read');flow.page.wait_for_function('()=>planApprovalView?.items.length===2&&planApprovalView.items.every(x=>x.state==="CONSUMED")',timeout=30000)
+        flow.read_consumed_approvals()
         flow.page.set_viewport_size(dict(width=390,height=1000));flow.shot('04-reapproval-consumed.png','#plan-approval-panel');flow.font('REAL_REAPPROVAL_CONSUMED_NARROW')
         run.report['before_restart_snapshot']=after
         run.report['receipts_before_restart']=[run.old_delivery['receipt'],result['receipt']]
@@ -355,9 +364,7 @@ def cold_browser(run,browser):
         restored_plan=flow.page.evaluate('(keys)=>Object.fromEntries(keys.map(k=>[k,servicePlanView[k]]))',list(PLAN_FIELDS))
         assert restored_plan==run.report['sealed_hot_plan_UI'],'cold UI plan projection differs from actual sealed hot UI'
         run.report['restored_cold_plan_UI']=restored_plan
-        flow.click('[data-tab="resource"]');flow.page.locator('#delivery-case').fill(run.record['preparation_id'])
-        flow.click('#plan-approval-read');flow.page.wait_for_function('()=>planApprovalView?.items.length===2',timeout=30000)
-        assert flow.page.evaluate('planApprovalView.items.every(x=>x.state==="CONSUMED")')
+        flow.read_consumed_approvals()
         for item in flow.page.locator('#plan-approval-result .approval-audit').all():item.locator('summary').click()
         flow.shot('05-restarted-history.png','#plan-approval-panel');flow.font('RESTARTED_APPROVAL_HISTORY_NARROW')
         assert snapshot(run)==run.report['before_restart_snapshot'] and run.budget.posts==posts

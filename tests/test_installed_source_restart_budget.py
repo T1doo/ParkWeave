@@ -89,3 +89,44 @@ def test_telemetry_failure_always_closes_context_and_preserves_all_errors(extra_
     with pytest.raises(BaseExceptionGroup) as raised:flow.close(body)
     assert calls==['CLOSE']
     assert raised.value.exceptions==((body,telemetry,close) if extra_close_error else (body,telemetry))
+
+
+@pytest.mark.parametrize('cold',[False,True])
+@pytest.mark.parametrize('enabled',[True,False])
+def test_history_navigation_reidentifies_through_visible_UI_or_stops(cold,enabled):
+    """Controlled locator model: tab clear hides history until authorized reads."""
+    events=[]
+    class Page:
+        identified=False
+        case=None
+        def locator(self,selector):return Control(selector,self)
+        def wait_for_load_state(self,state,timeout):assert state=='networkidle' and timeout==30000
+        def wait_for_function(self,expression,timeout):
+            assert timeout==30000
+            if 'bundleActor!==null' in expression:
+                if not self.identified:raise TimeoutError('original resource identity unavailable')
+            elif 'planApprovalView?.items.length===2' in expression:
+                assert 'CONSUMED' in expression and events[-1]=='#plan-approval-read'
+    class Control:
+        def __init__(self,selector,page):self.selector=selector;self.page=page
+        def visible(self):return self.selector!='#plan-approval-read' or self.page.identified
+        def scroll_into_view_if_needed(self,timeout):assert timeout==15000 and self.visible(),'hidden native approval history'
+        def click(self):
+            events.append(self.selector)
+            if self.selector=='[data-tab="resource"]':self.page.identified=False
+            elif self.selector=='#resource-catalog':self.page.identified=enabled
+            elif self.selector=='#plan-approval-read':assert self.page.identified and self.page.case=='original-case'
+        def fill(self,value):assert self.selector=='#delivery-case';self.page.case=value
+    class Expect:
+        def __init__(self,control):self.control=control
+        def to_be_visible(self):assert self.control.visible()
+        def to_be_enabled(self):assert self.control.visible()
+    flow=candidate.Flow.__new__(candidate.Flow);flow.page=Page();flow.expect=Expect;flow.cold=cold
+    flow.run=SimpleNamespace(started=time.monotonic(),report={},record={'preparation_id':'original-case'})
+    if enabled:
+        flow.read_consumed_approvals()
+        assert events==['[data-tab="resource"]','#resource-catalog','#plan-approval-read']
+    else:
+        with pytest.raises(TimeoutError,match='identity unavailable'):flow.read_consumed_approvals()
+        assert events==['[data-tab="resource"]','#resource-catalog']
+    assert flow.run.report['stage']==('RESTARTED_APPROVAL_HISTORY_READ' if cold else 'HOT_APPROVAL_HISTORY_READ')
