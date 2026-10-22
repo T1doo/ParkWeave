@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/scripts/workspace_visual_browser_once.py", line 68, in owned_browser
+    browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/parkweave-owned-launch-20261022/driver_checkpoint_check.py", line 12, in launch
+    raise TimeoutError('synthetic original launch failure')
+TimeoutError: synthetic original launch failure
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/scripts/workspace_visual_browser_once.py", line 163, in run_flow
+    with owned_browser(env) as browser:
+         ^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/scripts/workspace_visual_browser_once.py", line 65, in owned_browser
+    with sync_playwright() as pw:
+         ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/parkweave-owned-launch-20261022/driver_checkpoint_check.py", line 13, in __exit__
+    def __exit__(self,*args):raise RuntimeError('synthetic later SDK stop error')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: synthetic later SDK stop error
+{
+  "status": "PASS",
+  "injected_driver_primary_preserved": true,
+  "later_error_preserved": true,
+  "worker_final_checkpoint": true,
+  "actual_browser_runs": 0,
+  "actual_servers_started": 0,
+  "CI_runs": 0
+}

@@ -1,5 +1,5 @@
 """Run26/attempt1: original pages, presentation review, no product backend."""
-import hashlib,json,os,signal,socket,tempfile,threading,time,traceback
+import hashlib,json,os,signal,socket,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
@@ -7,12 +7,14 @@ from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
 from scripts import fictional_park_browser_once as base
 from scripts.fictional_park_restart_browser_once import installed_font_environment,verify_rendered_font
+from scripts.visual_owned_launch import atomic_report,supervise
 
 ROOT=Path(__file__).resolve().parents[1]
 REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='RUNNING',stage='START',
     product_API=False,database=False,real_model_calls=0,business_POSTs=0,requests=[],browser_requests=[],
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0
+CHECKPOINT=None
 ENTERED=threading.Event();RELEASE=threading.Event()
 DENIED='/api/preparations/00000000-0000-4000-8000-000000000001/entry'
 SOURCE={
@@ -23,6 +25,18 @@ PUBLIC_FILES=frozenset(('01-before-service-wide.png','02-after-service-wide.png'
  '07-after-historical-plan-narrow.png','08-after-guide-narrow.png','failure-visual.png','result.json'))
 
 def timeout(*_):raise TimeoutError('90s visual work and cleanup deadline')
+
+def checkpoint():
+    if CHECKPOINT is None:return
+    REPORT.setdefault('phase_timeline',[]).append(dict(stage=REPORT['stage'],seconds=time.monotonic()-START,error_type=REPORT.get('error_type')))
+    try:atomic_report(CHECKPOINT,REPORT)
+    except Exception as error:REPORT.setdefault('checkpoint_errors',[]).append(dict(type=type(error).__name__,errno=getattr(error,'errno',None)))
+
+def stage(name):
+    REPORT['stage']=name;checkpoint()
+
+def require_operation_time(seconds):
+    if time.monotonic()-START+seconds+5>=90:raise TimeoutError('insufficient original operation time and cleanup reserve')
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
@@ -49,8 +63,13 @@ class Handler(BaseHTTPRequestHandler):
 @contextmanager
 def owned_browser(font_env):
     with sync_playwright() as pw:
-        REPORT['stage']='CHROME_SANDBOX'
-        browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
+        stage('CHROME_SANDBOX');require_operation_time(15)
+        try:
+            browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
+        except BaseException as error:
+            REPORT['status']='FAIL';REPORT['error_type']=type(error).__name__;REPORT['error']=str(error)
+            checkpoint() # Preserve the primary launch failure before SDK teardown.
+            raise
         try:yield browser
         except BaseException:
             if PAGE is not None and not PAGE.is_closed():
@@ -63,6 +82,7 @@ def owned_browser(font_env):
 
 def open_page(browser,origin,path,width):
     global PAGE
+    require_operation_time(30)
     context=browser.new_context(viewport={'width':width,'height':1000},service_workers='block')
     def boundary(route):
         request=route.request;a=urlsplit(request.url);b=urlsplit(origin)
@@ -80,6 +100,7 @@ def open_page(browser,origin,path,width):
     return context,page
 
 def observe(page,label,font=False):
+    require_operation_time(5 if font else 1)
     row=page.evaluate("""() => {const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};return {width:innerWidth,documentWidth:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight,visibleButtons:[...document.querySelectorAll('button')].filter(e=>e.getClientRects().length).map(e=>({id:e.id,height:e.getBoundingClientRect().height,disabled:e.disabled})),nav:document.querySelector('.workspace-nav')?rect(document.querySelector('.workspace-nav')):null,content:document.querySelector('.session-panel')?rect(document.querySelector('.session-panel')):null}}""")
     row['label']=label;REPORT['checks'].append(row)
     assert row['documentWidth']<=row['width'] and row['height']<12000,row
@@ -92,9 +113,11 @@ def observe(page,label,font=False):
     return row
 
 def shot(page,name):
+    require_operation_time(15)
     page.evaluate('() => window.scrollTo(0,0)');page.screenshot(path=str(OUT/name),full_page=True,timeout=15000)
 
 def historical_plan(page,variant,width):
+    require_operation_time(30)
     # Reuse an exact already-public synthetic observation. This is a rendering
     # replay, never a current authority/health response or business restoration.
     file=ROOT/'docs/F2/evidence/again-role-readback-20261022/run23/result.json'
@@ -115,11 +138,12 @@ def historical_plan(page,variant,width):
     name='07-after-historical-plan-narrow.png' if width==390 else ('03-before-historical-plan-wide.png' if variant=='before' else '04-after-historical-plan-wide.png')
     panel.screenshot(path=str(OUT/name),timeout=15000)
 
-def main():
+def run_flow(started):
     global OUT,PRIVATE,START
-    os.umask(0o077);START=time.monotonic();server=None;thread=None
+    os.umask(0o077);START=started;server=None;thread=None
     try:
         REPORT['source_sha']=base.require_hosted(os.environ,run_number='26')
+        checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         REPORT['source_binding']={}
         for name,(file,marker,expected) in SOURCE.items():
@@ -139,13 +163,15 @@ def main():
         with owned_browser(env) as browser:
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
             for variant in ('before','after'):
-                REPORT['stage']=variant.upper()+'_WORKSPACE_WIDE';context,page=open_page(browser,origin,'/'+variant,1200)
+                stage(variant.upper()+'_WORKSPACE_WIDE');context,page=open_page(browser,origin,'/'+variant,1200)
                 observe(page,variant+'-service-wide',True);shot(page,'01-before-service-wide.png' if variant=='before' else '02-after-service-wide.png')
                 if variant=='after':
                     for tab in ('collaboration','resource'):
+                        require_operation_time(30)
                         page.locator('[data-tab='+tab+']').click();assert page.locator('#'+tab).is_visible()
                         assert page.locator('[data-tab='+tab+']').get_attribute('aria-current')=='page'
                         observe(page,'after-'+tab+'-wide',True)
+                    require_operation_time(30)
                     page.locator('[data-tab=service]').click();page.locator('#existing-preparation-id').fill('00000000-0000-4000-8000-000000000001')
                     page.locator('#token').fill('SYNTHETIC_PRESENTATION_REPLAY_SESSION');page.locator('#existing-preparation-read').click()
                     page.wait_for_function("() => document.getElementById('existing-preparation-status').textContent.includes('正在只读核对')",timeout=15000)
@@ -160,24 +186,29 @@ def main():
                     page.locator('[data-tab=service]').click()
                 historical_plan(page,variant,1200)
                 context.close()
-            REPORT['stage']='AFTER_WORKSPACE_NARROW';context,page=open_page(browser,origin,'/after',390)
+            stage('AFTER_WORKSPACE_NARROW');context,page=open_page(browser,origin,'/after',390)
             for tab in ('service','collaboration','resource'):
+                require_operation_time(30)
                 page.locator('[data-tab='+tab+']').click();observe(page,'after-'+tab+'-narrow',True)
             page.locator('[data-tab=service]').click();historical_plan(page,'after',390);context.close()
             for variant in ('before','after'):
-                REPORT['stage']=variant.upper()+'_GUIDE_WIDE';context,page=open_page(browser,origin,'/'+variant+'-guide',1200)
+                stage(variant.upper()+'_GUIDE_WIDE');context,page=open_page(browser,origin,'/'+variant+'-guide',1200)
                 assert all(page.locator('[data-role='+role+']').is_disabled() for role in ('enterprise','specialist','executor'))
                 observe(page,variant+'-guide-wide',True);shot(page,'05-before-guide-wide.png' if variant=='before' else '06-after-guide-wide.png');context.close()
-            REPORT['stage']='AFTER_GUIDE_NARROW';context,page=open_page(browser,origin,'/after-guide',390)
+            stage('AFTER_GUIDE_NARROW');context,page=open_page(browser,origin,'/after-guide',390)
             page.locator('#sessions').set_input_files(dict(name='not-a-session.json',mimeType='application/json',buffer=b'{}'))
             page.wait_for_function("() => document.getElementById('status').textContent.includes('不是本次演示')",timeout=15000)
             REPORT['invalid_file_text']=page.locator('#status').text_content();assert page.locator('#workspace-open').is_disabled()
             observe(page,'after-guide-invalid-file-narrow',True);shot(page,'08-after-guide-narrow.png');context.close()
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
-            REPORT['status']='PASS';REPORT['stage']='COMPLETE'
+            REPORT['status']='PASS';stage('COMPLETE')
     except BaseException as error:
-        REPORT['status']='FAIL';REPORT['error_type']=type(error).__name__;REPORT['error']=str(error);traceback.print_exc()
+        REPORT['status']='FAIL'
+        if 'error' in REPORT and (REPORT['error_type'],REPORT['error'])!=(type(error).__name__,str(error)):
+            REPORT.setdefault('later_errors',[]).append(dict(type=type(error).__name__,error=str(error)))
+        REPORT.setdefault('error_type',type(error).__name__);REPORT.setdefault('error',str(error));traceback.print_exc()
+        checkpoint()
     finally:
         signal.alarm(0);RELEASE.set()
         if server:
@@ -189,6 +220,47 @@ def main():
             except Exception as error:REPORT['cleanup_errors'].append('server:'+type(error).__name__)
         REPORT['elapsed_seconds']=time.monotonic()-START
         if REPORT['cleanup_errors'] or REPORT.get('browser_close')!='CLOSED' or REPORT.get('listener_after_cleanup')!='REFUSED' or REPORT['elapsed_seconds']>90:REPORT['status']='FAIL'
-    return base.finish_report(REPORT,[],OUT,started=START,allowed_names=PUBLIC_FILES)
+        REPORT['worker_final']=True;checkpoint()
+    return 0 if REPORT['status']=='PASS' and not REPORT.get('checkpoint_errors') else 1
 
-if __name__=='__main__':raise SystemExit(main())
+def worker_main(path):
+    global CHECKPOINT
+    hand=json.loads(sys.stdin.buffer.readline(4096))
+    if hand['parent_pid']!=os.getppid() or hand['worker_pid']!=os.getpid() or not 0<=time.monotonic()-hand['started']<85:
+        raise RuntimeError('owned worker handshake refused')
+    CHECKPOINT=Path(path)
+    return run_flow(hand['started'])
+
+def main():
+    started=time.monotonic();os.umask(0o077)
+    report=dict(REPORT);public=None
+    try:
+        source=base.require_hosted(os.environ,run_number='26')
+        report['source_sha']=source
+        private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
+        state=private/'worker-state.json'
+        owned=supervise([sys.executable,'-B','-m','scripts.workspace_visual_browser_once','--owned-worker',str(state)],
+            env=dict(os.environ),cwd=ROOT,directory=private,started=started)
+        report['owned_launch']=owned
+        if state.exists():
+            if state.stat().st_size>2*1024*1024:raise RuntimeError('owned worker report exceeds2MiB')
+            report=json.loads(state.read_text())
+        report['owned_launch']=owned
+        if (private/'worker-output.log').exists():
+            with (private/'worker-output.log').open('rb') as stream:output=stream.read(256*1024+1)
+            report['worker_output_truncated']=len(output)>256*1024
+            output=output[:256*1024]
+            report['worker_output_captured_sha256']=hashlib.sha256(output).hexdigest()
+            report['worker_output_text']=output.decode('utf-8',errors='backslashreplace')
+        if report.get('source_sha')!=source or not report.get('worker_final') or report.get('worker_output_truncated') or owned['status']!='CLEANUP_CONFIRMED' or owned['operation_status']!='PASS':
+            report['status']='FAIL';report.setdefault('error_type','OwnedWorkerFailure');report.setdefault('error','Owned worker failed or its process scope could not be confirmed closed')
+        report['work_and_cleanup_seconds']=time.monotonic()-started
+        if report['work_and_cleanup_seconds']>90:report['status']='FAIL'
+        candidate=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate'
+        if not candidate.exists():candidate.mkdir(mode=0o700,exist_ok=False)
+        public=candidate
+    except BaseException as error:
+        report['status']='FAIL';report.setdefault('error_type',type(error).__name__);report.setdefault('error',str(error));traceback.print_exc()
+    return base.finish_report(report,[],public,started=started,allowed_names=PUBLIC_FILES)
+
+if __name__=='__main__':raise SystemExit(worker_main(sys.argv[2]) if len(sys.argv)==3 and sys.argv[1]=='--owned-worker' else main())

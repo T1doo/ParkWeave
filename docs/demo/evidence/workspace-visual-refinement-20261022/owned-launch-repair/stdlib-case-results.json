@@ -1,0 +1,426 @@
+{
+  "case-double_fork_setsid": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130357,
+        "start_ticks": 3673681,
+        "initial_ppid": 130356,
+        "initial_session": 130357,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      },
+      {
+        "pid": 130358,
+        "start_ticks": 3673683,
+        "initial_ppid": 130356,
+        "initial_session": 130358,
+        "ownership_basis": [
+          "DIRECT_CHILD"
+        ],
+        "kind": "OWNED_DESCENDANT",
+        "exited": true,
+        "reaped": true
+      },
+      {
+        "pid": 130359,
+        "start_ticks": 3673683,
+        "initial_ppid": 130356,
+        "initial_session": 130358,
+        "ownership_basis": [
+          "DIRECT_CHILD"
+        ],
+        "kind": "OWNED_DESCENDANT",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [],
+    "signals": [
+      {
+        "pid": 130359,
+        "start_ticks": 3673683,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      },
+      {
+        "pid": 130359,
+        "start_ticks": 3673683,
+        "signal": 9,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": 1,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 0.356319608996273,
+    "operation_status": "FAIL"
+  },
+  "case-enumeration_failure": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_UNCONFIRMED",
+    "processes": [
+      {
+        "pid": 130369,
+        "start_ticks": 3674231,
+        "initial_ppid": 130368,
+        "initial_session": 130369,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [
+      {
+        "stage": "work_capture",
+        "type": "OSError",
+        "errno": 5
+      },
+      {
+        "stage": "scope_closure",
+        "type": "RuntimeError",
+        "errno": null
+      }
+    ],
+    "signals": [
+      {
+        "pid": 130369,
+        "start_ticks": 3674231,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": -15,
+    "bound_processes_exited": true,
+    "subtree_complete": false,
+    "handshake": true,
+    "elapsed_seconds": 0.02905533299781382,
+    "operation_status": "FAIL"
+  },
+  "case-normal": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130352,
+        "start_ticks": 3673643,
+        "initial_ppid": 130351,
+        "initial_session": 130352,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [],
+    "signals": [],
+    "worker_returncode": 0,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 0.06602202000067336,
+    "operation_status": "PASS"
+  },
+  "case-orphan": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130354,
+        "start_ticks": 3673661,
+        "initial_ppid": 130353,
+        "initial_session": 130354,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      },
+      {
+        "pid": 130355,
+        "start_ticks": 3673664,
+        "initial_ppid": 130353,
+        "initial_session": 130354,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "OWNED_DESCENDANT",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [],
+    "signals": [
+      {
+        "pid": 130355,
+        "start_ticks": 3673664,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": 1,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 0.07220555900130421,
+    "operation_status": "FAIL"
+  },
+  "case-pidfd_denied": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_UNCONFIRMED",
+    "processes": [],
+    "errors": [
+      {
+        "stage": "preflight",
+        "type": "PermissionError",
+        "errno": 13
+      }
+    ],
+    "signals": [],
+    "worker_returncode": null,
+    "bound_processes_exited": false,
+    "subtree_complete": false,
+    "handshake": false,
+    "elapsed_seconds": 0.0003174279991071671,
+    "operation_status": "FAIL"
+  },
+  "case-primary_checkpoint": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130363,
+        "start_ticks": 3673893,
+        "initial_ppid": 130362,
+        "initial_session": 130363,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [
+      {
+        "stage": "work_wait",
+        "type": "TimeoutError",
+        "errno": null
+      }
+    ],
+    "signals": [
+      {
+        "pid": 130363,
+        "start_ticks": 3673893,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      },
+      {
+        "pid": 130363,
+        "start_ticks": 3673893,
+        "signal": 9,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": -9,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 1.532551914002397,
+    "operation_status": "FAIL",
+    "preserved_checkpoint": {
+      "status": "FAIL",
+      "stage": "CHROME_LAUNCH_SIMULATED",
+      "error_type": "InjectedLaunchTimeout",
+      "error": "original primary failure",
+      "worker_final": false
+    }
+  },
+  "case-signal_denied": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_UNCONFIRMED",
+    "processes": [
+      {
+        "pid": 130371,
+        "start_ticks": 3674245,
+        "initial_ppid": 130370,
+        "initial_session": 130371,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      },
+      {
+        "pid": 130372,
+        "start_ticks": 3674247,
+        "initial_ppid": 130371,
+        "initial_session": 130371,
+        "ownership_basis": [
+          "PRIVATE_SESSION"
+        ],
+        "kind": "OWNED_DESCENDANT",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [
+      {
+        "stage": "pidfd_signal",
+        "type": "PermissionError",
+        "errno": 13
+      }
+    ],
+    "signals": [],
+    "worker_returncode": 1,
+    "bound_processes_exited": true,
+    "subtree_complete": false,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 0.45997996799997054,
+    "operation_status": "FAIL"
+  },
+  "case-stubborn": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130361,
+        "start_ticks": 3673728,
+        "initial_ppid": 130360,
+        "initial_session": 130361,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [
+      {
+        "stage": "work_wait",
+        "type": "TimeoutError",
+        "errno": null
+      }
+    ],
+    "signals": [
+      {
+        "pid": 130361,
+        "start_ticks": 3673728,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      },
+      {
+        "pid": 130361,
+        "start_ticks": 3673728,
+        "signal": 9,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": -9,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 1.53376315299829,
+    "operation_status": "FAIL"
+  },
+  "case-term_fork": {
+    "scope": "ONE_DEDICATED_SUBREAPER_WORKER_TREE",
+    "status": "CLEANUP_CONFIRMED",
+    "processes": [
+      {
+        "pid": 130365,
+        "start_ticks": 3674057,
+        "initial_ppid": 130364,
+        "initial_session": 130365,
+        "ownership_basis": [
+          "DIRECT_CHILD",
+          "PRIVATE_SESSION"
+        ],
+        "kind": "WORKER",
+        "exited": true,
+        "reaped": true
+      },
+      {
+        "pid": 130366,
+        "start_ticks": 3674177,
+        "initial_ppid": 130364,
+        "initial_session": 130366,
+        "ownership_basis": [
+          "DIRECT_CHILD"
+        ],
+        "kind": "OWNED_DESCENDANT",
+        "exited": true,
+        "reaped": true
+      }
+    ],
+    "errors": [
+      {
+        "stage": "work_wait",
+        "type": "TimeoutError",
+        "errno": null
+      }
+    ],
+    "signals": [
+      {
+        "pid": 130365,
+        "start_ticks": 3674057,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      },
+      {
+        "pid": 130366,
+        "start_ticks": 3674177,
+        "signal": 15,
+        "via": "BIRTH_CHECKED_PIDFD"
+      },
+      {
+        "pid": 130366,
+        "start_ticks": 3674177,
+        "signal": 9,
+        "via": "BIRTH_CHECKED_PIDFD"
+      }
+    ],
+    "worker_returncode": 1,
+    "bound_processes_exited": true,
+    "subtree_complete": true,
+    "handshake": true,
+    "remaining_children": [],
+    "remaining_private_session_members": [],
+    "elapsed_seconds": 1.519435987000179,
+    "operation_status": "FAIL"
+  }
+}
