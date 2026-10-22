@@ -266,24 +266,35 @@ def installed_font_environment(environment, directory, report, *, extra_text="")
         preserve_font_diagnostics(directory, diagnostics, selected)
 
 
+VISIBLE_FONT_NODES_SCRIPT = r"""() => {
+        const found=new Map(), walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+        const path=e=>e.id?'#'+CSS.escape(e.id):e===document.body?'body':path(e.parentElement)+' > '+e.tagName.toLowerCase()+':nth-child('+([...e.parentElement.children].indexOf(e)+1)+')';
+        const painted=e=>{
+            for(let a=e;a;a=a.parentElement){
+                if(a.tagName==='DETAILS'&&!a.open){
+                    const summary=Array.from(a.children).find(c=>c.tagName==='SUMMARY');
+                    if(!summary||!summary.contains(e))return false;
+                }
+            }return true;
+        };
+        for(let n; n=walk.nextNode();){
+            if(!/[\u3400-\u9fff\u3000-\u303f\uff00-\uffef]/u.test(n.data))continue;
+            const e=n.parentElement,s=getComputedStyle(e),r=document.createRange();r.selectNodeContents(n);
+            if(!painted(e)||s.visibility!=='visible'||s.opacity==='0'||!Array.from(r.getClientRects()).some(b=>b.width&&b.height&&b.bottom>0&&b.right>0&&b.top<innerHeight&&b.left<innerWidth))continue;
+            const key=path(e);found.set(key,(found.get(key)||'')+n.data);
+        }return [...found].map(([selector,text])=>({selector,text}));} """
+
+
 def verify_rendered_font(page, report):
     """Read original visible guide nodes; never add glyph probes or alter pixels."""
     selected = report['installed_CJK_font']
     selected['rendering_observed'] = False
     stop = time.monotonic() + 5
     candidates = unpack_font_diagnostics(selected)['candidates']
-    nodes = page.evaluate("""() => {
-        const found=new Map(), walk=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-        const path=e=>e.id?'#'+CSS.escape(e.id):e===document.body?'body':path(e.parentElement)+' > '+e.tagName.toLowerCase()+':nth-child('+([...e.parentElement.children].indexOf(e)+1)+')';
-        for(let n; n=walk.nextNode();){
-            if(!/[\\u3400-\\u9fff\\u3000-\\u303f\\uff00-\\uffef]/u.test(n.data))continue;
-            const e=n.parentElement,s=getComputedStyle(e),r=document.createRange();r.selectNodeContents(n);
-            if(s.visibility!=='visible'||s.opacity==='0'||!Array.from(r.getClientRects()).some(b=>b.width&&b.height&&b.bottom>0&&b.right>0&&b.top<innerHeight&&b.left<innerWidth))continue;
-            const key=path(e);found.set(key,(found.get(key)||'')+n.data);
-        }return [...found].map(([selector,text])=>({selector,text}));} """)
+    nodes = page.evaluate(VISIBLE_FONT_NODES_SCRIPT)
     observations = selected['visible_node_font_usage'] = []
-    selected['rendering_observation_scope'] = ('guide viewport text-node parents at page_ready only; CDP node-level font usage '
-        'and charset union, not glyph-to-codepoint attribution or all683 pixel acceptance; review original screenshot separately')
+    selected['rendering_observation_scope'] = ('actual named viewport painted text-node parents; closed native details content excluded; CDP node-level font usage '
+        'and charset union, not glyph-to-codepoint attribution or all target-codepoint pixel acceptance; review original screenshot separately')
     assert 0 < len(nodes) <= 256
     session = page.context.new_cdp_session(page)
     file_hashes = {}
