@@ -41,9 +41,13 @@ Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有�
 
 `application_readiness.py`新增默认未激活的生产就绪消费者。控制器要求两个精确API/worker token、原有受保护Bearer及预期主体、同次challenge/当前DB app-role与schema、前后真实进程身份；独立物理库/目录绑定在探针后再次核对，不能由同名DB/OID代替。API新增只读`GET /api/runtime/readiness`，沿原active Bearer身份且拒绝不走audit写入；worker显式`--readiness-stdio --readiness-challenge`在第一claim前用私有pipe报告WAITING_GO，原业务循环仅GO后进入。RUNNING落盘失败不发GO，未知GO不重发，失败沿原owned cleanup。不会生成新token/secret或授予业务能力。
 
-`instance_processes.py`新增高层**应用对接线候选**，未接双击入口或构建器。一个调用实例只接一次NEW或REOPEN、同一个租约及集群端口返回的原`DatabaseInputs`对象；NEW再次经过原OWNER暂停门，REOPEN仅委托独立的既有集群端口，没有initdb/迁移/seed/session补办命令。集群生产端口本身仍未实现，不以委托接口冒充私有PG已可启动。候选约定集群数据位于持有根下`data/postgresql`，应用文件位于`files`；不迁移旧路径、不创建这些目录。
+`instance_processes.py`新增高层**应用对接线候选**，未接双击入口或构建器。一个调用实例只接一次NEW或REOPEN、同一个租约及集群端口返回的原`DatabaseInputs`对象；NEW再次经过原OWNER暂停门，REOPEN仅委托独立的既有集群端口，没有initdb/迁移/seed/session补办命令。集群固定进程编排现有下述独立候选，但完整生产路径仍缺安全输入与真实就绪实现，不以委托接口冒充私有PG已可启动。候选约定集群数据位于持有根下`data/postgresql`，应用文件位于`files`；不迁移旧路径、不创建这些目录。
 
 应用仅使用固定包内Python的`-I -B`命令：回环uvicorn原`configured_app`工厂及带原stdio/challenge的worker。原`PrivateProcessAdapter`只额外接受冻结的三项显式LOCAL环境（app-role DSN、LOCAL、同根files），不继承其他项目/PG/provider环境；DSN不进入argv/repr/公开诊断。创建回调即时把原token转交控制器，部分失败仍由原token逆序清理，未知清理不向所属端口重发。返回`RegisteredApplication`不表示就绪；真实身份核验、RUNNING落盘及唯一GO仍全部在原控制器。定向替身检查和准确未验范围见[原件](../../docs/demo/evidence/private-application-processes-20261023/README.md)。这不是集群、安全文件、原生Windows或自包含成品的验收。
+
+`cluster_processes.py`的`FixedClusterProcesses`接续固定包内initdb/postgres编排：NEW原门→必需受保护输入→initdb确切int退出0→同原token确认整个Job退出→检查新树→前台回环postgres→真实维护库/物理集群检查端口；REOPEN目录中只有postgres命令，缺文件/UNKNOWN交接不补初始化。四项`ClusterPrerequisites`仍无生产实现，必须覆盖密码文件与后续path-open保护、树/配置/旧进程退出、发凭据前的端点出生身份及真实维护库/物理集群。现有角色安全初始化亦未实现：原issuer在CREATE DATABASE前仍要求安全的parkweave_app已存在，roles.sql只GRANT，不创建该角色。源码候选没有SQL/角色/session操作，不进入原entry/build，不能据编排签成PG可运行。
+
+集群候选共享30秒协作式启动截止，显式传给四项检查；initdb观察每片≤5秒，预留原创建/停止时间，真实检查返回迟到则拒绝。没有把未实现的检查回调或内核IO变成可强制取消的硬实时操作。原句柄/Job清理只证明进程退出，不承诺干净PG停机；正常WAL恢复仍需后续真实ready等待，不能拿它补schema/session。11项受控替身检查、两层控制器接线和原始错误/清理双故障证据见[本片原件](../../docs/demo/evidence/private-cluster-processes-20261023/README.md)。未启动PG/集群/Windows进程，未生成或配置凭据，没有新CI。
 
 Windows worker profile仅继承三份精确stdio句柄，两个匿名pipe的原fd进入私有resource登记，确认进程退出后关闭；本轮仅真实Linux pipe fd加Win句柄替身，未实测Windows容量/继承/PeekNamedPipe。发送Bearer前必须核已连接socket反向四元组的ESTABLISHED唯一行与原API hProcess出生身份；`windows_endpoint.py`只读SYSTEM32 GetExtendedTcpTable，有界缓冲，不输出系统表，不查询/操作外来进程。缺native支持零HTTP调用，连接归属不符零应用字节。新门仍关闭，端点和进程API源码不是原生验收。
 
