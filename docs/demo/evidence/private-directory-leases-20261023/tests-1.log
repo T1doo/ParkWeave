@@ -1,0 +1,47 @@
+test_actual_identity_drift_symlink_hardlink_and_foreign_journal_are_refused (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_actual_identity_drift_symlink_hardlink_and_foreign_journal_are_refused) ... ok
+test_atomic_checkpoints_are_complete_for_concurrent_real_file_reader (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_atomic_checkpoints_are_complete_for_concurrent_real_file_reader) ... ACTUAL_LINUX: concurrent reader observed complete bounded JSON snapshots only
+ok
+test_close_reports_unknown_after_actual_kernel_close_without_retry_or_postclose_write (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_close_reports_unknown_after_actual_kernel_close_without_retry_or_postclose_write) ... ok
+test_failed_close_retaining_actual_lock_blocks_new_acquisition_and_is_not_retried (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_failed_close_retaining_actual_lock_blocks_new_acquisition_and_is_not_retried) ... ok
+test_live_root_and_lock_replacement_prevents_any_journal_publication (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_live_root_and_lock_replacement_prevents_any_journal_publication) ... ok
+test_real_child_crash_before_release_intent_cannot_reopen_even_if_ready_was_written (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_real_child_crash_before_release_intent_cannot_reopen_even_if_ready_was_written) ... ACTUAL_LINUX: os._exit(17) after READY but before release intent refused
+ok
+test_real_file_write_sync_and_rename_failures_poison_lease_without_repair (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_real_file_write_sync_and_rename_failures_poison_lease_without_repair) ... ok
+test_real_lock_inode_stays_fixed_journal_replaces_and_reopen_bumps_generation (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_real_lock_inode_stays_fixed_journal_replaces_and_reopen_bumps_generation) ... ok
+test_real_reacquirer_crash_retires_old_pending_handoff_before_returning (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_real_reacquirer_crash_retires_old_pending_handoff_before_returning) ... ok
+test_strict_phase_order_prevents_ready_skips_and_no_secrets_or_extra_fields_in_journal (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_strict_phase_order_prevents_ready_skips_and_no_secrets_or_extra_fields_in_journal) ... ok
+test_two_real_process_contenders_are_refused_while_original_kernel_lock_is_held (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_two_real_process_contenders_are_refused_while_original_kernel_lock_is_held) ... ACTUAL_LINUX: two concurrent processes BUSY; after close one process ACQUIRED/STOPPED_RELEASED
+ok
+test_unknown_partial_duplicate_corrupt_or_oversized_journal_never_recovers (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_unknown_partial_duplicate_corrupt_or_oversized_journal_never_recovers) ... ok
+test_unsafe_paths_existing_roots_ancestors_and_permissions_are_not_repaired (scripts.windows_portable.test_directories.ActualLinuxLeaseChecks.test_unsafe_paths_existing_roots_ancestors_and_permissions_are_not_repaired) ... ok
+test_actual_abi_buffer_is_win64_relative_name_not_path_or_ads (scripts.windows_portable.test_directories.WindowsStandInChecks.test_actual_abi_buffer_is_win64_relative_name_not_path_or_ads) ... ok
+test_handle_close_unknown_does_not_retry_and_keeps_lock_last (scripts.windows_portable.test_directories.WindowsStandInChecks.test_handle_close_unknown_does_not_retry_and_keeps_lock_last) ... ERROR
+test_native_durability_gap_refuses_before_any_root_handle_or_mutation (scripts.windows_portable.test_directories.WindowsStandInChecks.test_native_durability_gap_refuses_before_any_root_handle_or_mutation) ... ok
+test_native_fresh_pause_precedes_any_backend_call (scripts.windows_portable.test_directories.WindowsStandInChecks.test_native_fresh_pause_precedes_any_backend_call) ... ok
+test_relative_ntcreate_flags_exclude_acl_owner_and_lock_sharing (scripts.windows_portable.test_directories.WindowsStandInChecks.test_relative_ntcreate_flags_exclude_acl_owner_and_lock_sharing) ... ok
+
+======================================================================
+ERROR: test_handle_close_unknown_does_not_retry_and_keeps_lock_last (scripts.windows_portable.test_directories.WindowsStandInChecks.test_handle_close_unknown_does_not_retry_and_keeps_lock_last)
+----------------------------------------------------------------------
+  + Exception Group Traceback (most recent call last):
+  |   File "/workspace/ParkWeave/scripts/windows_portable/test_directories.py", line 292, in test_handle_close_unknown_does_not_retry_and_keeps_lock_last
+  |     fs.close()
+  |   File "/workspace/ParkWeave/scripts/windows_portable/windows_directory_handles.py", line 215, in close
+  |     if errors: raise BaseExceptionGroup('NATIVE_LEASE_CLOSE_UNKNOWN', errors)
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  | ExceptionGroup: NATIVE_LEASE_CLOSE_UNKNOWN (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/workspace/ParkWeave/scripts/windows_portable/windows_directory_handles.py", line 213, in close
+    |     try: self.api.close(handle)
+    |          ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/workspace/ParkWeave/scripts/windows_portable/test_directories.py", line 288, in close
+    |     if handle == 3: raise OSError('injected native close unknown')
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | OSError: injected native close unknown
+    +------------------------------------
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.690s
+
+FAILED (errors=1)

@@ -1,0 +1,97 @@
+{
+  "scope": "LINUX_REAL_FILESYSTEM_AND_BOUNDED_PROCESS_TESTS_WINDOWS_ABI_STANDINS",
+  "base": "672979d1f2fd2874dbe2ad698a4ebb82ececff4d",
+  "command": "PYTHONPATH=src /workspace/parkweave-venv/bin/python -B -m unittest scripts.windows_portable.test_directories -v",
+  "final_log": "tests-6.log",
+  "final_tests": 21,
+  "linux_tests": 16,
+  "windows_standin_tests": 5,
+  "previous_invocations_not_added": true,
+  "first_fail": "tests-1: Windows stand-in exposed retry of already-consumed unknown lock handle on reentrant close; both backends fixed",
+  "second_fail": "tests-4: reserved CON root newly refused with payload exception rather than LeaseRefused; public exception translated before IO",
+  "review": "Limited ACK; publication final-binding P2 fixed; actual two-worker barrier reviewed; no new definite P1/P2",
+  "final_invocation_limits": {
+    "own_python_children": 5,
+    "simultaneous_contenders": 2,
+    "child_result_seconds": 5,
+    "child_cleanup_term_seconds": 3,
+    "child_cleanup_kill_seconds": 3,
+    "reader_snapshots_max": 2048
+  },
+  "actual_observations": [
+    "two returned own workers alive at READY barrier before go, both kernel-lock BUSY",
+    "after real close, separate process ACQUIRED then STOPPED_RELEASED",
+    "child os._exit17 after READY before release intent refused",
+    "child os._exit17 after new acquire leaves new OWNED generation, rejects old pending replay",
+    "close-then-injected-error followed by NEW real exclusive acquire completes pending handoff",
+    "injected pre-close failure leaves actual held lock and blocks a fresh independent file-description acquire; no production fd retry",
+    "root/lock swaps at post-sync/final-read publication windows refused",
+    "actual fs writes/fsync/rename fault injection, bounded atomic JSON reader"
+  ],
+  "journal_authority": "retry/handoff guard only; never database birth proof or authorization",
+  "linux_limitations": [
+    "cooperating processes on the tested filesystem; not a kernel guarantee against same-UID malicious rename or administrators",
+    "no power-loss test",
+    "controller integration uses real lease with all PG/security/process ports fake"
+  ],
+  "windows": {
+    "executions": 0,
+    "api_code": true,
+    "owner_control_raw_dacl_comparison": true,
+    "full_sd_comparison": false,
+    "fresh_gate": "OWNER_MUTATION_PAUSED",
+    "reopen_preflight": "WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED",
+    "native_mutual_exclusion": "NOT_RUN",
+    "crash_recovery": "NOT_RUN",
+    "accepted_directory_metadata_barrier": false
+  },
+  "no_pg_or_browser_or_ci_or_user_computer": true,
+  "unknown_lock_deleted": false,
+  "original_unchanged_sha256": {
+    "src/parkweave/store.py": "b6dd49b8526d51a2b6789c40f2d707087f6d3988e2e1844cc25cfac240223c1b",
+    "src/parkweave/installed_fixture_receipt.py": "1be37c7033c13733f1d332024ebb6b34f65424e7a585e5d280ef07eecf4eeecc",
+    "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
+    "scripts/windows/lifecycle.py": "da38bc9deae30dd6b2d771e485682dc55adaf59c62e210e38e116746111b1c96",
+    "scripts/windows_portable/entry.py": "461b88d2d749344b4ab8a6e412b73530d9f3818c9cf839e70f0ec8ed805ac45b",
+    "scripts/windows_portable/build.py": "f76d6ce3803446bcbd3bbfda69cb0c4ffdce63080a03badde1ca028664eb517a",
+    "scripts/windows_portable/initialize.py": "37e5f4f9bbc23fba5e45c7de40d4d0832ec4577fa10ed0b02c9cb07f1ad866db",
+    "scripts/windows_portable/runtime-assets.json": "74c686742f161f65c3ca0c94bdb2e7bd5c5a00ea29a3a56cf727d406f2b85ed8",
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/migration-026.sql": "625208b5620e8c5a0840e6672fd08c1081e148b5bd1d401697f0810dec8b50a3",
+    "src/parkweave/migration-027.sql": "97034ad99ad21af9c0e36724481a65c179638e7e49a27d5d140e8aaa93a73c79",
+    "src/parkweave/migration-028.sql": "ed94c37d627300651dc13935665baf774fa07ea9f3589e4089649ff6005591f0",
+    "src/parkweave/migration-029.sql": "179ff8f16b862cc7b5a076a6f21a31dd77961a0c62af37cc53d9315e89b9bac7",
+    "src/parkweave/migration-030.sql": "c50c7224db5723611a79bac721238c66683608b18a6bfef4e72c4ce7d29d3f03",
+    "src/parkweave/migration-031.sql": "906b70e775e70e7706558395ab779a0bfbe2b598004fac29b0eb30d3181e1eac",
+    "src/parkweave/migration-032.sql": "c24bd55751a7922341557d48270f83e6f911513d4588c6f3571c7beca10a284b"
+  },
+  "changed_source_sha256": {
+    "scripts/windows_portable/directories.py": "b2692d3dd09e57361de8e8e72b72a9e5e369bd36c704f6b82300d5a7acfb52b1",
+    "scripts/windows_portable/windows_directory_handles.py": "07991898f7683d7639168e776fad86789ac826cacd64fa6938a97e18f2f2e065",
+    "scripts/windows_portable/test_directories.py": "ab7dfe70300cd1774f754eb54b2937e6fcf0471d9c4942542624f23f7d1a78a1",
+    "scripts/windows_portable/controller.py": "33cd428c5a93c783b7bcd5b2f87c0a2b40b26254cbf0c737082e563a0d322dd5",
+    "scripts/windows_portable/README.md": "4e0b866c14194108d1dc25da1a2227bbcff09c08d2b633c04b6d71a146aca68e"
+  },
+  "controller_logic_ast_unchanged": true,
+  "log_sha256": {
+    "tests-1.log": "5a306442da4e2c47f1aa34b938626002f9ba4a4a383f54f29722f989fdd5927b",
+    "tests-2.log": "7d306b33ee8b345fb1336c15b93b1d25fe6985b2f60e5bc10a814868eee1e987",
+    "tests-3.log": "05247ca9640f645a131e0914f5af99f7c9fa12ab4299f479281554d4a10b6e7d",
+    "tests-4.log": "43aa0491b0f346d0922882a9e3ca9625c0116f6fc60f627af9c6a5e8b6c3af75",
+    "tests-5.log": "d4268933d378e37b7b94755b774e8388e0627e45659b1004d63ad10b080fdb8b",
+    "tests-6.log": "2f11018d88c8b725796b1797d146de694239289f473d0fd1f1b3ef6a91a2527f"
+  },
+  "manifest": {
+    "original_test_files": 405,
+    "implementation_files": 372,
+    "historical_collection": 9521,
+    "collection_rerun": false
+  },
+  "original_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_rename_info",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
+  ],
+  "global_or_existing_user_permission_mutations": false,
+  "test_permission_changes": "only own temporary fixtures to exercise strict refusal"
+}

@@ -81,8 +81,10 @@ class DirectoryLease(Protocol):
         The production adapter must preserve UNKNOWN/refusal using verified
         ownership before handoff, or refuse acquisition after an ambiguous
         handoff even if an older READY_STOPPED journal remains. It must never
-        rewrite a journal after ownership may have been lost. This safety
-        implementation is absent, not proven by the fake adapter.
+        rewrite a journal after ownership may have been lost. The separate
+        POSIX implementation requires a new real exclusive acquisition to
+        complete RELEASE_PENDING; native Windows durability is not accepted.
+        Fake adapters do not prove either operating-system contract.
         """
         ...
 
