@@ -49,6 +49,10 @@ Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有�
 
 集群候选共享30秒协作式启动截止，显式传给四项检查；initdb观察每片≤5秒，预留原创建/停止时间，真实检查返回迟到则拒绝。没有把未实现的检查回调或内核IO变成可强制取消的硬实时操作。原句柄/Job清理只证明进程退出，不承诺干净PG停机；正常WAL恢复仍需后续真实ready等待，不能拿它补schema/session。11项受控替身检查、两层控制器接线和原始错误/清理双故障证据见[本片原件](../../docs/demo/evidence/private-cluster-processes-20261023/README.md)。未启动PG/集群/Windows进程，未生成或配置凭据，没有新CI。
 
+`runtime_payload.py`提供下一个独立静态前置组件，尚未接入cluster provider或entry。外部冻结的manifest摘要/source SHA与当前精确fixed lease/snapshot绑定后，仅读manifest列出的完整PG载荷子树（包括bin/lib/share与许可文件），通过原相对根句柄pin核所有文件hash/身份，并两次held-fd枚举拒绝额外对象、别名、链接和不匹配文件集；不会读取根下data/files/secrets。复用原manifest/PE导入解析与builder的有限bootstrap模块口径，PG-only快照不证明Python、OS API-set、符号/转发、动态加载或initdb内部bootstrap/standalone/管道执行闭包，外部摘要也不是发布者认证。
+
+只读`PinnedPayloadFile`复用原私有根/祖先/文件验证，允许数据文件0600/空内容；其spec不是Command，原进程目录仍只接受精确Command并使用默认可执行映像检查。末级POSIX读取加O_NONBLOCK，先拒FIFO等非普通对象，不等writer；普通文件仍核原权限/身份/hash。Windows缺已接受的held-directory枚举时拒绝，不退回路径遍历；即使Linux静态快照通过，require_for_cluster仍拒绝NATIVE_RUNTIME_LOADING_NOT_ACCEPTED，不能激活。实测范围和关闭双故障原件见[本片证据](../../docs/demo/evidence/runtime-payload-prerequisite-20261023/README.md)。同UID并发双扫不是原子快照或加载期sandbox，不据此放行实际运行时。
+
 Windows worker profile仅继承三份精确stdio句柄，两个匿名pipe的原fd进入私有resource登记，确认进程退出后关闭；本轮仅真实Linux pipe fd加Win句柄替身，未实测Windows容量/继承/PeekNamedPipe。发送Bearer前必须核已连接socket反向四元组的ESTABLISHED唯一行与原API hProcess出生身份；`windows_endpoint.py`只读SYSTEM32 GetExtendedTcpTable，有界缓冲，不输出系统表，不查询/操作外来进程。缺native支持零HTTP调用，连接归属不符零应用字节。新门仍关闭，端点和进程API源码不是原生验收。
 
 消费者共享5秒就绪准入/激活时钟，HTTP按同一余额接收且不代理/重定向。`polling_database.py`使用非阻塞libpq connect/send/flush/consume/result与显式只读启动配置；超时finish原连接，不同步cancel或COMMIT。`isolated_pipe.py`把同步pipe操作放进冻结命令的自有辅助进程，同一绝对截止内预留0.5秒核退出与清理，不留timeout线程；GO写后迟到/解析/OS失败均UNKNOWN且不重发。根进程不再PeekNamedPipe，确认全部helper及父端writer关闭后才读有界结果；任一关闭未知保留原cap与lease UNKNOWN。真实Linux helper及synthetic wire限测见[原始证据](../../docs/demo/evidence/transport-deadline-candidate-20261023/README.md)，不签所有内核/文件系统操作硬实时保证。worker自身10秒准入以及真实Windows管道/Job、DB/物理绑定、安全SESSION/CONFIG、高层启动、端用户运行仍未验或未闭合，双击入口继续拒绝。

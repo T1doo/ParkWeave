@@ -73,6 +73,8 @@ def private_root(lease):
 
 
 class PinnedExecutable:
+    _image_required = True
+
     def __init__(self, lease, command):
         self.lease, self.command = lease, command
         self.handles, self.file = [], None
@@ -93,7 +95,9 @@ class PinnedExecutable:
                 self.directory_links.append((parent, part, fd))
                 meta = os.fstat(fd)
                 if meta.st_uid != os.geteuid() or meta.st_mode & 0o077: raise ProcessRefused('PRIVATE_EXEC_DIRECTORY_REQUIRED')
-            self.file = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=fd)
+            # Reject FIFO/device swaps via fstat without waiting for a writer.
+            # O_NONBLOCK does not relax any regular-file/image/hash check.
+            self.file = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK, dir_fd=fd)
             self.handles.append(self.file)
             self.parent, self.basename = fd, parts[-1]
             self.original = os.fstat(self.file)
@@ -117,7 +121,8 @@ class PinnedExecutable:
                 raise ProcessRefused('EXEC_DIRECTORY_IDENTITY_CHANGED')
         info = os.fstat(self.file)
         if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != os.geteuid()
-                or info.st_mode & 0o077 or not info.st_mode & stat.S_IXUSR or info.st_size != self.command.size):
+                or info.st_mode & 0o077 or self._image_required and not info.st_mode & stat.S_IXUSR
+                or info.st_size != self.command.size):
             raise ProcessRefused('PRIVATE_EXECUTABLE_REQUIRED')
         current = os.stat(self.basename, dir_fd=self.parent, follow_symlinks=False)
         signature = lambda row: (row.st_dev, row.st_ino, row.st_mode, row.st_nlink, row.st_size, row.st_uid, row.st_mtime_ns, row.st_ctime_ns)
@@ -125,7 +130,7 @@ class PinnedExecutable:
             raise ProcessRefused('EXEC_IDENTITY_CHANGED')
         digest = hashlib.sha256(); os.lseek(self.file, 0, os.SEEK_SET)
         first = os.read(self.file, min(info.st_size, 1024 * 1024)); digest.update(first)
-        if self.command.model == 'SINGLE_PROCESS_ELF' and first[:4] != b'\x7fELF':
+        if self._image_required and self.command.model == 'SINGLE_PROCESS_ELF' and first[:4] != b'\x7fELF':
             raise ProcessRefused('SINGLE_PROCESS_ELF_REQUIRED')
         count = len(first)
         while count < info.st_size:
@@ -145,6 +150,58 @@ class PinnedExecutable:
                 else: self.lease.fs.api.close(handle)
             except BaseException as error: errors.append(error)
         if errors: raise BaseExceptionGroup('EXEC_CLOSE_UNKNOWN', errors)
+
+
+@dataclass(frozen=True, repr=False)
+class PayloadFileSpec:
+    relative_executable: str  # Shared handle-pinning layout; never a launch Command.
+    sha256: str
+    size: int
+    model: str = field(default='PAYLOAD_DATA', init=False)
+
+    def __post_init__(self):
+        import re
+        safe_name(self.relative_executable)
+        if (type(self.sha256) is not str or not re.fullmatch('[0-9a-f]{64}', self.sha256) or
+                type(self.size) is not int or not 0 <= self.size <= 128 * 1024 * 1024):
+            raise ProcessRefused('FIXED_PAYLOAD_FILE_REQUIRED')
+
+
+class PinnedPayloadFile(PinnedExecutable):
+    """Read-only data pin using the original root/ancestor/file identity checks.
+
+    PrivateProcessAdapter only accepts Command and always pins PinnedExecutable;
+    this data spec cannot be launched or lower the executable image requirement.
+    """
+    _image_required = False
+
+    def __init__(self, lease, spec):
+        if type(spec) is not PayloadFileSpec: raise ProcessRefused('PAYLOAD_FILE_SPEC_REQUIRED')
+        super().__init__(lease, spec)
+
+    def read_bytes(self):
+        self.verify()
+        if os.name == 'posix':
+            chunks, offset = [], 0
+            while offset < self.command.size:
+                raw = os.pread(self.file, min(1024 * 1024, self.command.size - offset), offset)
+                if not raw: raise ProcessRefused('PAYLOAD_SHORT_READ')
+                chunks.append(raw); offset += len(raw)
+            result = b''.join(chunks)
+        else:
+            api = self.lease.fs.api
+            # Signature already set by the original native verification path.
+            api.need(api.readonly.k.SetFilePointerEx(self.file, 0, None, 0))
+            chunks, count = [], 0
+            while count < self.command.size:
+                raw = api.read(self.file, min(1024 * 1024, self.command.size - count))
+                if not raw: raise ProcessRefused('PAYLOAD_SHORT_READ')
+                chunks.append(raw); count += len(raw)
+            result = b''.join(chunks)
+        self.verify()
+        if len(result) != self.command.size or hashlib.sha256(result).hexdigest() != self.command.sha256:
+            raise ProcessRefused('PAYLOAD_READ_HASH_REFUSED')
+        return result
 
 
 @dataclass(eq=False, repr=False)

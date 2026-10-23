@@ -70,7 +70,8 @@ def verify_executable(pin):
         if not raw: raise ProcessRefused('NATIVE_EXEC_SHORT_READ')
         if not size: first = raw
         size += len(raw); digest.update(raw)
-    if first[:2] != b'MZ' or digest.hexdigest() != pin.command.sha256 or api.info(pin.file) != info:
+    if (getattr(pin, '_image_required', True) and first[:2] != b'MZ' or
+            digest.hexdigest() != pin.command.sha256 or api.info(pin.file) != info):
         raise ProcessRefused('NATIVE_EXEC_HASH_REFUSED')
     # Loader/DLL closure remains a separate unaccepted product prerequisite.
 

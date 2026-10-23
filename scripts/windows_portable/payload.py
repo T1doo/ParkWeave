@@ -79,20 +79,37 @@ def file_manifest(files):
     return {n: dict(bytes=len(b), sha256=sha256(b).hexdigest()) for n, b in sorted(files.items())}
 
 
-def verify_directory(root):
-    root = Path(root).absolute()
-    require(root.resolve() == root and not root.is_symlink(), 'ROOT_LINK')
-    path = root / MANIFEST
-    require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024, 'MANIFEST_FILE')
+def parse_manifest(raw):
+    require(type(raw) is bytes and 0 < len(raw) <= 4 * 1024 * 1024, 'MANIFEST_BYTES')
     def pairs(items):
         value = {}
         for k, v in items:
             require(k not in value, 'JSON_DUPLICATE'); value[k] = v
         return value
-    manifest = json.loads(path.read_bytes(), object_pairs_hook=pairs)
-    require(manifest.get('schema') == SCHEMA and manifest.get('status') == 'INITIALIZATION_NOT_ENABLED', 'MANIFEST_SCHEMA')
+    manifest = json.loads(raw, object_pairs_hook=pairs)
+    require(type(manifest) is dict and manifest.get('schema') == SCHEMA and
+            manifest.get('status') == 'INITIALIZATION_NOT_ENABLED', 'MANIFEST_SCHEMA')
     expected = manifest.get('files')
     require(isinstance(expected, dict) and 0 < len(expected) <= MAX_FILES, 'MANIFEST_FILES')
+    seen, total = set(), 0
+    for name, row in expected.items():
+        safe_name(name)
+        require(name.casefold() not in seen and name.casefold() != MANIFEST, 'MANIFEST_COLLISION')
+        seen.add(name.casefold())
+        require(type(row) is dict and set(row) == {'bytes', 'sha256'} and type(row['bytes']) is int and
+                0 <= row['bytes'] <= 128 * 1024 * 1024 and type(row['sha256']) is str and
+                re.fullmatch('[0-9a-f]{64}', row['sha256']), 'MANIFEST_ROW')
+        total += row['bytes']; require(total <= MAX_BYTES, 'PAYLOAD_BYTES')
+    return manifest
+
+
+def verify_directory(root):
+    root = Path(root).absolute()
+    require(root.resolve() == root and not root.is_symlink(), 'ROOT_LINK')
+    path = root / MANIFEST
+    require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024, 'MANIFEST_FILE')
+    manifest = parse_manifest(path.read_bytes())
+    expected = manifest['files']
     actual = {}; total = 0; seen = set()
     for child in root.rglob('*'):
         name = child.relative_to(root).as_posix(); safe_name(name)

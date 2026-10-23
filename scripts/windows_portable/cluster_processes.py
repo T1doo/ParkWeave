@@ -115,7 +115,9 @@ class FixedClusterProcesses:
                          '-p', port, '-c', 'unix_socket_directories=', '-c', 'ssl=off',
                          '-c', 'logging_collector=off', '-c', 'log_statement=none'))}
             if mode == 'NEW':
-                # No trust, fsync-disable, service install, shell, single-user SQL or secret argv.
+                # No injected trust/fsync-disable/service/shell/SQL/secret argv.
+                # initdb itself uses bootstrap/standalone backends and pipes;
+                # pinning this top-level EXE does not attest that inner closure.
                 commands['initdb'] = command(self.initdb, ('-D', self.inputs.data_directory, '-U', 'postgres',
                                     '--pwfile', password_file, '--auth-local=scram-sha-256',
                                     '--auth-host=scram-sha-256', '--encoding=UTF8', '--locale=C'))

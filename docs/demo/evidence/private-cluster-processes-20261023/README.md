@@ -4,7 +4,7 @@
 
 [`FixedClusterProcesses`](../../../../scripts/windows_portable/cluster_processes.py)只固定编排包内initdb.exe/postgres.exe与原`PrivateProcessAdapter`。NEW仍先在配置/文件/进程端口前拒绝OWNER暂停；受控测试显式替换此门，仅证明分流控制流。将来前置另通过时才允许initdb读取根下固定`secrets/postgres-bootstrap.password`、初始化`data/postgresql`；不得覆盖已有/部分目录。确切int退出0后还须同原token确认整个Job退出，才能启动postgres。REOPEN命令表只有postgres，不调用initdb，不读取/传递密码文件，不迁移、seed、补session或自动修复。
 
-三份原DatabaseInputs仅接受同一个回环127.0.0.1/端口，maintenance为postgres库/postgres角色，owner为parkweave库/postgres，应用为parkweave_app；此对象不是NativeDatabaseCreationEvidence或任何权限证明。命令不含密码/DSN，只传固定路径、SCRAM选项及端口；无trust、禁fsync、单用户SQL、系统服务或shell动作，子进程不继承项目/PG/provider环境。官方参数依据为[initdb](https://www.postgresql.org/docs/17/app-initdb.html)和[postgres](https://www.postgresql.org/docs/17/app-postgres.html)，未下载运行时或DLL。
+三份原DatabaseInputs仅接受同一个回环127.0.0.1/端口，maintenance为postgres库/postgres角色，owner为parkweave库/postgres，应用为parkweave_app；此对象不是NativeDatabaseCreationEvidence或任何权限证明。高层冻结argv不含密码/DSN，只传固定路径、SCRAM选项及端口，不注入trust、禁fsync、单用户SQL、系统服务或shell命令；显式启动环境不继承项目/PG/provider变量。此处只描述高层argv：initdb内部本身运行bootstrap/standalone backend和管道命令，pin住initdb.exe不代表内部postgres、share、DLL/加载或管道闭包已验，该项仍阻止激活。官方参数依据为[initdb](https://www.postgresql.org/docs/17/app-initdb.html)和[postgres](https://www.postgresql.org/docs/17/app-postgres.html)，未下载运行时或DLL。
 
 四项必需`ClusterPrerequisites`目前都是未实现的生产依赖，没有默认成功实现：
 
