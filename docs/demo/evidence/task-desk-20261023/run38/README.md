@@ -42,3 +42,14 @@
 `preflight.json`记录实际纯来源门正反例、两页指纹／字节漂移拒绝、内嵌JS编译但不调用、390同横边界几何归属替身反例、实际sentinel纯谓词空值／替换／错UUID拒绝；不是pytest、浏览器或效果测试。原owned_browser、require_operation_time、worker_main/main（除精确run号）逐字保留；workflow只运行编号／阶段名、font只私有目录／编号同步，不改资产或预算。真实原生／像素／运行耗时仍未验，尚无run38 PNG/result或新的官方run/job/artifact。
 
 取得新原件时执行器仅报告正常元数据ID/name/size/digest/expiry/source。父级选择已有正常授权消费者读取；不自动尝试历史Forbidden下载方式或换路径取旧包。
+
+
+## 2026-10-23 唯一执行结果：FAIL，原件待父级核验
+
+实际受测完整SHA `f322cb7c9ce850b5fb3693ba90f55b23aa0b29f2`。提交后在干净精确checkout重新调用实际source_contract成功，原始输出保存在 [postcommit-source-gate-original.json](official-metadata/postcommit-source-gate-original.json)；不使用前述提交前preflight的NOT_EXECUTED代签。执行前重核最新仍37、原执行ref仍86bd、公开仓库条件成立，随后仅一次正常快进到精确f322，没有改SHA或重跑。
+
+官方 [run38／attempt1](https://github.com/T1doo/ParkWeave/actions/runs/39984733291)，job `120520854599`，16:11:48–16:12:32 UTC，conclusion=failure。Checkout和既有依赖／字体步骤成功；Native return paths and collaboration visual verification 步骤16:12:24–16:12:29失败；证据上传步骤成功。watch仅观测进程exit1／步骤状态，不是原始job日志。未再次投递。
+
+新artifact ID `12514932159`，名称 `fictional-park-browser-38`，399869B，官方digest `sha256:2c3dbd75a28a0f40ec4e8b59e8a4b37215f9305bb3ec675852ddcbfcdeb9cbbf`，expiry `2026-10-24T16:12:30Z`。这仅是API元数据，执行器没有下载ZIP／log或读取PNG/result；不能称8图齐全、特定页面/原生动作通过，实际失败stage、请求计数、browser_close／监听／进程退出仍UNKNOWN，待父级正常授权消费者核新原件。未读取旧拒绝附件或换路径。
+
+[official-metadata](official-metadata/)保留三份正常API元数据原响应、元数据摘要、提交后实际源码门原输出及执行前公开仓库字段，均有SHA256SUMS。它们不是完整job log或artifact payload。没有像素／美观／真实业务验收结论，没执行的READY、次级入口及Forward不列为已测。
