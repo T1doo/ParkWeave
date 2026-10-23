@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_catalog_feedback_on_original_get_handler[empty-service] _________
+
+mode = 'empty-service'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The input did not match the regular expression /暂无可用服务/. Input:
+E         
+E         ''
+E         
+E             at [eval]:31:10
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', "\nconst vm=require('node:vm'),assert=require('node:assert/strict');\nconst input...Error [ERR_ASSERTION]: The input did not match the regular expression /暂无可用服务/. Input:\n\n''\n\n    at [eval]:31:10\n").returncode
+
+tests/test_preparation_catalog_feedback.py:88: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[empty-service]
+1 failed, 7 deselected, 1 warning in 0.12s
