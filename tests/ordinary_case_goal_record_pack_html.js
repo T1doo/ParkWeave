@@ -28,6 +28,7 @@ class Element {
   scrollIntoView() {} focus() {} select() {} remove() {} click() { return this.onclick?.(); }
 }
 const textOf = element => element.textContent + element.children.map(e => typeof e === 'object' ? textOf(e) : e).join(' ');
+const descendantElements = element => (element?.children || []).filter(e => typeof e === 'object').flatMap(e => [e, ...descendantElements(e)]);
 function page(config, storage, calls, transport) {
   const documentHTML = config.page === 'upgrade' ? fs.readFileSync('src/parkweave/template_upgrade_web.html', 'utf8') : html;
   const pageCode = documentHTML.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
@@ -117,13 +118,13 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
   for(const adapter of ['P3','P4']){
    owner.$('service-plan-reason').value='SYNTHETIC independent owner decision '+adapter;
    const card=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter===adapter);
-   const button=card?.children.find(e=>e.dataset.serviceAction==='VERIFY');check(!!button,'original allowed VERIFY '+adapter);await button.click();
+   const button=descendantElements(card).find(e=>e.dataset.serviceAction==='VERIFY');check(!!button,'original allowed VERIFY '+adapter);await button.click();
    check(owner.run(`servicePlanView.steps.find(s=>s.adapter_id==='${adapter}').state`)==='VERIFIED','durable explicit VERIFY '+adapter);
   }
  }
  if(config.local_action){
   const card=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter==='P5');
-  const open=card?.children.find(e=>e.dataset.serviceOpen==='localcase');
+  const open=descendantElements(card).find(e=>e.dataset.serviceOpen==='localcase');
   check(!!open,'original P5 navigation');await open.click();
   check(owner.run('localCaseId')===config.preparation_id,'exact original local record');
   const actions=config.local_action==='CLOSE'?[['local-case-validate','READY'],['local-case-close','LOCAL_RECORD_CLOSED']]:[['local-case-reopen','REOPENED']];
@@ -140,7 +141,7 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
   if(config.local_action==='CLOSE'){
    check(owner.run("servicePlanView.steps.find(s=>s.adapter_id==='P5').state")!=='VERIFIED','local close does not automatically VERIFY P5');
    const refreshed=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter==='P5');
-   const verify=refreshed?.children.find(e=>e.dataset.serviceAction==='VERIFY');
+   const verify=descendantElements(refreshed).find(e=>e.dataset.serviceAction==='VERIFY');
    check(!!verify,'original explicit P5 VERIFY');owner.$('service-plan-reason').value='SYNTHETIC explicit independent P5 decision';
    await verify.click();check(owner.run("servicePlanView.steps.find(s=>s.adapter_id==='P5').state")==='VERIFIED','durable P5 owner decision');
   }else{

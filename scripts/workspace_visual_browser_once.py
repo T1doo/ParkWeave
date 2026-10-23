@@ -1,5 +1,5 @@
-"""Run27/attempt1: original pages, presentation review, no product backend."""
-import hashlib,json,os,signal,socket,sys,tempfile,threading,time,traceback
+"""Run28/attempt1: original content presentation, no product backend."""
+import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
@@ -17,12 +17,20 @@ OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
 ENTERED=threading.Event();RELEASE=threading.Event()
 DENIED='/api/preparations/00000000-0000-4000-8000-000000000001/entry'
+BASELINE_SHA='82db2929f4b3e7ec9f0065c42febfff6a9be9a37'
 SOURCE={
- 'workspace':('web.html',b'/* Workspace refinement: presentation only;', '1174b0f0d835cd46f6562db9360fb8e4d680701c43300c2cefe7042077b02d33'),
- 'guide':('park_demo_web.html',b'/* Same visual system as the original workspace;', '48dc8a8dec295b6fe11ec373ff18b90e4a1dab147a28c62ebe43f9385f12f402')}
-PUBLIC_FILES=frozenset(('01-before-service-wide.png','02-after-service-wide.png','03-before-historical-plan-wide.png',
- '04-after-historical-plan-wide.png','05-before-guide-wide.png','06-after-guide-wide.png',
- '07-after-historical-plan-narrow.png','08-after-guide-narrow.png','failure-visual.png','result.json'))
+ 'workspace':('web.html','f740106eef67c603a56cbeb1280c8dd71a5a954af93df026f1336a20cf0ad31d'),
+ 'guide':('park_demo_web.html','ae8e7f929a56e8029cb58540b4ce01768d1a319321c429320a26ae69c5fccef5')}
+PUBLIC_FILES=frozenset(('01-before-plan-wide.png','02-after-plan-wide.png','03-before-plan-narrow.png',
+ '04-after-plan-narrow.png','05-before-guide-wide.png','06-after-guide-wide.png',
+ '07-guide-error-narrow.png','08-guide-success-narrow.png','failure-visual.png','result.json'))
+
+def business_script(source):
+    script=source.split(b'<script>',1)[1].split(b'</script>',1)[0]
+    start=script.index(b'function renderServiceCasePlan(');end=script.index(b'\nasync function loadServiceCasePlan',start)
+    script=script[:start]+b'<CASE_PLAN_PRESENTATION>'+script[end:]
+    start=script.index(b'function clearServiceCasePlan(');end=script.index(b'\n',start)
+    return script[:start]+b'<CASE_PLAN_PRESENTATION_CLEAR>'+script[end:]
 
 def timeout(*_):raise TimeoutError('90s visual work and cleanup deadline')
 
@@ -118,8 +126,7 @@ def shot(page,name):
 
 def historical_plan(page,variant,width):
     require_operation_time(30)
-    # Reuse an exact already-public synthetic observation. This is a rendering
-    # replay, never a current authority/health response or business restoration.
+    # Exact historical synthetic view only. No current health or authority claim.
     file=ROOT/'docs/F2/evidence/again-role-readback-20261022/run23/result.json'
     raw=file.read_bytes();assert hashlib.sha256(raw).hexdigest()=='0ef683ef62243d49b397abcf064a4714ec7cacfb5f42726d2c1c676b00cf8952'
     plan=json.loads(raw)['fresh_roles'][0]['plans'][0]
@@ -127,31 +134,88 @@ def historical_plan(page,variant,width):
         case_id=plan['case_id'],run_id=plan['run_id'],plan_id=plan['plan_id'],purpose='HISTORICAL_SYNTHETIC_VIEW_REPLAY_ONLY_NOT_CURRENT_HEALTH')
     page.evaluate('(x) => {servicePlanId=x.preparation_id;renderServiceCasePlan(x)}',plan)
     panel=page.locator('#service-case-plan-detail');assert panel.is_visible()
-    text=panel.text_content();fingerprint=hashlib.sha256(text.encode()).hexdigest()
+    assert page.evaluate('JSON.parse(JSON.stringify(servicePlanView))')==plan
+    projection=page.locator('#service-plan-steps > article').evaluate_all("""els=>els.map(e=>({id:e.dataset.serviceStepId,adapter:e.dataset.serviceAdapter,
+      name:e.querySelector('strong').textContent,paragraphs:[...e.children].filter(n=>n.tagName==='P'&&!n.classList.contains('service-step-reference')).map(n=>n.textContent),
+      full_id:e.querySelector('.service-step-reference code')?.textContent||e.querySelector('small').textContent.replace('稳定步骤编号 ',''),
+      buttons:[...e.querySelectorAll('button')].map(b=>({text:b.textContent,disabled:b.disabled,step:b.dataset.serviceStep||null,action:b.dataset.serviceAction||null,open:b.dataset.serviceOpen||null}))}))""")
+    assert [x['id'] for x in projection]==[x['id'] for x in plan['steps']]
+    assert all(x['full_id']==x['id'] for x in projection)
+    fingerprint=hashlib.sha256(json.dumps(projection,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
     rows=REPORT.setdefault('historical_rendering',[])
-    if rows:assert rows[0]['text_sha256']==fingerprint
-    ids=page.locator('#service-plan-steps > article').evaluate_all('(els) => els.map(e=>e.dataset.serviceStepId)')
-    assert ids==[s['id'] for s in plan['steps']]
-    rows.append(dict(variant=variant,width=width,text_sha256=fingerprint,step_ids=ids,source_state=plan['state']))
+    if rows:assert rows[0]['projection_sha256']==fingerprint
     page.evaluate("() => window.scrollTo(0,document.getElementById('service-case-plan-detail').getBoundingClientRect().top+scrollY-24)")
-    observe(page,variant+'-historical-plan-'+str(width),True)
-    name='07-after-historical-plan-narrow.png' if width==390 else ('03-before-historical-plan-wide.png' if variant=='before' else '04-after-historical-plan-wide.png')
+    observation=observe(page,variant+'-historical-plan-'+str(width),True)
+    row=dict(variant=variant,width=width,projection_sha256=fingerprint,step_ids=[x['id'] for x in projection],source_state=plan['state'],document_height=observation['height'],font_scope='visible checked nodes near the plan heading; not every ID/action or whole panel glyph')
+    if variant=='after':
+        require_operation_time(30)
+        contract=page.locator('details[data-plan-disclosure=contract]');history=page.locator('#service-plan-history-details')
+        assert not contract.evaluate('(e)=>e.open') and not history.evaluate('(e)=>e.open')
+        assert contract.locator('summary').is_visible() and history.locator('summary').is_visible()
+        outside=page.locator('#service-plan-coverage').evaluate("e=>[...e.children].filter(n=>n.tagName!=='DETAILS').map(n=>n.textContent).join(' / ')")
+        assert '正式服务发布、审批及原Case真实目标完成仍未证明' in outside
+        for item in plan.get('current_preview',{}).get('goal_coverage',[]):
+            if item['status']!='SUPPORTED_PREVIEW':assert item['goal'] in outside
+        geometry=page.locator('#service-plan-steps > article').evaluate_all("""els=>els.map(e=>{const r=e.querySelector('.service-step-reference').getBoundingClientRect(),a=e.querySelector('.service-step-actions').getBoundingClientRect(),buttons=[...e.querySelectorAll('.service-step-actions>button')].map(b=>{const r=b.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}});return {reference_bottom:r.bottom,actions_top:a.top,buttons}})""")
+        for card in geometry:
+            assert card['actions_top']>=card['reference_bottom']+9
+            for a,b in zip(card['buttons'],card['buttons'][1:]):assert b['top']>=a['bottom']+9 or b['left']>=a['right']+9
+        reads=len(REPORT['requests']);browser_reads=len(REPORT['browser_requests'])
+        contract.locator('summary').focus();page.keyboard.press('Enter');assert contract.evaluate('(e)=>e.open')
+        focus=contract.locator('summary').evaluate("e=>({visible:e.matches(':focus-visible'),outline:getComputedStyle(e).outlineWidth})")
+        assert focus['visible'] and focus['outline']=='3px'
+        expanded=contract.inner_text()
+        for item in plan.get('current_preview',{}).get('goal_coverage',[]):
+            if item['status']=='SUPPORTED_PREVIEW':assert item['goal'] in expanded
+        history.locator('summary').click(timeout=15000);assert history.evaluate('(e)=>e.open')
+        expanded_history=history.inner_text()
+        for event in plan.get('events',[]):assert ('计划版本 '+str(event['revision'])) in expanded_history
+        preview_articles=contract.locator(':scope > article').all_text_contents();history_text=page.locator('#service-plan-history').text_content()
+        for index,original in enumerate(preview_articles):assert contract.locator(':scope > article').nth(index).inner_text()==original
+        assert page.locator('#service-plan-history').is_visible()
+        contract.locator('summary').click(timeout=15000);history.locator('summary').click(timeout=15000)
+        assert not contract.evaluate('(e)=>e.open') and not history.evaluate('(e)=>e.open')
+        assert len(REPORT['requests'])==reads and len(REPORT['browser_requests'])==browser_reads
+        row.update(disclosures_expanded_and_closed=True,disclosure_GETs=0,geometry=geometry,keyboard_focus=focus)
+        REPORT['keyboard_focus']=focus
+    else:
+        preview_articles=page.locator('#service-plan-coverage > article').all_text_contents();history_text=page.locator('#service-plan-history').text_content()
+    if rows:
+        assert preview_articles==rows[0]['rendered_preview_articles'] and history_text==rows[0]['rendered_history_text']
+    row.update(rendered_preview_articles=preview_articles,rendered_history_text=history_text,rendered_history_sha256=hashlib.sha256(history_text.encode()).hexdigest())
+    rows.append(row)
+    if width==390 and variant=='after':
+        before=next(x for x in rows if x['width']==390 and x['variant']=='before')
+        assert row['document_height']<before['document_height']
+        REPORT['narrow_height_change']=dict(before=before['document_height'],after=row['document_height'],saved=before['document_height']-row['document_height'])
+    page.evaluate("() => window.scrollTo(0,document.getElementById('service-case-plan-detail').getBoundingClientRect().top+scrollY-24)")
+    name={('before',1200):'01-before-plan-wide.png',('after',1200):'02-after-plan-wide.png',('before',390):'03-before-plan-narrow.png',('after',390):'04-after-plan-narrow.png'}[(variant,width)]
     panel.screenshot(path=str(OUT/name),timeout=15000)
+
+def guide_state(page,label,tone):
+    status=page.locator('#status');assert status.is_visible() and status.get_attribute('data-tone')==tone
+    value=status.evaluate("e=>({text:e.textContent,color:getComputedStyle(e).color,background:getComputedStyle(e).backgroundColor,height:e.clientHeight,scrollHeight:e.scrollHeight,width:e.clientWidth,scrollWidth:e.scrollWidth})")
+    assert value['color']=={'neutral':'rgb(82, 99, 93)','error':'rgb(141, 55, 46)','success':'rgb(40, 91, 61)'}[tone]
+    assert value['text'] and value['scrollHeight']<=value['height'] and value['scrollWidth']<=value['width']
+    REPORT.setdefault('guide_states',[]).append(dict(label=label,tone=tone,**value));observe(page,label,True)
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='27')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='28')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         REPORT['source_binding']={}
-        for name,(file,marker,expected) in SOURCE.items():
-            after=(ROOT/'src/parkweave'/file).read_bytes();assert after.count(marker)==1
-            prefix,tail=after.split(marker,1);before=prefix+b'</style>'+tail.split(b'</style>',1)[1]
+        parent=subprocess.check_output(['git','rev-parse','HEAD^'],cwd=ROOT,text=True).strip()
+        assert parent==BASELINE_SHA,'exact reviewed direct parent baseline required'
+        for name,(file,expected) in SOURCE.items():
+            after=(ROOT/'src/parkweave'/file).read_bytes()
+            before=subprocess.check_output(['git','show',BASELINE_SHA+':src/parkweave/'+file],cwd=ROOT)
             assert hashlib.sha256(before).hexdigest()==expected
-            assert before.split(b'</style>',1)[1]==after.split(b'</style>',1)[1]
-            REPORT['source_binding'][name]=dict(before_sha256=expected,after_sha256=hashlib.sha256(after).hexdigest(),outside_style_identical=True)
+            if name=='workspace':assert business_script(before)==business_script(after)
+            REPORT['source_binding'][name]=dict(baseline_sha=BASELINE_SHA,before_sha256=expected,after_sha256=hashlib.sha256(after).hexdigest(),
+                presentation_changes=True,business_script_unchanged_except_case_plan_render_and_clear=(name=='workspace'))
             for variant,data in [('before',before),('after',after)]:
                 (PRIVATE/(variant+('-guide' if name=='guide' else '')+'.html')).write_bytes(data)
         env=dict(os.environ)
@@ -162,44 +226,31 @@ def run_flow(started):
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start();origin='http://127.0.0.1:'+str(server.server_port)
         with owned_browser(env) as browser:
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
-            for variant in ('before','after'):
-                stage(variant.upper()+'_WORKSPACE_WIDE');context,page=open_page(browser,origin,'/'+variant,1200)
-                observe(page,variant+'-service-wide',True);shot(page,'01-before-service-wide.png' if variant=='before' else '02-after-service-wide.png')
-                if variant=='after':
-                    for tab in ('collaboration','resource'):
-                        require_operation_time(30)
-                        page.locator('[data-tab='+tab+']').click();assert page.locator('#'+tab).is_visible()
-                        assert page.locator('[data-tab='+tab+']').get_attribute('aria-current')=='page'
-                        observe(page,'after-'+tab+'-wide',True)
-                    require_operation_time(30)
-                    page.locator('[data-tab=service]').click();page.locator('#existing-preparation-id').fill('00000000-0000-4000-8000-000000000001')
-                    page.locator('#token').fill('SYNTHETIC_PRESENTATION_REPLAY_SESSION');page.locator('#existing-preparation-read').click()
-                    page.wait_for_function("() => document.getElementById('existing-preparation-status').textContent.includes('正在只读核对')",timeout=15000)
-                    REPORT['loading_text']=page.locator('#existing-preparation-status').text_content();assert ENTERED.wait(5)
-                    RELEASE.set();page.wait_for_function("() => document.getElementById('existing-preparation-status').textContent.length>0&&!document.getElementById('existing-preparation-status').textContent.includes('正在只读核对')",timeout=15000)
-                    REPORT['refusal_text']=page.locator('#existing-preparation-status').text_content();assert page.locator('#prep-detail').is_hidden()
-                    observe(page,'after-controlled403-wide')
-                    page.locator('#existing-preparation-read').focus();page.keyboard.press('Tab')
-                    REPORT['keyboard_focus']=page.evaluate("() => ({id:document.activeElement.id,outline:getComputedStyle(document.activeElement).outlineWidth,visible:document.activeElement.matches(':focus-visible')})")
-                    assert REPORT['keyboard_focus']['visible'] and REPORT['keyboard_focus']['outline']=='3px'
-                    page.locator('#token').fill('')
-                    page.locator('[data-tab=service]').click()
-                historical_plan(page,variant,1200)
-                context.close()
-            stage('AFTER_WORKSPACE_NARROW');context,page=open_page(browser,origin,'/after',390)
-            for tab in ('service','collaboration','resource'):
-                require_operation_time(30)
-                page.locator('[data-tab='+tab+']').click();observe(page,'after-'+tab+'-narrow',True)
-            page.locator('[data-tab=service]').click();historical_plan(page,'after',390);context.close()
+            for width in (1200,390):
+                for variant in ('before','after'):
+                    stage(variant.upper()+'_HISTORICAL_PLAN_'+str(width));context,page=open_page(browser,origin,'/'+variant,width)
+                    historical_plan(page,variant,width);context.close()
             for variant in ('before','after'):
                 stage(variant.upper()+'_GUIDE_WIDE');context,page=open_page(browser,origin,'/'+variant+'-guide',1200)
                 assert all(page.locator('[data-role='+role+']').is_disabled() for role in ('enterprise','specialist','executor'))
-                observe(page,variant+'-guide-wide',True);shot(page,'05-before-guide-wide.png' if variant=='before' else '06-after-guide-wide.png');context.close()
+                if variant=='after':guide_state(page,'guide-neutral-wide','neutral')
+                else:observe(page,'before-guide-wide',True)
+                shot(page,'05-before-guide-wide.png' if variant=='before' else '06-after-guide-wide.png');context.close()
             stage('AFTER_GUIDE_NARROW');context,page=open_page(browser,origin,'/after-guide',390)
             page.locator('#sessions').set_input_files(dict(name='not-a-session.json',mimeType='application/json',buffer=b'{}'))
-            page.wait_for_function("() => document.getElementById('status').textContent.includes('不是本次演示')",timeout=15000)
-            REPORT['invalid_file_text']=page.locator('#status').text_content();assert page.locator('#workspace-open').is_disabled()
-            observe(page,'after-guide-invalid-file-narrow',True);shot(page,'08-after-guide-narrow.png');context.close()
+            page.wait_for_function("() => document.getElementById('status').dataset.tone==='error'",timeout=15000)
+            assert page.locator('#workspace-open').is_disabled();guide_state(page,'guide-invalid-file-narrow','error');shot(page,'07-guide-error-narrow.png')
+            roles=('enterprise','specialist','executor','second_enterprise','second_specialist','second_executor')
+            memory_file=json.dumps({role:str(i)*43 for i,role in enumerate(roles)}).encode()
+            REPORT['guide_success_scope']='FORMAT_VALID_SYNTHETIC_MEMORY_FILE_ONLY_NOT_A_REAL_SESSION_OR_AUTHORITY'
+            page.locator('#sessions').set_input_files(dict(name='SYNTHETIC-memory-only.json',mimeType='application/json',buffer=memory_file))
+            page.wait_for_function("() => document.getElementById('status').dataset.tone==='success'",timeout=15000)
+            assert page.locator('#workspace-open').is_enabled() and all(page.locator('[data-role='+role+']').is_disabled() for role in roles[:3])
+            guide_state(page,'guide-memory-file-success-narrow','success');shot(page,'08-guide-success-narrow.png')
+            REPORT['guide_event_scope']='Synthetic pagehide dispatched to the original listener and programmatic input clear; not real navigation, bfcache or native chooser cancellation'
+            page.evaluate("() => window.dispatchEvent(new Event('pagehide'))")
+            assert page.locator('#workspace-open').is_disabled();guide_state(page,'guide-injected-pagehide-neutral-narrow','neutral')
+            page.locator('#sessions').set_input_files([]);guide_state(page,'guide-programmatic-selection-cleared-neutral-narrow','neutral');context.close()
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
             REPORT['status']='PASS';stage('COMPLETE')
@@ -235,7 +286,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='27')
+        source=base.require_hosted(os.environ,run_number='28')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'

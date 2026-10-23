@@ -22,7 +22,7 @@ const scenario = String.raw`
  check(plan.current_case_step_scope.contract==='CASE_STEP_ASSIGNMENT_V1','ordinary CaseStep source');
  for(const adapter of ['P1','P2','P3','P4','P5']){
   const card=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter===adapter);
-  check(!!card?.children.find(e=>e.dataset.serviceOpen&&!e.disabled),'direct original handling entry '+adapter);
+  check(!!descendantElements(card).find(e=>e.dataset.serviceOpen&&!e.disabled),'direct original handling entry '+adapter);
  }
  const key=posts()[0].request_key;check(typeof key==='string'&&key.length>0,'original selection key');
  console.log(JSON.stringify({scope:'LOCAL_DEMO_TO_ORDINARY_CASE_STEP_REAL_HTML',checks,calls,candidate,plan_id:plan.plan_id,selection_key:key,completeOriginalHTML:true,real_browser:false}));process.exit(0);

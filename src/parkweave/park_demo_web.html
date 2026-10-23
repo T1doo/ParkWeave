@@ -16,6 +16,11 @@ button,input,select{border-radius:10px;min-height:44px;padding:11px 14px}button{
 @media(max-width:420px){header{padding:24px 20px}header h1{font-size:23px}main{padding:16px 14px 32px}aside,#workspace-panel{padding:20px 18px;border-radius:16px}aside>h2{font-size:17px}input,select{font-size:16px}summary{padding:13px 14px}#workspace-panel h2{font-size:20px}details>ol,details>p{margin-left:15px;margin-right:15px}}
 @media(prefers-reduced-motion:reduce){button,input,select{transition:none}}
 @media(forced-colors:active){header{background:Canvas;color:CanvasText;border-bottom:1px solid CanvasText}header p{color:CanvasText}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}}
+/* Status tone describes only the local guide result, never business completion. */
+#status{border-color:#dce2df;background:#f5f7f6;color:#52635d}
+#status[data-tone="success"]{border-color:#c8decc;background:#edf6ec;color:#285b3d}
+#status[data-tone="error"]{border-color:#e5c3b9;border-left:3px solid #a13e36;background:#fff3ef;color:#8d372e}
+@media(forced-colors:active){#status[data-tone]{border-color:CanvasText;background:Canvas;color:CanvasText}}
 </style>
 <header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
 <main><aside>
@@ -28,7 +33,7 @@ button,input,select{border-radius:10px;min-height:44px;padding:11px 14px}button{
 <button data-role="enterprise" disabled>林岚 · 虚构企业经办人</button>
 <button data-role="specialist" disabled>周禾 · 虚构园区专员</button>
 <button data-role="executor" disabled>许辰 · 虚构执行者</button>
-<p id="status" role="status">等待选择本次模拟会话文件。</p>
+<p id="status" role="status" data-tone="neutral">等待选择本次模拟会话文件。</p>
 <h2>2 · 选择不同输入</h2>
 <select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
 <button id="fill-goal" disabled>填入新事项目标</button>
@@ -70,23 +75,24 @@ function workspace(){const w=workspaceWindow;if(!w||w.closed||w.location.origin!
 function field(id,value){const w=workspace(),el=w.document.getElementById(id);if(!el)throw Error('请先打开原办理表单');el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));return el;}
 function controls(){document.querySelectorAll('button').forEach(b=>b.disabled=!sessions||(b.id!=='workspace-open'&&(!workspaceWindow||workspaceWindow.closed)));}
 function clear(){sessions=null;epoch++;controls();try{field('token','');}catch{} }
-function act(fn){try{fn();}catch{ $('status').textContent='原页面尚未就绪，请等待页面加载后重试；没有提交业务。';}}
-$('workspace-open').onclick=()=>act(()=>{if(!sessions)return;if(!workspaceWindow||workspaceWindow.closed)workspaceWindow=window.open('/','_blank');else workspaceWindow.focus();controls();$('status').textContent=workspaceWindow?'原办理窗口已打开，请等待加载后明确选择人物。':'未打开办理窗口，请再次点击打开；没有提交业务。';});
-$('sessions').onchange=async()=>{clear();const version=epoch,file=$('sessions').files?.[0];if(!file)return;try{
+function showStatus(text,tone='neutral'){$('status').textContent=text;$('status').dataset.tone=tone;}
+function act(fn){try{fn();}catch{showStatus('原页面尚未就绪，请等待页面加载后重试；没有提交业务。','error');}}
+$('workspace-open').onclick=()=>act(()=>{if(!sessions)return;if(!workspaceWindow||workspaceWindow.closed)workspaceWindow=window.open('/','_blank');else workspaceWindow.focus();controls();showStatus(workspaceWindow?'原办理窗口已打开，请等待加载后明确选择人物。':'未打开办理窗口，请再次点击打开；没有提交业务。',workspaceWindow?'neutral':'error');});
+$('sessions').onchange=async()=>{clear();const version=epoch,file=$('sessions').files?.[0];showStatus(file?'正在本页核对模拟会话文件…':'等待选择本次模拟会话文件。');if(!file)return;try{
  if(file.size>4096||file.size<1)throw Error();const parsed=JSON.parse(await file.text());
  if(version!==epoch)return;const keys=[...roles,...roles.map(x=>'second_'+x)].sort();
  if(!parsed||Array.isArray(parsed)||Object.keys(parsed).sort().join('|')!==keys.join('|')||keys.some(k=>typeof parsed[k]!=='string'||! /^[A-Za-z0-9_-]{43}$/.test(parsed[k])))throw Error();
- sessions=parsed;controls();$('status').textContent='模拟身份已在本页内存就绪。请明确选择人物；不会自动办理。';
- }catch{if(version===epoch){clear();$('status').textContent='不是本次演示的六身份会话文件；未上传或使用其内容。';}}};
+ sessions=parsed;controls();showStatus('模拟身份已在本页内存就绪。请明确选择人物；不会自动办理。','success');
+ }catch{if(version===epoch){clear();showStatus('不是本次演示的六身份会话文件；未上传或使用其内容。','error');}}};
 document.querySelectorAll('[data-role]').forEach(button=>button.onclick=()=>act(()=>{
  if(!sessions)return;const role=button.dataset.role;field('token',sessions[role]);
  const w=workspace(),el=w.document.getElementById('token');el.dispatchEvent(new w.Event('change',{bubbles:true}));
- $('status').textContent=button.textContent+'：已切换。请在协同列表重新打开当前事项。';
+ showStatus(button.textContent+'：已切换。请在协同列表重新打开当前事项。');
 }));
-$('fill-goal').onclick=()=>act(()=>{const value=examples[$('scenario').value].goal;field('goal',value);field('prep-goal',value);$('status').textContent='已填新目标；请在原页面核对并明确创建。';});
-$('fill-request').onclick=()=>act(()=>{field('request-current',examples[$('scenario').value].need);field('plan-required-goals',goals.join('\n'));workspace().document.getElementById('request-local-goal').checked=false;$('status').textContent='已填本次诉求与五个目标；请明确保存。';});
-function material(slot,text){field('prep-slot',slot);field('prep-text',text);field('prep-source-kind','USER_STATEMENT');field('prep-source-label','SYNTHETIC 青禾园虚构演示');$('status').textContent='已填候选材料；请核对后明确追加，未继承审核。';}
+$('fill-goal').onclick=()=>act(()=>{const value=examples[$('scenario').value].goal;field('goal',value);field('prep-goal',value);showStatus('已填新目标；请在原页面核对并明确创建。');});
+$('fill-request').onclick=()=>act(()=>{field('request-current',examples[$('scenario').value].need);field('plan-required-goals',goals.join('\n'));workspace().document.getElementById('request-local-goal').checked=false;showStatus('已填本次诉求与五个目标；请明确保存。');});
+function material(slot,text){field('prep-slot',slot);field('prep-text',text);field('prep-source-kind','USER_STATEMENT');field('prep-source-label','SYNTHETIC 青禾园虚构演示');showStatus('已填候选材料；请核对后明确追加，未继承审核。');}
 $('fill-need').onclick=()=>act(()=>material('need_summary',examples[$('scenario').value].need));
 $('fill-outline').onclick=()=>act(()=>material('material_outline',outline));
-window.addEventListener('pagehide',clear);controls();
+window.addEventListener('pagehide',()=>{clear();showStatus('等待选择本次模拟会话文件。');});controls();
 </script></html>
