@@ -9,7 +9,6 @@ from hashlib import sha256
 import json,os,re,signal,subprocess,sys,tempfile,time,math
 from contextlib import contextmanager
 from functools import wraps
-from uuid import uuid4
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit
@@ -17,7 +16,8 @@ from scripts import guide_installed_browser_once as guide
 from scripts.visual_owned_launch import atomic_report,supervise
 
 installed=guide.installed;source=guide.source;tail=guide.tail;base=guide.base;ROOT=guide.ROOT
-RUN='32';MODULE='scripts.full_guide_installed_browser_once'
+RUN='33';MODULE='scripts.full_guide_installed_browser_once'
+INVOCATION='51eed5572b4843ae87f3a63749404b6f'
 SHOTS={'01-A-local-approved.png','02-A-executor-receipt.png','03-A-five-local-verified.png','04-B-independent-reuse.png'}
 TEXTS={'A-local-verified-case.txt','B-unfinished-case.txt'}
 PUBLIC=SHOTS|TEXTS|{'failure-guide.png','result.json','installation-redacted.log',installed.WHEEL_NAME}
@@ -41,9 +41,10 @@ def progress_atomic(path,value):
     try:
         with os.fdopen(fd,'wb') as stream:
             if stream.write(data)!=len(data):raise OSError('short progress write')
-            stream.flush();os.fsync(stream.fileno())
+            stream.flush();fsync_started=time.monotonic();os.fsync(stream.fileno());fsync_seconds=time.monotonic()-fsync_started
         if Path(name).read_bytes()!=data:raise OSError('truncated progress temporary')
         os.replace(name,path)
+        return fsync_seconds
     finally:
         if os.path.exists(name):os.unlink(name)
 
@@ -60,17 +61,23 @@ class Progress:
         self.run=run;self.path=Path(config['progress_path']);self.segment_started=segment_started
         self.value=dict(schema='BROWSER_PARTIAL_PROGRESS_V1',**progress_identity(config),state='PARTIAL',worker_final=False,
             outcome='UNKNOWN',sequence=0,root_elapsed=0,segment_elapsed=0,stage='UNKNOWN',actions=[],requests=[],
-            in_flight_actions=[],last_completed_action=None,checkpoint_errors=[])
+            in_flight_actions=[],last_completed_action=None,checkpoint_errors=[],checkpoint_io=dict(
+                scope='COMPLETED_SAVES_BEFORE_THIS_SNAPSHOT_CURRENT_AND_IN_FLIGHT_UNKNOWN',completed_saves=0,failed_saves=0,
+                total_save_seconds=0.0,successful_fsync_seconds=0.0,maximum_save_seconds=0.0))
         self.request_ids={};self.request_refs=[];self.save()
     def save(self):
+        io_started=time.monotonic();fsync_seconds=0.0;success=False
         try:
             v=self.value;v['sequence']+=1
             v['root_elapsed']=round(time.monotonic()-self.run.started,6);v['segment_elapsed']=round(time.monotonic()-self.segment_started,6)
             stage=self.run.report.get('stage','');v['stage']=stage if STAGE.fullmatch(stage) else 'UNKNOWN'
             assert len(v['actions'])<=1024 and len(v['requests'])<=400
             assert all(x['actor'] in ACTORS|{None} for x in v['actions'])
-            progress_atomic(self.path,v)
+            completed_fsync=progress_atomic(self.path,v)
+            assert type(completed_fsync) in (int,float) and math.isfinite(completed_fsync) and completed_fsync>=0
+            fsync_seconds=completed_fsync
             self.run.report['progress_reference']=dict(sequence=v['sequence'],sha256=sha256(self.path.read_bytes()).hexdigest(),**{k:v[k] for k in ('phase','invocation','worker_final','outcome')})
+            success=True
         except Exception as e:
             # Preserve the original business error, and fail normal finalization
             # if any diagnostic update failed. Never persist exception text.
@@ -78,6 +85,13 @@ class Progress:
             self.run.report['progress_error_count']=self.run.report.get('progress_error_count',0)+1
             self.run.report['progress_errors']=(self.run.report.get('progress_errors',[])+[item])[-16:]
             self.value['checkpoint_errors']=self.run.report['progress_errors']
+        finally:
+            # Mutated only after this atomic write returns. Its on-disk snapshot
+            # therefore describes the completed prefix, not the in-flight I/O.
+            io=self.value['checkpoint_io'];elapsed=time.monotonic()-io_started
+            io['completed_saves']+=1;io['failed_saves']+=int(not success)
+            io['total_save_seconds']+=elapsed;io['successful_fsync_seconds']+=fsync_seconds
+            io['maximum_save_seconds']=max(io['maximum_save_seconds'],elapsed)
     @contextmanager
     def action(self,kind,selector=None,target_actor=None):
         assert kind in KINDS
@@ -146,7 +160,13 @@ def recover_progress(report,config,final=None,previous=None):
         assert all(v[k]>=previous[k] for k in ('root_elapsed','segment_elapsed'))
     # Only this strict projection crosses into a root/public report. Reject
     # unexpected fields instead of importing arbitrary full-page/session data.
-    assert set(v)=={'schema','source_sha','run_number','phase','invocation','state','worker_final','outcome','sequence','root_elapsed','segment_elapsed','stage','actions','requests','in_flight_actions','last_completed_action','checkpoint_errors'}
+    assert set(v)=={'schema','source_sha','run_number','phase','invocation','state','worker_final','outcome','sequence','root_elapsed','segment_elapsed','stage','actions','requests','in_flight_actions','last_completed_action','checkpoint_errors','checkpoint_io'}
+    io=v['checkpoint_io'];assert set(io)=={'scope','completed_saves','failed_saves','total_save_seconds','successful_fsync_seconds','maximum_save_seconds'}
+    assert io['scope']=='COMPLETED_SAVES_BEFORE_THIS_SNAPSHOT_CURRENT_AND_IN_FLIGHT_UNKNOWN'
+    assert type(io['completed_saves']) is int and io['completed_saves']==v['sequence']-1
+    assert type(io['failed_saves']) is int and 0<=io['failed_saves']<=io['completed_saves']
+    assert all(type(io[k]) in (int,float) and math.isfinite(io[k]) and 0<=io[k]<=360 for k in ('total_save_seconds','successful_fsync_seconds','maximum_save_seconds'))
+    assert io['successful_fsync_seconds']<=io['total_save_seconds'] and io['maximum_save_seconds']<=io['total_save_seconds']
     assert v['state'] in ('PARTIAL','COMPLETE') and type(v['worker_final']) is bool and v['outcome'] in ('UNKNOWN','FAIL','PASS')
     assert v['stage']=='UNKNOWN' or STAGE.fullmatch(v['stage'])
     for row in v['actions']:
@@ -454,6 +474,8 @@ def browser_worker(config,started):
     finally:
         signal.alarm(0);report.setdefault('browser_segment_seconds',{})[run.phase]=time.monotonic()-started
         report['browser_worker_final']=run.phase;run.progress.finish()
+        report.setdefault('progress_io_summaries',{})[run.phase]=dict(run.progress.value['checkpoint_io'],
+            scope='ALL_RETURNED_SAVES_THIS_WORKER_NO_UNFINISHED_IO',phase=run.phase,invocation=run.progress.value['invocation'])
         if report.get('progress_errors') and report['status']=='PASS':failed(report,RuntimeError('partial checkpoint failed'))
         atomic_report(Path(config['browser_result']),report)
 
@@ -466,7 +488,7 @@ def supervisor(config_path):
 
 
 def main():
-    os.umask(0o077);started=time.monotonic();report=dict(scope='INSTALLED_FULL_NO_MODEL_A_AND_INDEPENDENT_REUSE_B',status='NOT_RUN',stage='HOST_GATE',responses=[],screenshots=[],violations=[],page_errors=[],real_model_calls=0,formal_source=False,formal_AT35=False,Windows=False,PG_restart=False)
+    os.umask(0o077);started=time.monotonic();report=dict(scope='INSTALLED_FULL_NO_MODEL_A_AND_INDEPENDENT_REUSE_B',invocation=INVOCATION,status='NOT_RUN',stage='HOST_GATE',responses=[],screenshots=[],violations=[],page_errors=[],real_model_calls=0,formal_source=False,formal_AT35=False,Windows=False,PG_restart=False)
     run=SimpleNamespace(started=started,report=report,secrets=[],public=None);progress_configs={};progress_seen={}
     try:
         report['source_sha']=base.require_hosted(os.environ,run_number=RUN);run.private=Path(tempfile.mkdtemp(prefix='parkweave-installed-full-guide-'))
@@ -483,7 +505,7 @@ def main():
                 report.setdefault('phase_admissions',[]).append(dict(phase=phase,elapsed=time.monotonic()-started,reserved_seconds=reserve,root_limit=270))
                 result=run.private/('browser-result-'+phase+'.json');path=run.private/('browser-config-'+phase+'.json')
                 cfg=dict(started=started,phase=phase,report=report,ready=run.budget.internal_reads,chrome_env=env,browser_result=str(result),
-                    progress_path=str(run.private/('browser-partial-'+phase+'.json')),progress_invocation=uuid4().hex,
+                    progress_path=str(run.private/('browser-partial-'+phase+'.json')),progress_invocation=sha256((INVOCATION+':'+phase).encode()).hexdigest()[:32],
                     **{k:str(getattr(run,k)) for k in ('private','public','harness','state','python')});path.write_text(json.dumps(cfg));progress_configs[phase]=dict(cfg,report=dict(report))
                 with (run.private/('browser-supervisor-'+phase+'.log')).open('w') as log:
                     child=subprocess.run([sys.executable,'-B','-m',MODULE,'--browser-supervisor',str(path)],cwd=ROOT,env=dict(os.environ),stdout=log,stderr=log,timeout=100)
