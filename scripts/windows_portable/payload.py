@@ -11,7 +11,7 @@ MAX_FILES = 16000
 MAX_BYTES = 1024 * 1024 * 1024
 MANIFEST = 'payload-manifest.json'
 SCHEMA = 'parkweave-windows-portable-candidate/1'
-DEVICE = re.compile(r'(?i)^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)')
+DEVICE = re.compile(r'(?i)^(con|prn|aux|nul|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)')
 # Windows 10/11 API-set contracts and named OS DLLs only. CRT/PG/Python DLLs
 # are deliberately absent: these must be resolved inside the payload domain.
 OS_DLLS = frozenset(('kernel32.dll kernelbase.dll ntdll.dll advapi32.dll user32.dll '

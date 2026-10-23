@@ -56,7 +56,8 @@ class PayloadChecks(unittest.TestCase):
 
     def test_windows_paths_reject_escaping_ads_devices_and_aliases(self):
         for name in ('../a', '/a', 'C:/a', '//server/a', 'a\\b', 'a:b', 'a/../b',
-                     'a//b', 'a./b', 'a /b', 'CON.txt', 'x/Lpt9', 'x/NUL', 'x\x01y'):
+                     'a//b', 'a./b', 'a /b', 'CON.txt', 'x/Lpt9', 'x/NUL', 'x\x01y',
+                     'x/CONIN$', 'x/CONOUT$', 'COM¹.txt', 'LPT².log', 'x/com³'):
             with self.subTest(name=name), self.assertRaises(p.PayloadRefused): p.safe_name(name)
         self.assertEqual(p.safe_name('app/中文说明.txt'), 'app/中文说明.txt')
 
