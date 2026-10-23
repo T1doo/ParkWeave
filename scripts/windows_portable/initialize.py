@@ -35,7 +35,9 @@ def create_fresh_native_schema32(
     COMMIT/rollback transport failure can leave the result UNKNOWN. Preserve
     that state and the original exception for inspection; there is no DROP,
     retry, receipt serialization or cold reissuance path.
-    Exceptions retain their original cause; do not publish their text/DSNs.
+    A rollback/close exception may become the surfaced exception; the private
+    controller retains its cause/context chain as well as later cleanup errors.
+    Do not publish exception text/DSNs or assume SQL error is always top-level.
     """
     from scripts.windows.lifecycle import require_setup_readiness
     require_setup_readiness()

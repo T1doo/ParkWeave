@@ -25,4 +25,6 @@ python -B -m scripts.windows_portable.build --source <完整冻结commit> \
 
 SQL阶段异常请求回滚026–032；COMMIT或回滚连接失败时结果可能UNKNOWN，必须保留原异常和数据，不重试或断言仍在25。该候选单独运行`PYTHONPATH=src python -B -m unittest scripts.windows_portable.test_initialize -v`。正向控制流测试显式mock原暂停门、CREATE、25迁移和授权；只验证顺序、单事务、失败保全及提交结果未知。暂停测试预先导入lifecycle，不是冷导入实测。真实未发行凭据由原注册表拒绝。离线通过不签收原生迁移、首次运行或重开。
 
+`controller.py`接续新建/重开流程：新建沿真实schema候选→原roles.sql→原安全路径独占SESSION适配器→原Store.seed→独占CONFIG→文件/物理库只读验真；随后才启动应用。初始化READY与进程STOPPED_CONFIRMED分别记录，只有两者成立才能同目录重开。重开仅加载已有秘密、原文件/owner/ACL/物理库绑定与schema32，不CREATE、迁移、补seed、补会话或重发原生凭据。部分初始化、COMMIT结果未知、启动/清理未确认均拒绝自动重开。目录记录只防重试，不授予DDL权限。原安全门仍暂停，目录/进程/秘密/SESSION-CONFIG端口均未提供生产实现，也未接入包或双击入口。离线fake验证命令为`PYTHONPATH=src python -B -m unittest scripts.windows_portable.test_controller -v`；不代表真实PG/Windows首建或恢复成功。SQL叠加rollback/close及随后进程/lease清理错误私有保留完整异常链，公开报告只给有界阶段/类型，不输出秘密。
+
 本组件14项stdlib离线测试单独运行，PE为明确不可执行fixture；不并入原405文件/9521项历史collection，也不称全回归。真实资产静态检查另列，不累加为测试通过。无新浏览器、PG、Windows、CI或用户电脑运行。
