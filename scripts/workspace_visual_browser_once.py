@@ -1,4 +1,4 @@
-"""Run41/attempt1 candidate: resource and guide presentation; no product backend."""
+"""Run42/attempt1 candidate: isolated template UI and stable guide button; no product backend."""
 import hashlib,json,math,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -15,25 +15,28 @@ REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='R
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
-BASELINE_SHA='4e3d7a877b8b0afbcc04a33ff6c047f151cb5d14'
+BASELINE_SHA='4406f5f254bb53e53ca08ba8bd50ea228e36b67e'
 SOURCE_SHA256='7798e0e5c08462fd98cc20382d9e429a57a58ca61bbe95513c32065c7d755884'
 GUIDE_SHA256='966f175764bdf323eea9c6e87f520c584da6ae03243b5c0396e492ce76a1af8c'
-PNG_FILES=('01-resource-fieldset-1200.png','02-resource-fieldset-390.png',
-    '03-resource-records-1200.png','04-resource-records-390.png','05-guide-entry-1200.png',
-    '06-guide-entry-390.png','07-guide-invalid-390.png','08-guide-ready-390.png')
+TEMPLATE_SHA256='69882b775d78f571f3a1a70aeff1a38c4ae178df0e97f62cd9b4956b69b2e010'
+ISOLATED_ENTRY_SOURCES={'src/parkweave/template_isolated_app.py':'22eaee2712d5a5e83d7c9dbd397272d8d7dfdfe45b84438d2c31b06448bde27a','src/parkweave/template_candidate_api.py':'dc6522606369b9b06714491602649b006cde0fee9a0cbcbcae14946ab619bec4'}
+PNG_FILES=('01-template-entry-1200.png','02-template-entry-390.png','03-template-fields-1200.png',
+    '04-template-fields-390.png','05-template-return-1200.png','06-template-return-390.png','07-guide-stable-390.png')
 PUBLIC_FILES=frozenset(PNG_FILES+('failure-visual.png','result.json'))
 EXPECTED_CHANGED_PATHS=frozenset((
     '.github/workflows/fictional-park-browser-once.yml','scripts/workspace_visual_browser_once.py',
     'scripts/fictional_park_font_once.py','docs/F2/evidence/eng057-job-shards.json',
-    'docs/demo/evidence/task-desk-20261023/run41/README.md',
-    'docs/demo/evidence/task-desk-20261023/run41/preflight.json',
-    'docs/demo/evidence/task-desk-20261023/run41/SHA256SUMS'))
+    'docs/demo/evidence/task-desk-20261023/run42/README.md',
+    'docs/demo/evidence/task-desk-20261023/run42/preflight.json',
+    'docs/demo/evidence/task-desk-20261023/run42/SHA256SUMS'))
 FIXTURE_SUMMARY='合成界面复放 · 无真实业务、身份或授权'
 FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE · 静态交互复放，非真实业务、身份或授权。'
 
 
-def presentation_contract(reviewed,current,guide=False):
-    expected=GUIDE_SHA256 if guide else SOURCE_SHA256
+def presentation_contract(reviewed,current,page='web.html'):
+    fingerprints={'web.html':SOURCE_SHA256,'park_demo_web.html':GUIDE_SHA256,'template_candidate_web.html':TEMPLATE_SHA256}
+    assert page in fingerprints,'only exact reviewed original pages permitted'
+    expected=fingerprints[page]
     assert hashlib.sha256(reviewed).hexdigest()==expected,'reviewed page fingerprint mismatch'
     assert current==reviewed,'current product page must equal the exact reviewed candidate'
 
@@ -50,12 +53,16 @@ def source_contract():
     changed=subprocess.check_output(['git','diff','--name-only',BASELINE_SHA,'HEAD'],cwd=ROOT,text=True).splitlines()
     validate_source_listing(parent,changed,subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=ROOT,text=True))
     pages={}
-    for name,guide in [('web.html',False),('park_demo_web.html',True)]:
+    for name in ['web.html','park_demo_web.html','template_candidate_web.html']:
         path='src/parkweave/'+name;current=(ROOT/path).read_bytes()
         reviewed=subprocess.check_output(['git','show',BASELINE_SHA+':'+path],cwd=ROOT)
-        presentation_contract(reviewed,current,guide);pages[name]=current
+        presentation_contract(reviewed,current,name);pages[name]=current
+    for path,digest in ISOLATED_ENTRY_SOURCES.items():
+        reviewed=subprocess.check_output(['git','show',BASELINE_SHA+':'+path],cwd=ROOT)
+        assert (ROOT/path).read_bytes()==reviewed and hashlib.sha256(reviewed).hexdigest()==digest,'isolated entry source changed'
     return pages,dict(reviewed_product_sha=BASELINE_SHA,current_web_sha256=SOURCE_SHA256,
-        current_guide_sha256=GUIDE_SHA256,product_pages_identical_to_reviewed_baseline=True,
+        current_guide_sha256=GUIDE_SHA256,current_template_sha256=TEMPLATE_SHA256,isolated_entry_sources=ISOLATED_ENTRY_SOURCES,
+        isolated_entry_scope="Static replay of original /template bytes only; factory/API/engine not started or enabled",product_pages_identical_to_reviewed_baseline=True,
         exact_changed_paths=sorted(changed),scope='CURRENT candidate only; no old-run pixels or script-permutation claim')
 
 
@@ -78,13 +85,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path=urlsplit(self.path).path;row=dict(method='GET',path=path);REPORT['requests'].append(row)
         if len(REPORT['requests'])>=40:raise RuntimeError('40 GET allowance exhausted')
-        if path in ('/current','/','/guide'):
-            body=(PRIVATE/('guide.html' if path=='/guide' else 'current.html')).read_bytes();kind='text/html; charset=utf-8';code=200
-        elif path in RESOURCE_REPLIES:
-            RESOURCE_READS[path]=RESOURCE_READS.get(path,0)+1
-            if RESOURCE_READS[path]>RESOURCE_LIMITS[path]:
+        if path in ('/current','/','/guide','/template'):
+            body=(PRIVATE/('guide.html' if path=='/guide' else 'template.html' if path=='/template' else 'current.html')).read_bytes();kind='text/html; charset=utf-8';code=200
+        elif path in FIXTURE_REPLIES:
+            FIXTURE_READS[path]=FIXTURE_READS.get(path,0)+1
+            if FIXTURE_READS[path]>FIXTURE_LIMITS[path]:
                 REPORT['unexpected_GET'].append(path);body=b'{}';code=404
-            else:body=json.dumps(RESOURCE_REPLIES[path],ensure_ascii=False).encode();code=200
+            else:body=json.dumps(FIXTURE_REPLIES[path],ensure_ascii=False).encode();code=200
             kind='application/json'
         elif path=='/api/run-access/status':
             body=b'{"enabled":false,"read_available":false,"scope":"PRESENTATION_REPLAY_DISABLED"}';kind='application/json';code=200
@@ -134,7 +141,7 @@ def open_page(browser,origin,path,width):
     context.on('page',lambda new_page:new_page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error))))
     page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error)))
     response=page.goto(origin+path,wait_until='load',timeout=15000)
-    assert response.status==200 and response.body()==(PRIVATE/('guide.html' if path=='/guide' else 'current.html')).read_bytes()
+    assert response.status==200 and response.body()==(PRIVATE/('guide.html' if path=='/guide' else 'template.html' if path=='/template' else 'current.html')).read_bytes()
     return context,page
 
 def observe(page,label,font=False):
@@ -197,14 +204,24 @@ def dispatch_frame_delta(rows,height):
     return minimum if minimum>0 else maximum if maximum<0 else 0
 
 
-RESOURCE_READS={}
-RESOURCE_NAME='合成资源：园区联合培训资料整理与设备说明核对'
-RESOURCE_MEMBER=dict(resource_name=RESOURCE_NAME,purpose='长中文合成记录：须本人核对，外部未受理',starts_at='2026-10-23T10:00:00Z',ends_at='2026-10-23T11:00:00Z',quantity=1,state='CONFIRMED')
-RESOURCE_REPLIES={
-    '/api/synthetic-resources':dict(server_time='2026-10-23T09:00:00Z',items=[dict(id='ui-resource-1',name=RESOURCE_NAME,capacity=3,revision=1,buffer_seconds=60,enabled=True,open_from='2026-10-23T00:00:00Z',open_until='2026-10-24T00:00:00Z',source=dict(kind='SYNTHETIC',id='ui-source-1',revision=1,statement='静态交互复放，非真实可用性'))]),
-    '/api/resource-bundles':dict(actor_id='SYNTHETIC_UI_ACTOR',items=[dict(id='ui-combination-1',state='CONFIRMED',members=[dict(RESOURCE_MEMBER,id='ui-member-'+str(i),resource_name=RESOURCE_NAME+' · '+str(i)) for i in range(1,4)])]),
-    '/api/plan-approval/status':dict(enabled=False,approval_scope=None,source_reapproval_enabled=False,plan_replacement_enabled=False,known_not_started_enabled=False,p3_closure_enabled=False,production_execution_enabled=False,formal_release=False,role='enterprise_operator')}
-RESOURCE_LIMITS={'/api/synthetic-resources':2,'/api/resource-bundles':4,'/api/plan-approval/status':4}
+FIXTURE_READS={}
+FIXTURE_REPLIES={'/api/template-candidate/status':dict(enabled_for_isolated_tests=False,isolated_personas=[],isolated_principals=[],registered_goals=['LOCAL_MATERIAL_PREPARATION'],namespace='ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE',candidate_demo=False,business_publication=False,deployment_enabled=False,new_grants=False,automatic_execution=False,case_goal_completed=False,contract_revision=1,compatible_publication_only=False)}
+FIXTURE_LIMITS={'/api/template-candidate/status':2}
+TEMPLATE_FIXTURE=r"""() => {
+ const f=window.__templateVisual={sentinel:crypto.randomUUID()};
+ f.draft='SYNTHETIC 界面复放：为园区联合培训准备资料，不是正式事项或资格结论。';
+ const goals=['LOCAL_MATERIAL_PREPARATION','SYNTHETIC_EXTERNAL_AUTHORITY_APPROVAL'];
+ renderPlanning({plan_id:null,request_intent:{current_request:f.draft,required_goals:goals,planning_constraints:{excluded_roles:['service_executor'],additional_requirements:['SYNTHETIC 待人工核对的附加条件，不自动判为满足']}},current:{state:'PARTIAL',preparation_revision:1,partial_offer:{can_adopt:true,step_ids:['P1'],waiting_step_ids:['P2'],manual_goals:['SYNTHETIC_EXTERNAL_AUTHORITY_APPROVAL']},steps:[]},service_case_plan:{can_adopt_partial:true}});
+ f.fields={};for(const id of ['consumer-release','consumer-reviewer','consumer-goal','consumer-need-summary','consumer-material-outline','consumer-need-source','consumer-outline-source','consumer-exclude-owner','consumer-exclude-specialist','consumer-exclude-executor','consumer-additional','consumer-plan-reason','consumer-partial-confirm']){
+  if(['consumer-need-summary','consumer-material-outline'].includes(id))$(id).value=f.draft;
+  f.fields[id]={value:$(id).value,checked:$(id).checked};
+ }
+ f.goals=[...document.querySelectorAll('[data-consumer-goal]')].map(e=>[e.dataset.consumerGoal,e.checked]);
+ f.snapshot=()=>JSON.stringify({fields:Object.fromEntries(Object.keys(f.fields).map(id=>[id,{value:$(id).value,checked:$(id).checked,disabled:$(id).disabled}])),goals:[...document.querySelectorAll('[data-consumer-goal]')].map(e=>({goal:e.dataset.consumerGoal,checked:e.checked,disabled:e.disabled})),cp,planningView,confirmed,instance,catalog,handle:adoptionHandle,storage:Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)])});
+ f.mode=mode=>{cp=mode?{state:mode,action:'CREATE',key:'SYNTHETIC_VISUAL_ONLY',body:{goal:f.draft},fields:structuredClone(f.fields),goals:structuredClone(f.goals)}:null;buttons();f.cp=cp;f.body=cp?.body;f.before=f.snapshot();};
+ f.same=()=>({sentinel:f.sentinel,cpSame:cp===f.cp,bodySame:cp?.body===f.body,snapshotSame:f.snapshot()===f.before});
+ f.mode(null);window.__sameTemplateDocument=f.sentinel;
+}"""
 
 
 def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
@@ -220,187 +237,158 @@ def bounded_rectangles(rows,viewport=False):
 
 
 def frame_required(page,selectors):
-    # Original nodes remain untouched; move the explicit fixture marker only.
     require_operation_time(5);counts=request_counts();viewport=dict(page.viewport_size)
-    rows=rectangles(page,selectors)
-    delta=dispatch_frame_delta(rows,1000)
+    rows=rectangles(page,selectors);delta=dispatch_frame_delta(rows,1000)
     page.evaluate('delta=>window.scrollBy({top:delta,behavior:"instant"})',delta)
     rows=rectangles(page,selectors);bounded_rectangles(rows,True)
     assert all(16<=x['top'] and x['bottom']<=984 for x in rows),rows
-    assert counts==request_counts() and dict(page.viewport_size)==viewport,'framing must not request or resize'
+    assert counts==request_counts() and dict(page.viewport_size)==viewport
     REPORT.setdefault('screenshot_framing',[]).append(dict(selectors=selectors,scroll_delta=delta,rectangles=rows))
 
 
-def resource_breakpoints(page,width):
+def template_marker(page):
+    page.evaluate("""([summary,text])=>{const n=document.createElement('details');n.dataset.visualFixture='true';n.style.cssText='padding:8px;border:1px dashed #b2a16e;background:#fff6dc;color:#614b19;font-size:12px;line-height:1.5';const s=document.createElement('summary');s.textContent=summary;const p=document.createElement('p');p.textContent=text;n.append(s,p);$('banner').after(n)}""",['候选未启用 · '+FIXTURE_SUMMARY,FIXTURE_LABEL])
+
+    assert page.locator('[data-visual-fixture]>summary').inner_text()=='候选未启用 · '+FIXTURE_SUMMARY
+
+def template_safety(page):
+    assert page.locator('#banner').inner_text()=='候选未启用：没有显式隔离合同，审核发布与新建事项均不可用。'
+    assert page.evaluate('()=>status.enabled_for_isolated_tests===false&&status.isolated_personas.length===0&&instance===null&&catalog===null&&confirmed===null&&view===null')
+    assert page.locator('[data-template-action]:not(:disabled)').count()==0
+    for name in ['consumer-create','consumer-resume','consumer-confirm','consumer-save-request','consumer-adopt','consumer-adoption-finalize']:
+        assert page.locator('#'+name).is_disabled(),name
+
+
+def native_template_link(page,link,target,first,method):
+    require_operation_time(15);counts=request_counts()
+    before=page.evaluate('()=>({hash:location.hash,history:history.length,sentinel:window.__sameTemplateDocument,proof:window.__templateVisual.same()})')
+    assert before['hash']!='#'+target
+    locator=page.locator(link)
+    if method=='mouse':locator.click(timeout=15000)
+    else:locator.focus();page.keyboard.press('Enter')
+    page.wait_for_function('target=>location.hash==="#"+target',arg=target,timeout=15000)
+    at=page.evaluate('()=>({hash:location.hash,history:history.length,sentinel:window.__sameTemplateDocument,active:document.activeElement.id,focusVisible:document.activeElement.matches(":focus-visible"),heading:(()=>{const e=document.activeElement.querySelector(":scope>h2");if(!e)return null;const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:innerWidth,height:innerHeight}})(),proof:window.__templateVisual.same()})')
+    assert at['sentinel']==before['sentinel'] and at['active']==target and at['history'] in (before['history'],before['history']+1),dict(before=before,at=at)
+    heading=at['heading'];assert heading and 0<=heading['top']<heading['bottom']<=heading['height'] and 0<=heading['left']<heading['right']<=heading['width'],at
+    if method=='Enter':assert at['focusVisible'],at
+    assert all(at['proof'][k] for k in ['cpSame','bodySame','snapshotSame']),at
+    # Back retains a forward entry; the next native anchor may replace it rather than grow length.
+    page.keyboard.press('Tab');tab=page.evaluate("()=>({id:document.activeElement.id,focusVisible:document.activeElement.matches(':focus-visible')})");assert tab==dict(id=first,focusVisible=True),tab
+    page.go_back(timeout=15000,wait_until='load')
+    page.wait_for_function('hash=>location.hash===hash',arg=before['hash'],timeout=15000)
+    after=page.evaluate('()=>({hash:location.hash,sentinel:window.__sameTemplateDocument,proof:window.__templateVisual.same()})')
+    assert after['sentinel']==before['sentinel'] and all(after['proof'][k] for k in ['cpSame','bodySame','snapshotSame']) and counts==request_counts(),after
+    REPORT.setdefault('template_navigation',[]).append(dict(method=method,target=target,landed=at,after_back=after,subsequent_Tab=tab,request_delta=0))
+
+
+def template_breakpoints(page):
     counts=request_counts();viewport=dict(page.viewport_size);scroll=page.evaluate('()=>({x:scrollX,y:scrollY})')
     try:
-        for w in (899,900,390):
-            page.set_viewport_size(dict(width=w,height=1000))
-            rows=rectangles(page,['.resource-pair','#bundle-panel','#delivery-panel','#combination-items'])
-            bounded_rectangles(rows)
-            a,b,d,i=rows
-            if w>=900:assert a['right']+8<=b['left'] and abs(a['top']-b['top'])<2,rows
-            else:assert a['bottom']<=b['top'] and abs(a['left']-b['left'])<2,rows
-            assert abs(d['left']-a['left'])<2 and abs(i['left']-a['left'])<2 and d['width']>=a['width'] and i['width']>=a['width'],rows
-            REPORT.setdefault('resource_breakpoints',[]).append(dict(width=w,rows=rows,scope='geometry only, not PNG'))
-    finally:
-        page.set_viewport_size(viewport);page.evaluate('p=>scrollTo({left:p.x,top:p.y,behavior:"instant"})',scroll)
-    assert dict(page.viewport_size)==viewport and page.evaluate('()=>({x:scrollX,y:scrollY})')==scroll
-    assert counts==request_counts()
+        for width in [700,899,900]:
+            page.set_viewport_size(dict(width=width,height=1000))
+            row=page.evaluate("""()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,session:getComputedStyle(document.querySelector('.consumer-session')).gridTemplateColumns,draft:getComputedStyle(document.querySelector('.consumer-draft')).display,draftColumns:getComputedStyle(document.querySelector('.consumer-draft')).gridTemplateColumns})""")
+            assert row['documentWidth']<=width
+            assert len(row['session'].split())==(1 if width<=700 else 2),row
+            assert row['draft']==('grid' if width>=900 else 'block'),row
+            if width>=900:assert len(row['draftColumns'].split())==2,row
+            bounded_rectangles(rectangles(page,['.consumer-session','.consumer-draft','.consumer-return','.consumer-plan','#consumer-partial-label']))
+            REPORT.setdefault('template_breakpoints_geometry_only',[]).append(row)
+    finally:page.set_viewport_size(viewport);page.evaluate('p=>scrollTo({left:p.x,top:p.y,behavior:"instant"})',scroll)
+    assert dict(page.viewport_size)==viewport and page.evaluate('()=>({x:scrollX,y:scrollY})')==scroll and counts==request_counts()
 
 
-def resource_observation(page,width):
-    page.locator('[data-tab="resource"]').click(timeout=15000)
-    assert page.locator('#resource').is_visible()
-    page.locator('#resource-catalog').click(timeout=15000)
-    page.wait_for_function("() => !$('resource-form').hidden && bundleActor==='SYNTHETIC_UI_ACTOR'",timeout=15000)
-    assert '外部未受理' in page.locator('.resource-preparation>.notice').inner_text()
-    fields=['resource-start','resource-end','resource-search-from','resource-search-until']
-    for name in fields:
-        field=page.locator('#'+name);assert field.get_attribute('type')=='datetime-local' and field.input_value()
-        field.focus();assert field.evaluate('e=>document.activeElement===e')
-    geometry=rectangles(page,['#resource-form','#resource-form>fieldset']+['#'+x for x in fields])
-    bounded_rectangles(geometry)
-    fieldset=geometry[1]
-    assert all(fieldset['left']<=x['left']<x['right']<=fieldset['right'] for x in geometry[4:]),geometry
-    if width==1200:assert geometry[1]['width']>=geometry[0]['width']-2,geometry
-    REPORT.setdefault('resource_form',[]).append(dict(width=width,rows=geometry,datetime_scope='native datetime-local controls/value/focus, not OS picker interaction'))
-    assert page.locator('#resource-hold').is_disabled()
-    compose_fixture(page,'#resource-form>fieldset')
-    fieldset_selectors=['[data-visual-fixture]','#resource-form>fieldset>legend','#resource-form>fieldset>p','#resource-form>fieldset>label:has(#resource-search-from)','#resource-form>fieldset>label:has(#resource-search-until)','#resource-search-from','#resource-search-until','#resource-alternatives']
-    frame_required(page,fieldset_selectors)
-    observe(page,'resource-fieldset-'+str(width),True)
-    capture(page,'01-resource-fieldset-1200.png' if width==1200 else '02-resource-fieldset-390.png')
-    # Read through the original button and renderer, not an injected renderer call.
-    page.locator('#bundle-mine').click(timeout=15000)
-    page.wait_for_function("()=>$('combination-items').querySelectorAll('.combination-result').length===1",timeout=15000)
-    card=page.locator('#combination-items>.combination-result')
-    assert card.locator('p').count()==4 and '3条占位均本地合成确认' in card.inner_text()
-    assert card.locator('.boundary-note').inner_text()=='组合仅为本地合成记录。真实预约未确认，外部未受理，无线下履约。'
-    assert card.locator('[data-combination-cancel]').count()==1
-    if width==1200:resource_breakpoints(page,width)
-    # Static Case warnings are original explanatory text, not a Case permission proof.
-    delivery=page.locator('#delivery-panel');assert '资格请求不是事实或批准' in delivery.inner_text() and '旧占用及全部历史保留' in delivery.inner_text()
-    assert page.locator('#delivery-confirm').is_disabled() and page.locator('#delivery-reapproval').is_disabled()
-    REPORT.setdefault('resource_case_warning',[]).append(dict(width=width,text=delivery.inner_text(),scope='original static warnings and disabled gates, no Case read/action/permission acceptance'))
-    compose_fixture(page,'#combination-items')
-    frame_required(page,['[data-visual-fixture]','#combination-items>.combination-result'])
-    observe(page,'resource-records-'+str(width),True)
-    capture(page,'03-resource-records-1200.png' if width==1200 else '04-resource-records-390.png')
-
-
-def guide_status(page,tone,fragment):
-    page.wait_for_function("([tone,fragment])=>$('status').dataset.tone===tone&&$('status').textContent.includes(fragment)",arg=[tone,fragment],timeout=15000)
-    row=page.locator('#status').evaluate("e=>({tone:e.dataset.tone,text:e.textContent,color:getComputedStyle(e).color,background:getComputedStyle(e).backgroundColor,role:e.getAttribute('role')})")
-    assert row['role']=='status'
-    REPORT.setdefault('guide_status',[]).append(row)
-    return row
-
-
-def guide_observation(page,context,origin,width):
-    counts=request_counts()
-    assert page.locator('aside>.notice').inner_text()=='所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。'
-    assert page.locator('#workspace-open').is_disabled()
-    for selector in ['.guide-session','.guide-roles','.guide-inputs','.guide-fill-actions','.guide-process','#sessions','#workspace-open']:
-        bounded_rectangles(rectangles(page,[selector]))
+def template_observation(page,width):
+    page.wait_for_function('()=>status!==null',timeout=15000);template_safety(page);template_marker(page)
     page.evaluate('()=>scrollTo(0,0)')
-    entry=rectangles(page,['aside>.notice','.guide-session>label:has(#sessions)','#sessions','.guide-session>small','#workspace-open'])
-    bounded_rectangles(entry,True);REPORT.setdefault('guide_entry',[]).append(dict(width=width,rows=entry))
-    observe(page,'guide-entry-'+str(width),True)
-    capture(page,'05-guide-entry-1200.png' if width==1200 else '06-guide-entry-390.png')
-    neutral=guide_status(page,'neutral','等待选择')
-    page.locator('#sessions').set_input_files(dict(name='invalid-synthetic.json',mimeType='application/json',buffer=b'{}'))
-    error=guide_status(page,'error','未上传或使用')
-    assert page.locator('button:not(:disabled)').count()==0
-    if width==390:
-        compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
-        capture(page,'07-guide-invalid-390.png')
-    # Synthetic six-role input exists only in this context's memory; no real identities/credentials.
+    bounded_rectangles(rectangles(page,['body>h1','#banner','.template-entry-nav']),True)
+    observe(page,'template-entry-'+str(width),True);capture(page,'01-template-entry-1200.png' if width==1200 else '02-template-entry-390.png')
+    page.evaluate(TEMPLATE_FIXTURE);template_safety(page)
+    for link,target,first in [('a[href="#template-consumer-workspace"]','template-consumer-workspace','consumer-token'),('a[href="#template-governance-workspace"]','template-governance-workspace','template-actor')]:
+        for method in ['mouse','Enter']:native_template_link(page,link,target,first,method)
+    for mode in ['SUBMITTING','UNKNOWN']:
+        guard_counts=request_counts()
+        page.evaluate('mode=>window.__templateVisual.mode(mode)',mode);template_safety(page)
+        rows=page.evaluate("""()=>Object.keys(window.__templateVisual.fields).map(id=>({id,disabled:$(id).disabled,color:getComputedStyle($(id)).color,background:getComputedStyle($(id)).backgroundColor}))""")
+        assert all(r['disabled'] for r in rows),rows
+        native_template_link(page,'a[href="#template-consumer-workspace"]','template-consumer-workspace','consumer-token','Enter')
+        # Controlled DOM mutation on a disabled draft tests the original restore handler, not native typing.
+        page.evaluate("()=>{$('consumer-goal').value='SYNTHETIC rejected visual edit';$('consumer-goal').dispatchEvent(new Event('input',{bubbles:true}))}")
+        assert page.evaluate('()=>window.__templateVisual.same().snapshotSame') and guard_counts==request_counts()
+        REPORT.setdefault('template_pending_guards',[]).append(dict(width=width,state=mode,disabled=rows,original_object_body_draft_preserved=True,request_delta=0,scope='transparent client UI-state only; no actual submitted request/permission'))
+    if width==1200:template_breakpoints(page)
+    # Long original PARTIAL checkbox is measured/font-read without a dedicated PNG or real eligibility claim.
+    page.locator('#consumer-partial-label').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
+    partial=rectangles(page,['#consumer-partial-label']);bounded_rectangles(partial,True)
+    assert not page.locator('#consumer-partial-confirm').is_checked() and page.locator('#consumer-partial-confirm').is_disabled()
+    observe(page,'template-long-partial-label-geometry-only-'+str(width),True)
+    REPORT.setdefault('template_partial_label_geometry_only',[]).append(dict(width=width,rows=partial,scope='renderer fixture, not a real partial offer or authorization'))
+    compose_fixture(page,'.consumer-draft>fieldset:first-of-type')
+    frame_required(page,['[data-visual-fixture]','.consumer-draft>fieldset:nth-of-type(1)','.consumer-draft>fieldset:nth-of-type(2)'])
+    observe(page,'template-fields-'+str(width),True);capture(page,'03-template-fields-1200.png' if width==1200 else '04-template-fields-390.png')
+    compose_fixture(page,'.consumer-return');frame_required(page,['.consumer-return'])
+    observe(page,'template-return-'+str(width),True);capture(page,'05-template-return-1200.png' if width==1200 else '06-template-return-390.png')
+    template_safety(page)
+
+
+def rgba_color(value):
+    import re
+    m=re.fullmatch(r'rgba?\(([^)]+)\)',value);assert m,value
+    numbers=[float(n.strip()) for n in m[1].split(',')];assert len(numbers) in (3,4) and (len(numbers)==3 or numbers[3]==1),value
+    assert all(0<=n<=255 for n in numbers[:3]);return numbers[:3]
+
+
+def contrast_ratio(foreground,background):
+    def luminance(channels):
+        values=[n/255 for n in channels];values=[n/12.92 if n<=.04045 else ((n+.055)/1.055)**2.4 for n in values]
+        return sum(n*w for n,w in zip(values,[.2126,.7152,.0722]))
+    low,high=sorted([luminance(rgba_color(foreground)),luminance(rgba_color(background))]);return (high+.05)/(low+.05)
+
+
+GUIDE_BUTTON_STYLE="""()=>{const e=$('workspace-open'),s=getComputedStyle(e);return {color:s.color,background:s.backgroundColor,opacity:s.opacity,disabled:e.disabled,transitionDuration:s.transitionDuration,transitionProperty:s.transitionProperty,animations:e.getAnimations({subtree:true}).map(a=>({playState:a.playState,currentTime:a.currentTime,duration:a.effect.getTiming().duration}))}}"""
+
+
+def guide_stable_observation(page):
+    page.evaluate("([summary,text])=>{const d=document.createElement('details');d.dataset.visualFixture='true';const h=document.createElement('summary');h.textContent=summary;const p=document.createElement('p');p.textContent=text;d.append(h,p);document.querySelector('aside').prepend(d)}",[FIXTURE_SUMMARY,FIXTURE_LABEL])
     payload={name:str(i)*43 for i,name in enumerate(['enterprise','specialist','executor','second_enterprise','second_specialist','second_executor'])}
     page.locator('#sessions').set_input_files(dict(name='synthetic-six-role-local-only.json',mimeType='application/json',buffer=json.dumps(payload).encode()))
-    ready=guide_status(page,'success','不会自动办理')
-    assert page.locator('button:not(:disabled)').count()==1
-    assert len({(r['color'],r['background']) for r in [neutral,error,ready]})==3
-    if width==390:
-        compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
-        capture(page,'08-guide-ready-390.png')
-    # Genuine original same-origin window.open; capture its real response bytes.
-    responses=[];context.on('response',lambda response:responses.append(response))
-    with page.expect_popup(timeout=15000) as opened:page.locator('#workspace-open').click(timeout=15000)
-    popup=opened.value
-    try:
-        popup.wait_for_load_state('load',timeout=15000)
-        assert popup.url==origin+'/'
-        response=next(r for r in responses if r.url==origin+'/' and r.request.is_navigation_request())
-        assert response.status==200 and response.body()==(PRIVATE/'current.html').read_bytes()
-        popup.wait_for_function("()=>typeof $==='function'&&!!$('request-current')",timeout=15000)
-        page.locator('[data-role="enterprise"]').click(timeout=15000)
-        popup.wait_for_load_state('networkidle',timeout=15000)
-        assert popup.locator('#token').input_value()==payload['enterprise']
-        # Readiness/role GETs are separate from the four zero-request fill actions.
-        fills=request_counts();popup.evaluate("()=>{window.__visualSubmitCount=0;document.addEventListener('submit',()=>window.__visualSubmitCount++,true)}")
-        for name in ['fill-goal','fill-request','fill-need','fill-outline']:
-            page.locator('#'+name).click(timeout=15000)
-            if name=='fill-goal':assert popup.locator('#goal').input_value()==popup.locator('#prep-goal').input_value() and '6台设备' in popup.locator('#goal').input_value()
-            elif name=='fill-request':assert '6台设备' in popup.locator('#request-current').input_value() and len(popup.locator('#plan-required-goals').input_value().splitlines())==5 and not popup.locator('#request-local-goal').is_checked()
-            elif name=='fill-need':assert popup.locator('#prep-slot').input_value()=='need_summary' and '6台设备' in popup.locator('#prep-text').input_value()
-            else:assert popup.locator('#prep-slot').input_value()=='material_outline' and '同用途通用资料目录' in popup.locator('#prep-text').input_value()
-            assert fills==request_counts() and popup.evaluate('()=>window.__visualSubmitCount')==0
-        # Long fill controls remain original and keyboard-focusable, no clipping/hiding.
-        buttons=rectangles(page,['#'+x for x in ['fill-goal','fill-request','fill-need','fill-outline']]);bounded_rectangles(buttons)
-        REPORT.setdefault('guide_cross_window',[]).append(dict(width=width,source_web_sha256=SOURCE_SHA256,same_origin_popup=True,role='synthetic enterprise',fill_actions=4,fill_request_delta=0,submit_events=0,scope='real DOM only; no Case/Run created, no business acceptance',long_buttons=buttons))
-    finally:popup.close()
-    # Controlled null-return branch, not native popup-blocker acceptance. Restore even on failure.
-    page.evaluate('()=>{window.__visualNativeOpen=window.open;window.open=()=>null}')
-    try:
-        page.locator('#workspace-open').click(timeout=15000);guide_status(page,'error','没有提交业务')
-        assert page.locator('[data-role="enterprise"]').is_disabled()
-    finally:page.evaluate('()=>{window.open=window.__visualNativeOpen;delete window.__visualNativeOpen}')
-    # Native keyboard details, restore every original open flag.
-    original=page.locator('.guide-process>details').evaluate_all('xs=>xs.map(e=>e.open)')
-    for index in range(3):
-        detail=page.locator('.guide-process>details').nth(index);summary=detail.locator('summary');page.keyboard.press('Tab');summary.focus()
-        assert summary.evaluate("e=>document.activeElement===e&&e.matches(':focus-visible')")
-        summary.press('Enter',timeout=15000);assert detail.evaluate('e=>e.open')!=original[index]
-        summary.press('Space',timeout=15000);assert detail.evaluate('e=>e.open')==original[index]
-    assert page.locator('.guide-process>details').evaluate_all('xs=>xs.map(e=>e.open)')==original
-    REPORT.setdefault('guide_details',[]).append(dict(width=width,original_open=original,Enter_Space_restored=True,scope='native keyboard actions, no PNG'))
-    REPORT.setdefault('guide_scope',[]).append(dict(width=width,requests_including_root_popup_and_role_GET=len(REPORT['browser_requests'])-counts[1],file_selection='set_input_files; not OS chooser',popup_refusal='controlled original window.open null-return branch',all_steps_business_POST=0))
+    page.wait_for_function("()=>$('status').dataset.tone==='success'&&!$('workspace-open').disabled",timeout=15000)
+    # Keep the original transition intact and wait for its actual completion.
+    page.wait_for_function("()=>$('workspace-open').getAnimations({subtree:true}).every(a=>a.playState==='finished'||a.playState==='idle')",timeout=15000)
+    page.evaluate('()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
+    compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
+    before=page.evaluate(GUIDE_BUTTON_STYLE);assert not before['disabled'] and before['opacity']=='1' and not before['animations'],before
+    ratio=contrast_ratio(before['color'],before['background']);assert ratio>=4.5,(before,ratio)
+    observe(page,'guide-stable-enabled-button-390',True);capture(page,'07-guide-stable-390.png')
+    after=page.evaluate(GUIDE_BUTTON_STYLE);assert after==before,(before,after)
+    REPORT['guide_stable_button']=dict(before=before,after=after,contrast_ratio=ratio,viewport=dict(page.viewport_size),scope='actual stable computed state around PNG; not causation proof for old08 frame or full accessibility')
 
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='41')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='42')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
-        (PRIVATE/'current.html').write_bytes(pages['web.html']);(PRIVATE/'guide.html').write_bytes(pages['park_demo_web.html'])
-        REPORT['fixture_scope']='Transparent read-only HTTP response and client UI-state fixtures; not live business or permission acceptance'
+        (PRIVATE/'current.html').write_bytes(pages['web.html']);(PRIVATE/'guide.html').write_bytes(pages['park_demo_web.html']);(PRIVATE/'template.html').write_bytes(pages['template_candidate_web.html'])
+        REPORT['fixture_scope']='Transparent closed-status UI projection and client renderer fixtures; not create_isolated_template_app execution, business or permission acceptance'
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             p=PRIVATE/name;p.mkdir(mode=0o700);env[key]=str(p)
-        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+RESOURCE_NAME+RESOURCE_MEMBER['purpose'])
+        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+pages['template_candidate_web.html'].decode('utf-8'))
         signal.signal(signal.SIGALRM,timeout);signal.alarm(max(1,int(90-(time.monotonic()-START))))
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start();origin='http://127.0.0.1:'+str(server.server_port)
         with owned_browser(env) as browser:
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
             for width in (1200,390):
-                stage('RESOURCE_'+str(width));context,page=open_page(browser,origin,'/current',width)
-                try:
-                    mark_fixture(page)
-                    page.locator('#token').fill('SYNTHETIC_UI_STATE_FIXTURE');page.keyboard.press('Tab')
-                    page.wait_for_load_state('networkidle',timeout=15000)
-                    resource_observation(page,width)
+                stage('TEMPLATE_'+str(width));context,page=open_page(browser,origin,'/template',width)
+                try:template_observation(page,width)
                 finally:context.close()
-                stage('GUIDE_'+str(width));context,page=open_page(browser,origin,'/guide',width)
-                try:
-                    # Marker is explicitly non-product; all product bytes and actions remain original.
-                    page.evaluate("([summary,text])=>{const d=document.createElement('details');d.dataset.visualFixture='true';const h=document.createElement('summary');h.textContent=summary;const p=document.createElement('p');p.textContent=text;d.append(h,p);document.querySelector('aside').prepend(d)}",[FIXTURE_SUMMARY,FIXTURE_LABEL])
-                    guide_observation(page,context,origin,width)
-                finally:context.close()
-            assert RESOURCE_READS==RESOURCE_LIMITS,'each exact resource GET must be consumed'
+            stage('GUIDE_STABLE_390');context,page=open_page(browser,origin,'/guide',390)
+            try:guide_stable_observation(page)
+            finally:context.close()
+            assert FIXTURE_READS==FIXTURE_LIMITS,'each exact closed template status GET must be consumed'
             assert {p.name for p in OUT.glob('*.png')}==set(PNG_FILES)
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
@@ -437,7 +425,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='41')
+        source=base.require_hosted(os.environ,run_number='42')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
