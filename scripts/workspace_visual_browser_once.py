@@ -1,4 +1,4 @@
-"""Run26/attempt1: original pages, presentation review, no product backend."""
+"""Run27/attempt1: original pages, presentation review, no product backend."""
 import hashlib,json,os,signal,socket,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -142,7 +142,7 @@ def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='26')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='27')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         REPORT['source_binding']={}
@@ -235,7 +235,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='26')
+        source=base.require_hosted(os.environ,run_number='27')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
