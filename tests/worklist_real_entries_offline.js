@@ -38,7 +38,40 @@ if(mode==='intake_cold_asgi'){
  context.fetch=async(path,options={})=>{calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};};
 }
 (async()=>{
- if(mode.startsWith('duplicate_record_')){
+ if(mode==='same_batch_receipt_navigation'){
+  const rows=[{id:id(21),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1},{id:id(22),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1}];
+  const listing=$('receipt-list').onclick();finish(calls.at(-1),200,{role:'enterprise_operator',items:rows});await listing;
+  const buttons=$('receipt-items').children.filter(e=>e.tagName==='button');check(buttons.length===2);
+  for(let n=0;n<2;n++){
+   const count=calls.length,reading=buttons[n].onclick();check(calls.length===count+1);check(calls.at(-1).path==='/api/executor-receipts/'+rows[n].id);
+   const x=receipt();x.step.id=rows[n].id;finish(calls.at(-1),200,x);await reading;check(run('receiptView.step.id')===rows[n].id);check($('receipt-items').children.filter(e=>e.tagName==='button').length===2);
+  }
+  check(calls.every(c=>(c.options.method||'GET')==='GET'));
+ }else if(mode.startsWith('list_feedback_')){
+  const kind=mode.slice('list_feedback_'.length),prefix=kind==='dispatch'?'dispatch':'receipt',items=prefix+'-items',status=prefix+'-list-status',button=prefix+'-list';
+  const visible=e=>e.textContent+' '+e.children.map(visible).join(' ');
+  const rows=[{id:id(21),preparation_id:id(41),goal:'SYNTHETIC SAME GOAL <img src=x onerror=alert(1)>',state:'LOCAL_ACKNOWLEDGED',revision:2,case_cancelled:true,case_reconciling:true,case_write_blocked:true},{id:id(22),preparation_id:id(42),goal:'SYNTHETIC SAME GOAL',state:'constructor',revision:1}];
+  if(kind==='dispatch')for(const r of rows)for(const k of ['state','revision','case_cancelled','case_reconciling','case_write_blocked'])delete r[k];
+  const response=(values=rows,extra={})=>({role:'enterprise_operator',items:values,...extra});
+  const start=()=>{const promise=$(button).onclick(),call=calls.at(-1);return {promise,call};};
+  let a=start();check($(button).disabled);check($(status).dataset.state==='LOADING');check(visible($(items)).trim()==='');finish(a.call,200,response());await a.promise;
+  check(!$(button).disabled);check($(status).dataset.state==='READY');let cards=$(items).children.filter(e=>e.tagName==='button');check(cards.length===2);
+  for(let n=0;n<2;n++){check(visible(cards[n]).includes(rows[n].id));check(!visible(cards[n]).includes(rows[1-n].id));check(visible(cards[n]).includes('只读打开'));}
+  if(kind==='receipt'){check(visible(cards[0]).includes('已本地核对'));check(visible(cards[0]).includes('已取消'));check(visible(cards[0]).includes('核对中'));check(visible(cards[0]).includes('新办理暂停'));check(visible(cards[1]).includes('状态待核对'));check(!visible(cards[1]).includes('undefined'));}
+  else{check(visible(cards[0]).includes('进入原记录后核对'));check(visible(cards[0]).includes('含历史'));}
+  // A newer valid empty result wins over an older successful response.
+  a=start();let b=start();finish(b.call,200,response([],{has_older_records:true,access_filtered:1}));await b.promise;const empty=$(status).textContent;check($(status).dataset.state==='EMPTY');check(empty.includes('范围'));check(visible($(items)).includes('更早'));check(visible($(items)).includes('读取条件'));
+  finish(a.call,200,response());await a.promise;check($(status).textContent===empty);check($(items).children.filter(e=>e.tagName==='button').length===0);
+  // A late denial cannot clear the newer successful page.
+  a=start();b=start();finish(b.call,200,response(rows.slice(0,1)));await b.promise;const ready=$(status).textContent;finish(a.call,403,{});await a.promise;check($(status).textContent===ready);check($(items).children.filter(e=>e.tagName==='button').length===1);
+  // Identity switch plus new pending read: an old denial must not enable it.
+  a=start();$('token').value='SYNTHETIC_SESSION_B';b=start();finish(a.call,403,{});await a.promise;check($(button).disabled);check($(status).dataset.state==='LOADING');finish(b.call,200,response());await b.promise;check($(status).dataset.state==='READY');
+  a=start();finish(a.call,403,{});await a.promise;check($(status).dataset.state==='DENIED');check(!$(button).disabled);check($(items).children.length===0);check(run('dispatchView===null&&receiptView===null'));
+  a=start();a.call.resolve({status:403,ok:false,json:async()=>{throw Error('SYNTHETIC_DENIED_INVALID_JSON')}});await a.promise;check($(status).dataset.state==='DENIED');check($(items).children.length===0);check(!$(button).disabled);
+  a=start();finish(a.call,200,{role:'enterprise_operator',items:null});await a.promise;check($(status).dataset.state==='ERROR');check(!$(status).textContent.includes('暂无'));check($(items).children.length===0);check(!$(button).disabled);
+  a=start();finish(a.call,500,{});await a.promise;check($(status).dataset.state==='ERROR');check($(items).children.length===0);check(!$(button).disabled);
+  check(calls.every(c=>(c.options.method||'GET')==='GET'));
+ }else if(mode.startsWith('duplicate_record_')){
   const kind=mode.slice('duplicate_record_'.length),names={preparation:['prep-list','prep-items','/api/preparations'],dispatch:['dispatch-list','dispatch-items','/api/service-dispatches'],receipt:['receipt-list','receipt-items','/api/executor-receipts']},[list,items,path]=names[kind];
   const rows=[{id:id(21),case_id:id(31),preparation_id:id(41),goal:'SYNTHETIC SAME GOAL <img src=x onerror=alert(1)>',state:'RECEIPT_RECORDED',revision:2},{id:id(22),case_id:id(32),preparation_id:id(42),goal:'SYNTHETIC SAME GOAL <img src=x onerror=alert(1)>',state:'RECEIPT_RECORDED',revision:2}];
   for(const row of rows){if(kind==='preparation'){row.state='IN_PREPARATION';delete row.preparation_id;}else if(kind==='dispatch'){delete row.state;delete row.case_id;delete row.revision;}else{delete row.preparation_id;delete row.case_id;}}
