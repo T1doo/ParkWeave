@@ -21,6 +21,18 @@ button,input,select{border-radius:10px;min-height:44px;padding:11px 14px}button{
 #status[data-tone="success"]{border-color:#c8decc;background:#edf6ec;color:#285b3d}
 #status[data-tone="error"]{border-color:#e5c3b9;border-left:3px solid #a13e36;background:#fff3ef;color:#8d372e}
 @media(forced-colors:active){#status[data-tone]{border-color:CanvasText;background:Canvas;color:CanvasText}}
+/* Shared calm surfaces and explicit feedback; original guide actions unchanged. */
+body{background:#f4f6f3;color:#233d36;line-height:1.75}header{background:linear-gradient(110deg,#183f33,#275f4b);padding-top:32px;padding-bottom:32px}header h1{font-size:28px;line-height:1.5}header p{font-size:13px;line-height:1.8}
+main{gap:24px;padding-top:26px}aside,#workspace-panel{border-color:#dce5df;border-radius:16px;box-shadow:0 2px 4px #173e3203,0 12px 32px #173e3205}aside{padding:28px}#workspace-panel{background:#f9fbf7;border-top:3px solid #739a82;padding:26px}aside>h2{font-size:18px;line-height:1.65;letter-spacing:-.2px;margin-top:26px;padding-top:24px}label{font-size:13px;color:#364c43;line-height:1.8}small{line-height:1.8;color:#596d65}
+input,select{border:1px solid #bdccc2;border-radius:9px;background:#fff;min-height:46px}input[type=file]{border:1px dashed #91ac9b;background:#f7faf5;padding:14px}input::file-selector-button{min-height:36px;background:#fff;border-color:#c2d4c7;border-radius:7px}
+button{min-height:46px;border-radius:9px;padding:12px 14px;font-size:13px;transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease}button:hover:not(:disabled){background:#eaf3e6;border-color:#91b39f;box-shadow:0 3px 9px #173e3209}button:active:not(:disabled){box-shadow:inset 0 1px 3px #173e3220}button:disabled,#workspace-open:disabled{background:#edf0ec;border-color:#d6ded8;color:#617068;box-shadow:none}
+#workspace-open:not(:disabled){background:#23664f;border-color:#23664f;color:#fff}#workspace-open:hover:not(:disabled){background:#174b3a}
+.notice{background:#fff9ec;border-color:#e7d9b8;color:#75531d;line-height:1.85;border-radius:9px}#status{font-size:13px;line-height:1.8;background:#f2f6f5;color:#37544a;border-color:#d7e0df}#status[data-tone=error]{border-color:#e3c5bd;border-left-color:#a13e36;background:#fff3ef;color:#8d372e}#status[data-tone=success]{border-color:#bdd8c7;background:#edf6ef;color:#285c3e}
+details{border-radius:10px;background:#fafcf8}summary{padding:15px 16px;font-size:14px;line-height:1.7;min-height:48px}summary:hover{background:#edf3eb;border-radius:9px}details[open]>summary{border-bottom-color:#dce5df}li{font-size:13px;line-height:1.85;margin-bottom:16px}li::marker{color:#23664f}
+@media(max-width:800px){header{padding:26px 22px}header h1{font-size:24px}main{padding:20px;gap:18px}aside,#workspace-panel{padding:22px}}
+@media(max-width:420px){header{padding:23px 18px}header h1{font-size:22px}main{padding:16px 14px 30px}aside,#workspace-panel{padding:20px 17px;border-radius:13px}aside>h2{font-size:17px}input,select{font-size:16px}summary{font-size:14px;padding:13px 14px}li{line-height:1.8}#workspace-panel h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media(forced-colors:active){header{background:Canvas;color:CanvasText}#status[data-tone],.notice{background:Canvas;color:CanvasText;border-color:CanvasText}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}}
 </style>
 <header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
 <main><aside>
@@ -35,7 +47,7 @@ button,input,select{border-radius:10px;min-height:44px;padding:11px 14px}button{
 <button data-role="executor" disabled>许辰 · 虚构执行者</button>
 <p id="status" role="status" data-tone="neutral">等待选择本次模拟会话文件。</p>
 <h2>2 · 选择不同输入</h2>
-<select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
+<label for="scenario">演示事项</label><select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
 <button id="fill-goal" disabled>填入新事项目标</button>
 <button id="fill-request" disabled>填入本事项诉求与五个办理目标</button>
 <button id="fill-need" disabled>填入独立诉求摘要</button>
