@@ -1,5 +1,5 @@
 """Run38/attempt1 candidate: native return paths and collaboration; no product backend."""
-import hashlib,json,os,queue,signal,socket,subprocess,sys,tempfile,threading,time,traceback
+import hashlib,json,math,os,queue,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
@@ -234,6 +234,41 @@ def compose_fixture(page,selector):
     REPORT.setdefault('screenshot_composition',[]).append(dict(selector=selector,scope='Move only the explicit fixture marker, then frame original section; not native landing proof'))
 
 
+def dispatch_frame_delta(rows,height):
+    margin=16
+    assert height==1000 and rows,'original viewport and required framing nodes must exist'
+    assert all(isinstance(r[k],(int,float)) and not isinstance(r[k],bool) and math.isfinite(r[k]) for r in rows for k in ('top','bottom'))
+    assert all(r['bottom']>r['top'] for r in rows),'required framing node is not visible'
+    minimum=math.ceil(max(r['bottom'] for r in rows)-(height-margin))
+    maximum=math.floor(min(r['top'] for r in rows)-margin)
+    assert minimum<=maximum,'complete markers, warnings and records do not fit the unchanged viewport'
+    return minimum if minimum>0 else maximum if maximum<0 else 0
+
+
+def frame_dispatch_records(page):
+    # Screenshot06 only: correct scroll-padding's landing using actual geometry.
+    # A single whole-page scroll preserves both lanes, font sizes and all text.
+    require_operation_time(5);counts=request_counts();viewport=dict(page.viewport_size)
+    selectors=['.collaboration-lane:first-child > [data-visual-fixture]',
+        '.collaboration-lane:first-child > h3','.collaboration-lane:first-child > p:not([role])',
+        '#dispatch-list','#dispatch-list-status','#dispatch-items',
+        '#dispatch-items > button:nth-child(1)','#dispatch-items > button:nth-child(2)',
+        '.collaboration-lane:last-child > h3','.collaboration-lane:last-child > p:not([role])']
+    measure="""selectors=>({height:innerHeight,width:innerWidth,scrollY,rows:selectors.map(selector=>{
+        const found=document.querySelectorAll(selector);if(found.length!==1)throw Error('required framing node missing or ambiguous: '+selector);
+        const e=found[0],r=e.getBoundingClientRect();return {selector,top:r.top,bottom:r.bottom,left:r.left,right:r.right,
+            visible:!!e.getClientRects().length&&getComputedStyle(e).visibility==='visible'};})})"""
+    before=page.evaluate(measure,selectors);delta=dispatch_frame_delta(before['rows'],before['height'])
+    page.evaluate("delta=>window.scrollBy({top:delta,left:0,behavior:'instant'})",delta)
+    after=page.evaluate(measure,selectors)
+    REPORT.setdefault('dispatch_record_framing',[]).append(dict(before=before,requested_scroll_delta=delta,actual_scroll_delta=after['scrollY']-before['scrollY'],after=after,
+        margin=16,scope='Screenshot06 composition only, one whole-page scroll; not native return landing proof'))
+    assert after['height']==before['height']==1000 and after['width']==before['width']==1200 and page.viewport_size==viewport
+    assert all(r['visible'] and 16<=r['top']<r['bottom']<=after['height']-16 and 0<=r['left']<r['right']<=after['width'] for r in after['rows']),after
+    assert dispatch_frame_delta(after['rows'],after['height'])==0,after
+    assert counts==request_counts(),'screenshot framing made a request'
+
+
 def native_return(page,link,target,first,method,*,shot=None):
     require_operation_time(15)
     assert not page.evaluate('()=>!!activeEntryWriteFlow||entryWriteRequests.size>0||!!receiptLocalPending')
@@ -437,7 +472,7 @@ def collaboration_observation(page,width):
         compose_fixture(page,'.collaboration-heading');collaboration_geometry(page,'empty-1200')
         observe(page,'current-collaboration-empty-1200',True);capture(page,'05-collaboration-empty-1200.png')
         read_list_fixture(page,'dispatch','READY');collaboration_records(page,'dispatch')
-        compose_fixture(page,'.collaboration-lane:first-child');visible_in_viewport(page,['dispatch-items']);collaboration_geometry(page,'records-1200')
+        compose_fixture(page,'.collaboration-lane:first-child');frame_dispatch_records(page);visible_in_viewport(page,['dispatch-items']);collaboration_geometry(page,'records-1200')
         observe(page,'current-collaboration-records-1200',True);capture(page,'06-collaboration-records-1200.png')
         combined_breakpoints(page)
     else:
