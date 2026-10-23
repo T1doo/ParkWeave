@@ -19,6 +19,10 @@ python -B -m scripts.windows_portable.build --source <完整冻结commit> \
 
 完整性清单检测意外漂移、缺项和多余文件；它不是发布者签名，分发仍须可信来源的外部ZIP摘要。Windows路径检查拒绝越界、ADS、设备名、尾点空格、大小写别名及链接/reparse对象。PE核验仅做AMD64与普通/延迟导入名检查；只匹配模块目录/本进程私有exe目录。API-set名称不证明OS提供，符号/转发导出及真实加载均未验。
 
-已核真实资产仍有明确未完成项：官方Python3.12.10嵌入包已被3.12.15取代，仅供静态检查，不能当安全可发布运行时；PG缺私有Microsoft C++运行库，不从PATH/CWD补缺或执行系统安装。原生SESSION/CONFIG安全创建、schema026–032、角色与seed初始化及真实端用户首次运行/退出重开仍需实现和独立验收。不会把Linux证明、假PE fixture或源码help转签为Windows成品。
+已核真实资产仍有明确未完成项：官方Python3.12.10嵌入包已被3.12.15取代，仅供静态检查，不能当安全可发布运行时；PG缺私有Microsoft C++运行库，不从PATH/CWD补缺或执行系统安装。原生SESSION/CONFIG安全创建、角色与seed初始化及真实端用户首次运行/退出重开仍需实现和独立验收。不会把Linux证明、假PE fixture或源码help转签为Windows成品。
+
+`initialize.py`是另一个**默认暂停的schema候选**，未接入双击入口或载荷构建器：先调用原`require_setup_readiness()`，当前在依赖导入、文件读取和连接之前拒绝`OWNER_MUTATION_PAUSED`，没有override。将来原门另经审查允许后，只能由原发行器真实CREATE、取得同进程原始`NativeDatabaseCreationEvidence`，沿原Store到25，再使用原锁/原精确类验真和冻结原SQL，在单个事务扩展026–032并逐版核对。默认Store原生跳过分支和七份SQL未改；这是新增原生消费者候选，**不是原Windows已支持迁移**。失败回滚仅覆盖026–032；真实CREATE和已提交25保留，不DROP、不重试、不读取时补签旧库。函数不负责私有PG启动/认证、受限角色及秘密持久化、SESSION/CONFIG或ACL，返回Store也不表示安装完成。
+
+SQL阶段异常请求回滚026–032；COMMIT或回滚连接失败时结果可能UNKNOWN，必须保留原异常和数据，不重试或断言仍在25。该候选单独运行`PYTHONPATH=src python -B -m unittest scripts.windows_portable.test_initialize -v`。正向控制流测试显式mock原暂停门、CREATE、25迁移和授权；只验证顺序、单事务、失败保全及提交结果未知。暂停测试预先导入lifecycle，不是冷导入实测。真实未发行凭据由原注册表拒绝。离线通过不签收原生迁移、首次运行或重开。
 
 本组件14项stdlib离线测试单独运行，PE为明确不可执行fixture；不并入原405文件/9521项历史collection，也不称全回归。真实资产静态检查另列，不累加为测试通过。无新浏览器、PG、Windows、CI或用户电脑运行。
