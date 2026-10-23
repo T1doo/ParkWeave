@@ -13,3 +13,13 @@
 准备时正常只读 GitHub 元数据确认最近为 run34（39938250371、attempt1、cb64d7a58ee608d162786a1511eecc97e7bd83a9），故仅绑定下一run35；推送前再次核最新序号及远端。提交必须以0d102为直接父、精确七路径，提交后本地执行 source_contract 再正常快进。固定SHA来自实际checkout且与PW_BROWSER_SHA相等，main不动，不强推。
 
 输出读取边界：旧run34原job log/ZIP的Forbidden仍保留，未重试、未换路线。本次仅可尝试新run35正常元数据和原件读取；新原件可访问性在准备时未知，实际拒绝即停止对应读取，不用绿色状态推断图片或清理。普通入口为新run的GitHub Actions页面及名为 fictional-park-browser-35 的附件；结果必须另行记录，不把本候选文档当作实际通过。
+
+## 实际单次结果与精确阻塞
+
+本次受测提交 **`8f73c47ceb9fbc4e4e82942d4c938554b6dc98a5`** 已正常整体快进并回读，候选时dirty为空、ahead/behind 0/0，main保持`31e7acb7e53bb1ab6465b9daae59de28757f7583`。提交后source_contract真实通过，两名独审限定ACK。唯一 [run35/attempt1](https://github.com/T1doo/ParkWeave/actions/runs/39963264022)，job `120446420602`：官方原API元数据显示run/job/全部步骤success，job13:41:13–13:42:06 UTC（53秒），视觉步骤13:41:50–13:42:03（13秒）。这是元数据时间，不是读取result后得到的精细执行耗时。
+
+新附件`fictional-park-browser-35`，id `12506345470`，官方元数据大小1,043,275B，digest `sha256:d0068a8b7f1bb49f7aa52704e47b709101778ad01afb7b0a949474c56051076e`，到期2026-10-24 13:42:03 UTC。该大小和hash**未本地验算**：首次正常`gh api repos/T1doo/ParkWeave/actions/artifacts/12506345470/zip`跟随GitHub新目标跳转后，`productionresultssa18.blob.core.windows.net`返回`Forbidden`，退出1，文件0B。没有原因说明；不推断凭据失效或缺项目开发授权。签名查询串已从错误证据中移除。没有重试、替代入口、旧run34请求或待批上传，随后原job log没有请求。
+
+因此本轮**原图0张已读，result.json未读、原日志未读、summary未读，运行时请求实际数和进程退出未独核，视觉不验收**。不将official success转写为页面精美、字体/导航断言或清理已经独验通过。正常页面为上述run链接；页面附件名和预期PNG/result文件名见前文及preflight.json，是否其他已允许UI可读尚未试探，不给未验证替代入口。该附件读取动作已拒绝，非pending或未知写入；继续读取需与此拒绝直接相关的新事实，不能仅换工具。
+
+本目录保存三个原API JSON、已脱签名查询的错误及读取状态、提交后来源合同、正常推送回读、outcome和预检；没有假ZIP、假截图或拼接原日志。SHA256SUMS覆盖所有这里实际文件。后续证据提交采用[skip ci]，不重跑也不修改受测产品源码。
