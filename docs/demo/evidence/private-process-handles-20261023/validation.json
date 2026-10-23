@@ -1,0 +1,110 @@
+{
+  "scope": "UNACTIVATED_PRIVATE_PROCESS_HANDLE_CANDIDATE_WITH_REAL_HARMLESS_LINUX_CHILDREN",
+  "base": "a729130ec48197d26b03989225562a027fac6925",
+  "command": "PYTHONPATH=src /workspace/parkweave-venv/bin/python -B -m unittest scripts.windows_portable.test_processes -v",
+  "final_log": "tests-5.log",
+  "final_tests": 22,
+  "actual_linux_file_process_test_methods": 15,
+  "linux_waitid_standin": 1,
+  "windows_standin_test_methods": 6,
+  "prior_invocations_not_added": true,
+  "final_invocation": {
+    "real_fork_children": 12,
+    "maximum_simultaneously_live": 1,
+    "maximum_sleep_seconds": 5,
+    "startup_seconds": 2,
+    "stop_seconds": 3,
+    "controlled_fault_test_disposal_seconds": 2,
+    "temporary_directories": "own TemporaryDirectory fixtures only; finish verifies fd count restored; fixtures removed"
+  },
+  "review": {
+    "source": "Limited ACK after mutable-cap and pre-configuration Job registration P2 fixes; no further definite P1/P2",
+    "journal": "DESIGN_ACK only, not implemented and existing Windows refusal unchanged",
+    "final_evidence": "Independent read-only source and tests-5.log limited ACK, 22 tests/0.316s; reviewer ran no tests/processes and wrote no files"
+  },
+  "actual_observations": [
+    "gated returned child registered before exact private fd-exec; birth, pidfd and actual image observed",
+    "natural exit WNOWAIT then exact one-time reap without signal",
+    "TERM followed by actual SIGKILL on same pidfd after controlled lost-TERM stand-in",
+    "child pidfd-open fault aborts by GO EOF then unreaped-child wait/reap, zero numeric-PID signals",
+    "exec failure has CLOEXEC error-pipe payload, never reported acknowledged exec",
+    "controlled observation error retains pidfd, writes real lease UNKNOWN, blocks same/fresh adapter and reopen",
+    "real private-file hash, symlink and registration-time subdirectory swap refused",
+    "opaque legitimate token rejects injected resources/status/executable properties; no raw handle exposed",
+    "creation callback cannot reenter stop; environment/partial pipe failures dispose already-created own resources"
+  ],
+  "windows": {
+    "api_executions": 0,
+    "scope": "six stand-in checks only",
+    "job_registration": "CreateJob immediately saved/registered before SetInformationJobObject and any child",
+    "birth": "exact returned process HANDLE, PID plus GetProcessTimes creation ticks and pinned NT image path",
+    "unassigned_child": "must terminate/wait exact returned process before job-zero is sufficient",
+    "config_and_close_double_fault": "primary retained, UNKNOWN, no handle-close retry",
+    "native_containment": "NOT_RUN",
+    "dll_loader_closure": "UNACCEPTED",
+    "lease_directory_barrier": "WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED"
+  },
+  "limits": [
+    "Linux reference backend only accepts exact existing OS sleep/true bytes copied privately, no generic executable/PG/tree launcher",
+    "No same-UID hostile in-process Python mutation guarantee, administrator defense or power-loss claim",
+    "Fault-only cleanup uses exact retained own capabilities after injected observer fault has ended; production UNKNOWN remains blocked",
+    "No PG create_cluster/open_cluster/readiness or application high-level controller wiring implemented",
+    "SESSION/CONFIG, secret persistence, runtime/DLL closure and native Windows validation remain incomplete",
+    "No build/entry activation and no runnable end-user product"
+  ],
+  "pg_browser_ci_user_computer_runs": 0,
+  "new_real_credentials": 0,
+  "security_permission_changes": false,
+  "changed_source_sha256": {
+    "scripts/windows_portable/processes.py": "2e667ec72dd421e804612be548536d21ca01498bf114f88dd5f4351a5f60dca9",
+    "scripts/windows_portable/windows_process_handles.py": "2401de3e1add84a2e48591eb35cd2b0a314e401bf56e82bf4c95de946d135338",
+    "scripts/windows_portable/test_processes.py": "89158047b757f4bcefcff559bc80bebd5725a0489f56204539e5edf0fc2ecddb",
+    "scripts/windows_portable/fixed-journal-design.md": "9f1851a0950778a92cf5ec18c2fa4deccb92122f2869c21c059e0a6840b91ed0",
+    "scripts/windows_portable/README.md": "1ac4761f54811eeaf8553a604c5815059bfa4125ef35ab5aab985aebb2cdf33b"
+  },
+  "original_unchanged_sha256": {
+    "scripts/windows_portable/entry.py": "461b88d2d749344b4ab8a6e412b73530d9f3818c9cf839e70f0ec8ed805ac45b",
+    "scripts/windows_portable/build.py": "f76d6ce3803446bcbd3bbfda69cb0c4ffdce63080a03badde1ca028664eb517a",
+    "scripts/windows_portable/initialize.py": "37e5f4f9bbc23fba5e45c7de40d4d0832ec4577fa10ed0b02c9cb07f1ad866db",
+    "scripts/windows_portable/controller.py": "33cd428c5a93c783b7bcd5b2f87c0a2b40b26254cbf0c737082e563a0d322dd5",
+    "scripts/windows_portable/directories.py": "b2692d3dd09e57361de8e8e72b72a9e5e369bd36c704f6b82300d5a7acfb52b1",
+    "scripts/windows_portable/windows_directory_handles.py": "07991898f7683d7639168e776fad86789ac826cacd64fa6938a97e18f2f2e065",
+    "scripts/windows_portable/runtime-assets.json": "74c686742f161f65c3ca0c94bdb2e7bd5c5a00ea29a3a56cf727d406f2b85ed8",
+    "scripts/windows/lifecycle.py": "da38bc9deae30dd6b2d771e485682dc55adaf59c62e210e38e116746111b1c96",
+    "scripts/windows_ci/owned_job.py": "67ecef417d1365a95219b8e2a00a5af3ad3c03c9f46ab772a2ff070416878f5b",
+    "src/parkweave/store.py": "b6dd49b8526d51a2b6789c40f2d707087f6d3988e2e1844cc25cfac240223c1b",
+    "src/parkweave/installed_fixture_receipt.py": "1be37c7033c13733f1d332024ebb6b34f65424e7a585e5d280ef07eecf4eeecc",
+    "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/migration-026.sql": "625208b5620e8c5a0840e6672fd08c1081e148b5bd1d401697f0810dec8b50a3",
+    "src/parkweave/migration-027.sql": "97034ad99ad21af9c0e36724481a65c179638e7e49a27d5d140e8aaa93a73c79",
+    "src/parkweave/migration-028.sql": "ed94c37d627300651dc13935665baf774fa07ea9f3589e4089649ff6005591f0",
+    "src/parkweave/migration-029.sql": "179ff8f16b862cc7b5a076a6f21a31dd77961a0c62af37cc53d9315e89b9bac7",
+    "src/parkweave/migration-030.sql": "c50c7224db5723611a79bac721238c66683608b18a6bfef4e72c4ce7d29d3f03",
+    "src/parkweave/migration-031.sql": "906b70e775e70e7706558395ab779a0bfbe2b598004fac29b0eb30d3181e1eac",
+    "src/parkweave/migration-032.sql": "c24bd55751a7922341557d48270f83e6f911513d4588c6f3571c7beca10a284b"
+  },
+  "log_sha256": {
+    "smoke-original.log": "540bd033341b113d7fbd7a72101285b94cddb20d8c797f5eeae82a3ab915da5f",
+    "tests-1.log": "e528e89e9199b46da65017a57332dcfaa04a4dc7a03fac9b21e660a6d10d675e",
+    "tests-2.log": "0e0586331d7ffa7026c9249ee1eb263aac1cf442e84b8d3644d6d6d1a1a8af43",
+    "tests-3.log": "b49ee56839bef813fd70a2cf0dc6a991c45514e2aee25eb10c0dbb0b284c96ff",
+    "tests-4.log": "fe6690896bc53517a7c445f0dfc29fd7f3b9cc5c0de4bc641c035a7f27214acb",
+    "tests-5.log": "bab9ec98c09508a739ec31f4e7c647aa5ab1dd9dbed360fa2c2e44229f9f730f"
+  },
+  "manifest": {
+    "test_files": 405,
+    "implementation_files": 376,
+    "historical_collection": 9521,
+    "collection_rerun": false,
+    "all_current_raw_fingerprints_verified": true
+  },
+  "official_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-queryfullprocessimagenamew",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information",
+    "https://man7.org/linux/man-pages/man2/pidfd_open.2.html",
+    "https://man7.org/linux/man-pages/man2/wait.2.html",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
+  ]
+}
