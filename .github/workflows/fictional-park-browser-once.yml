@@ -41,7 +41,7 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/dev/fictional-park-browser-once-20261020' &&
       github.event.repository.private == false &&
-      github.run_attempt == 1 && github.run_number == 34
+      github.run_attempt == 1 && github.run_number == 35
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -74,7 +74,7 @@ jobs:
             RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
             GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
             .runtime/fictional-browser-venv/bin/python -B -m scripts.fictional_park_font_once
-      - name: Polished original entry and pending receipt visual verification
+      - name: Current core page and refused navigation visual verification
         timeout-minutes: 6
         env:
           PW_BROWSER_SHA: ${{ github.sha }}
