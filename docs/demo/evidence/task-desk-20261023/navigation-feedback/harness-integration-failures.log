@@ -1,0 +1,334 @@
+..F..FFFFFFFFF                                                           [100%]
+=================================== FAILURES ===================================
+_____ test_original_unknown_material_navigation_preserves_context[normal] ______
+
+mode = 'normal'
+
+    @pytest.mark.parametrize("mode", ["unknown-post", "unknown-readback", "normal", "discard", "objection"])
+    def test_original_unknown_material_navigation_preserves_context(mode):
+        source, wrapper = original_source()
+        stubs = "clearRecordDirectory clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead clearResources prepCatalogStatus".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source, "wrapper": wrapper, "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+E         + actual - expected
+E         
+E         + 'resource'
+E         - 'collaboration'
+E         
+E             at [eval]:62:31
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...xpected values to be strictly equal:\n+ actual - expected\n\n+ 'resource'\n- 'collaboration'\n\n    at [eval]:62:31\n").returncode
+
+tests/test_workspace_navigation_feedback.py:106: AssertionError
+_________ test_catalog_feedback_on_original_get_handler[empty-service] _________
+
+mode = 'empty-service'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:35:27
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...valFunction (node:internal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n').returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+________ test_catalog_feedback_on_original_get_handler[empty-reviewer] _________
+
+mode = 'empty-reviewer'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:35:27
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...valFunction (node:internal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n').returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+_____________ test_catalog_feedback_on_original_get_handler[ready] _____________
+
+mode = 'ready'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:35:27
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...valFunction (node:internal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n').returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+____________ test_catalog_feedback_on_original_get_handler[loading] ____________
+
+mode = 'loading'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+E         + actual - expected
+E         
+E         + undefined
+E         - 'LOADING'
+E         
+E             at [eval]:50:52
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E             at node:internal/main/eval_string:71:3
+E         evalmachine.<anonymous>:6
+E         function clearPreparation(preserveNotice=false,preservePlan=false,discardMaterialDraft=false){const refusal=preparationClearRefusal(discardMaterialDraft);if(refusal){if(refusal==='请先核对当前材料操作结果')$('prep-command-feedback').textContent='材料操作结果仍待核对；请留在当前事项使用原请求重试。';throw Error(refusal);} clearRuntimeNavigation();clearPersonalTaskList();mgClear();clearCaseCancellation();clearDeadline();clearOpportunities();clearFactBundle();clearObjections();clearRunAccess(false);clearCaseFacts();clearMaterialReuse();clearMaterialDraft();prepCommandPending=null;prepRecoveryHandle=null;prepRecoveryChecking=false;$('prep-recovery-status').textContent='';$('prep-recovery-read').hidden=true;$('prep-recovery-release').hidden=true;clearMaterialCorrections();renderPrepCommandPending();resetPreparationDraft();clearReadiness();clearPlanMaterialNavigation();if(!preserveNotice)clearNotices();clearLocalCase(preservePlan);clearDispatch(preservePlan);clearCaseResources();clearReceipts(preservePlan);invalidatePreparationRead();prepGeneration++;preparationContext=null;preparationView=null;preparationId=null;prepRole=null;prepCatalog=null;prepRetries.clear();$('prep-detail').hidden=true;$('prep-summary').textContent='';$('prep-items').replaceChildren();$('prep-task-items').replaceChildren();$('prep-catalog-view').replaceChildren();prepCatalogStatus('UNREAD','');$('prep-create').hidden=true;$('prep-create').reset();$('prep-reviewer').replaceChildren();$('prep-evidence').reset();$('prep-reason').value='';$('prep-history').replaceChildren();$('prep-materials').replaceChildren();$('prep-error').textContent='';}
+E                                                                                                                     ^
+E         
+E         ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:50:35
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...ternal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+_________ test_catalog_feedback_on_original_get_handler[failure-retry] _________
+
+mode = 'failure-retry'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:39:42
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...valFunction (node:internal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n').returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+____________ test_catalog_feedback_on_original_get_handler[invalid] ____________
+
+mode = 'invalid'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:45:40
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...valFunction (node:internal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n').returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+________ test_catalog_feedback_on_original_get_handler[late-navigation] ________
+
+mode = 'late-navigation'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+E         + actual - expected
+E         
+E         + undefined
+E         - 'LOADING'
+E         
+E             at [eval]:50:52
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E             at node:internal/main/eval_string:71:3
+E         evalmachine.<anonymous>:6
+E         function clearPreparation(preserveNotice=false,preservePlan=false,discardMaterialDraft=false){const refusal=preparationClearRefusal(discardMaterialDraft);if(refusal){if(refusal==='请先核对当前材料操作结果')$('prep-command-feedback').textContent='材料操作结果仍待核对；请留在当前事项使用原请求重试。';throw Error(refusal);} clearRuntimeNavigation();clearPersonalTaskList();mgClear();clearCaseCancellation();clearDeadline();clearOpportunities();clearFactBundle();clearObjections();clearRunAccess(false);clearCaseFacts();clearMaterialReuse();clearMaterialDraft();prepCommandPending=null;prepRecoveryHandle=null;prepRecoveryChecking=false;$('prep-recovery-status').textContent='';$('prep-recovery-read').hidden=true;$('prep-recovery-release').hidden=true;clearMaterialCorrections();renderPrepCommandPending();resetPreparationDraft();clearReadiness();clearPlanMaterialNavigation();if(!preserveNotice)clearNotices();clearLocalCase(preservePlan);clearDispatch(preservePlan);clearCaseResources();clearReceipts(preservePlan);invalidatePreparationRead();prepGeneration++;preparationContext=null;preparationView=null;preparationId=null;prepRole=null;prepCatalog=null;prepRetries.clear();$('prep-detail').hidden=true;$('prep-summary').textContent='';$('prep-items').replaceChildren();$('prep-task-items').replaceChildren();$('prep-catalog-view').replaceChildren();prepCatalogStatus('UNREAD','');$('prep-create').hidden=true;$('prep-create').reset();$('prep-reviewer').replaceChildren();$('prep-evidence').reset();$('prep-reason').value='';$('prep-history').replaceChildren();$('prep-materials').replaceChildren();$('prep-error').textContent='';}
+E                                                                                                                     ^
+E         
+E         ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:50:35
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...ternal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+_______ test_catalog_feedback_on_original_get_handler[late-identity-aba] _______
+
+mode = 'late-identity-aba'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+E         + actual - expected
+E         
+E         + undefined
+E         - 'LOADING'
+E         
+E             at [eval]:50:52
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E             at node:internal/main/eval_string:71:3
+E         evalmachine.<anonymous>:6
+E         function clearPreparation(preserveNotice=false,preservePlan=false,discardMaterialDraft=false){const refusal=preparationClearRefusal(discardMaterialDraft);if(refusal){if(refusal==='请先核对当前材料操作结果')$('prep-command-feedback').textContent='材料操作结果仍待核对；请留在当前事项使用原请求重试。';throw Error(refusal);} clearRuntimeNavigation();clearPersonalTaskList();mgClear();clearCaseCancellation();clearDeadline();clearOpportunities();clearFactBundle();clearObjections();clearRunAccess(false);clearCaseFacts();clearMaterialReuse();clearMaterialDraft();prepCommandPending=null;prepRecoveryHandle=null;prepRecoveryChecking=false;$('prep-recovery-status').textContent='';$('prep-recovery-read').hidden=true;$('prep-recovery-release').hidden=true;clearMaterialCorrections();renderPrepCommandPending();resetPreparationDraft();clearReadiness();clearPlanMaterialNavigation();if(!preserveNotice)clearNotices();clearLocalCase(preservePlan);clearDispatch(preservePlan);clearCaseResources();clearReceipts(preservePlan);invalidatePreparationRead();prepGeneration++;preparationContext=null;preparationView=null;preparationId=null;prepRole=null;prepCatalog=null;prepRetries.clear();$('prep-detail').hidden=true;$('prep-summary').textContent='';$('prep-items').replaceChildren();$('prep-task-items').replaceChildren();$('prep-catalog-view').replaceChildren();prepCatalogStatus('UNREAD','');$('prep-create').hidden=true;$('prep-create').reset();$('prep-reviewer').replaceChildren();$('prep-evidence').reset();$('prep-reason').value='';$('prep-history').replaceChildren();$('prep-materials').replaceChildren();$('prep-error').textContent='';}
+E                                                                                                                     ^
+E         
+E         ReferenceError: preparationClearRefusal is not defined
+E             at clearPreparation (evalmachine.<anonymous>:6:109)
+E             at $.onclick (evalmachine.<anonymous>:13:2)
+E             at [eval]:50:35
+E             at [eval]:64:3
+E             at runScriptInThisContext (node:internal/vm:219:10)
+E             at node:internal/process/execution:451:12
+E             at [eval]-wrapper:6:24
+E             at runScriptInContext (node:internal/process/execution:449:60)
+E             at evalFunction (node:internal/process/execution:283:30)
+E             at evalTypeScript (node:internal/process/execution:295:3)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...ternal/process/execution:283:30)\n    at evalTypeScript (node:internal/process/execution:295:3)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+________ test_catalog_feedback_on_original_get_handler[protected-clear] ________
+
+mode = 'protected-clear'
+
+    @pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+    def test_catalog_feedback_on_original_get_handler(mode):
+        stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The input did not match the regular expression /核对当前材料操作结果/. Input:
+E         
+E         'ReferenceError: preparationClearRefusal is not defined'
+E         
+E             at async [eval]:30:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...ession /核对当前材料操作结果/. Input:\n\n'ReferenceError: preparationClearRefusal is not defined'\n\n    at async [eval]:30:3\n").returncode
+
+tests/test_preparation_catalog_feedback.py:93: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_workspace_navigation_feedback.py::test_original_unknown_material_navigation_preserves_context[normal]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[empty-service]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[empty-reviewer]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[ready]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[loading]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[failure-retry]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[invalid]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[late-navigation]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[late-identity-aba]
+FAILED tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[protected-clear]
+10 failed, 4 passed, 1 warning in 0.87s

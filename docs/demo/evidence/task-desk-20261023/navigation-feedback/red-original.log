@@ -1,0 +1,33 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_original_unknown_material_navigation_preserves_context[unknown-post] ___
+
+mode = 'unknown-post'
+
+    @pytest.mark.parametrize("mode", ["unknown-post", "unknown-readback", "normal", "discard", "objection"])
+    def test_original_unknown_material_navigation_preserves_context(mode):
+        source, wrapper = original_source()
+        stubs = "clearRecordDirectory clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead clearResources prepCatalogStatus".split()
+        run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source, "wrapper": wrapper, "stubs": stubs, "mode": mode}),
+                             text=True, capture_output=True, timeout=10)
+>       assert run.returncode == 0, run.stderr
+E       AssertionError: {"unhandled_navigation_error":"请先核对当前材料操作结果","child_clearers_before_rejection":["clearRecordDirectory","clearRuntimeNavigation","clearPersonalTaskList","mgClear","clearCaseCancellation","clearDeadline","clearOpportunities","clearFactBundle"]}
+E         AssertionError [ERR_ASSERTION]: refused navigation ran child clearers
+E         
+E         8 !== 0
+E         
+E             at [eval]:52:11
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst vm=require(\'node:vm\'),assert=require(\'node:assert/strict\');\nconst i...tBundle"]}\nAssertionError [ERR_ASSERTION]: refused navigation ran child clearers\n\n8 !== 0\n\n    at [eval]:52:11\n').returncode
+
+tests/test_workspace_navigation_feedback.py:106: AssertionError
+=============================== warnings summary ===============================
+../parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/parkweave-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_workspace_navigation_feedback.py::test_original_unknown_material_navigation_preserves_context[unknown-post]
+1 failed, 4 deselected, 1 warning in 0.14s

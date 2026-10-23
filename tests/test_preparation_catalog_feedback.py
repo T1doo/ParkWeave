@@ -79,6 +79,8 @@ def source_parts():
     lines = page.splitlines()
     source = "\n".join(line for line in lines if any(
         line.startswith(prefix + name + "(") for name in functions for prefix in ("function ", "async function ")))
+    start = page.index("function preparationClearRefusal(")
+    source += "\n" + page[start:page.index("\nfunction clearPreparation(", start)]
     start = page.index("function prepCatalogStatus(") if "function prepCatalogStatus(" in page else page.index("$('prep-catalog').onclick=")
     source += "\n" + page[start:page.index("\nasync function retryWrite(", start)]
     declarations = "let prepGeneration=0,preparationId=null,preparationContext=null,preparationView=null,prepRole=null,prepCatalog=null,prepCommandPending=null,prepRecoveryHandle=null,prepRecoveryChecking=false;const prepRetries=new Map();\n"
