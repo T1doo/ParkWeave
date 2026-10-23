@@ -32,6 +32,7 @@ class Command:
     arguments: tuple[str, ...] = ()
     model: str = 'SINGLE_PROCESS_ELF'
     stdio_contract: str = 'NONE'
+    environment: tuple[tuple[str, str], ...] = field(default=(), repr=False)
 
     def __post_init__(self):
         import re
@@ -44,6 +45,31 @@ class Command:
                 or self.stdio_contract not in ('NONE','WORKER_READINESS_V1','PIPE_PROBE_V1')
                 or self.stdio_contract == 'WORKER_READINESS_V1' and self.model != 'WINDOWS_JOB'):
             raise ProcessRefused('FIXED_PRIVATE_COMMAND_REQUIRED')
+        if self.environment:
+            if (type(self.environment) is not tuple or len(self.environment) != 3 or
+                    any(type(row) is not tuple or len(row) != 2 or
+                        any(type(value) is not str or not value or len(value) > 2048 or
+                            any(ord(c) < 32 for c in value) for value in row) for row in self.environment)):
+                raise ProcessRefused('FIXED_APPLICATION_ENVIRONMENT_REQUIRED')
+            values = dict(self.environment)
+            if (set(values) != {'PARKWEAVE_DSN', 'PARKWEAVE_MODE', 'PARKWEAVE_FILE_ROOT'} or
+                    values['PARKWEAVE_MODE'] != 'LOCAL' or self.model != 'WINDOWS_JOB' or
+                    self.stdio_contract not in ('NONE', 'WORKER_READINESS_V1')):
+                raise ProcessRefused('FIXED_APPLICATION_ENVIRONMENT_REQUIRED')
+            from parkweave.installed_fixture_receipt import _dsn
+            parsed = _dsn(values['PARKWEAVE_DSN'], 'parkweave')
+            if parsed['host'] != '127.0.0.1' or parsed['user'] != 'parkweave_app':
+                raise ProcessRefused('FIXED_APPLICATION_ROLE_REQUIRED')
+        elif type(self.environment) is not tuple:
+            raise ProcessRefused('FIXED_APPLICATION_ENVIRONMENT_REQUIRED')
+
+
+def private_root(lease):
+    """Same held root used by executable pinning; no path discovery or repair."""
+    lease._verify()
+    if os.name == 'posix':
+        return Path(lease.fs.base) / lease.fs.chain[-1][1]
+    return Path(lease.fs.api.final_path(lease.fs.root))
 
 
 class PinnedExecutable:
@@ -350,6 +376,9 @@ class PrivateProcessAdapter:
         if phase not in ('CLUSTER', 'APPLICATION') and not (phase == 'NEW' and isinstance(self.backend, LinuxSingleProcess)):
             raise ProcessRefused('ACTIVE_LEASE_LAUNCH_PHASE_REQUIRED')
         command = self.commands[name]
+        project = dict(command.environment)
+        if project and project['PARKWEAVE_FILE_ROOT'] != str(private_root(self.lease) / 'files'):
+            raise ProcessRefused('HELD_APPLICATION_FILE_ROOT_REQUIRED')
         self.backend.preflight(command)
         executable = PinnedExecutable(self.lease, command)
         group, token = _ProcessState(command, executable), OwnedGroup()
@@ -367,6 +396,7 @@ class PrivateProcessAdapter:
             env = minimal_environment(os.environ)
             env['PATH'] = str(Path(executable.path).parent)
             for key in ('TEMP', 'TMP', 'TMPDIR'): env[key] = str(Path(executable.path).parents[len(command.relative_executable.split('/')) - 1])
+            env.update(project)  # Frozen explicit app-role inputs only; never inherited project settings.
             self.backend.create(group, register_once, env, time.monotonic() + self.startup_seconds)
             if not registered: raise ProcessRefused('CREATION_NOT_REGISTERED')
             group.creating = False

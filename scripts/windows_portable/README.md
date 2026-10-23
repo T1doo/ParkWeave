@@ -41,6 +41,10 @@ Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有�
 
 `application_readiness.py`新增默认未激活的生产就绪消费者。控制器要求两个精确API/worker token、原有受保护Bearer及预期主体、同次challenge/当前DB app-role与schema、前后真实进程身份；独立物理库/目录绑定在探针后再次核对，不能由同名DB/OID代替。API新增只读`GET /api/runtime/readiness`，沿原active Bearer身份且拒绝不走audit写入；worker显式`--readiness-stdio --readiness-challenge`在第一claim前用私有pipe报告WAITING_GO，原业务循环仅GO后进入。RUNNING落盘失败不发GO，未知GO不重发，失败沿原owned cleanup。不会生成新token/secret或授予业务能力。
 
+`instance_processes.py`新增高层**应用对接线候选**，未接双击入口或构建器。一个调用实例只接一次NEW或REOPEN、同一个租约及集群端口返回的原`DatabaseInputs`对象；NEW再次经过原OWNER暂停门，REOPEN仅委托独立的既有集群端口，没有initdb/迁移/seed/session补办命令。集群生产端口本身仍未实现，不以委托接口冒充私有PG已可启动。候选约定集群数据位于持有根下`data/postgresql`，应用文件位于`files`；不迁移旧路径、不创建这些目录。
+
+应用仅使用固定包内Python的`-I -B`命令：回环uvicorn原`configured_app`工厂及带原stdio/challenge的worker。原`PrivateProcessAdapter`只额外接受冻结的三项显式LOCAL环境（app-role DSN、LOCAL、同根files），不继承其他项目/PG/provider环境；DSN不进入argv/repr/公开诊断。创建回调即时把原token转交控制器，部分失败仍由原token逆序清理，未知清理不向所属端口重发。返回`RegisteredApplication`不表示就绪；真实身份核验、RUNNING落盘及唯一GO仍全部在原控制器。定向替身检查和准确未验范围见[原件](../../docs/demo/evidence/private-application-processes-20261023/README.md)。这不是集群、安全文件、原生Windows或自包含成品的验收。
+
 Windows worker profile仅继承三份精确stdio句柄，两个匿名pipe的原fd进入私有resource登记，确认进程退出后关闭；本轮仅真实Linux pipe fd加Win句柄替身，未实测Windows容量/继承/PeekNamedPipe。发送Bearer前必须核已连接socket反向四元组的ESTABLISHED唯一行与原API hProcess出生身份；`windows_endpoint.py`只读SYSTEM32 GetExtendedTcpTable，有界缓冲，不输出系统表，不查询/操作外来进程。缺native支持零HTTP调用，连接归属不符零应用字节。新门仍关闭，端点和进程API源码不是原生验收。
 
 消费者共享5秒就绪准入/激活时钟，HTTP按同一余额接收且不代理/重定向。`polling_database.py`使用非阻塞libpq connect/send/flush/consume/result与显式只读启动配置；超时finish原连接，不同步cancel或COMMIT。`isolated_pipe.py`把同步pipe操作放进冻结命令的自有辅助进程，同一绝对截止内预留0.5秒核退出与清理，不留timeout线程；GO写后迟到/解析/OS失败均UNKNOWN且不重发。根进程不再PeekNamedPipe，确认全部helper及父端writer关闭后才读有界结果；任一关闭未知保留原cap与lease UNKNOWN。真实Linux helper及synthetic wire限测见[原始证据](../../docs/demo/evidence/transport-deadline-candidate-20261023/README.md)，不签所有内核/文件系统操作硬实时保证。worker自身10秒准入以及真实Windows管道/Job、DB/物理绑定、安全SESSION/CONFIG、高层启动、端用户运行仍未验或未闭合，双击入口继续拒绝。
