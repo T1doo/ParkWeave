@@ -1,4 +1,4 @@
-"""Only run31/attempt1: stage the explicitly approved original font and license."""
+"""Only run32/attempt1: stage the explicitly approved original font and license."""
 from hashlib import sha1, sha256
 import json
 import os
@@ -9,7 +9,7 @@ import urllib.request
 from scripts import fictional_park_browser_once as base
 
 COMMIT = 'f8d157532fbfaeda587e826d4cd5b21a49186f7c'
-DIRECTORY = base.ROOT / '.runtime/approved-noto-run31'
+DIRECTORY = base.ROOT / '.runtime/approved-noto-run32'
 ASSETS = (
     ('LICENSE', 'Sans/LICENSE', 4301, 'd952d62c065f3f35fb83a173496e90b21525aef3'),
     ('NotoSansCJKsc-Regular.otf', 'Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf',
@@ -87,10 +87,10 @@ def stage_asset(asset, directory, deadline):
 
 def main():
     os.umask(0o077)
-    report = dict(scope='APPROVED_RUN31_PRIVATE_FONT_STAGE', status='NOT_RUN',
+    report = dict(scope='APPROVED_RUN32_PRIVATE_FONT_STAGE', status='NOT_RUN',
         stage='FONT_STAGE_HOST_GATE', real_browser=False, real_model_calls=0, assets={})
     try:
-        report['source_sha'] = base.require_hosted(os.environ, run_number='31')
+        report['source_sha'] = base.require_hosted(os.environ, run_number='32')
         assert DIRECTORY.parent.resolve() == base.ROOT / '.runtime'
         DIRECTORY.mkdir(mode=0o700, exist_ok=False)
         started = time.monotonic()
