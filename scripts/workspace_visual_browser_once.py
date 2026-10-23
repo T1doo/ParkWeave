@@ -1,4 +1,4 @@
-"""Run28/attempt1: original content presentation, no product backend."""
+"""Run29/attempt1: original collaboration/receipt/goal presentation, no product backend."""
 import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -16,21 +16,20 @@ REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='R
 OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
 ENTERED=threading.Event();RELEASE=threading.Event()
-DENIED='/api/preparations/00000000-0000-4000-8000-000000000001/entry'
-BASELINE_SHA='82db2929f4b3e7ec9f0065c42febfff6a9be9a37'
-SOURCE={
- 'workspace':('web.html','f740106eef67c603a56cbeb1280c8dd71a5a954af93df026f1336a20cf0ad31d'),
- 'guide':('park_demo_web.html','ae8e7f929a56e8029cb58540b4ce01768d1a319321c429320a26ae69c5fccef5')}
-PUBLIC_FILES=frozenset(('01-before-plan-wide.png','02-after-plan-wide.png','03-before-plan-narrow.png',
- '04-after-plan-narrow.png','05-before-guide-wide.png','06-after-guide-wide.png',
- '07-guide-error-narrow.png','08-guide-success-narrow.png','failure-visual.png','result.json'))
+BASELINE_SHA='aa6b2fb7e92853ea4b22d163260b309bb7992f74'
+SOURCE_SHA256='ca6c39622746c88ef602aba8b56f95845c2b978a6a6dea68ab8275d86e705362'
+PUBLIC_FILES=frozenset(('01-before-collaboration-390.png','02-after-collaboration-390.png',
+ '03-before-dispatch-390.png','04-after-dispatch-390.png','05-before-receipt-390.png',
+ '06-after-receipt-390.png','07-before-goals-txt-390.png','08-after-goals-txt-390.png',
+ 'failure-visual.png','result.json'))
+FIXTURES={}
 
-def business_script(source):
-    script=source.split(b'<script>',1)[1].split(b'</script>',1)[0]
-    start=script.index(b'function renderServiceCasePlan(');end=script.index(b'\nasync function loadServiceCasePlan',start)
-    script=script[:start]+b'<CASE_PLAN_PRESENTATION>'+script[end:]
-    start=script.index(b'function clearServiceCasePlan(');end=script.index(b'\n',start)
-    return script[:start]+b'<CASE_PLAN_PRESENTATION_CLEAR>'+script[end:]
+def presentation_contract(source):
+    import re
+    text=source.decode()
+    text=re.sub(r'<style>[\s\S]*?</style>','<STYLE>',text,count=1)
+    pattern=r'<div role="group" class="workflow-tools" data-workflow-tools="[^"]+" aria-label="[^"]+">([\s\S]*?)</div>'
+    return re.sub(pattern,r'\1',text).encode()
 
 def timeout(*_):raise TimeoutError('90s visual work and cleanup deadline')
 
@@ -51,14 +50,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path=urlsplit(self.path).path;row=dict(method='GET',path=path);REPORT['requests'].append(row)
         if len(REPORT['requests'])>40:raise RuntimeError('40 GET allowance exhausted')
-        if path in ('/before','/after','/before-guide','/after-guide'):
+        if path in ('/before','/after'):
             body=(PRIVATE/(path[1:]+'.html')).read_bytes();kind='text/html; charset=utf-8';code=200
         elif path=='/api/run-access/status':
             body=b'{"enabled":false,"read_available":false,"scope":"PRESENTATION_REPLAY_DISABLED"}';kind='application/json';code=200
-        elif path==DENIED:
-            ENTERED.set()
-            if not RELEASE.wait(15):raise TimeoutError('controlled refusal was not released')
-            body=b'{"detail":"record unavailable or authorization denied"}';kind='application/json';code=403
+        elif path=='/api/preparations':
+            body=json.dumps(FIXTURES['list'],ensure_ascii=False).encode();kind='application/json; charset=utf-8';code=200
+        elif path=='/api/preparations/'+FIXTURES['goal']['preparation_id']+'/goal-results':
+            body=json.dumps(FIXTURES['goal'],ensure_ascii=False).encode();kind='application/json; charset=utf-8';code=200
         elif path=='/favicon.ico':body=b'';kind='image/x-icon';code=204
         else:
             REPORT['unexpected_GET'].append(path);body=b'{}';kind='application/json';code=404
@@ -124,100 +123,115 @@ def shot(page,name):
     require_operation_time(15)
     page.evaluate('() => window.scrollTo(0,0)');page.screenshot(path=str(OUT/name),full_page=True,timeout=15000)
 
-def historical_plan(page,variant,width):
-    require_operation_time(30)
-    # Exact historical synthetic view only. No current health or authority claim.
-    file=ROOT/'docs/F2/evidence/again-role-readback-20261022/run23/result.json'
-    raw=file.read_bytes();assert hashlib.sha256(raw).hexdigest()=='0ef683ef62243d49b397abcf064a4714ec7cacfb5f42726d2c1c676b00cf8952'
-    plan=json.loads(raw)['fresh_roles'][0]['plans'][0]
-    REPORT['historical_fixture']=dict(source='run23 fresh_roles[0].plans[0]',sha256=hashlib.sha256(raw).hexdigest(),
-        case_id=plan['case_id'],run_id=plan['run_id'],plan_id=plan['plan_id'],purpose='HISTORICAL_SYNTHETIC_VIEW_REPLAY_ONLY_NOT_CURRENT_HEALTH')
-    page.evaluate('(x) => {servicePlanId=x.preparation_id;renderServiceCasePlan(x)}',plan)
-    panel=page.locator('#service-case-plan-detail');assert panel.is_visible()
-    assert page.evaluate('JSON.parse(JSON.stringify(servicePlanView))')==plan
-    projection=page.locator('#service-plan-steps > article').evaluate_all("""els=>els.map(e=>({id:e.dataset.serviceStepId,adapter:e.dataset.serviceAdapter,
-      name:e.querySelector('strong').textContent,paragraphs:[...e.children].filter(n=>n.tagName==='P'&&!n.classList.contains('service-step-reference')).map(n=>n.textContent),
-      full_id:e.querySelector('.service-step-reference code')?.textContent||e.querySelector('small').textContent.replace('稳定步骤编号 ',''),
-      buttons:[...e.querySelectorAll('button')].map(b=>({text:b.textContent,disabled:b.disabled,step:b.dataset.serviceStep||null,action:b.dataset.serviceAction||null,open:b.dataset.serviceOpen||null}))}))""")
-    assert [x['id'] for x in projection]==[x['id'] for x in plan['steps']]
-    assert all(x['full_id']==x['id'] for x in projection)
-    fingerprint=hashlib.sha256(json.dumps(projection,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
-    rows=REPORT.setdefault('historical_rendering',[])
-    if rows:assert rows[0]['projection_sha256']==fingerprint
-    page.evaluate("() => window.scrollTo(0,document.getElementById('service-case-plan-detail').getBoundingClientRect().top+scrollY-24)")
-    observation=observe(page,variant+'-historical-plan-'+str(width),True)
-    row=dict(variant=variant,width=width,projection_sha256=fingerprint,step_ids=[x['id'] for x in projection],source_state=plan['state'],document_height=observation['height'],font_scope='visible checked nodes near the plan heading; not every ID/action or whole panel glyph')
-    if variant=='after':
-        require_operation_time(30)
-        contract=page.locator('details[data-plan-disclosure=contract]');history=page.locator('#service-plan-history-details')
-        assert not contract.evaluate('(e)=>e.open') and not history.evaluate('(e)=>e.open')
-        assert contract.locator('summary').is_visible() and history.locator('summary').is_visible()
-        outside=page.locator('#service-plan-coverage').evaluate("e=>[...e.children].filter(n=>n.tagName!=='DETAILS').map(n=>n.textContent).join(' / ')")
-        assert '正式服务发布、审批及原Case真实目标完成仍未证明' in outside
-        for item in plan.get('current_preview',{}).get('goal_coverage',[]):
-            if item['status']!='SUPPORTED_PREVIEW':assert item['goal'] in outside
-        geometry=page.locator('#service-plan-steps > article').evaluate_all("""els=>els.map(e=>{const r=e.querySelector('.service-step-reference').getBoundingClientRect(),a=e.querySelector('.service-step-actions').getBoundingClientRect(),buttons=[...e.querySelectorAll('.service-step-actions>button')].map(b=>{const r=b.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}});return {reference_bottom:r.bottom,actions_top:a.top,buttons}})""")
-        for card in geometry:
-            assert card['actions_top']>=card['reference_bottom']+9
-            for a,b in zip(card['buttons'],card['buttons'][1:]):assert b['top']>=a['bottom']+9 or b['left']>=a['right']+9
-        reads=len(REPORT['requests']);browser_reads=len(REPORT['browser_requests'])
-        contract.locator('summary').focus();page.keyboard.press('Enter');assert contract.evaluate('(e)=>e.open')
-        focus=contract.locator('summary').evaluate("e=>({visible:e.matches(':focus-visible'),outline:getComputedStyle(e).outlineWidth})")
-        assert focus['visible'] and focus['outline']=='3px'
-        expanded=contract.inner_text()
-        for item in plan.get('current_preview',{}).get('goal_coverage',[]):
-            if item['status']=='SUPPORTED_PREVIEW':assert item['goal'] in expanded
-        history.locator('summary').click(timeout=15000);assert history.evaluate('(e)=>e.open')
-        expanded_history=history.inner_text()
-        for event in plan.get('events',[]):assert ('计划版本 '+str(event['revision'])) in expanded_history
-        preview_articles=contract.locator(':scope > article').all_text_contents();history_text=page.locator('#service-plan-history').text_content()
-        for index,original in enumerate(preview_articles):assert contract.locator(':scope > article').nth(index).inner_text()==original
-        assert page.locator('#service-plan-history').is_visible()
-        contract.locator('summary').click(timeout=15000);history.locator('summary').click(timeout=15000)
-        assert not contract.evaluate('(e)=>e.open') and not history.evaluate('(e)=>e.open')
-        assert len(REPORT['requests'])==reads and len(REPORT['browser_requests'])==browser_reads
-        row.update(disclosures_expanded_and_closed=True,disclosure_GETs=0,geometry=geometry,keyboard_focus=focus)
-        REPORT['keyboard_focus']=focus
-    else:
-        preview_articles=page.locator('#service-plan-coverage > article').all_text_contents();history_text=page.locator('#service-plan-history').text_content()
-    if rows:
-        assert preview_articles==rows[0]['rendered_preview_articles'] and history_text==rows[0]['rendered_history_text']
-    row.update(rendered_preview_articles=preview_articles,rendered_history_text=history_text,rendered_history_sha256=hashlib.sha256(history_text.encode()).hexdigest())
-    rows.append(row)
-    if width==390 and variant=='after':
-        before=next(x for x in rows if x['width']==390 and x['variant']=='before')
-        assert row['document_height']<before['document_height']
-        REPORT['narrow_height_change']=dict(before=before['document_height'],after=row['document_height'],saved=before['document_height']-row['document_height'])
-    page.evaluate("() => window.scrollTo(0,document.getElementById('service-case-plan-detail').getBoundingClientRect().top+scrollY-24)")
-    name={('before',1200):'01-before-plan-wide.png',('after',1200):'02-after-plan-wide.png',('before',390):'03-before-plan-narrow.png',('after',390):'04-after-plan-narrow.png'}[(variant,width)]
-    panel.screenshot(path=str(OUT/name),timeout=15000)
+def load_fixtures():
+    paths={
+      'run21':('docs/F2/evidence/no-model-tail-20261022/run21/result.json','f311b24f3d77931e1e07b8c5c59f7a5613893b609bfc61f4b31038d7181db9e7'),
+      'run23':('docs/F2/evidence/again-role-readback-20261022/run23/result.json','0ef683ef62243d49b397abcf064a4714ec7cacfb5f42726d2c1c676b00cf8952'),
+      'TXT':('docs/F2/evidence/no-model-tail-20261022/run21/p5-unverified-case-record-pack.txt','02c87cebbfa2c60737f6cfbfeb60628181241f2c5b5399433d4b13400cae9bdd')}
+    data={};REPORT['historical_fixtures']={}
+    for key,(name,sha) in paths.items():
+        raw=(ROOT/name).read_bytes();assert hashlib.sha256(raw).hexdigest()==sha
+        data[key]=raw.decode() if key=='TXT' else json.loads(raw)
+        REPORT['historical_fixtures'][key]=dict(file=name,sha256=sha,bytes=len(raw))
+    old=data['run21'];preps=[p['preparation'] for p in data['run23']['fresh_roles'][0]['preparations']]
+    assert len(preps)==2 and len({p['id'] for p in preps})==2
+    FIXTURES.update(dispatch=old['accepted_dispatch'],receipt=old['acknowledged_receipt'],
+      goal=old['exports'][0]['goal_results'],TXT=data['TXT'],
+      list=dict(role='enterprise_operator',items=preps))
+    assert FIXTURES['dispatch']['case_id']==FIXTURES['receipt']['step']['case_id']==FIXTURES['goal']['case_id']
+    assert FIXTURES['goal']['case_id'] not in {p['case_id'] for p in preps}
+    REPORT['fixture_scope']='Archived SYNTHETIC VIEW_REPLAY; run23 list is a separate scenario from run21 details, not a new connected business walk or current authority/health. List response is a field-preserving projection of two archived full preparation DTOs. Goal UI binding context is derived from its exact archived response, not a full plan DTO or valid session.'
 
-def guide_state(page,label,tone):
-    status=page.locator('#status');assert status.is_visible() and status.get_attribute('data-tone')==tone
-    value=status.evaluate("e=>({text:e.textContent,color:getComputedStyle(e).color,background:getComputedStyle(e).backgroundColor,height:e.clientHeight,scrollHeight:e.scrollHeight,width:e.clientWidth,scrollWidth:e.scrollWidth})")
-    assert value['color']=={'neutral':'rgb(82, 99, 93)','error':'rgb(141, 55, 46)','success':'rgb(40, 91, 61)'}[tone]
-    assert value['text'] and value['scrollHeight']<=value['height'] and value['scrollWidth']<=value['width']
-    REPORT.setdefault('guide_states',[]).append(dict(label=label,tone=tone,**value));observe(page,label,True)
+def presentation(page,component,variant,width):
+    require_operation_time(30)
+    page.evaluate("""() => {clearPreparation();clearDispatch();clearReceipts();clearServiceCasePlan();
+      document.querySelectorAll('[data-presentation-replay]').forEach(e=>e.remove());
+      $('service').hidden=true;$('collaboration').hidden=true;$('resource').hidden=true;
+      $('token').value='VIEW_REPLAY_NO_AUTHORITY';}""")
+    if component=='collaboration':
+        page.evaluate("() => {$('collaboration').hidden=false;document.body.dataset.workspace='collaboration';}")
+        page.locator('#prep-list').click(timeout=15000)
+        page.wait_for_function("() => document.querySelectorAll('#prep-items>button').length===2",timeout=15000)
+        panel=page.locator('#collaboration');scenario='run23 · 两个历史资料事项'
+        for row in FIXTURES['list']['items']:
+            assert row['id'] in page.locator('#prep-items').text_content() and row['case_id'] in page.locator('#prep-items').text_content()
+    elif component=='dispatch':
+        page.evaluate('(x) => renderDispatch(x)',FIXTURES['dispatch'])
+        assert page.evaluate('JSON.parse(JSON.stringify(dispatchView))')==FIXTURES['dispatch']
+        panel=page.locator('#dispatch-detail');scenario='run21 · 历史已接单分派'
+        assert page.locator('#dispatch-receipt').is_visible()
+    elif component=='receipt':
+        page.evaluate('(x) => renderReceipt(x)',FIXTURES['receipt'])
+        assert page.evaluate('JSON.parse(JSON.stringify(receiptView))')==FIXTURES['receipt']
+        panel=page.locator('#receipt-detail');scenario='run21 · 历史企业本地核对回执'
+        assert page.locator('#receipt-ack').is_disabled() and page.locator('#receipt-correct').is_disabled() and page.locator('#receipt-reopen').is_enabled()
+        assert FIXTURES['receipt']['current_receipt']['source_sha256'] in page.locator('#receipt-current').text_content()
+    else:
+        x=FIXTURES['goal']
+        page.evaluate("""async x => {servicePlanId=x.preparation_id;
+          servicePlanView={role:'enterprise_operator',read_only:false,case_id:x.case_id,run_id:x.run_id,
+          plan_id:x.plan_id,revision:x.plan_revision,preparation_revision:x.preparation_revision,request_revision:x.request_revision,
+          actor_ref:await coldDigest({actor_id:x.actor_id})};
+          $('service-case-plan-detail').hidden=false;$('goal-results-panel').hidden=false;}""",x)
+        page.locator('#goal-results-read').click(timeout=15000)
+        page.wait_for_function('() => goalResultView!==null',timeout=15000)
+        assert page.evaluate('JSON.parse(JSON.stringify(goalResultView))')==x
+        assert page.locator('#case-record-pack-download').is_disabled()
+        page.locator('#case-record-pack-generate').click(timeout=15000)
+        page.wait_for_function("() => !$('case-record-pack-output').hidden&&!caseRecordPackBusy",timeout=15000)
+        actual=page.locator('#case-record-pack-text').input_value()
+        assert actual==FIXTURES['TXT'],'original formatter and strict projection must reproduce the complete archived TXT'
+        assert page.locator('#case-record-pack-text').get_attribute('readonly') is not None and page.locator('#case-record-pack-download').is_enabled()
+        panel=page.locator('#goal-results-panel');scenario='run21 · 原P5尚待企业VERIFY的目标与核对包'
+        REPORT.setdefault('TXT_replay',[]).append(dict(variant=variant,width=width,bytes=len(actual.encode()),sha256=hashlib.sha256(actual.encode()).hexdigest(),scope='Original generator over exact archived GET response; not new authenticated export or download'))
+    assert panel.is_visible()
+    panel.evaluate("""(e,label) => {const n=document.createElement('p');n.dataset.presentationReplay='true';n.className='notice';n.textContent='SYNTHETIC VIEW_REPLAY · '+label+'；仅历史视图，不是当前业务、有效身份或授权。';e.prepend(n)}""",scenario)
+    projection=panel.evaluate("""e=>({text:e.textContent,controls:[...e.querySelectorAll('button,input,textarea,select')].map(b=>({id:b.id,type:b.type,text:b.tagName==='BUTTON'?b.textContent:null,value:b.value,disabled:b.disabled,hidden:b.hidden,readOnly:b.readOnly||false,dataset:{...b.dataset}}))})""")
+    rows=REPORT.setdefault('presentation_projections',[])
+    first=next((r for r in rows if r['component']==component),None)
+    if first:assert first['projection']==projection,'original text, IDs, values, hidden and disabled controls must match before/after and widths'
+    row=dict(component=component,variant=variant,width=width,projection=projection,projection_sha256=hashlib.sha256(json.dumps(projection,sort_keys=True,ensure_ascii=False).encode()).hexdigest())
+    panel.evaluate('(e)=>window.scrollTo(0,e.getBoundingClientRect().top+scrollY-24)')
+    observe(page,variant+'-'+component+'-'+str(width),True)
+    if variant=='after':
+        tools=panel.locator('.workflow-tools')
+        geometry=tools.evaluate_all("""els=>els.map(e=>({name:e.getAttribute('aria-label'),buttons:[...e.querySelectorAll(':scope>button')].filter(b=>b.getClientRects().length).map(b=>{const r=b.getBoundingClientRect();return {id:b.id,disabled:b.disabled,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width}})}))""")
+        for group in geometry:
+            assert group['name']
+            for a,b in zip(group['buttons'],group['buttons'][1:]):assert b['top']>=a['bottom']+9 or b['left']>=a['right']+9
+        row['named_tool_geometry']=geometry
+        if component=='goals-txt':
+            colors=panel.locator('#goal-results-items>article').evaluate_all("""els=>els.map(e=>({state:e.dataset.goalState,text:e.querySelector('p').textContent,color:getComputedStyle(e.querySelector('p')).color,background:getComputedStyle(e.querySelector('p')).backgroundColor}))""")
+            assert all(c['color']==('rgb(49, 94, 63)' if c['state']=='LOCAL_OUTPUT_VERIFIED' else 'rgb(23, 62, 53)') for c in colors)
+            row['goal_state_colors']=colors
+        focus=panel.locator('button:visible:not(:disabled)').first
+        focus.focus();page.keyboard.press('Tab');page.keyboard.press('Shift+Tab')
+        assert focus.evaluate('(e)=>document.activeElement===e')
+        key=focus.evaluate("e=>({id:e.id,visible:e.matches(':focus-visible'),outline:getComputedStyle(e).outlineWidth,method:'real Tab then Shift+Tab roundtrip from an initial programmatic focus'})")
+        assert key['visible'] and key['outline']=='3px';row['keyboard_focus']=key
+    rows.append(row)
+    if width==390:
+        number={'collaboration':1,'dispatch':3,'receipt':5,'goals-txt':7}[component]+(variant=='after')
+        require_operation_time(15);panel.screenshot(path=str(OUT/(str(number).zfill(2)+'-'+variant+'-'+component+'-390.png')),timeout=15000)
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='28')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='29')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
-        REPORT['source_binding']={}
+        load_fixtures()
         parent=subprocess.check_output(['git','rev-parse','HEAD^'],cwd=ROOT,text=True).strip()
         assert parent==BASELINE_SHA,'exact reviewed direct parent baseline required'
-        for name,(file,expected) in SOURCE.items():
-            after=(ROOT/'src/parkweave'/file).read_bytes()
-            before=subprocess.check_output(['git','show',BASELINE_SHA+':src/parkweave/'+file],cwd=ROOT)
-            assert hashlib.sha256(before).hexdigest()==expected
-            if name=='workspace':assert business_script(before)==business_script(after)
-            REPORT['source_binding'][name]=dict(baseline_sha=BASELINE_SHA,before_sha256=expected,after_sha256=hashlib.sha256(after).hexdigest(),
-                presentation_changes=True,business_script_unchanged_except_case_plan_render_and_clear=(name=='workspace'))
-            for variant,data in [('before',before),('after',after)]:
-                (PRIVATE/(variant+('-guide' if name=='guide' else '')+'.html')).write_bytes(data)
+        after=(ROOT/'src/parkweave/web.html').read_bytes()
+        before=subprocess.check_output(['git','show',BASELINE_SHA+':src/parkweave/web.html'],cwd=ROOT)
+        assert hashlib.sha256(before).hexdigest()==SOURCE_SHA256
+        assert presentation_contract(before)==presentation_contract(after)
+        assert before.split(b'<script>',1)[1]==after.split(b'<script>',1)[1]
+        REPORT['source_binding']=dict(baseline_sha=BASELINE_SHA,before_sha256=SOURCE_SHA256,after_sha256=hashlib.sha256(after).hexdigest(),
+          complete_script_identical=True,outside_CSS_and_seven_static_groups_identical=True)
+        for variant,data in [('before',before),('after',after)]: (PRIVATE/(variant+'.html')).write_bytes(data)
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             p=PRIVATE/name;p.mkdir(mode=0o700);env[key]=str(p)
@@ -228,29 +242,10 @@ def run_flow(started):
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
             for width in (1200,390):
                 for variant in ('before','after'):
-                    stage(variant.upper()+'_HISTORICAL_PLAN_'+str(width));context,page=open_page(browser,origin,'/'+variant,width)
-                    historical_plan(page,variant,width);context.close()
-            for variant in ('before','after'):
-                stage(variant.upper()+'_GUIDE_WIDE');context,page=open_page(browser,origin,'/'+variant+'-guide',1200)
-                assert all(page.locator('[data-role='+role+']').is_disabled() for role in ('enterprise','specialist','executor'))
-                if variant=='after':guide_state(page,'guide-neutral-wide','neutral')
-                else:observe(page,'before-guide-wide',True)
-                shot(page,'05-before-guide-wide.png' if variant=='before' else '06-after-guide-wide.png');context.close()
-            stage('AFTER_GUIDE_NARROW');context,page=open_page(browser,origin,'/after-guide',390)
-            page.locator('#sessions').set_input_files(dict(name='not-a-session.json',mimeType='application/json',buffer=b'{}'))
-            page.wait_for_function("() => document.getElementById('status').dataset.tone==='error'",timeout=15000)
-            assert page.locator('#workspace-open').is_disabled();guide_state(page,'guide-invalid-file-narrow','error');shot(page,'07-guide-error-narrow.png')
-            roles=('enterprise','specialist','executor','second_enterprise','second_specialist','second_executor')
-            memory_file=json.dumps({role:str(i)*43 for i,role in enumerate(roles)}).encode()
-            REPORT['guide_success_scope']='FORMAT_VALID_SYNTHETIC_MEMORY_FILE_ONLY_NOT_A_REAL_SESSION_OR_AUTHORITY'
-            page.locator('#sessions').set_input_files(dict(name='SYNTHETIC-memory-only.json',mimeType='application/json',buffer=memory_file))
-            page.wait_for_function("() => document.getElementById('status').dataset.tone==='success'",timeout=15000)
-            assert page.locator('#workspace-open').is_enabled() and all(page.locator('[data-role='+role+']').is_disabled() for role in roles[:3])
-            guide_state(page,'guide-memory-file-success-narrow','success');shot(page,'08-guide-success-narrow.png')
-            REPORT['guide_event_scope']='Synthetic pagehide dispatched to the original listener and programmatic input clear; not real navigation, bfcache or native chooser cancellation'
-            page.evaluate("() => window.dispatchEvent(new Event('pagehide'))")
-            assert page.locator('#workspace-open').is_disabled();guide_state(page,'guide-injected-pagehide-neutral-narrow','neutral')
-            page.locator('#sessions').set_input_files([]);guide_state(page,'guide-programmatic-selection-cleared-neutral-narrow','neutral');context.close()
+                    stage(variant.upper()+'_PRESENTATION_'+str(width));context,page=open_page(browser,origin,'/'+variant,width)
+                    for component in ('collaboration','dispatch','receipt','goals-txt'):
+                        stage(variant.upper()+'_'+component.upper()+'_'+str(width));presentation(page,component,variant,width)
+                    context.close()
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
             REPORT['status']='PASS';stage('COMPLETE')
@@ -286,7 +281,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='28')
+        source=base.require_hosted(os.environ,run_number='29')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
