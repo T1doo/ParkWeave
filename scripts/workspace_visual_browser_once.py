@@ -1,5 +1,5 @@
-"""Run39/attempt1 candidate: native return paths and collaboration; no product backend."""
-import hashlib,json,math,os,queue,signal,socket,subprocess,sys,tempfile,threading,time,traceback
+"""Run40/attempt1 candidate: resource and guide presentation; no product backend."""
+import hashlib,json,math,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
@@ -15,19 +15,19 @@ REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='R
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
-BASELINE_SHA='c20ff280977efe1180dc195686a7cd2adeec441d'
-SOURCE_SHA256='9711354a500e0940f1be9677b38e9d35d68e03a5485aa0ba4c9bd8d43ab30aa2'
-GUIDE_SHA256='1d1aefb15eda9ef9107220e8c72e8a1b864d0eac1b6a46c0e3203cca7508163e'
-PNG_FILES=('01-service-entry-1200.png','02-service-entry-390.png',
-    '03-native-existing-390.png','04-native-formal-390.png','05-collaboration-empty-1200.png',
-    '06-collaboration-records-1200.png','07-collaboration-records-390.png','08-collaboration-denied-390.png')
+BASELINE_SHA='a105a5bf1a7bc7fb064dcfba7a1159eadc9cd134'
+SOURCE_SHA256='7798e0e5c08462fd98cc20382d9e429a57a58ca61bbe95513c32065c7d755884'
+GUIDE_SHA256='966f175764bdf323eea9c6e87f520c584da6ae03243b5c0396e492ce76a1af8c'
+PNG_FILES=('01-resource-fieldset-1200.png','02-resource-fieldset-390.png',
+    '03-resource-records-1200.png','04-resource-records-390.png','05-guide-entry-1200.png',
+    '06-guide-entry-390.png','07-guide-invalid-390.png','08-guide-ready-390.png')
 PUBLIC_FILES=frozenset(PNG_FILES+('failure-visual.png','result.json'))
 EXPECTED_CHANGED_PATHS=frozenset((
     '.github/workflows/fictional-park-browser-once.yml','scripts/workspace_visual_browser_once.py',
     'scripts/fictional_park_font_once.py','docs/F2/evidence/eng057-job-shards.json',
-    'docs/demo/evidence/task-desk-20261023/run39/README.md',
-    'docs/demo/evidence/task-desk-20261023/run39/preflight.json',
-    'docs/demo/evidence/task-desk-20261023/run39/SHA256SUMS'))
+    'docs/demo/evidence/task-desk-20261023/run40/README.md',
+    'docs/demo/evidence/task-desk-20261023/run40/preflight.json',
+    'docs/demo/evidence/task-desk-20261023/run40/SHA256SUMS'))
 FIXTURE_SUMMARY='合成界面复放 · 无真实业务、身份或授权'
 FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE · 静态交互复放，非真实业务、身份或授权。'
 
@@ -78,20 +78,14 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path=urlsplit(self.path).path;row=dict(method='GET',path=path);REPORT['requests'].append(row)
         if len(REPORT['requests'])>=40:raise RuntimeError('40 GET allowance exhausted')
-        if path=='/current':
-            body=(PRIVATE/'current.html').read_bytes();kind='text/html; charset=utf-8';code=200
-        elif path in LIST_PATHS.values():
-            name=next(k for k,v in LIST_PATHS.items() if v==path)
-            try:fixture=LIST_REPLIES[name].get_nowait()
-            except queue.Empty:
-                REPORT['unexpected_GET'].append(path);body=b'{}';kind='application/json';code=404
-            else:
-                fixture['started'].set()
-                if not fixture['release'].wait(5):
-                    REPORT['violations'].append(dict(path=path,reason='controlled fixture release missed5s'))
-                    body=b'{}';code=504
-                else:body=fixture['body'];code=fixture['code']
-                kind='application/json'
+        if path in ('/current','/','/guide'):
+            body=(PRIVATE/('guide.html' if path=='/guide' else 'current.html')).read_bytes();kind='text/html; charset=utf-8';code=200
+        elif path in RESOURCE_REPLIES:
+            RESOURCE_READS[path]=RESOURCE_READS.get(path,0)+1
+            if RESOURCE_READS[path]>RESOURCE_LIMITS[path]:
+                REPORT['unexpected_GET'].append(path);body=b'{}';code=404
+            else:body=json.dumps(RESOURCE_REPLIES[path],ensure_ascii=False).encode();code=200
+            kind='application/json'
         elif path=='/api/run-access/status':
             body=b'{"enabled":false,"read_available":false,"scope":"PRESENTATION_REPLAY_DISABLED"}';kind='application/json';code=200
         elif path=='/favicon.ico':body=b'';kind='image/x-icon';code=204
@@ -137,9 +131,10 @@ def open_page(browser,origin,path,width):
             if request.method=='POST':REPORT['business_POSTs']+=1
             route.abort()
     context.route('**/*',boundary);page=context.new_page();PAGE=page
+    context.on('page',lambda new_page:new_page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error))))
     page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error)))
     response=page.goto(origin+path,wait_until='load',timeout=15000)
-    assert response.status==200 and response.body()==(PRIVATE/(path[1:]+'.html')).read_bytes()
+    assert response.status==200 and response.body()==(PRIVATE/('guide.html' if path=='/guide' else 'current.html')).read_bytes()
     return context,page
 
 def observe(page,label,font=False):
@@ -176,49 +171,6 @@ def visible_in_viewport(page,ids):
     return rows
 
 
-NAVIGATION_WORKSPACE_SCRIPT="""() => ({
-    workspace:{present:document.body.hasAttribute('data-workspace'),value:document.body.getAttribute('data-workspace')},
-    current:[...document.querySelectorAll('[data-tab][aria-current=page]')].map(e=>e.dataset.tab),
-    panels:['service','collaboration','resource'].map(id=>({id,hidden:$(id).hidden}))})
-"""
-
-
-def assert_navigation_workspace(before,after):
-    assert before['workspace'] in ({'present':False,'value':None},{'present':True,'value':'service'}),before
-    assert before['current']==['service'],before
-    assert before['panels']==[dict(id=name,hidden=name!='service') for name in ('service','collaboration','resource')],before
-    assert after==before,dict(before=before,after=after)
-
-
-RETURN_LINKS=(('existing-preparation-jump','existing-preparation-entry','existing-preparation-id'),
-    ('formal-preparation-jump','formal-preparation-entry','formal-preparation-check'))
-LIST_PATHS={'dispatch':'/api/service-dispatches','receipt':'/api/executor-receipts'}
-LIST_REPLIES={kind:queue.Queue(maxsize=1) for kind in LIST_PATHS}
-FIXTURE_GOAL='合成界面夹具：为星河制造整理园区联合培训材料，等待本人核对原记录'
-
-def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
-
-def same_document_snapshot(page):
-    return page.evaluate("""() => ({hash:location.hash,history:history.length,
-        active:document.activeElement.id,workspace:document.body.getAttribute('data-workspace'),
-        epochs:[tiEpoch,templateEntryGeneration]})""")
-
-
-def entry_observation(page,width):
-    require_operation_time(5)
-    row=page.evaluate("""() => {const box=e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}};
-        return {width:innerWidth,links:box(document.querySelector('.return-entry-links')),
-            primary:box(document.querySelector('.primary-entry-heading')),firstAction:box($('prep-catalog')),
-            documentFirstActionTop:$('prep-catalog').getBoundingClientRect().top+scrollY,
-            existingTop:$('existing-preparation-entry').getBoundingClientRect().top+scrollY,
-            formalTop:$('formal-preparation-entry').getBoundingClientRect().top+scrollY};} """)
-    assert row['links']['top']<row['primary']['top']<row['firstAction']['top'],row
-    assert 0<=row['firstAction']['top']<row['firstAction']['bottom']<=1000,row
-    REPORT.setdefault('entry_geometry',[]).append(row)
-    observe(page,'current-return-entry-'+str(width),True)
-    capture(page,'01-service-entry-1200.png' if width==1200 else '02-service-entry-390.png')
-
-
 def capture(page,name):
     require_operation_time(15)
     assert name in PUBLIC_FILES and name.endswith('.png')
@@ -230,7 +182,7 @@ def compose_fixture(page,selector):
     # Only after raw native/geometry measurements. This is screenshot framing,
     # never the oracle for browser navigation landing or original target focus.
     page.evaluate("""selector=>{const n=document.querySelector('[data-visual-fixture]'),target=document.querySelector(selector);
-        if(!n||!target)throw Error('fixture composition target missing');target.prepend(n);target.scrollIntoView({block:'start',behavior:'instant'});} """,selector)
+        if(!n||!target)throw Error('fixture composition target missing');if(target.tagName==='FIELDSET')target.querySelector('legend').after(n);else target.prepend(n);target.scrollIntoView({block:'start',behavior:'instant'});} """,selector)
     REPORT.setdefault('screenshot_composition',[]).append(dict(selector=selector,scope='Move only the explicit fixture marker, then frame original section; not native landing proof'))
 
 
@@ -245,298 +197,209 @@ def dispatch_frame_delta(rows,height):
     return minimum if minimum>0 else maximum if maximum<0 else 0
 
 
-def frame_dispatch_records(page):
-    # Screenshot06 only: correct scroll-padding's landing using actual geometry.
-    # A single whole-page scroll preserves both lanes, font sizes and all text.
+RESOURCE_READS={}
+RESOURCE_NAME='合成资源：园区联合培训资料整理与设备说明核对'
+RESOURCE_MEMBER=dict(resource_name=RESOURCE_NAME,purpose='长中文合成记录：须本人核对，外部未受理',starts_at='2026-10-23T10:00:00Z',ends_at='2026-10-23T11:00:00Z',quantity=1,state='CONFIRMED')
+RESOURCE_REPLIES={
+    '/api/synthetic-resources':dict(server_time='2026-10-23T09:00:00Z',items=[dict(id='ui-resource-1',name=RESOURCE_NAME,capacity=3,revision=1,buffer_seconds=60,enabled=True,open_from='2026-10-23T00:00:00Z',open_until='2026-10-24T00:00:00Z',source=dict(kind='SYNTHETIC',id='ui-source-1',revision=1,statement='静态交互复放，非真实可用性'))]),
+    '/api/resource-bundles':dict(actor_id='SYNTHETIC_UI_ACTOR',items=[dict(id='ui-combination-1',state='CONFIRMED',members=[dict(RESOURCE_MEMBER,id='ui-member-'+str(i),resource_name=RESOURCE_NAME+' · '+str(i)) for i in range(1,4)])])}
+RESOURCE_LIMITS={'/api/synthetic-resources':2,'/api/resource-bundles':4}
+
+
+def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
+
+
+def rectangles(page,selectors):
+    return page.evaluate("""selectors=>selectors.map(selector=>{const e=document.querySelector(selector);if(!e)throw Error('required node missing '+selector);const r=e.getBoundingClientRect();return {selector,visible:!!e.getClientRects().length,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight}})""",selectors)
+
+
+def bounded_rectangles(rows,viewport=False):
+    assert all(x['visible'] and x['width']>0 and x['height']>0 and 0<=x['left']<x['right']<=x['viewportWidth'] for x in rows),rows
+    if viewport:assert all(0<=x['top']<x['bottom']<=x['viewportHeight'] for x in rows),rows
+
+
+def frame_required(page,selectors):
+    # Original nodes remain untouched; move the explicit fixture marker only.
     require_operation_time(5);counts=request_counts();viewport=dict(page.viewport_size)
-    selectors=['.collaboration-lane:first-child > [data-visual-fixture]',
-        '.collaboration-lane:first-child > h3','.collaboration-lane:first-child > p:not([role])',
-        '#dispatch-list','#dispatch-list-status','#dispatch-items',
-        '#dispatch-items > button:nth-child(1)','#dispatch-items > button:nth-child(2)',
-        '.collaboration-lane:last-child > h3','.collaboration-lane:last-child > p:not([role])']
-    measure="""selectors=>({height:innerHeight,width:innerWidth,scrollY,rows:selectors.map(selector=>{
-        const found=document.querySelectorAll(selector);if(found.length!==1)throw Error('required framing node missing or ambiguous: '+selector);
-        const e=found[0],r=e.getBoundingClientRect();return {selector,top:r.top,bottom:r.bottom,left:r.left,right:r.right,
-            visible:!!e.getClientRects().length&&getComputedStyle(e).visibility==='visible'};})})"""
-    before=page.evaluate(measure,selectors);delta=dispatch_frame_delta(before['rows'],before['height'])
-    page.evaluate("delta=>window.scrollBy({top:delta,left:0,behavior:'instant'})",delta)
-    after=page.evaluate(measure,selectors)
-    REPORT.setdefault('dispatch_record_framing',[]).append(dict(before=before,requested_scroll_delta=delta,actual_scroll_delta=after['scrollY']-before['scrollY'],after=after,
-        margin=16,scope='Screenshot06 composition only, one whole-page scroll; not native return landing proof'))
-    assert after['height']==before['height']==1000 and after['width']==before['width']==1200 and page.viewport_size==viewport
-    assert all(r['visible'] and 16<=r['top']<r['bottom']<=after['height']-16 and 0<=r['left']<r['right']<=after['width'] for r in after['rows']),after
-    assert dispatch_frame_delta(after['rows'],after['height'])==0,after
-    assert counts==request_counts(),'screenshot framing made a request'
+    rows=rectangles(page,selectors)
+    delta=dispatch_frame_delta(rows,1000)
+    page.evaluate('delta=>window.scrollBy({top:delta,behavior:"instant"})',delta)
+    rows=rectangles(page,selectors);bounded_rectangles(rows,True)
+    assert all(16<=x['top'] and x['bottom']<=984 for x in rows),rows
+    assert counts==request_counts() and dict(page.viewport_size)==viewport,'framing must not request or resize'
+    REPORT.setdefault('screenshot_framing',[]).append(dict(selectors=selectors,scroll_delta=delta,rectangles=rows))
 
 
-def native_return(page,link,target,first,method,*,shot=None):
-    require_operation_time(15)
-    assert not page.evaluate('()=>!!activeEntryWriteFlow||entryWriteRequests.size>0||!!receiptLocalPending')
-    before=same_document_snapshot(page);counts=request_counts()
-    assert before['hash']!='#'+target
-    document_token=page.evaluate("()=>{window.__returnDocument=window.__returnDocument||{id:crypto.randomUUID()};window.__beforeReturnDocument=window.__returnDocument;return window.__returnDocument.id;}")
-    if method=='mouse':page.locator('#'+link).click(timeout=15000)
-    else:page.locator('#'+link).focus();page.keyboard.press('Enter')
-    page.wait_for_function('id=>location.hash==="#"+id',arg=target,timeout=15000)
-    landed=same_document_snapshot(page)
-    assert landed['active']==target and landed['workspace']==before['workspace'],landed
-    assert landed['epochs']==[x+1 for x in before['epochs']],landed
-    assert page.evaluate('token=>!!window.__returnDocument&&!!window.__beforeReturnDocument&&window.__returnDocument===window.__beforeReturnDocument&&window.__returnDocument.id===token',document_token)
-    raw=page.locator('#'+target).evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,heading:e.querySelector('h2').textContent,warning:e.querySelector('p').textContent}}")
-    assert raw['height']>0 and -1<=raw['top']<1000,raw
-    page.keyboard.press('Tab');tab=page.evaluate('()=>document.activeElement.id');assert tab==first,(target,tab)
-    if shot:
-        compose_fixture(page,'#'+target)
-        visible_in_viewport(page,[target])
-        observe(page,'current-return-target-'+target,True);capture(page,shot)
-        # Restore marker to the original preparation position before Back.
-        page.evaluate("()=>$('prep-catalog').before(document.querySelector('[data-visual-fixture]'))")
-    page.go_back(wait_until='load',timeout=15000)
-    page.wait_for_function('hash=>location.hash===hash',arg=before['hash'],timeout=15000)
-    restored=same_document_snapshot(page)
-    assert restored['workspace']==before['workspace'] and restored['epochs']==landed['epochs'],restored
-    assert page.evaluate('token=>!!window.__returnDocument&&!!window.__beforeReturnDocument&&window.__returnDocument===window.__beforeReturnDocument&&window.__returnDocument.id===token',document_token)
-    assert counts==request_counts(),'same-document return navigation made a request'
-    REPORT.setdefault('return_navigation',[]).append(dict(width=page.viewport_size['width'],link=link,method=method,
-        before=before,landed=landed,raw_native_target=raw,next_Tab=tab,back=restored,request_delta=0,
-        scope='Actual mouse/Enter/Tab/Back; no target.focus, hash assignment or scroll used to establish native landing'))
-
-
-RETURN_FIXTURE_INSTALL="""mode => {
-    if(prepCommandPending||receiptLocalPending||activeEntryWriteFlow||entryWriteRequests.size)throw Error('nonempty original write state');
-    const f={mode,pending:{context:prepContext(),state:'UNKNOWN',key:'11111111-1111-4111-8111-111111111111',
-        body:{action:'ADD_EVIDENCE',expected_revision:1,text:'SYNTHETIC UI_STATE_FIXTURE, never sent'}},
-        flow:{kind:'SYNTHETIC_UI_STATE_FIXTURE',requests:new Map()},op:{kind:'SYNTHETIC_UI_STATE_FIXTURE',path:'/api/runs/22222222-2222-4222-8222-222222222222'},
-        map:entryWriteRequests,draft:$('prep-text').value,goal:$('prep-goal').value};
-    $('prep-text').value='SYNTHETIC original unsent draft';$('prep-goal').value='SYNTHETIC original unsent goal';
-    if(mode==='prep-unknown')prepCommandPending=f.pending;
-    else if(mode==='receipt-unknown')receiptLocalPending=f.pending;
-    else if(mode==='active-flow')activeEntryWriteFlow=f.flow;
-    else if(mode==='retained-lease')entryWriteRequests.set('SYNTHETIC_UI_STATE_FIXTURE',f.op);
-    else throw Error('unknown fixture mode');
-    f.body=f.pending.body;f.context=f.pending.context;f.flowRequests=f.flow.requests;
-    f.snapshot=()=>{const copy=document.body.cloneNode(true);for(const id of ['result','page-feedback','receipt-local-execution-error']){copy.querySelector('#'+id).replaceChildren();copy.querySelector('#'+id).removeAttribute('data-tone');}
-        return JSON.stringify({DOM:copy.innerHTML,controls:[...document.querySelectorAll('input,textarea,select,button')].map(e=>({id:e.id,value:e.value,checked:e.checked,disabled:e.disabled,hidden:e.hidden})),
-        pending:prepCommandPending,receipt:receiptLocalPending,flow:activeEntryWriteFlow,flowRequestEntries:[...f.flow.requests],flowRequestSize:f.flow.requests.size,ops:[...entryWriteRequests],
-        workspace:document.body.getAttribute('data-workspace'),panels:['service','collaboration','resource'].map(id=>[id,$(id).hidden])});};
-    f.serialized=JSON.stringify(f.pending);f.before=f.snapshot();window.__returnStateFixture=f;return {mode,scope:'Explicit client UI state only; no request, business identity or authority'};
-}"""
-RETURN_FIXTURE_COMPARE="""() => {
-    const f=window.__returnStateFixture;if(!f||f.map!==entryWriteRequests||f.pending.body!==f.body||f.pending.context!==f.context||f.flow.requests!==f.flowRequests||JSON.stringify(f.pending)!==f.serialized||f.snapshot()!==f.before)throw Error('original pending/draft/control state changed');
-    if(f.mode==='prep-unknown'&&prepCommandPending!==f.pending||f.mode==='receipt-unknown'&&receiptLocalPending!==f.pending||f.mode==='active-flow'&&activeEntryWriteFlow!==f.flow||f.mode==='retained-lease'&&entryWriteRequests.get('SYNTHETIC_UI_STATE_FIXTURE')!==f.op)throw Error('fixture object reference changed');
-    return {same_pending_reference_and_body:true,same_drafts_controls_and_workspace:true,same_flow_Map_op_reference:true};
-}"""
-RETURN_FIXTURE_RELEASE="""() => {
-    const f=window.__returnStateFixture;
-    if(!f||f.snapshot()!==f.before)throw Error('cannot release changed state');
-    if(f.mode==='prep-unknown'){if(prepCommandPending!==f.pending)throw Error('pending changed');prepCommandPending=null;}
-    if(f.mode==='receipt-unknown'){if(receiptLocalPending!==f.pending)throw Error('receipt changed');receiptLocalPending=null;}
-    if(f.mode==='active-flow'){if(activeEntryWriteFlow!==f.flow)throw Error('flow changed');activeEntryWriteFlow=null;}
-    if(f.mode==='retained-lease'){if(entryWriteRequests.get('SYNTHETIC_UI_STATE_FIXTURE')!==f.op)throw Error('op changed');entryWriteRequests.delete('SYNTHETIC_UI_STATE_FIXTURE');}
-    $('prep-text').value=f.draft;$('prep-goal').value=f.goal;delete window.__returnStateFixture;
-}"""
-
-
-def return_guard_observation(page):
-    require_operation_time(15)
-    for mode in ('prep-unknown','active-flow','retained-lease','receipt-unknown'):
-        fixture=page.evaluate(RETURN_FIXTURE_INSTALL,mode)
-        try:
-            for link,target,first in RETURN_LINKS:
-                for method in ('mouse','Enter'):
-                    if mode=='prep-unknown':
-                        native_return(page,link,target,first,method)
-                        proof=page.evaluate(RETURN_FIXTURE_COMPARE)
-                        detail=dict(native_observation_index=len(REPORT['return_navigation'])-1)
-                    else:
-                        before=same_document_snapshot(page);counts=request_counts()
-                        assert before['hash']!='#'+target
-                        if method=='mouse':page.locator('#'+link).click(timeout=15000)
-                        else:page.locator('#'+link).focus();page.keyboard.press('Enter')
-                        after=same_document_snapshot(page);proof=page.evaluate(RETURN_FIXTURE_COMPARE)
-                        assert after['hash']==before['hash'] and after['history']==before['history'] and after['active']!=target,(mode,before,after)
-                        expected=before['epochs'] if mode=='receipt-unknown' else [x+1 for x in before['epochs']]
-                        assert after['epochs']==expected,(mode,before,after)
-                        assert counts==request_counts()
-                        feedback=page.locator('#receipt-local-execution-error' if mode=='receipt-unknown' else '#page-feedback').text_content()
-                        expected_feedback='本地执行结果未知；请先使用原请求重试。切换页面或角色会清除此身份的私有请求状态。' if mode=='receipt-unknown' else '请先在原入口核对尚未确定的操作；原请求编号与草稿保留，可使用原入口只读恢复。'
-                        assert feedback==expected_feedback,feedback
-                        detail=dict(before=before,after=after,feedback=feedback)
-                    REPORT.setdefault('return_state_guards',[]).append(dict(fixture=fixture,link=link,method=method,proof=proof,
-                        default_navigation='ALLOWED_LOCATION_ONLY' if mode=='prep-unknown' else 'PREVENTED',request_delta=0,**detail))
-        finally:page.evaluate(RETURN_FIXTURE_RELEASE)
-
-
-def queue_list(kind,state,held=False):
-    ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222']
-    rows=[dict(id=id,preparation_id=('33333333-3333-4333-8333-333333333333' if i==0 else '44444444-4444-4444-8444-444444444444'),
-        goal=FIXTURE_GOAL,state='LOCAL_ACKNOWLEDGED' if i==0 else 'SYNTHETIC_UNMAPPED',case_cancelled=i==0,case_write_blocked=i==0) for i,id in enumerate(ids)]
-    data=dict(role='enterprise_operator',scope='SYNTHETIC_INTERNAL_DISPATCH_ONLY' if kind=='dispatch' else 'SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY',items=rows if state=='READY' else [])
-    fixture=dict(code=403 if state=='DENIED' else 200,body=json.dumps(data,ensure_ascii=False).encode(),started=threading.Event(),release=threading.Event())
-    if not held:fixture['release'].set()
-    LIST_REPLIES[kind].put_nowait(fixture);return fixture
-
-
-def read_list_fixture(page,kind,state,*,held=False):
-    require_operation_time(15)
-    fixture=queue_list(kind,state,held)
-    before=request_counts()
-    visible_before=page.locator('#'+kind+'-items > button').count()
-    pre_response=None
+def resource_breakpoints(page,width):
+    counts=request_counts();viewport=dict(page.viewport_size);scroll=page.evaluate('()=>({x:scrollX,y:scrollY})')
     try:
-        page.locator('#'+kind+'-list').click(timeout=15000)
-        if held:
-            observed_by=time.monotonic()+2
-            while not fixture['started'].is_set():
-                remaining=observed_by-time.monotonic();assert remaining>0,'list fixture request not observed'
-                page.wait_for_timeout(min(20,remaining*1000))
-            assert page.locator('#'+kind+'-list').is_disabled()
-            assert page.locator('#'+kind+'-list-status').get_attribute('data-state')=='LOADING'
-            assert page.locator('#'+kind+'-items').get_attribute('aria-busy')=='true'
-            pre_response=page.evaluate("()=>({dispatchCards:$('dispatch-items').children.length,receiptCards:$('receipt-items').children.length,viewsAlreadyEmpty:preparationView===null&&dispatchView===null&&receiptView===null})")
-            fixture['release'].set()
-        page.wait_for_function('x=>$(x.kind+"-list-status").dataset.state===x.state',arg=dict(kind=kind,state=state),timeout=15000)
-        assert not page.locator('#'+kind+'-list').is_disabled()
-        assert page.locator('#'+kind+'-items').get_attribute('aria-busy')=='false'
-        after=request_counts();assert after[0]-before[0]==1 and after[1]-before[1]==1 and after[2]==before[2]
-        assert REPORT['requests'][-1]['path']==LIST_PATHS[kind] and REPORT['requests'][-1]['status']==fixture['code']
-        REPORT.setdefault('list_response_fixtures',[]).append(dict(kind=kind,state=state,status=fixture['code'],loading_observed=held,cards_before_click=visible_before,pre_response=pre_response,server_GET_delta=1,browser_GET_delta=1,POST_delta=0))
-    finally:fixture['release'].set()
+        for w in (899,900,390):
+            page.set_viewport_size(dict(width=w,height=1000))
+            rows=rectangles(page,['.resource-pair','#bundle-panel','#delivery-panel','#combination-items'])
+            bounded_rectangles(rows)
+            a,b,d,i=rows
+            if w>=900:assert a['right']+8<=b['left'] and abs(a['top']-b['top'])<2,rows
+            else:assert a['bottom']<=b['top'] and abs(a['left']-b['left'])<2,rows
+            assert abs(d['left']-a['left'])<2 and abs(i['left']-a['left'])<2 and d['width']>=a['width'] and i['width']>=a['width'],rows
+            REPORT.setdefault('resource_breakpoints',[]).append(dict(width=w,rows=rows,scope='geometry only, not PNG'))
+    finally:
+        page.set_viewport_size(viewport);page.evaluate('p=>scrollTo({left:p.x,top:p.y,behavior:"instant"})',scroll)
+    assert dict(page.viewport_size)==viewport and page.evaluate('()=>({x:scrollX,y:scrollY})')==scroll
+    assert counts==request_counts()
 
 
-def collaboration_geometry(page,label):
-    row=page.evaluate("""() => {const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
-        const lanes=[...document.querySelectorAll('.collaboration-lane')];return {width:innerWidth,documentWidth:document.documentElement.scrollWidth,
-            header:box(document.querySelector('.collaboration-heading')),primary:box(document.querySelector('.collaboration-preparation')),
-            grid:getComputedStyle(document.querySelector('.collaboration-lanes')).gridTemplateColumns,
-            lanes:lanes.map(e=>({box:box(e),readButton:{id:e.querySelector('button').id,...box(e.querySelector('button'))},listDisplay:getComputedStyle(e.querySelector('.actions')).display,listColumns:getComputedStyle(e.querySelector('.actions')).gridTemplateColumns})),
-            buttons:[...document.querySelectorAll('#collaboration button')].filter(e=>e.getClientRects().length).map(e=>({id:e.id,...box(e)}))};} """)
-    row['label']=label;REPORT.setdefault('collaboration_geometry',[]).append(row)
-    assert row['documentWidth']<=row['width'] and row['header']['bottom']<=row['primary']['top']<row['lanes'][0]['box']['top'],row
-    a,b=[r['box'] for r in row['lanes']]
-    if row['width']>=900:assert abs(a['top']-b['top'])<=1 and a['right']<b['left'],row
-    else:assert a['bottom']<b['top'],row
-    assert [r['readButton']['id'] for r in row['lanes']]==['dispatch-list','receipt-list'],row
-    assert all(r['listDisplay']=='grid' and len(r['listColumns'].split())==1 for r in row['lanes']),row
-    assert all(r['height']>=44 for r in row['buttons']),row
-    if row['width']==390:
-        for lane in row['lanes']:
-            button=lane['readButton']
-            assert button['id'] in ('dispatch-list','receipt-list') and button['width']>=lane['box']['width']-40,row
+def resource_observation(page,width):
+    page.locator('[data-tab="resource"]').click(timeout=15000)
+    assert page.locator('#resource').is_visible()
+    page.locator('#resource-catalog').click(timeout=15000)
+    page.wait_for_function("() => !$('resource-form').hidden && bundleActor==='SYNTHETIC_UI_ACTOR'",timeout=15000)
+    assert '外部未受理' in page.locator('.resource-preparation>.notice').inner_text()
+    fields=['resource-start','resource-end','resource-search-from','resource-search-until']
+    for name in fields:
+        field=page.locator('#'+name);assert field.get_attribute('type')=='datetime-local' and field.input_value()
+        field.focus();assert field.evaluate('e=>document.activeElement===e')
+    geometry=rectangles(page,['#resource-form','#resource-form>fieldset']+['#'+x for x in fields])
+    bounded_rectangles(geometry)
+    fieldset=geometry[1]
+    assert all(fieldset['left']<=x['left']<x['right']<=fieldset['right'] for x in geometry[4:]),geometry
+    if width==1200:assert geometry[1]['width']>=geometry[0]['width']-2,geometry
+    REPORT.setdefault('resource_form',[]).append(dict(width=width,rows=geometry,datetime_scope='native datetime-local controls/value/focus, not OS picker interaction'))
+    assert page.locator('#resource-hold').is_disabled()
+    compose_fixture(page,'#resource-form>fieldset')
+    fieldset_selectors=['[data-visual-fixture]','#resource-form>fieldset>legend','#resource-form>fieldset>p','#resource-form>fieldset>label:has(#resource-search-from)','#resource-form>fieldset>label:has(#resource-search-until)','#resource-search-from','#resource-search-until','#resource-alternatives']
+    frame_required(page,fieldset_selectors)
+    observe(page,'resource-fieldset-'+str(width),True)
+    capture(page,'01-resource-fieldset-1200.png' if width==1200 else '02-resource-fieldset-390.png')
+    # Read through the original button and renderer, not an injected renderer call.
+    page.locator('#bundle-mine').click(timeout=15000)
+    page.wait_for_function("()=>$('combination-items').querySelectorAll('.combination-result').length===1",timeout=15000)
+    card=page.locator('#combination-items>.combination-result')
+    assert card.locator('p').count()==4 and '3条占位均本地合成确认' in card.inner_text()
+    assert card.locator('.boundary-note').inner_text()=='组合仅为本地合成记录。真实预约未确认，外部未受理，无线下履约。'
+    assert card.locator('[data-combination-cancel]').count()==1
+    if width==1200:resource_breakpoints(page,width)
+    # Static Case warnings are original explanatory text, not a Case permission proof.
+    delivery=page.locator('#delivery-panel');assert '资格请求不是事实或批准' in delivery.inner_text() and '旧占用及全部历史保留' in delivery.inner_text()
+    assert page.locator('#delivery-confirm').is_disabled() and page.locator('#delivery-reapproval').is_disabled()
+    REPORT.setdefault('resource_case_warning',[]).append(dict(width=width,text=delivery.inner_text(),scope='original static warnings and disabled gates, no Case read/action/permission acceptance'))
+    compose_fixture(page,'#combination-items')
+    frame_required(page,['[data-visual-fixture]','#combination-items>.combination-result'])
+    observe(page,'resource-records-'+str(width),True)
+    capture(page,'03-resource-records-1200.png' if width==1200 else '04-resource-records-390.png')
+
+
+def guide_status(page,tone,fragment):
+    page.wait_for_function("([tone,fragment])=>$('status').dataset.tone===tone&&$('status').textContent.includes(fragment)",arg=[tone,fragment],timeout=15000)
+    row=page.locator('#status').evaluate("e=>({tone:e.dataset.tone,text:e.textContent,color:getComputedStyle(e).color,background:getComputedStyle(e).backgroundColor,role:e.getAttribute('role')})")
+    assert row['role']=='status'
+    REPORT.setdefault('guide_status',[]).append(row)
     return row
 
 
-def collaboration_records(page,kind):
-    cards=page.locator('#'+kind+'-items > button');assert cards.count()==2
-    rows=[]
-    for i in range(2):
-        card=cards.nth(i);expected=('11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222')[i]
-        assert card.get_attribute('data-list-record-id')==expected
-        text=card.inner_text();assert FIXTURE_GOAL in text and expected in text
-        other=('22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111')[i];assert other not in text
-        assert '不确认当前责任或办理权限' in text and '只读打开' in text
-        if kind=='receipt':assert ('Case已取消' in text and '新办理暂停' in text) if i==0 else '状态待核对' in text
-        rows.append(dict(id=expected,text_sha256=hashlib.sha256(text.encode()).hexdigest()))
-    REPORT.setdefault('collaboration_record_observations',[]).append(dict(width=page.viewport_size['width'],kind=kind,records=rows,same_named_distinct_keys=True))
-
-
-def combined_breakpoints(page):
-    require_operation_time(5);counts=request_counts();viewport=dict(page.viewport_size);scroll=page.evaluate('()=>({x:scrollX,y:scrollY})')
+def guide_observation(page,context,origin,width):
+    counts=request_counts()
+    assert page.locator('aside>.notice').inner_text()=='所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。'
+    assert page.locator('#workspace-open').is_disabled()
+    for selector in ['.guide-session','.guide-roles','.guide-inputs','.guide-fill-actions','.guide-process','#sessions','#workspace-open']:
+        bounded_rectangles(rectangles(page,[selector]))
+    page.evaluate('()=>scrollTo(0,0)')
+    entry=rectangles(page,['aside>.notice','.guide-session>label:has(#sessions)','#sessions','.guide-session>small','#workspace-open'])
+    bounded_rectangles(entry,True);REPORT.setdefault('guide_entry',[]).append(dict(width=width,rows=entry))
+    observe(page,'guide-entry-'+str(width),True)
+    capture(page,'05-guide-entry-1200.png' if width==1200 else '06-guide-entry-390.png')
+    neutral=guide_status(page,'neutral','等待选择')
+    page.locator('#sessions').set_input_files(dict(name='invalid-synthetic.json',mimeType='application/json',buffer=b'{}'))
+    error=guide_status(page,'error','未上传或使用')
+    assert page.locator('button:not(:disabled)').count()==0
+    if width==390:
+        compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
+        capture(page,'07-guide-invalid-390.png')
+    # Synthetic six-role input exists only in this context's memory; no real identities/credentials.
+    payload={name:str(i)*43 for i,name in enumerate(['enterprise','specialist','executor','second_enterprise','second_specialist','second_executor'])}
+    page.locator('#sessions').set_input_files(dict(name='synthetic-six-role-local-only.json',mimeType='application/json',buffer=json.dumps(payload).encode()))
+    ready=guide_status(page,'success','不会自动办理')
+    assert page.locator('button:not(:disabled)').count()==1
+    assert len({(r['color'],r['background']) for r in [neutral,error,ready]})==3
+    if width==390:
+        compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
+        capture(page,'08-guide-ready-390.png')
+    # Genuine original same-origin window.open; capture its real response bytes.
+    responses=[];context.on('response',lambda response:responses.append(response))
+    with page.expect_popup(timeout=15000) as opened:page.locator('#workspace-open').click(timeout=15000)
+    popup=opened.value
     try:
-        for width in (899,900,1060):
-            page.set_viewport_size(dict(width=width,height=1000));collaboration_geometry(page,'breakpoint-'+str(width))
-        page.set_viewport_size(dict(width=1060,height=1000))
-        row=page.evaluate("""()=>{const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};
-            const nav=document.querySelector('.workspace-nav');return {width:innerWidth,body:getComputedStyle(document.body).display,direction:getComputedStyle(nav).flexDirection,
-            current:[...document.querySelectorAll('[data-tab][aria-current=page]')].map(e=>e.dataset.tab),documentWidth:document.documentElement.scrollWidth,
-            nav:box(nav),session:box(document.querySelector('.session-panel')),buttons:[...nav.querySelectorAll('button')].map(e=>({tab:e.dataset.tab,...box(e)}))};} """)
-        assert row['width']==1060 and row['body']=='block' and row['direction']=='row' and row['current']==['collaboration'] and row['documentWidth']==1060,row
-        buttons=row['buttons'];assert [r['tab'] for r in buttons]==['service','collaboration','resource'],row
-        assert max(r['top'] for r in buttons)-min(r['top'] for r in buttons)<=1,row
-        assert all(a['right']<=b['left'] for a,b in zip(buttons,buttons[1:])),row
-        assert row['nav']['left']<=buttons[0]['left'] and buttons[-1]['right']<=row['nav']['right'] and row['session']['top']>=row['nav']['bottom'],row
-        REPORT['breakpoint_1060']=row
-    finally:page.set_viewport_size(viewport);page.evaluate('p=>window.scrollTo(p.x,p.y)',scroll)
-    assert counts==request_counts();REPORT['breakpoint_1060']['request_delta']=0
-
-
-def collaboration_observation(page,width):
-    require_operation_time(15)
-    page.locator('[data-tab="collaboration"]').click(timeout=15000)
-    assert page.locator('#collaboration').is_visible() and page.locator('#service').is_hidden()
-    assert page.locator('[aria-current="page"][data-tab]').get_attribute('data-tab')=='collaboration'
-    compose_fixture(page,'.collaboration-heading')
-    if width==1200:
-        read_list_fixture(page,'dispatch','EMPTY',held=True)
-        assert '不代表没有其他事项' in page.locator('#dispatch-list-status').inner_text()
-        compose_fixture(page,'.collaboration-heading');collaboration_geometry(page,'empty-1200')
-        observe(page,'current-collaboration-empty-1200',True);capture(page,'05-collaboration-empty-1200.png')
-        read_list_fixture(page,'dispatch','READY');collaboration_records(page,'dispatch')
-        compose_fixture(page,'.collaboration-lane:first-child');frame_dispatch_records(page);visible_in_viewport(page,['dispatch-items']);collaboration_geometry(page,'records-1200')
-        observe(page,'current-collaboration-records-1200',True);capture(page,'06-collaboration-records-1200.png')
-        combined_breakpoints(page)
-    else:
-        read_list_fixture(page,'receipt','READY',held=True);collaboration_records(page,'receipt');collaboration_geometry(page,'records-390')
-        compose_fixture(page,'.collaboration-lane:last-child')
-        first=page.locator('#receipt-items > button').nth(0)
-        first_rect=first.evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
-        assert 0<=first_rect['top']<first_rect['bottom']<=1000,first_rect
-        observe(page,'current-collaboration-records-390',True);capture(page,'07-collaboration-records-390.png')
-        second=page.locator('#receipt-items > button').nth(1)
-        second.evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
-        second_rect=second.evaluate("e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height}}")
-        assert 0<=second_rect['top']<second_rect['bottom']<=1000,second_rect
-        observe(page,'current-collaboration-second-record-390-no-PNG',True)
-        REPORT['narrow_records_scope']=dict(first_card_in_PNG=first_rect,second_card_geometry_font_only=second_rect,
-            screenshot='07 is a partial vertical viewport with original warning/first complete card; second record has geometry/font observations only, no second-record pixel claim')
-        read_list_fixture(page,'receipt','DENIED',held=True)
-        assert page.locator('#receipt-items').inner_text()=='' and page.locator('#dispatch-items').inner_text()==''
-        assert page.evaluate('()=>preparationView===null&&dispatchView===null&&receiptView===null')
-        assert '权限被拒绝' in page.locator('#receipt-list-status').inner_text()
-        page.locator('#receipt-list').focus();page.keyboard.press('Shift+Tab');page.keyboard.press('Tab')
-        assert page.locator('#receipt-list').evaluate("e=>document.activeElement===e&&e.matches(':focus-visible')")
-        compose_fixture(page,'.collaboration-lane:last-child');visible_in_viewport(page,['receipt-list-status'])
-        observe(page,'current-collaboration-denied-390',True);capture(page,'08-collaboration-denied-390.png')
-        REPORT['denial_scope']='READY cards -> original refresh clears cards/views before response -> current403 DENIED remains empty. Not independent403-caused private-view clearing or real permission revocation acceptance.'
+        popup.wait_for_load_state('load',timeout=15000)
+        assert popup.url==origin+'/'
+        response=next(r for r in responses if r.url==origin+'/' and r.request.is_navigation_request())
+        assert response.status==200 and response.body()==(PRIVATE/'current.html').read_bytes()
+        popup.wait_for_function("()=>typeof $==='function'&&!!$('request-current')",timeout=15000)
+        page.locator('[data-role="enterprise"]').click(timeout=15000)
+        popup.wait_for_load_state('networkidle',timeout=15000)
+        assert popup.locator('#token').input_value()==payload['enterprise']
+        # Readiness/role GETs are separate from the four zero-request fill actions.
+        fills=request_counts();popup.evaluate("()=>{window.__visualSubmitCount=0;document.addEventListener('submit',()=>window.__visualSubmitCount++,true)}")
+        for name in ['fill-goal','fill-request','fill-need','fill-outline']:
+            page.locator('#'+name).click(timeout=15000)
+            if name=='fill-goal':assert popup.locator('#goal').input_value()==popup.locator('#prep-goal').input_value() and '6台设备' in popup.locator('#goal').input_value()
+            elif name=='fill-request':assert '6台设备' in popup.locator('#request-current').input_value() and len(popup.locator('#plan-required-goals').input_value().splitlines())==5 and not popup.locator('#request-local-goal').is_checked()
+            elif name=='fill-need':assert popup.locator('#prep-slot').input_value()=='need_summary' and '6台设备' in popup.locator('#prep-text').input_value()
+            else:assert popup.locator('#prep-slot').input_value()=='material_outline' and '同用途通用资料目录' in popup.locator('#prep-text').input_value()
+            assert fills==request_counts() and popup.evaluate('()=>window.__visualSubmitCount')==0
+        # Long fill controls remain original and keyboard-focusable, no clipping/hiding.
+        buttons=rectangles(page,['#'+x for x in ['fill-goal','fill-request','fill-need','fill-outline']]);bounded_rectangles(buttons)
+        REPORT.setdefault('guide_cross_window',[]).append(dict(width=width,source_web_sha256=SOURCE_SHA256,same_origin_popup=True,role='synthetic enterprise',fill_actions=4,fill_request_delta=0,submit_events=0,scope='real DOM only; no Case/Run created, no business acceptance',long_buttons=buttons))
+    finally:popup.close()
+    # Controlled null-return branch, not native popup-blocker acceptance. Restore even on failure.
+    page.evaluate('()=>{window.__visualNativeOpen=window.open;window.open=()=>null}')
+    try:
+        page.locator('#workspace-open').click(timeout=15000);guide_status(page,'error','没有提交业务')
+        assert page.locator('[data-role="enterprise"]').is_disabled()
+    finally:page.evaluate('()=>{window.open=window.__visualNativeOpen;delete window.__visualNativeOpen}')
+    # Native keyboard details, restore every original open flag.
+    original=page.locator('.guide-process>details').evaluate_all('xs=>xs.map(e=>e.open)')
+    for index in range(3):
+        detail=page.locator('.guide-process>details').nth(index);summary=detail.locator('summary');page.keyboard.press('Tab');summary.focus()
+        assert summary.evaluate("e=>document.activeElement===e&&e.matches(':focus-visible')")
+        summary.press('Enter',timeout=15000);assert detail.evaluate('e=>e.open')!=original[index]
+        summary.press('Space',timeout=15000);assert detail.evaluate('e=>e.open')==original[index]
+    assert page.locator('.guide-process>details').evaluate_all('xs=>xs.map(e=>e.open)')==original
+    REPORT.setdefault('guide_details',[]).append(dict(width=width,original_open=original,Enter_Space_restored=True,scope='native keyboard actions, no PNG'))
+    REPORT.setdefault('guide_scope',[]).append(dict(width=width,requests_including_root_popup_and_role_GET=len(REPORT['browser_requests'])-counts[1],file_selection='set_input_files; not OS chooser',popup_refusal='controlled original window.open null-return branch',all_steps_business_POST=0))
 
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='39')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='40')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
-        (PRIVATE/'current.html').write_bytes(pages['web.html'])
+        (PRIVATE/'current.html').write_bytes(pages['web.html']);(PRIVATE/'guide.html').write_bytes(pages['park_demo_web.html'])
         REPORT['fixture_scope']='Transparent read-only HTTP response and client UI-state fixtures; not live business or permission acceptance'
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             p=PRIVATE/name;p.mkdir(mode=0o700);env[key]=str(p)
-        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+FIXTURE_GOAL)
+        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+RESOURCE_NAME+RESOURCE_MEMBER['purpose'])
         signal.signal(signal.SIGALRM,timeout);signal.alarm(max(1,int(90-(time.monotonic()-START))))
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start();origin='http://127.0.0.1:'+str(server.server_port)
         with owned_browser(env) as browser:
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
             for width in (1200,390):
-                stage('CURRENT_ENTRY_'+str(width));context,page=open_page(browser,origin,'/current',width)
+                stage('RESOURCE_'+str(width));context,page=open_page(browser,origin,'/current',width)
                 try:
                     mark_fixture(page)
-                    page.locator('#token').fill('SYNTHETIC_UI_STATE_FIXTURE')
-                    page.keyboard.press('Tab') # Commit the original change handler before request-delta accounting.
+                    page.locator('#token').fill('SYNTHETIC_UI_STATE_FIXTURE');page.keyboard.press('Tab')
                     page.wait_for_load_state('networkidle',timeout=15000)
-                    page.evaluate('()=>window.scrollTo(0,0)')
-                    entry_observation(page,width)
-                    stage('NATIVE_RETURN_'+str(width))
-                    for link,target,first in RETURN_LINKS:
-                        for method in ('mouse','Enter'):
-                            shot=('03-native-existing-390.png' if target=='existing-preparation-entry' else '04-native-formal-390.png') if width==390 and method=='mouse' else None
-                            native_return(page,link,target,first,method,shot=shot)
-                    if width==390:
-                        stage('RETURN_UNKNOWN_AND_INFLIGHT');return_guard_observation(page)
-                    stage('COLLABORATION_'+str(width));collaboration_observation(page,width)
+                    resource_observation(page,width)
                 finally:context.close()
-            assert all(q.empty() for q in LIST_REPLIES.values())
+                stage('GUIDE_'+str(width));context,page=open_page(browser,origin,'/guide',width)
+                try:
+                    # Marker is explicitly non-product; all product bytes and actions remain original.
+                    page.evaluate("([summary,text])=>{const d=document.createElement('details');d.dataset.visualFixture='true';const h=document.createElement('summary');h.textContent=summary;const p=document.createElement('p');p.textContent=text;d.append(h,p);document.querySelector('aside').prepend(d)}",[FIXTURE_SUMMARY,FIXTURE_LABEL])
+                    guide_observation(page,context,origin,width)
+                finally:context.close()
+            assert RESOURCE_READS==RESOURCE_LIMITS,'each exact resource GET must be consumed'
             assert {p.name for p in OUT.glob('*.png')}==set(PNG_FILES)
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
@@ -573,7 +436,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='39')
+        source=base.require_hosted(os.environ,run_number='40')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
