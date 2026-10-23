@@ -1,0 +1,154 @@
+{
+  "scope": "FIXED_INODE_JOURNAL_CANDIDATE_REAL_LINUX_FILES_AND_EOF_SEMANTICS",
+  "base": "fbfdeaa3752e2f8bcfa19abb60a7f03a3d1260d1",
+  "command": "PYTHONPATH=src /workspace/parkweave-venv/bin/python -B -m unittest scripts.windows_portable.test_processes scripts.windows_portable.test_fixed_journal -v",
+  "final_log": "final-tests-4.log",
+  "final_tests": 41,
+  "seconds": 0.685,
+  "split": {
+    "process_module": {
+      "total": 24,
+      "real_linux_methods": 17,
+      "linux_waitid_standin": 1,
+      "windows_standin_methods": 6
+    },
+    "fixed_module": {
+      "total": 17,
+      "real_linux_file_methods": 15,
+      "pure_codec_prefix_check": 1,
+      "windows_preflight_standin": 1
+    }
+  },
+  "prior_invocations_not_added": true,
+  "first_fixed_failure": "fixed-tests-1.log: 13P/1ERROR; own test loop called release twice; corrected test bookkeeping, not a native storage failure",
+  "source_review_fixes": [
+    "RLock alone allowed same-thread public reentry, including direct private verification from process pins; one shared entry gate with explicit owner/depth now guards all first entries, permits only private same-thread nesting, rejects every public reentry before IO"
+  ],
+  "eof_semantics": {
+    "empty_eof": "NO_ERROR_RECEIVED, not exec acknowledgement",
+    "target_image": "independent held-executable device/inode plus birth observation; absence or fast exit never reconstructed as success",
+    "business_readiness": "NOT_CHECKED",
+    "actual_faults": "own fork child signal before exec and immediate zero exit without exec, both withhold target/readiness success"
+  },
+  "fixed_storage": {
+    "explicit_opt_in": "FixedPrivateDirectories",
+    "default_v1_unchanged": true,
+    "old_v1_conversion": false,
+    "file": ".parkweave-lease.slots",
+    "bytes": 8192,
+    "slots": 2,
+    "slot_bytes": 4096,
+    "checkpoint_offsets": [
+      0,
+      4096
+    ],
+    "io": "actual pread/pwrite/fsync with readback; never rename",
+    "validation": "both slots required, canonical duplicate-free JSON, exact state/generation/sequence/hash/footer/padding/file identity, original transitions",
+    "read_and_write_failures_poison": true,
+    "old_pending_fallback": false,
+    "new_generation_owned_before_return": true,
+    "missing_names_recreated": false,
+    "concurrent_or_public_reentrant_operation": "BUSY before IO; owner not poisoned",
+    "actual_faults": [
+      "partial initial file",
+      "both checkpoint directions short writes",
+      "torn OWNED acquire after old PENDING",
+      "file flush failure",
+      "short/error reads and postflush read failure",
+      "same-size new inode and symlink path substitution",
+      "illegal state/generation/schema/journal binding even with recomputed checksums",
+      "missing journal/lock and unchanged v1 root refused",
+      "another real child BUSY then after release gen2 OWNED os._exit17 prevents reopen",
+      "close-then-error handoff completed only by a new real exclusive acquisition"
+    ],
+    "all4095_partial_prefixes": "pure codec, not4095 physical disk or crash experiments"
+  },
+  "limits": {
+    "real_children": 16,
+    "own_fork_children": 14,
+    "own_python_subprocesses": 2,
+    "max_live_children": 1,
+    "own_test_threads": 1,
+    "max_sleep_seconds": 5,
+    "process_startup_seconds": 2,
+    "process_stop_seconds": 3,
+    "child_result_seconds": 5,
+    "child_cleanup_term_kill_seconds_each": 2,
+    "thread_event_wait_seconds": 2,
+    "thread_join_seconds": 3,
+    "temporary_files": "only own TemporaryDirectory; all final tests verify fd count restored and fixture cleanup"
+  },
+  "windows": {
+    "native_executions": 0,
+    "fixed_file_io_code": true,
+    "admission_gate": "WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED",
+    "fresh_gate": "OWNER_MUTATION_PAUSED",
+    "no_gate_relaxation": true,
+    "file_flush_not_directory_durability": true,
+    "initial_name_or_power_loss_guarantee": false
+  },
+  "unverified": [
+    "native Windows fixed-file IO/mutual exclusion/crash behavior",
+    "power loss/hardware durability, initial namespace availability",
+    "same-UID hostile Python/code mutation or administrators",
+    "PG/application high-level startup/readiness controller wiring",
+    "secrets/SESSION/CONFIG and runtime/DLL closure",
+    "build or double-click entry not activated, no runnable end-user product"
+  ],
+  "pg_browser_ci_user_computer_runs": 0,
+  "real_credentials_generated": 0,
+  "new_security_permissions": false,
+  "changed_source_sha256": {
+    "scripts/windows_portable/processes.py": "7053ddbb326828a1648b07011a1751cf4208ed3d57c3d80837682a463225e7b2",
+    "scripts/windows_portable/test_processes.py": "8f4a8760a43672343d089d1f71a92149c762799fef2a191252e3975c2deff3b5",
+    "scripts/windows_portable/fixed_journal.py": "efca8ca458dd8a93e508b3cdf3d48d5211375579d4584e122642f30bc259d1e5",
+    "scripts/windows_portable/fixed_directories.py": "b4d6fbabc96393aff7371953f53e5385936a7f9adcdb0bca36487f6547b45703",
+    "scripts/windows_portable/fixed_windows_journal.py": "29a78c5f4bb7d66f1a06ab5261fdaa6c6a495ed4484bc0a132a7343320f32180",
+    "scripts/windows_portable/test_fixed_journal.py": "d3b3a14d54b849e9c52dbc685d04a319d82fad46b1dab6309bec51da0426d4b9",
+    "scripts/windows_portable/fixed-journal-design.md": "aba930d44665c3d38ffe38b4ac413eef97b9778018f27f0ef682511da4a5e42b",
+    "scripts/windows_portable/README.md": "8a98d6d39fe01316ac6f1d7fb2292f54ed9282af2412a72697e3d8ce8c0f7c57"
+  },
+  "original_unchanged_sha256": {
+    "scripts/windows_portable/entry.py": "461b88d2d749344b4ab8a6e412b73530d9f3818c9cf839e70f0ec8ed805ac45b",
+    "scripts/windows_portable/build.py": "f76d6ce3803446bcbd3bbfda69cb0c4ffdce63080a03badde1ca028664eb517a",
+    "scripts/windows_portable/initialize.py": "37e5f4f9bbc23fba5e45c7de40d4d0832ec4577fa10ed0b02c9cb07f1ad866db",
+    "scripts/windows_portable/controller.py": "33cd428c5a93c783b7bcd5b2f87c0a2b40b26254cbf0c737082e563a0d322dd5",
+    "scripts/windows_portable/directories.py": "b2692d3dd09e57361de8e8e72b72a9e5e369bd36c704f6b82300d5a7acfb52b1",
+    "scripts/windows_portable/windows_directory_handles.py": "07991898f7683d7639168e776fad86789ac826cacd64fa6938a97e18f2f2e065",
+    "scripts/windows_portable/windows_process_handles.py": "2401de3e1add84a2e48591eb35cd2b0a314e401bf56e82bf4c95de946d135338",
+    "scripts/windows_portable/runtime-assets.json": "74c686742f161f65c3ca0c94bdb2e7bd5c5a00ea29a3a56cf727d406f2b85ed8",
+    "scripts/windows/lifecycle.py": "da38bc9deae30dd6b2d771e485682dc55adaf59c62e210e38e116746111b1c96",
+    "scripts/windows_ci/owned_job.py": "67ecef417d1365a95219b8e2a00a5af3ad3c03c9f46ab772a2ff070416878f5b",
+    "src/parkweave/store.py": "b6dd49b8526d51a2b6789c40f2d707087f6d3988e2e1844cc25cfac240223c1b",
+    "src/parkweave/installed_fixture_receipt.py": "1be37c7033c13733f1d332024ebb6b34f65424e7a585e5d280ef07eecf4eeecc",
+    "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/migration-026.sql": "625208b5620e8c5a0840e6672fd08c1081e148b5bd1d401697f0810dec8b50a3",
+    "src/parkweave/migration-027.sql": "97034ad99ad21af9c0e36724481a65c179638e7e49a27d5d140e8aaa93a73c79",
+    "src/parkweave/migration-028.sql": "ed94c37d627300651dc13935665baf774fa07ea9f3589e4089649ff6005591f0",
+    "src/parkweave/migration-029.sql": "179ff8f16b862cc7b5a076a6f21a31dd77961a0c62af37cc53d9315e89b9bac7",
+    "src/parkweave/migration-030.sql": "c50c7224db5723611a79bac721238c66683608b18a6bfef4e72c4ce7d29d3f03",
+    "src/parkweave/migration-031.sql": "906b70e775e70e7706558395ab779a0bfbe2b598004fac29b0eb30d3181e1eac",
+    "src/parkweave/migration-032.sql": "c24bd55751a7922341557d48270f83e6f911513d4588c6f3571c7beca10a284b"
+  },
+  "log_sha256": {
+    "process-tests-1.log": "6f721e7fe49d22769c3a4dddd68a70d9b2bba6fe72e2f0bdaf7bac363f751378",
+    "fixed-tests-1.log": "fcf63fde11d0fe828f3c31e6ca6db2dbba620f7a60f8cdaf589a96550e78dab9",
+    "final-tests-2.log": "872330bb81373b494e8dd77dc108637ca24bb3850b37ff0e1fc07f1c2b9c9362",
+    "final-tests-3.log": "74793102007587e1d18e0ac836ea16114d5395a89ad8909708d7dd36d1b9301e",
+    "final-tests-4.log": "d373438bb89344b18ccc2f977ea247414a17fffc3a9d6f26f4ada1b4808773ee"
+  },
+  "manifest": {
+    "original_test_files": 405,
+    "implementation_files": 380,
+    "historical_collection": 9521,
+    "collection_rerun": false,
+    "all785_raw_fingerprints_verified": true
+  },
+  "review": "Independent read-only limited ACK: owner/depth gate covers direct private verification; no further definite P1/P2; final41P/0.685s verified; reviewer executed no tests/processes and wrote no files",
+  "official_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfilepointerex",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers"
+  ]
+}

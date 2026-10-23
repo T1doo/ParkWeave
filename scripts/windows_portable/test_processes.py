@@ -114,6 +114,31 @@ class ActualProcessChecks(unittest.TestCase):
         self.assertFalse(self.state(group).started); self.assertTrue(self.state(group).stopped)
         self.assertEqual(self.state(group).resources['exec_errno'], errno.ENOEXEC)
         self.assertEqual(self.adapter.describe(group)['outcome'], 'FAILED')
+        self.assertEqual(self.adapter.describe(group)['exec_error_pipe'], 'ERROR_RECEIVED')
+
+    def test_go_then_signal_before_exec_eof_is_not_target_or_ready_success(self):
+        def signal_before_exec(group, env): os.kill(os.getpid(), signal.SIGTERM)
+        with patch.object(p.LinuxSingleProcess, '_exec', side_effect=signal_before_exec):
+            try: token = self.adapter.launch('sleep', lambda cap: None)
+            except p.ProcessStartFailure as error: token = error.group
+        # EOF may precede pidfd readability; either result must withhold image
+        # and readiness claims, then confirm the exact original child's exit.
+        self.assertTrue(self.adapter.stop_owned(token))
+        state = self.state(token)
+        self.assertTrue(state.exec_error_pipe_closed)
+        self.assertFalse(state.target_image_observed); self.assertFalse(state.started)
+        self.assertEqual(state.returncode, -signal.SIGTERM)
+        self.assertTrue(state.stopped)
+        self.assertEqual(self.adapter.describe(token)['business_readiness'], 'NOT_CHECKED')
+
+    def test_quick_zero_exit_without_exec_never_retroactively_observes_target(self):
+        with patch.object(p.LinuxSingleProcess, '_exec', side_effect=lambda group, env: os._exit(0)):
+            token = self.adapter.launch('true', lambda cap: None)
+        self.assertFalse(self.state(token).started)
+        self.assertEqual(self.adapter.describe(token)['target_image'], 'NOT_OBSERVED')
+        self.assertEqual(self.adapter.describe(token)['exec_error_pipe'], 'NO_ERROR_RECEIVED')
+        self.assertTrue(self.adapter.stop_owned(token))
+        self.assertEqual(self.state(token).returncode, 0)
 
     def test_pin_failure_after_fork_aborts_by_gate_eof_never_numeric_pid_signal(self):
         original = os.pidfd_open

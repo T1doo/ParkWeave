@@ -123,6 +123,8 @@ class _ProcessState:
     executable: PinnedExecutable
     resources: dict = field(default_factory=dict, repr=False)
     creating: bool = True
+    exec_error_pipe_closed: bool = False
+    target_image_observed: bool = False
     started: bool = False
     registration: str = 'NOT_CALLED'
     attempted_stop: bool = False
@@ -225,7 +227,22 @@ class LinuxSingleProcess:
         if error:
             r['exec_errno'] = int(error) if error.isdigit() else None
             raise ProcessRefused('EXEC_FAILED')
-        group.started = True
+        group.exec_error_pipe_closed = True
+        # EOF only means no exec error payload was received. A signal before
+        # exec closes the same pipe. Independently observe the pinned target,
+        # never infer it from a quick exit (including status zero).
+        code = self.observe(group, time.monotonic())
+        if code is not None and code != 0:
+            raise ProcessRefused('TARGET_EXITED_BEFORE_IMAGE_OBSERVATION')
+        if code is None:
+            try:
+                image = os.stat(f'/proc/{pid}/exe')
+                pinned = os.fstat(group.executable.file)
+                group.target_image_observed = ((image.st_dev, image.st_ino) == (pinned.st_dev, pinned.st_ino)
+                    and _proc_identity(pid) == before)
+            except (FileNotFoundError, ProcessLookupError):
+                pass  # Target vanished; no historical success is manufactured.
+        group.started = group.target_image_observed
         for key in ('ready_r', 'exec_r'): os.close(r.pop(key))
 
     def observe(self, group, deadline):
@@ -357,7 +374,10 @@ class PrivateProcessAdapter:
         group = self._group(group)
         from .controller import exception_chain
         return dict(scope=self.backend.scope, registration=group.registration,
-                    exec_acknowledged=group.started, stopped_confirmed=group.stopped,
+                    exec_error_pipe='ERROR_RECEIVED' if 'exec_errno' in group.resources else 'NO_ERROR_RECEIVED' if group.exec_error_pipe_closed else 'UNKNOWN',
+                    target_image='OBSERVED' if group.target_image_observed else 'NOT_OBSERVED',
+                    resume_acknowledged=group.started if self.backend.scope.startswith('EXACT_CREATED_WINDOWS') else False,
+                    business_readiness='NOT_CHECKED', stopped_confirmed=group.stopped,
                     outcome='UNKNOWN' if self.unknown else 'FAILED' if group.errors else 'OBSERVED',
                     returncode=group.returncode,
                     errors=[dict(phase=phase, types=[type(e).__name__[:64] for e in exception_chain(error)[:16]])

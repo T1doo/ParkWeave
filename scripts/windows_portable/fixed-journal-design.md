@@ -1,6 +1,6 @@
 # 固定 journal inode 的 Windows 交接候选合同
 
-仅设计，未实现、未做断电/Windows验收，不解除`WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED`或OWNER暂停。目标是保守拒绝下的交接安全；不保证首次建目录后断电仍可恢复使用。目录记录不授予DDL或身份权限。
+格式已有`fixed_journal.py`、`fixed_directories.py`实现候选及真实Linux文件检查；`fixed_windows_journal.py`仅提供未准入的原生文件IO接口。未做断电/Windows验收，不解除`WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED`或OWNER暂停。目标是保守拒绝下的交接安全；不保证首次建目录后断电仍可恢复使用。目录记录不授予DDL或身份权限。
 
 使用既有私有根、独立永久lock和**同一个固定8192字节journal文件**。在原句柄相对路径、根/祖先/reparse/既有owner-control-raw-DACL检查下打开；持锁期间没有合法并发writer。journal持有读写句柄且禁止write/delete共享，不rename、不替换、不增删文件名；不请求管理员卷flush。文件ID与根/lock ID均进入记录，并与真实持有句柄复核。
 
@@ -28,6 +28,6 @@
 
 release先在仍持锁/根句柄时确认进程退出与清理，再写最高RELEASE_PENDING并flush/读回复核。随后单向冻结lease，只关闭本次原句柄；未知关闭不重试、不失锁回写。只有新一次真实排他获取才可独立完成该pending交接，不冒称旧close返回成功。UNKNOWN、部分初始化或未确认退出不得靠此方案修复。
 
-实施前仍需针对两个写入方向的逐字节截断/撕裂、两槽读取/flush失败、代际重放、首次名称丢失、固定fileID置换及实际Windows互斥/进程崩溃验证。断电/硬件持久性另验。该设计仅尝试消除**后续检查点对目录rename屏障的依赖**，不填补SESSION/CONFIG、受限秘密、DLL闭包、初始化或端用户成品验收。
+Linux候选已检查实际两方向短写、两槽读取/flush失败、新代OWNED崩溃/撕裂、名称缺失与inode置换；4095个部分前缀仅为纯codec检查，不称4095个实际文件实验。真实Windows互斥/进程崩溃及断电/硬件持久性另验。调用者须显式选择`FixedPrivateDirectories`，默认v1路径不变、不自动迁移或补建；同lease并发操作在IO前拒绝，只有内部嵌套可重入。此候选仅消除**后续检查点对目录rename屏障的依赖**，不填补SESSION/CONFIG、受限秘密、DLL闭包、初始化或端用户成品验收。
 
 官方依据：[FlushFileBuffers的文件句柄合同](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers)、[NtCreateFile相对句柄与共享规则](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntcreatefile)。这里没有把文件flush等同目录flush。

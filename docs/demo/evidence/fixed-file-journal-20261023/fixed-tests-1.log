@@ -1,0 +1,34 @@
+test_actual_fixed_inode_full_flow_handoff_and_reopen_without_rename (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_actual_fixed_inode_full_flow_handoff_and_reopen_without_rename) ... ACTUAL_FIXED: same held inode/8192 bytes across all phases, release and gen2 OWNED; zero rename
+ok
+test_final_read_failure_after_flush_preserves_unacknowledged_owned_state (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_final_read_failure_after_flush_preserves_unacknowledged_owned_state) ... ok
+test_flush_failure_retains_bytes_and_unknown_stays_poisoned (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_flush_failure_retains_bytes_and_unknown_stays_poisoned) ... ok
+test_illegal_state_generation_schema_and_canonical_bodies_refused_on_real_file (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_illegal_state_generation_schema_and_canonical_bodies_refused_on_real_file) ... ok
+test_initial_write_failure_preserves_partial_file_without_automatic_initialization (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_initial_write_failure_preserves_partial_file_without_automatic_initialization) ... ok
+test_inode_swap_and_symlink_refuse_and_poison_original_lease (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_inode_swap_and_symlink_refuse_and_poison_original_lease) ... ok
+test_missing_names_are_never_recreated_and_old_v1_is_not_migrated (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_missing_names_are_never_recreated_and_old_v1_is_not_migrated) ... ok
+test_read_failure_and_short_read_poison_even_when_bytes_unchanged (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_read_failure_and_short_read_poison_even_when_bytes_unchanged) ... ok
+test_real_competitor_busy_and_crash_after_new_generation_is_not_reopenable (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_real_competitor_busy_and_crash_after_new_generation_is_not_reopenable) ... ACTUAL_FIXED: separate child BUSY while held; later gen2 OWNED os._exit17 blocks reopen
+ok
+test_release_close_unknown_is_completed_only_by_new_real_acquisition (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_release_close_unknown_is_completed_only_by_new_real_acquisition) ... ok
+test_short_checkpoint_writes_both_slot_directions_poison_without_repair (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_short_checkpoint_writes_both_slot_directions_poison_without_repair) ... ERROR
+test_torn_new_owned_cannot_fall_back_to_old_release_pending (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_torn_new_owned_cannot_fall_back_to_old_release_pending) ... ACTUAL_FIXED: torn new OWNED acquisition retained and old PENDING not replayed
+ok
+test_every_partial_prefix_never_replays_old_pending_after_any_change (scripts.windows_portable.test_fixed_journal.FixedContractChecks.test_every_partial_prefix_never_replays_old_pending_after_any_change) ... CODEC_ONLY: all4095 partial slot prefixes checked, no changed-byte rollback to old PENDING
+ok
+test_native_windows_fixed_io_retains_original_durability_preflight (scripts.windows_portable.test_fixed_journal.FixedContractChecks.test_native_windows_fixed_io_retains_original_durability_preflight) ... ok
+
+======================================================================
+ERROR: test_short_checkpoint_writes_both_slot_directions_poison_without_repair (scripts.windows_portable.test_fixed_journal.ActualFixedJournalChecks.test_short_checkpoint_writes_both_slot_directions_poison_without_repair)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/scripts/windows_portable/test_fixed_journal.py", line 93, in test_short_checkpoint_writes_both_slot_directions_poison_without_repair
+    lease.release()
+  File "/workspace/ParkWeave/scripts/windows_portable/directories.py", line 245, in release
+    if not self.active: raise LeaseRefused('LEASE_ALREADY_RELEASED')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts.windows_portable.directories.LeaseRefused: LEASE_ALREADY_RELEASED
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.353s
+
+FAILED (errors=1)

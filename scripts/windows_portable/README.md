@@ -33,10 +33,10 @@ SQL阶段异常请求回滚026–032；COMMIT或回滚连接失败时结果可�
 
 `processes.py`新增未激活的自有进程句柄核心：固定私有相对exe/大小/SHA256/参数目录，launch只接受冻结名称；可执行文件句柄及根/子目录身份在启动前再验。对外仅无资源属性、不可序列化的opaque token，真实句柄/状态留在本实例私有登记；注册回调不能在创建中重入stop。创建即登记、一个启动时限/停止时限，仅精确本次token可停止；未知退出保留最后观察句柄、记录真实lease UNKNOWN并阻止新adapter重开，不按PID猜目标、不自动重试或删除锁。公开诊断只给有界阶段/异常类型，不输出环境/命令/秘密。
 
-Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有副本，sleep至多5秒，无shell/PG/任意进程树；预检单内核线程/默认SIGCHLD、真实fork后EOF可取消的执行门、返回子进程pidfd与birth绑定、注册后才fd-exec，CLOEXEC错误管道区分exec失败，WNOWAIT后精确reap。TERM/KILL均使用同一个pidfd；pin失败只关闭GO门并等本次尚未reap子进程，不按数字PID发信号。这是目标环境的真实无业务子进程检查，不是Linux沙箱、同UID攻击防护或PG验收。
+Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有副本，sleep至多5秒，无shell/PG/任意进程树；预检单内核线程/默认SIGCHLD、真实fork后EOF可取消的执行门、返回子进程pidfd与birth绑定、注册后才fd-exec，CLOEXEC错误管道记录已收到的exec错误；空EOF仅表示未报错，另核原目标映像，快速退出不补签exec成功，业务就绪仍NOT_CHECKED。WNOWAIT后精确reap。TERM/KILL均使用同一个pidfd；pin失败只关闭GO门并等本次尚未reap子进程，不按数字PID发信号。这是目标环境的真实无业务子进程检查，不是Linux沙箱、同UID攻击防护或PG验收。
 
 `windows_process_handles.py`提供原生Job候选：CreateJob立刻登记后配置KILL_ON_CLOSE；CreateProcessW暂停创建，返回process/thread句柄先保存，再核出生时间/映像、精确AssignJob/成员身份后resume。Job未绑定时须先用原创建句柄终止并确认该子进程，再核Job空；空Job不能代签未入Job子进程退出。stdio/配置/关闭双故障保留主因及UNKNOWN。Windows API真实执行仍为零，现有目录门仍拒绝；DLL闭包、秘密、SESSION/CONFIG、PG/应用就绪和控制器高层接线均未完成，未加入载荷/双击入口，也未改变原OWNER暂停门。定向检查命令：`PYTHONPATH=src python -B -m unittest scripts.windows_portable.test_processes -v`，精确实测与替身范围见对应原始日志，不能签原生安装或成品。
 
-[`fixed-journal-design.md`](fixed-journal-design.md)仅描述不依赖后续目录rename屏障的固定inode双槽候选：两槽完整合法才接受，半写OWNED不得回退旧PENDING，缺初始名字拒绝且不自动fresh；仅取得真实排他并flush/读回新代后才返回。不是已实现或Windows/断电耐久证明，不解除现有拒绝。
+[`fixed-journal-design.md`](fixed-journal-design.md)现对应`fixed_journal.py`的固定8192字节双槽codec/storage和`fixed_directories.py`的显式新格式lease：真实Linux pread/pwrite只用0/4096偏移，文件inode不替换，文件fsync后两槽完整读回；严格原状态/代际、canonical JSON、hash链、根/锁/journal ID。任一坏槽拒绝，不回退旧PENDING；读取/绑定/写入失败均poison且不重试。取得内核排他后先提交新代OWNED，才返回lease；缺初始名字不补建、不自动fresh或迁移旧v1，默认v1实现不变。`fixed_windows_journal.py`提供受同一原准入门拒绝的固定文件接口，不rename、不请求卷flush/管理员权限；Linux实测不是Windows或断电耐久证明。命令：`PYTHONPATH=src python -B -m unittest scripts.windows_portable.test_fixed_journal -v`。
 
 本组件14项stdlib离线测试单独运行，PE为明确不可执行fixture；不并入原405文件/9521项历史collection，也不称全回归。真实资产静态检查另列，不累加为测试通过。无新浏览器、PG、Windows、CI或用户电脑运行。
