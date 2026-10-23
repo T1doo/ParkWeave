@@ -114,6 +114,13 @@ class Security(Protocol):
     def verify_existing_files(self, lease) -> None:
         """Read-only original owner/ACL/control, payload/config/session binding."""
         ...
+    def application_probe(self, lease):
+        """Read an existing protected session plus expected current actor binding.
+
+        No token creation, fallback actor or configuration repair.
+        """
+        ...
+
     def load_existing_credentials(self, lease):
         """Read existing protected secrets only; missing/corrupt is refusal."""
         ...
@@ -138,7 +145,13 @@ class Processes(Protocol):
     """
     def create_cluster(self, lease, credentials, register: Callable) -> DatabaseInputs: ...
     def open_cluster(self, lease, credentials, register: Callable) -> DatabaseInputs: ...
-    def start_application(self, lease, inputs: DatabaseInputs, register: Callable): ...
+    def start_application(self, lease, inputs: DatabaseInputs, register: Callable):
+        """Return RegisteredApplication with two distinct exact owned tokens.
+
+        Fixed worker command must use its private readiness stdio/challenge and
+        remain before claim until GO. Registration/EOF are not readiness.
+        """
+        ...
     def stop_owned(self, handle) -> bool:
         """True only after all owned members are confirmed exited; no PID reuse."""
         ...
@@ -218,7 +231,12 @@ class Controller:
             application = self.processes.start_application(lease, inputs, register)
             if len(owned) <= before:
                 raise CandidateRefused('registered application ownership required')
+            from .application_readiness import require_application_ready, check_before_running, activate_application
+            ready = require_application_ready(lease,inputs,application,self.security.application_probe(lease),owned[before:])
+            self.security.verify_database_binding(lease,inputs)  # Recheck physical source after both startup probes.
+            check_before_running(ready)
             checkpoint('RUNNING', 'RUNNING')
+            activate_application(ready)  # Exact worker GO only after durable RUNNING.
             use(application)  # Return values stay private; never become report data.
         except BaseException as error:
             surfaced = error

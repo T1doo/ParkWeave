@@ -281,6 +281,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
         return {"status": "ok", "project":"ParkWeave", "process_id":os.getpid(), "schema": version, "model": "MODEL_MOCK", "data": "SYNTHETIC", "execution_mode": store.mode}
 
+    @app.get('/api/runtime/readiness')
+    def runtime_readiness(authorization: str | None=Header(default=None),
+                          x_parkweave_readiness_challenge: str | None=Header(default=None)):
+        from .runtime_readiness import api_probe
+        try: result=api_probe(store,token(authorization),x_parkweave_readiness_challenge)
+        except Denied: raise HTTPException(403,'startup probe unavailable or authorization denied') from None
+        # Readiness refusals do not enter the ordinary denial-audit writer.
+        return JSONResponse(result,headers={'Cache-Control':'no-store'})
+
     @app.post("/api/runs", status_code=202)
     def submit(data: Intake, authorization: str | None = Header(default=None),
                idempotency_key: str = Header()):

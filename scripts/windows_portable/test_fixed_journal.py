@@ -314,9 +314,10 @@ class FixedContractChecks(unittest.TestCase):
     def test_native_windows_fixed_io_retains_original_durability_preflight(self):
         from .fixed_windows_journal import FixedWindowsFilesystem
         class API:
-            def require_directory_durability(self): raise LeaseRefused('WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED')
+            def require_directory_durability(self): raise AssertionError('legacy rename preflight used')
+            def require_fixed_file_prerequisites(self, base): pass  # Stand-in facts cannot grant native acceptance.
         fs = FixedWindowsFilesystem('C:\\private',api=API())
-        with self.assertRaisesRegex(LeaseRefused,'WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED'):
+        with self.assertRaisesRegex(LeaseRefused,'WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED'):
             fs.acquire('instance',fresh=False)
         self.assertEqual(fs.handles,[]); self.assertIsNone(fs.journal)
 

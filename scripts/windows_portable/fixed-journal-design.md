@@ -1,6 +1,6 @@
 # 固定 journal inode 的 Windows 交接候选合同
 
-格式已有`fixed_journal.py`、`fixed_directories.py`实现候选及真实Linux文件检查；`fixed_windows_journal.py`仅提供未准入的原生文件IO接口。未做断电/Windows验收，不解除`WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED`或OWNER暂停。目标是保守拒绝下的交接安全；不保证首次建目录后断电仍可恢复使用。目录记录不授予DDL或身份权限。
+格式已有`fixed_journal.py`、`fixed_directories.py`实现候选及真实Linux文件检查；`fixed_windows_journal.py`仅提供未准入的原生文件IO接口。未做断电/Windows验收，不解除旧v1的`WINDOWS_DIRECTORY_DURABILITY_NOT_ACCEPTED`、固定文件独立`WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED`或OWNER暂停。目标是保守拒绝下的交接安全；不保证首次建目录后断电仍可恢复使用。目录记录不授予DDL或身份权限。
 
 使用既有私有根、独立永久lock和**同一个固定8192字节journal文件**。在原句柄相对路径、根/祖先/reparse/既有owner-control-raw-DACL检查下打开；持锁期间没有合法并发writer。journal持有读写句柄且禁止write/delete共享，不rename、不替换、不增删文件名；不请求管理员卷flush。文件ID与根/lock ID均进入记录，并与真实持有句柄复核。
 

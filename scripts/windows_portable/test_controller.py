@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from scripts.windows import lifecycle
 from . import controller as c
+from . import application_readiness as ready
 
 
 INPUTS = c.DatabaseInputs('fake-maintenance', 'fake-owner', 'fake-app', '/fake/private-data')
@@ -64,6 +65,7 @@ class FakeInstallation:
     def create_sessions_exclusive(self, lease): self.event('sessions'); return self.sessions
     def publish_configuration_exclusive(self, lease, inputs): self.event('config')
     def verify_existing_files(self, lease): self.event('verify_files')
+    def application_probe(self, lease): self.event('probe_existing_actor'); return object()
     def load_existing_credentials(self, lease): self.event('load_credentials'); return self.credentials
     def verify_database_binding(self, lease, inputs): self.event('verify_physical_binding')
 
@@ -109,6 +111,10 @@ class ControllerChecks(unittest.TestCase):
         self.fake = FakeInstallation()
         self.patch = patch.object(lifecycle, 'require_setup_readiness')
         self.gate = self.patch.start(); self.addCleanup(self.patch.stop)
+        # Controller control-flow seams only; no actual endpoint/worker proof.
+        for name,event in (('require_application_ready','application_ready'),('check_before_running','check_ready'),('activate_application','worker_go')):
+            seam=patch.object(ready,name,side_effect=lambda *args,_event=event:self.fake.event(_event))
+            seam.start();self.addCleanup(seam.stop)
 
     def create(self, use=lambda app: None):
         return self.fake.controller().create('/fake/private-root', use)
@@ -129,11 +135,27 @@ class ControllerChecks(unittest.TestCase):
         expected = ['creation_support', 'prepare_roles', 'claim', 'credentials',
                     'create_cluster_after_register', 'create_schema', 'roles', 'sessions',
                     'seed', 'config', 'verify_files', 'verify_schema', 'verify_physical_binding',
-                    'checkpoint:READY', 'application_after_register', 'use',
+                    'checkpoint:READY', 'application_after_register', 'verify_physical_binding', 'use',
                     'stop_app', 'stop_cluster', 'checkpoint:READY_STOPPED', 'release']
         self.assertEqual([name for name in names if name in expected], expected)
         self.assertEqual(result, dict(initialization='READY', runtime='STOPPED_CONFIRMED', mode='NEW'))
         self.assertEqual((self.fake.state, self.fake.locks), ('READY_STOPPED', 0))
+
+    def test_readiness_refusal_never_runs_use_or_go_and_cleans_existing_groups(self):
+        self.fake.failures['application_ready']=PermissionError('fake identity mismatch')
+        with self.assertRaises(c.ControlFailure): self.create(lambda app:self.fail('not ready use'))
+        self.assertNotIn('checkpoint:RUNNING',self.fake.events)
+        self.assertNotIn('worker_go',self.fake.events)
+        self.assertEqual([x for x in self.fake.events if x.startswith('stop_')],['stop_app','stop_cluster'])
+        self.assertEqual(self.fake.state,'UNKNOWN')
+
+    def test_go_is_after_running_and_failed_running_never_sends_go(self):
+        self.create()
+        self.assertLess(self.fake.events.index('application_ready'),self.fake.events.index('checkpoint:RUNNING'))
+        self.assertLess(self.fake.events.index('checkpoint:RUNNING'),self.fake.events.index('worker_go'))
+        self.fake=FakeInstallation();self.fake.failures['checkpoint:RUNNING']=OSError('fake journal failure')
+        with self.assertRaises(c.ControlFailure):self.create()
+        self.assertNotIn('worker_go',self.fake.events)
 
     def test_same_root_reopen_never_calls_new_consumers_or_mints_anything(self):
         self.create(); self.fake.events.clear(); self.gate.reset_mock()
@@ -144,7 +166,7 @@ class ControllerChecks(unittest.TestCase):
         self.assertFalse(forbidden.intersection(self.fake.events))
         names = self.fake.events
         expected = ['open', 'verify_files', 'load_credentials', 'open_cluster', 'verify_schema',
-                    'verify_physical_binding', 'application_after_register', 'stop_app', 'stop_cluster', 'release']
+                    'verify_physical_binding', 'application_after_register', 'verify_physical_binding', 'stop_app', 'stop_cluster', 'release']
         self.assertEqual([name for name in names if name in expected], expected)
 
     def test_partial_unknown_running_or_ready_without_stop_cannot_reopen(self):
@@ -169,7 +191,7 @@ class ControllerChecks(unittest.TestCase):
     def test_each_partial_new_failure_retained_unknown_without_retry_or_followups(self):
         actions = ['credentials', 'create_cluster_after_register', 'create_schema', 'roles',
                    'sessions', 'seed', 'config', 'verify_files', 'verify_schema',
-                   'verify_physical_binding', 'application_after_register']
+                   'verify_physical_binding', 'application_after_register','probe_existing_actor','application_ready','check_ready','worker_go']
         for name in actions:
             with self.subTest(name=name):
                 self.fake = FakeInstallation()

@@ -292,9 +292,12 @@ class ActualLinuxLeaseChecks(unittest.TestCase):
         from .test_controller import FakeInstallation
         fake = FakeInstallation()
         controller = Controller(self.dirs, fake, fake, database=fake)
-        with patch.object(lifecycle, 'require_setup_readiness'):
-            first = controller.create(str(self.root), lambda app: None)
-        second = controller.reopen(str(self.root), lambda app: None)
+        # Real directory state only; runtime identity/DB/process ports remain fake.
+        from . import application_readiness as ready
+        with patch.object(ready,'require_application_ready'), patch.object(ready,'check_before_running'), patch.object(ready,'activate_application'):
+            with patch.object(lifecycle, 'require_setup_readiness'):
+                first = controller.create(str(self.root), lambda app: None)
+            second = controller.reopen(str(self.root), lambda app: None)
         self.assertEqual((first['runtime'], second['mode']), ('STOPPED_CONFIRMED', 'REOPEN'))
         record = d._decode((self.root / d.JOURNAL).read_bytes())
         self.assertEqual((record['generation'], record['phase'], record['handoff']), (2, 'READY_STOPPED', 'RELEASE_PENDING'))

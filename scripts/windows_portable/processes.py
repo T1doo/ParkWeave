@@ -5,6 +5,7 @@ Windows uses the original suspended Job backend and exact creation handles.
 No PID discovery, external kill, new credentials or permission changes.
 """
 from dataclasses import dataclass, field
+from functools import wraps
 import hashlib
 import math
 import os
@@ -30,6 +31,7 @@ class Command:
     size: int
     arguments: tuple[str, ...] = ()
     model: str = 'SINGLE_PROCESS_ELF'
+    stdio_contract: str = 'NONE'
 
     def __post_init__(self):
         import re
@@ -38,7 +40,9 @@ class Command:
                 or not 0 < self.size <= 64 * 1024 * 1024 or type(self.arguments) is not tuple
                 or len(self.arguments) > 32 or any(type(v) is not str or '\x00' in v or len(v) > 2048 for v in self.arguments)
                 or sum(len(v) for v in self.arguments) > 8192
-                or self.model not in ('SINGLE_PROCESS_ELF', 'WINDOWS_JOB')):
+                or self.model not in ('SINGLE_PROCESS_ELF', 'WINDOWS_JOB')
+                or self.stdio_contract not in ('NONE','WORKER_READINESS_V1')
+                or self.stdio_contract != 'NONE' and self.model != 'WINDOWS_JOB'):
             raise ProcessRefused('FIXED_PRIVATE_COMMAND_REQUIRED')
 
 
@@ -122,6 +126,7 @@ class _ProcessState:
     command: Command
     executable: PinnedExecutable
     resources: dict = field(default_factory=dict, repr=False)
+    operation_lock: object = field(default_factory=threading.Lock, repr=False)
     creating: bool = True
     exec_error_pipe_closed: bool = False
     target_image_observed: bool = False
@@ -298,6 +303,17 @@ class LinuxSingleProcess:
         if errors: raise BaseExceptionGroup('OWNED_PROCESS_CLOSE_UNKNOWN', errors)
 
 
+def _owned_operation(method):
+    @wraps(method)
+    def guarded(self, token, *args, **kwargs):
+        state=self._group(token)
+        if not state.operation_lock.acquire(blocking=False):
+            raise ProcessRefused('OWNED_OPERATION_BUSY')
+        try: return method(self,token,*args,**kwargs)
+        finally: state.operation_lock.release()
+    return guarded
+
+
 class PrivateProcessAdapter:
     """Trusted internal consumer of an immutable command catalogue and lease.
 
@@ -363,6 +379,7 @@ class PrivateProcessAdapter:
             except BaseException as cleanup: group.errors.append(('START_CLEANUP', cleanup))
             raise ProcessStartFailure(primary, token) from primary
 
+    @_owned_operation
     def observe(self, group, seconds=0):
         group = self._group(group)
         if type(seconds) not in (int,float) or not math.isfinite(seconds) or not 0 <= seconds <= 5:
@@ -370,6 +387,60 @@ class PrivateProcessAdapter:
         if group.stopped: return group.returncode
         return self.backend.observe(group, time.monotonic() + seconds)
 
+    @_owned_operation
+    def live_identity(self, token):
+        return self._live_identity(self._group(token))
+
+    def _live_identity(self, group):
+        if (self.unknown or group.creating or group.stopped or not group.started
+                or self.backend.observe(group,time.monotonic()) is not None):
+            raise ProcessRefused('OWNED_LIVE_IDENTITY_REQUIRED')
+        r=group.resources
+        if 'pid' not in r or 'birth' not in r: raise ProcessRefused('OWNED_BIRTH_REQUIRED')
+        return (r['pid'],r['birth'],group.command.sha256)  # Observations, not authority.
+
+    @_owned_operation
+    def require_endpoint_support(self, token):
+        group=self._group(token);self._live_identity(group)
+        from .windows_process_handles import WindowsJobProcess
+        from .windows_endpoint import require_native_support
+        if type(self.backend) is not WindowsJobProcess or group.command.model!='WINDOWS_JOB':
+            raise ProcessRefused('NATIVE_OWNED_API_ENDPOINT_REQUIRED')
+        require_native_support()
+
+    @_owned_operation
+    def verify_api_connection(self, token, connection):
+        group=self._group(token);before=self._live_identity(group)
+        from .windows_process_handles import WindowsJobProcess
+        from .windows_endpoint import verify_connection
+        if type(self.backend) is not WindowsJobProcess or group.command.model!='WINDOWS_JOB':
+            raise ProcessRefused('NATIVE_OWNED_API_ENDPOINT_REQUIRED')
+        verify_connection(connection,before[0])  # No Authorization bytes sent yet.
+        if self._live_identity(group)!=before: raise ProcessRefused('API_BIRTH_CHANGED')
+
+    @_owned_operation
+    def worker_ready_frame(self, token, deadline):
+        group=self._group(token); self._live_identity(group)
+        if type(deadline) not in (int,float) or not math.isfinite(deadline) or not 0<deadline-time.monotonic()<=5:
+            raise ProcessRefused('BOUNDED_WORKER_READINESS_CLOCK_REQUIRED')
+        if group.command.stdio_contract!='WORKER_READINESS_V1' or group.resources.get('ready_read_attempted'):
+            raise ProcessRefused('EXACT_UNCONSUMED_WORKER_PIPE_REQUIRED')
+        group.resources['ready_read_attempted']=True  # No replay after unknown read.
+        from parkweave.runtime_readiness import read_frame
+        return read_frame(group.resources['worker_ready_r'],deadline)
+
+    @_owned_operation
+    def worker_go(self, token, nonce):
+        group=self._group(token); self._live_identity(group)
+        if (group.command.stdio_contract!='WORKER_READINESS_V1' or not group.resources.get('ready_read_attempted')
+                or group.resources.get('go_attempted')):
+            raise ProcessRefused('EXACT_WORKER_GO_REQUIRED')
+        group.resources['go_attempted']=True  # Unknown write is never repeated.
+        from parkweave.runtime_readiness import write_frame, challenge
+        challenge(nonce)
+        write_frame(group.resources['worker_go_w'],{'schema':'parkweave-worker-go/1','challenge':nonce,'command':'GO'})
+
+    @_owned_operation
     def describe(self, group):
         group = self._group(group)
         from .controller import exception_chain
@@ -383,6 +454,7 @@ class PrivateProcessAdapter:
                     errors=[dict(phase=phase, types=[type(e).__name__[:64] for e in exception_chain(error)[:16]])
                             for phase,error in group.errors[:16]])
 
+    @_owned_operation
     def stop_owned(self, group):
         group = self._group(group)
         if group.creating: raise ProcessRefused('CREATION_IN_PROGRESS')

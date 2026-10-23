@@ -144,6 +144,10 @@ class WindowsFilesystem:
         if self.api is None: self.api = NativeLeaseAPI()
         # No false durable publication on an unaccepted Windows barrier.
         self.api.require_directory_durability()
+        self._acquire_handles(name, fresh=fresh)
+
+    def _acquire_handles(self, name, *, fresh):
+        """Shared handle mechanics only; each storage path owns its preflight."""
         from parkweave.windows_files import root_parts
         drive, parts = root_parts(self.base)
         handle = self.hold(self.api.open_drive(drive))

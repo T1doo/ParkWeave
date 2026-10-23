@@ -1,6 +1,7 @@
 """Independent worker; trusted local and opt-in synthetic fixture actions, explicit offline planning; live activation remains disabled."""
 import argparse
 import os
+import sys
 import time
 import uuid
 from .store import Store, Conflict
@@ -15,7 +16,11 @@ def main():
     parser.add_argument("--lease-seconds", type=int, default=30)
     parser.add_argument("--mock-model-wait-seconds", type=float, default=0)
     parser.add_argument("--model-fixture", choices=['good','wrong-model','bad-args','truncated','secret-echo','timeout','feedback-error'])
+    parser.add_argument("--readiness-stdio", action="store_true")
+    parser.add_argument("--readiness-challenge")
     args = parser.parse_args()
+    if bool(args.readiness_challenge) != args.readiness_stdio:
+        parser.error("readiness stdio requires its explicit startup challenge")
     if not 0<=args.mock_model_wait_seconds<=10:parser.error("mock wait must be 0..10 seconds")
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
@@ -26,6 +31,9 @@ def main():
     if args.fault_stage and store.mode != "FAULT_INJECTION":
         parser.error("fault-stage requires explicit FAULT_INJECTION mode")
     gateway = ExecutionGateway(store)
+    if args.readiness_stdio:
+        from .runtime_readiness import worker_handshake
+        worker_handshake(store,args.readiness_challenge)  # Before first claim/consume.
     worker_id = str(uuid.uuid4())
     while True:
         claim = store.claim(worker_id, args.lease_seconds)
@@ -51,10 +59,10 @@ def main():
                     else:
                         gateway.execute(claim, crash_at=args.fault_stage)
             except InjectedCrash as exc:
-                print(str(exc), flush=True)
+                print(str(exc), flush=True, file=sys.stderr if args.readiness_stdio else sys.stdout)
                 raise SystemExit(75)
             except Conflict:
-                print("claim fenced or authorization changed", flush=True)
+                print("claim fenced or authorization changed", flush=True, file=sys.stderr if args.readiness_stdio else sys.stdout)
         while store.consume():
             pass
         from .dispatch_notices import consume as consume_notices

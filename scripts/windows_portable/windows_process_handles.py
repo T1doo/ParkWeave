@@ -120,8 +120,13 @@ class WindowsJobProcess:
         with open(os.devnull, 'r+b', buffering=0) as null:
             try:
                 win = backend.win
-                for _ in range(3):
-                    duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(null.fileno()),
+                fds = [null.fileno()] * 3
+                if getattr(group.command,'stdio_contract','NONE') == 'WORKER_READINESS_V1':
+                    r['worker_go_r'],r['worker_go_w'] = os.pipe()
+                    r['worker_ready_r'],r['worker_ready_w'] = os.pipe()
+                    fds = [r['worker_go_r'],r['worker_ready_w'],null.fileno()]
+                for fd in fds:
+                    duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
                         win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
                 startup = subprocess.STARTUPINFO(); startup.dwFlags = win.STARTF_USESTDHANDLES
                 startup.hStdInput, startup.hStdOutput, startup.hStdError = duplicates
@@ -132,6 +137,9 @@ class WindowsJobProcess:
                 # Store exact returned handles before any fallible validation or
                 # cleanup. Failure before Job assignment still owns this child.
                 r.update(process=process, thread=thread, pid=pid, bound=False)
+                for key in ('worker_go_r','worker_ready_w'):
+                    fd=r.pop(key,None)
+                    if fd is not None: os.close(fd)
             except BaseException as error: primary = error
             finally:
                 while duplicates:
@@ -191,6 +199,11 @@ class WindowsJobProcess:
 
     def close_observed(self, group):
         errors = []
+        for name in ('worker_go_r','worker_go_w','worker_ready_r','worker_ready_w'):
+            fd=group.resources.pop(name,None)
+            if fd is not None:
+                try: os.close(fd)
+                except BaseException as error: errors.append(error)
         for name in ('thread', 'process', 'job'):
             handle = group.resources.pop(name, None)
             if handle is not None:

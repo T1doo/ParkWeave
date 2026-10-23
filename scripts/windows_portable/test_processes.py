@@ -392,6 +392,17 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         self.assertTrue(backend.stop(group,time.monotonic()+1))
         self.assertIn(('abort_exact',88,125),calls)
 
+    def test_worker_stdio_uses_private_pipes_and_closes_owned_crt_descriptors(self):
+        before=len(os.listdir('/proc/self/fd')) if sys.platform=='linux' else None
+        backend,group,calls=self.created_backend()
+        group.command.stdio_contract='WORKER_READINESS_V1'
+        with patch('subprocess.STARTUPINFO',SimpleNamespace,create=True):
+            backend.create(group,lambda cap:None,{},time.monotonic()+1)
+        self.assertNotIn('worker_go_r',group.resources);self.assertNotIn('worker_ready_w',group.resources)
+        self.assertIn('worker_go_w',group.resources);self.assertIn('worker_ready_r',group.resources)
+        self.assertTrue(backend.stop(group,time.monotonic()+1));backend.close_observed(group)
+        if before is not None:self.assertEqual(len(os.listdir('/proc/self/fd')),before)
+
     def test_assignment_failure_never_resumes_and_exact_unassigned_handle_is_stopped(self):
         backend, group, calls = self.created_backend(bind_error=True)
         with patch('subprocess.STARTUPINFO', SimpleNamespace, create=True):
