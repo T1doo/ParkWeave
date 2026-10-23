@@ -294,14 +294,30 @@ NAVIGATION_RELEASE_SCRIPT="""() => {
     prepCommandPending=null;delete window.__parkVisualFixture;
 }"""
 
+NAVIGATION_WORKSPACE_SCRIPT="""() => ({
+    workspace:{present:document.body.hasAttribute('data-workspace'),value:document.body.getAttribute('data-workspace')},
+    current:[...document.querySelectorAll('[data-tab][aria-current=page]')].map(e=>e.dataset.tab),
+    panels:['service','collaboration','resource'].map(id=>({id,hidden:$(id).hidden}))})
+"""
+
+
+def assert_navigation_workspace(before,after):
+    assert before['workspace'] in ({'present':False,'value':None},{'present':True,'value':'service'}),before
+    assert before['current']==['service'],before
+    assert before['panels']==[dict(id=name,hidden=name!='service') for name in ('service','collaboration','resource')],before
+    assert after==before,dict(before=before,after=after)
+
 
 def navigation_observation(page,width):
     require_operation_time(30)
+    workspace_before=page.evaluate(NAVIGATION_WORKSPACE_SCRIPT)
+    assert_navigation_workspace(workspace_before,workspace_before)
     fixture=page.evaluate(NAVIGATION_FIXTURE_SCRIPT)
     before=(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
     page.locator('[data-tab="resource"]').click(timeout=15000)
     page.wait_for_function("()=>$('page-feedback').textContent==='请先核对当前材料操作结果'",timeout=15000)
     proof=page.evaluate(NAVIGATION_COMPARE_SCRIPT)
+    assert_navigation_workspace(workspace_before,page.evaluate(NAVIGATION_WORKSPACE_SCRIPT))
     assert before==(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
     assert page.locator('#page-feedback').get_attribute('data-tone')=='error'
     page.keyboard.press('Shift+Tab');page.keyboard.press('Tab')
@@ -310,10 +326,13 @@ def navigation_observation(page,width):
         const style=e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,color:s.color,outline:s.outlineColor,outlineWidth:s.outlineWidth,outlineStyle:s.outlineStyle,boxShadow:s.boxShadow}};
         return {focused:f.dataset.tab,current:c.dataset.tab,workspace:document.body.dataset.workspace,focusVisible:f.matches(':focus-visible'),focusedStyle:style(f),currentStyle:style(c)};
     }""")
-    assert focus['focused']=='resource' and focus['current']==focus['workspace']=='service' and focus['focusVisible'],focus
+    assert focus['focused']=='resource' and focus['current']=='service' and focus['focusVisible'],focus
+    assert focus['workspace']==workspace_before['workspace']['value'],focus
     assert focus['focusedStyle']['outlineStyle']!='none' and float(focus['focusedStyle']['outlineWidth'].removesuffix('px'))>=2,focus
     assert focus['focusedStyle']['background']!=focus['currentStyle']['background'],focus
     assert page.evaluate(NAVIGATION_COMPARE_SCRIPT)==proof
+    workspace_after=page.evaluate(NAVIGATION_WORKSPACE_SCRIPT)
+    assert_navigation_workspace(workspace_before,workspace_after)
     page.evaluate('()=>window.scrollTo(0,0)');viewport=visible_in_viewport(page,['page-feedback'])
     observe(page,'current-navigation-refused-'+str(width),True)
     page.evaluate(NAVIGATION_RELEASE_SCRIPT)
@@ -323,7 +342,8 @@ def navigation_observation(page,width):
         assert page.locator('[data-tab][aria-current="page"]').get_attribute('data-tab')==name
     assert before==(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
     REPORT.setdefault('navigation_feedback',[]).append(dict(width=width,fixture=fixture,proof=proof,
-        request_delta=0,viewport=viewport,keyboard_focus=focus,fixture_released_by_exact_object=True,normal_three_workspace_navigation=True))
+        request_delta=0,viewport=viewport,keyboard_focus=focus,workspace_before=workspace_before,workspace_after=workspace_after,
+        fixture_released_by_exact_object=True,normal_three_workspace_navigation=True))
 
 
 def secondary_observation(page,width):

@@ -22,3 +22,14 @@
 本次原PNG读取0张、result未读、完整job log及summary未读；真实请求数、字体/布局断言、精确失败动作及自有进程退出均**不能独立签收**。官方job完成或附件步骤成功不证明应用清理。不能把4秒或附件大小推断为浏览器启动、具体页面失败或焦点根因，也不能称本轮审美通过。下一诊断需本次原ZIP；如通过用户提供文件，先核上述官方大小/hash及精确来源，再读数据，不执行内含脚本。不为补原件重复CI。
 
 这里保全三份完整官方API元数据、脱签名错误、读取状态、来源合同、推送回读及outcome；没有假ZIP或假截图。后续证据提交使用[skip ci]，不改受测产品或驱动。原本地离线检查范围仍见preflight，不累加旧测试数。
+
+
+## 驱动初态断言修复（离线，不补跑）
+
+父级随后沿既有正常登录页面只读提供日志文字，未访问被拒附件：失败位于`CURRENT_NAVIGATION_1200`，focused=`resource`、current=`service`、workspace=`None`、focusVisible=true。该文字报告还列出CLOSED/REFUSED、自有进程退出与清理确认；本实例没有物化完整日志或result，因此这些是**父级日志文字报告**，不冒充这里保存的原件或像素验收。之前“未知”是当时仅API元数据的事实，保留其历史记录。
+
+源码确认实际HTML没有显式body的data-workspace，初始service已选中且仅service可见；只有原成功导航handler写dataset.workspace。UNKNOWN拒绝发生在赋值前，正确保留未设置。run36新增焦点断言却强制workspace==service，是驱动错误。旧断言对真实HTML初态和原handler的Node模型输出复放为RED；父级所报focus字段仅参与断言复放，不称新浏览器观测。
+
+修复不改产品状态：先读属性“存在＋精确值”、唯一current及三个panel hidden；拒绝后与键盘往返后都必须等于原快照。初始未设置与通过原导航到协同再回服务的显式service状态分别验证；属性增删、resource漂移、current/hidden变化及非法初态反例仍拒。原pending对象/key/body/context、完整DOM/控件相等和零请求保护原字节保留；释放后原三工作区成功导航仍严格要求dataset与hidden匹配，不用空值回退掩盖状态变化。
+
+当前实际定向结果：原5个pytest参数通过，内部7次Node DOM/合成transport调用不另加测试数；旧断言RED、新精确合同两态PASS，26段JS语法检查。对应5个collection ID与历史真实全局collection原件完全一致；9535/407只是所存collection身份，未重跑全局、更不是本轮PASS数。原始pytest/定向collection输出及细节见workspace-contract相关文件。产品两页、workflow、字体暂存、监督器、共享字体验证和最终化模块原字节不变；本轮未启动浏览器/CI、未重试下载。后续如做新运行，仍须重新精确绑定新run、父提交及文件合同，当前run36保持FAIL，不能转签。
