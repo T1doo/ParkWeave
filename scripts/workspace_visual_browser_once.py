@@ -1,4 +1,4 @@
-"""Run36/attempt1: reviewed task surfaces and navigation; no product backend."""
+"""Run37/attempt1: reviewed task surfaces and navigation; no product backend."""
 import hashlib,json,os,queue,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -15,8 +15,8 @@ REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='R
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
-BASELINE_SHA='de673276e91dd0e41d6fec5d035bb65da1eca1e1'
-SOURCE_SHA256='b87bda8886b9ad2d23929650953609b2e909a7599099a2d7db458939396f6250'
+BASELINE_SHA='d366bb3f8d468731e03786f81bb6cff088ab6715'
+SOURCE_SHA256='e9677c71e45fc240bfb5de968ecd5ff6d4264c3a5e93e7988935931862d5cd9b'
 GUIDE_SHA256='1d1aefb15eda9ef9107220e8c72e8a1b864d0eac1b6a46c0e3203cca7508163e'
 SCENES=('entry','catalog-ready')
 PUBLIC_FILES=frozenset(tuple(f'{offset+i+1:02}-current-{scene}-{width}.png'
@@ -24,9 +24,9 @@ PUBLIC_FILES=frozenset(tuple(f'{offset+i+1:02}-current-{scene}-{width}.png'
 EXPECTED_CHANGED_PATHS=frozenset((
     '.github/workflows/fictional-park-browser-once.yml','scripts/workspace_visual_browser_once.py',
     'scripts/fictional_park_font_once.py','docs/F2/evidence/eng057-job-shards.json',
-    'docs/demo/evidence/task-desk-20261023/run36/README.md',
-    'docs/demo/evidence/task-desk-20261023/run36/preflight.json',
-    'docs/demo/evidence/task-desk-20261023/run36/SHA256SUMS'))
+    'docs/demo/evidence/task-desk-20261023/run37/README.md',
+    'docs/demo/evidence/task-desk-20261023/run37/preflight.json',
+    'docs/demo/evidence/task-desk-20261023/run37/SHA256SUMS'))
 CATALOG_REPLIES=queue.Queue(maxsize=1)
 FIXTURE_SUMMARY='合成界面复放 · 无真实业务、身份或授权'
 FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE · 静态交互复放，非真实业务、身份或授权。'
@@ -372,7 +372,7 @@ def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='36')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='37')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
@@ -436,7 +436,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='36')
+        source=base.require_hosted(os.environ,run_number='37')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
