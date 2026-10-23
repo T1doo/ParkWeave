@@ -1,4 +1,4 @@
-"""Run35/attempt1: current core page and refused navigation; no product backend."""
+"""Run36/attempt1: reviewed task surfaces and navigation; no product backend."""
 import hashlib,json,os,queue,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -15,19 +15,20 @@ REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='R
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0
 CHECKPOINT=None
-BASELINE_SHA='0d10246332506969a1015d035563aaa18edbb6e5'
-SOURCE_SHA256='bd470a216da57213b9064967fc17151666309da259889bb98f6e8a47c3f1b7c0'
+BASELINE_SHA='de673276e91dd0e41d6fec5d035bb65da1eca1e1'
+SOURCE_SHA256='b87bda8886b9ad2d23929650953609b2e909a7599099a2d7db458939396f6250'
 GUIDE_SHA256='1d1aefb15eda9ef9107220e8c72e8a1b864d0eac1b6a46c0e3203cca7508163e'
-SCENES=('entry','catalog-ready','navigation-refused','secondary-entry')
+SCENES=('entry','catalog-ready')
 PUBLIC_FILES=frozenset(tuple(f'{offset+i+1:02}-current-{scene}-{width}.png'
-    for width,offset in ((1200,0),(390,4)) for i,scene in enumerate(SCENES))+('failure-visual.png','result.json'))
+    for width,offset in ((1200,0),(390,2)) for i,scene in enumerate(SCENES))+('failure-visual.png','result.json'))
 EXPECTED_CHANGED_PATHS=frozenset((
     '.github/workflows/fictional-park-browser-once.yml','scripts/workspace_visual_browser_once.py',
     'scripts/fictional_park_font_once.py','docs/F2/evidence/eng057-job-shards.json',
-    'docs/demo/evidence/task-desk-20261023/run35/README.md',
-    'docs/demo/evidence/task-desk-20261023/run35/preflight.json',
-    'docs/demo/evidence/task-desk-20261023/run35/SHA256SUMS'))
+    'docs/demo/evidence/task-desk-20261023/run36/README.md',
+    'docs/demo/evidence/task-desk-20261023/run36/preflight.json',
+    'docs/demo/evidence/task-desk-20261023/run36/SHA256SUMS'))
 CATALOG_REPLIES=queue.Queue(maxsize=1)
+FIXTURE_SUMMARY='合成界面复放 · 无真实业务、身份或授权'
 FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE · 静态交互复放，非真实业务、身份或授权。'
 FIXTURE_SERVICE=dict(service_id='synthetic-ui-service',version=1,name='合成资料整理',
     source=dict(kind='SYNTHETIC',statement='只读界面夹具，不代表资格确认或外部受理'))
@@ -151,17 +152,24 @@ def observe(page,label,font=False):
     return row
 
 def mark_fixture(page):
-    page.evaluate("""text=>{for(const id of ['service','secondary-entry-group']){
-        const n=document.createElement('p');n.className='subtitle';n.dataset.visualFixture='true';n.textContent=text;
-        $(id).prepend(n);}}""",FIXTURE_LABEL)
+    page.evaluate("""([summary,text])=>{
+        const n=document.createElement('details');n.dataset.visualFixture='true';
+        n.style.cssText='margin:0 0 12px;padding:8px 10px;border:1px dashed #b2a16e;border-radius:8px;background:#fff6dc;color:#614b19;font-size:12px;line-height:1.5';
+        const s=document.createElement('summary');s.textContent=summary;s.style.cssText='cursor:pointer;min-height:24px';
+        const p=document.createElement('p');p.textContent=text;p.style.cssText='margin:8px 0 0;overflow-wrap:anywhere';
+        n.append(s,p);$('prep-catalog').before(n);
+    }""",[FIXTURE_SUMMARY,FIXTURE_LABEL])
+    marker=page.locator('[data-visual-fixture="true"]')
+    assert marker.count()==1 and marker.locator('summary').is_visible()
+    assert marker.locator('summary').inner_text()==FIXTURE_SUMMARY
+    assert marker.locator('p').text_content()==FIXTURE_LABEL
 
 
-def current_shot(page,scene,width,selector=None):
+def current_shot(page,scene,width):
     require_operation_time(15)
-    offset=0 if width==1200 else 4;number=offset+SCENES.index(scene)+1
-    target=page.locator(selector) if selector else page
-    kwargs={} if selector else dict(full_page=False)
-    target.screenshot(path=str(OUT/f'{number:02}-current-{scene}-{width}.png'),timeout=15000,**kwargs)
+    assert page.locator('[data-visual-fixture] > summary').evaluate("e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth}")
+    offset=0 if width==1200 else 2;number=offset+SCENES.index(scene)+1
+    page.screenshot(path=str(OUT/f'{number:02}-current-{scene}-{width}.png'),timeout=15000,full_page=False)
 
 
 def visible_in_viewport(page,ids):
@@ -169,6 +177,53 @@ def visible_in_viewport(page,ids):
         visible:!!e.getClientRects().length,top:r.top,bottom:r.bottom,height:innerHeight,text:e.textContent}})""",ids)
     assert all(r['visible'] and 0<=r['top'] and r['bottom']<=r['height'] for r in rows),rows
     return rows
+
+
+def surface_observation(page,label,ready=False):
+    row=page.evaluate("""() => {
+        const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}};
+        const surface=selector=>{const e=document.querySelector(selector),s=getComputedStyle(e);let p=e,bg=s.backgroundColor;
+            while(p&&['transparent','rgba(0, 0, 0, 0)'].includes(bg)){p=p.parentElement;if(p)bg=getComputedStyle(p).backgroundColor;}
+            return {selector,box:box(e),background:bg,color:s.color,border:s.borderTopColor,borderWidth:s.borderTopWidth,overflow:s.overflow};};
+        const regions=['body','.workspace-nav','.session-panel','.primary-entry-heading','.primary-entry-panel','#secondary-entry-group','#existing-preparation-entry','#formal-preparation-entry'].map(surface);
+        const button=$('prep-create').querySelector('button'),help=$('prep-create').querySelector('small');
+        return {width:innerWidth,regions,help:{text:help.textContent,display:getComputedStyle(help).display,box:box(help),button:box(button),form:box($('prep-create'))}};
+    }""")
+    row['label']=label;REPORT.setdefault('surface_observations',[]).append(row)
+    regions={r['selector']:r for r in row['regions']}
+    assert regions['.primary-entry-panel']['box']['bottom']+16<=regions['#secondary-entry-group']['box']['top'],row
+    assert regions['body']['background']!=regions['.workspace-nav']['background'],row
+    assert regions['.primary-entry-heading']['background']!=regions['.primary-entry-panel']['background'],row
+    assert regions['.primary-entry-panel']['background']!=regions['#secondary-entry-group']['background'],row
+    assert regions['#existing-preparation-entry']['background']!=regions['.primary-entry-panel']['background'],row
+    if ready:
+        h=row['help'];assert h['text']=='创建新的Case和运行，不复制上一事项材料。' and h['display']=='block',h
+        assert h['box']['top']>=h['button']['bottom'] and h['box']['height']>0,h
+        assert h['form']['left']<=h['box']['left']<h['box']['right']<=h['form']['right'] and h['box']['bottom']<=h['form']['bottom'],h
+
+
+def breakpoint_observation(page):
+    require_operation_time(5)
+    before=(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
+    scroll=page.evaluate('()=>({x:scrollX,y:scrollY})');viewport=dict(page.viewport_size)
+    try:
+        page.set_viewport_size({'width':1060,'height':1000})
+        row=page.evaluate("""() => {
+            const box=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}};
+            const n=document.querySelector('.workspace-nav');return {width:innerWidth,documentWidth:document.documentElement.scrollWidth,
+                bodyDisplay:getComputedStyle(document.body).display,direction:getComputedStyle(n).flexDirection,
+                nav:box(n),session:box(document.querySelector('.session-panel')),buttons:[...n.querySelectorAll('button')].map(e=>({tab:e.dataset.tab,...box(e)}))};
+        }""")
+        REPORT['breakpoint_1060']=row
+        assert row['width']==1060 and row['documentWidth']<=1060 and row['bodyDisplay']=='block' and row['direction']=='row',row
+        buttons=row['buttons'];assert [b['tab'] for b in buttons]==['service','collaboration','resource'],row
+        assert max(b['top'] for b in buttons)-min(b['top'] for b in buttons)<=1,row
+        assert all(a['right']<=b['left'] for a,b in zip(buttons,buttons[1:])),row
+        assert row['nav']['left']<=buttons[0]['left'] and buttons[-1]['right']<=row['nav']['right'] and row['session']['top']>=row['nav']['bottom'],row
+    finally:
+        page.set_viewport_size(viewport);page.evaluate('p=>window.scrollTo(p.x,p.y)',scroll)
+    assert before==(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
+    REPORT['breakpoint_1060']['request_delta']=0
 
 
 def queue_catalog(ready=False,held=False):
@@ -205,9 +260,10 @@ def catalog_observation(page,width):
         assert page.locator('#prep-catalog').get_attribute('aria-describedby')=='prep-catalog-status'
         assert page.locator('#prep-reviewer option').count()==1
         page.locator('#prep-goal').fill('SYNTHETIC：整理本次企业资料，尚未提交。')
-        page.locator('#prep-catalog').evaluate("e=>window.scrollTo(0,e.getBoundingClientRect().top+scrollY-16)")
+        page.locator('[data-visual-fixture]').evaluate("e=>window.scrollTo(0,e.getBoundingClientRect().top+scrollY-16)")
         viewport=visible_in_viewport(page,['prep-catalog-status','prep-create'])
         observe(page,'current-catalog-ready-'+str(width),True)
+        surface_observation(page,'catalog-ready-'+str(width),True)
         REPORT.setdefault('catalog_feedback',[]).append(dict(width=width,states=['LOADING','EMPTY','READY'],
             scope='READ_ONLY_RESPONSE_FIXTURE, exact original GET handler, no form submission or backend',viewport=viewport))
         current_shot(page,'catalog-ready',width)
@@ -248,9 +304,18 @@ def navigation_observation(page,width):
     proof=page.evaluate(NAVIGATION_COMPARE_SCRIPT)
     assert before==(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
     assert page.locator('#page-feedback').get_attribute('data-tone')=='error'
+    page.keyboard.press('Shift+Tab');page.keyboard.press('Tab')
+    focus=page.evaluate("""() => {
+        const f=document.activeElement,c=document.querySelector('[data-tab][aria-current=page]');
+        const style=e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,color:s.color,outline:s.outlineColor,outlineWidth:s.outlineWidth,outlineStyle:s.outlineStyle,boxShadow:s.boxShadow}};
+        return {focused:f.dataset.tab,current:c.dataset.tab,workspace:document.body.dataset.workspace,focusVisible:f.matches(':focus-visible'),focusedStyle:style(f),currentStyle:style(c)};
+    }""")
+    assert focus['focused']=='resource' and focus['current']==focus['workspace']=='service' and focus['focusVisible'],focus
+    assert focus['focusedStyle']['outlineStyle']!='none' and float(focus['focusedStyle']['outlineWidth'].removesuffix('px'))>=2,focus
+    assert focus['focusedStyle']['background']!=focus['currentStyle']['background'],focus
+    assert page.evaluate(NAVIGATION_COMPARE_SCRIPT)==proof
     page.evaluate('()=>window.scrollTo(0,0)');viewport=visible_in_viewport(page,['page-feedback'])
     observe(page,'current-navigation-refused-'+str(width),True)
-    current_shot(page,'navigation-refused',width)
     page.evaluate(NAVIGATION_RELEASE_SCRIPT)
     for name in ('resource','collaboration','service'):
         page.locator('[data-tab="'+name+'"]').click(timeout=15000)
@@ -258,7 +323,7 @@ def navigation_observation(page,width):
         assert page.locator('[data-tab][aria-current="page"]').get_attribute('data-tab')==name
     assert before==(len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
     REPORT.setdefault('navigation_feedback',[]).append(dict(width=width,fixture=fixture,proof=proof,
-        request_delta=0,viewport=viewport,fixture_released_by_exact_object=True,normal_three_workspace_navigation=True))
+        request_delta=0,viewport=viewport,keyboard_focus=focus,fixture_released_by_exact_object=True,normal_three_workspace_navigation=True))
 
 
 def secondary_observation(page,width):
@@ -278,17 +343,16 @@ def secondary_observation(page,width):
     page.emulate_media(reduced_motion='no-preference')
     page.locator('#secondary-entry-group').evaluate("e=>window.scrollTo(0,e.getBoundingClientRect().top+scrollY-16)")
     observe(page,'current-secondary-entry-'+str(width),True)
-    current_shot(page,'secondary-entry',width,'#secondary-entry-group')
     REPORT.setdefault('secondary_entry',[]).append(dict(width=width,native_keyboard='Enter open / Space close / Enter open',
         focus_outline='3px visible',reduced_motion=True,original_warnings_present=True,template_recovery_disabled=True,
-        screenshot_scope='whole secondary group; font observations only actual viewport nodes'))
+        screenshot_scope='no extra PNG; font observations only actual viewport nodes'))
 
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='35')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='36')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
@@ -297,7 +361,7 @@ def run_flow(started):
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             p=PRIVATE/name;p.mkdir(mode=0o700);env[key]=str(p)
-        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_LABEL+json.dumps(FIXTURE_SERVICE,ensure_ascii=False)+'SYNTHETIC：整理本次企业资料，尚未提交。')
+        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+json.dumps(FIXTURE_SERVICE,ensure_ascii=False)+'SYNTHETIC：整理本次企业资料，尚未提交。')
         signal.signal(signal.SIGALRM,timeout);signal.alarm(max(1,int(90-(time.monotonic()-START))))
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start();origin='http://127.0.0.1:'+str(server.server_port)
         with owned_browser(env) as browser:
@@ -308,8 +372,11 @@ def run_flow(started):
                     mark_fixture(page)
                     assert page.locator('#prep-catalog').is_visible() and page.locator('#prep-create').is_hidden()
                     visible_in_viewport(page,['prep-catalog'])
+                    surface_observation(page,'entry-'+str(width))
                     observe(page,'current-entry-'+str(width),True);current_shot(page,'entry',width)
                     stage('CURRENT_CATALOG_'+str(width));catalog_observation(page,width)
+                    if width==1200:
+                        stage('BREAKPOINT_1060');breakpoint_observation(page)
                     stage('CURRENT_NAVIGATION_'+str(width));navigation_observation(page,width)
                     stage('CURRENT_SECONDARY_'+str(width));secondary_observation(page,width)
                 finally:context.close()
@@ -349,7 +416,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='35')
+        source=base.require_hosted(os.environ,run_number='36')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
