@@ -1,8 +1,4 @@
-"""Production startup consumer; shared acceptance clock, not DB preemption.
-
-Synchronous libpq calls have connection/statement timeouts and late rejection;
-no hard transport-blackhole deadline has been established. No launch or mint.
-"""
+"""Startup observations share one deadline; native acceptance remains closed."""
 from dataclasses import dataclass,field
 import socket
 import time
@@ -94,17 +90,8 @@ def _get(application, bearer, nonce, deadline):
 
 
 def _database(inputs, deadline):
-    from parkweave.installed_fixture_receipt import _dsn, _connect
-    parsed=_dsn(inputs.application_dsn,'parkweave')
-    if parsed['host']!='127.0.0.1': raise CandidateRefused('explicit local database required')
-    if deadline-time.monotonic()<2: raise CandidateRefused('database readiness budget unavailable')
-    with _connect({**parsed,'connect_timeout':'2'},autocommit=False) as c:
-        c.execute('SET TRANSACTION READ ONLY')
-        c.execute("SET LOCAL statement_timeout='1500ms'")
-        result=runtime.database(c,'LOCAL')
-    if time.monotonic()>=deadline: raise CandidateRefused('database readiness deadline')
-    if result['port']!=int(parsed['port']): raise CandidateRefused('database readiness port mismatch')
-    return result
+    from .polling_database import probe
+    return probe(inputs,deadline)
 
 
 def require_application_ready(lease, inputs, application, probe, registered):
@@ -153,5 +140,7 @@ def activate_application(receipt):
         raise CandidateRefused('durable RUNNING within readiness clock required')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
-    application.adapter.worker_go(application.worker,application.challenge)
-    if time.monotonic()>=deadline: raise CandidateRefused('application activation deadline')
+    application.adapter.worker_go(application.worker,application.challenge,deadline)
+    if time.monotonic()>=deadline:
+        from .isolated_pipe import PipeFailure
+        raise PipeFailure('ACTIVATION_LATE','go',True)

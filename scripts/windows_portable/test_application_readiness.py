@@ -121,7 +121,7 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
     def fixture(self):
         lease=SimpleNamespace(_verify=lambda:None,status=lambda:'APPLICATION')
         backend=SimpleNamespace(observe=lambda *args:None,scope='STANDIN_ONLY')
-        command=p.Command('runtime/private.exe','0'*64,1,model='WINDOWS_JOB',stdio_contract='WORKER_READINESS_V1')
+        command=p.Command('runtime/private.exe','0'*64,1,('--readiness-challenge',NONCE),model='WINDOWS_JOB',stdio_contract='WORKER_READINESS_V1')
         adapter=p.PrivateProcessAdapter(lease,{'app':command},_backend=backend)
         tokens=[]
         for pid in (41,42):
@@ -156,8 +156,8 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
              patch.object(adapter,'worker_ready_frame',return_value=worker),patch.object(a,'_get',return_value=api), \
              patch.object(adapter,'worker_go') as go:
             receipt=a.require_application_ready(lease,None,app,probe,tokens)
-            a.check_before_running(receipt);go.assert_not_called()
-            lease.status=lambda:'RUNNING';a.activate_application(receipt);go.assert_called_once_with(app.worker,NONCE)
+            a.check_before_running(receipt);go.assert_not_called();deadline=a._issued[receipt][3]
+            lease.status=lambda:'RUNNING';a.activate_application(receipt);go.assert_called_once_with(app.worker,NONCE,deadline)
             with self.assertRaises(a.CandidateRefused):a.activate_application(receipt)
             lease.status=lambda:'APPLICATION';api['actor']={**ACTOR,'id':'different-owner'}
             with self.assertRaises(a.CandidateRefused):a.require_application_ready(lease,None,app,probe,tokens)
@@ -166,11 +166,11 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
         _,adapter,app,_,_=self.fixture();read_fd,write_fd=os.pipe()
         adapter._group(app.worker).resources['worker_ready_r']=read_fd
         values=[];errors=[];entered=threading.Event();original=r.read_frame
-        def read(fd,deadline):entered.set();return original(fd,deadline)
+        def read(owner,state,op,nonce,deadline):entered.set();return original(state.resources['worker_ready_r'],deadline)
         def observe():
             try:values.append(adapter.worker_ready_frame(app.worker,time.monotonic()+2))
             except BaseException as error:errors.append(error)
-        with patch.object(r,'read_frame',side_effect=read),patch.object(adapter.backend,'stop',create=True) as stop:
+        with patch('scripts.windows_portable.isolated_pipe.operation',side_effect=read),patch.object(adapter.backend,'stop',create=True) as stop:
             thread=threading.Thread(target=observe);thread.start()
             try:
                 self.assertTrue(entered.wait(2))

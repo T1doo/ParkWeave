@@ -13,6 +13,7 @@ import shutil
 import signal
 import sys
 import tempfile
+import threading
 import time
 from types import SimpleNamespace
 import unittest
@@ -387,6 +388,7 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         self.assertEqual(registered,[{'job':77}])
         self.assertEqual((group.resources['process'],group.resources['thread'],group.resources['bound']),(88,99,False))
         self.assertFalse(group.started)
+        self.assertEqual(group.resources['stdio_close_unknown'],[12])
         self.assertEqual([x for x in calls if x[0]=='create_suspended'],
                          [('create_suspended','C:\\private\\private.exe',0x4|0x400|0x80000,(10,11,12))])
         self.assertTrue(backend.stop(group,time.monotonic()+1))
@@ -402,6 +404,27 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         self.assertIn('worker_go_w',group.resources);self.assertIn('worker_ready_r',group.resources)
         self.assertTrue(backend.stop(group,time.monotonic()+1));backend.close_observed(group)
         if before is not None:self.assertEqual(len(os.listdir('/proc/self/fd')),before)
+
+    def test_child_stdio_crt_close_unknown_never_signs_whole_stop(self):
+        before=len(os.listdir('/proc/self/fd'))
+        backend,group,calls=self.created_backend()
+        group.command.stdio_contract='WORKER_READINESS_V1'
+        original=os.close;unknown=[]
+        def close_once(fd):
+            original(fd)
+            if not unknown:
+                unknown.append(fd);raise OSError('injected close outcome unknown')
+        with patch('subprocess.STARTUPINFO',SimpleNamespace,create=True),patch.object(os,'close',side_effect=close_once):
+            with self.assertRaises(BaseExceptionGroup):backend.create(group,lambda cap:None,{},time.monotonic()+1)
+        self.assertEqual(group.resources['stdio_close_unknown'],[('CRT',unknown[0])])
+        group.creating=False;group.attempted_stop=False;group.stopped=False;group.errors=[];group.operation_lock=threading.Lock()
+        group.executable.close=lambda:None
+        marks=[];lease=SimpleNamespace(mark_unknown=lambda phase:marks.append(phase))
+        adapter=p.PrivateProcessAdapter(lease,{'app':p.Command('runtime/private.exe','0'*64,1,model='WINDOWS_JOB')},_backend=backend)
+        token=p.OwnedGroup();adapter._issued[id(token)]=(token,group)
+        self.assertFalse(adapter.stop_owned(token));self.assertTrue(adapter.unknown);self.assertEqual(marks,['RUNNING'])
+        self.assertFalse(group.stopped)
+        self.assertEqual(len(os.listdir('/proc/self/fd')),before)
 
     def test_assignment_failure_never_resumes_and_exact_unassigned_handle_is_stopped(self):
         backend, group, calls = self.created_backend(bind_error=True)

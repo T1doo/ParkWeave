@@ -43,6 +43,6 @@ Linux参考后端明确只允已有`/usr/bin/sleep`、`true`原字节的私有�
 
 Windows worker profile仅继承三份精确stdio句柄，两个匿名pipe的原fd进入私有resource登记，确认进程退出后关闭；本轮仅真实Linux pipe fd加Win句柄替身，未实测Windows容量/继承/PeekNamedPipe。发送Bearer前必须核已连接socket反向四元组的ESTABLISHED唯一行与原API hProcess出生身份；`windows_endpoint.py`只读SYSTEM32 GetExtendedTcpTable，有界缓冲，不输出系统表，不查询/操作外来进程。缺native支持零HTTP调用，连接归属不符零应用字节。新门仍关闭，端点和进程API源码不是原生验收。
 
-消费者共享5秒就绪准入/激活时钟，HTTP按同一余额接收且不代理/重定向；同步libpq仅有connect/statement超时与事后超时拒签，**未证明网络黑洞下5秒硬抢占**。worker独占空pipe使用10秒GO准入时钟；PeekNamedPipe对同步句柄的多线程阻塞与单次小帧write未证硬抢占，真实Windows容量/传输、DB/物理绑定、安全SESSION/CONFIG、高层启动以及端用户完整运行仍未验或未闭合。双击入口继续明确拒绝，不能将ASGI/FakeDB、pipe/FakeDB或控制器fake接线称生产实例已就绪。
+消费者共享5秒就绪准入/激活时钟，HTTP按同一余额接收且不代理/重定向。`polling_database.py`使用非阻塞libpq connect/send/flush/consume/result与显式只读启动配置；超时finish原连接，不同步cancel或COMMIT。`isolated_pipe.py`把同步pipe操作放进冻结命令的自有辅助进程，同一绝对截止内预留0.5秒核退出与清理，不留timeout线程；GO写后迟到/解析/OS失败均UNKNOWN且不重发。根进程不再PeekNamedPipe，确认全部helper及父端writer关闭后才读有界结果；任一关闭未知保留原cap与lease UNKNOWN。真实Linux helper及synthetic wire限测见[原始证据](../../docs/demo/evidence/transport-deadline-candidate-20261023/README.md)，不签所有内核/文件系统操作硬实时保证。worker自身10秒准入以及真实Windows管道/Job、DB/物理绑定、安全SESSION/CONFIG、高层启动、端用户运行仍未验或未闭合，双击入口继续拒绝。
 
 本组件14项stdlib离线测试单独运行，PE为明确不可执行fixture；不并入原405文件/9521项历史collection，也不称全回归。真实资产静态检查另列，不累加为测试通过。无新浏览器、PG、Windows、CI或用户电脑运行。

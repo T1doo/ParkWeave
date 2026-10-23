@@ -1,0 +1,46 @@
+test_actual_libpq_connect_and_query_wire_blackholes_close_socket_by_shared_deadline (scripts.windows_portable.test_transport_deadlines.DatabaseChecks.test_actual_libpq_connect_and_query_wire_blackholes_close_socket_by_shared_deadline) ... WARNING: password file "/dev/null" is not a plain file
+ACTUAL_LIBPQ_SYNTHETIC_WIRE connect ['STARTUP', 'CLIENT_EOF'] elapsed 0.351 no real PG
+WARNING: password file "/dev/null" is not a plain file
+ACTUAL_LIBPQ_SYNTHETIC_WIRE query ['STARTUP', 'QUERY', 'CLIENT_EOF'] elapsed 0.3518 no real PG
+ok
+test_blocked_read_exits_reaps_and_releases_original_operation_lock (scripts.windows_portable.test_transport_deadlines.PipeChecks.test_blocked_read_exits_reaps_and_releases_original_operation_lock) ... FAIL
+test_full_pipe_go_unknown_never_reissued_and_cleanup_confirmed (scripts.windows_portable.test_transport_deadlines.PipeChecks.test_full_pipe_go_unknown_never_reissued_and_cleanup_confirmed) ... ACTUAL_LINUX full pipe GO: UNKNOWN, helper exited/reaped, consumed once
+ok
+test_success_read_go_and_written_but_late_result_is_unknown (scripts.windows_portable.test_transport_deadlines.PipeChecks.test_success_read_go_and_written_but_late_result_is_unknown) ... ERROR
+
+======================================================================
+ERROR: test_success_read_go_and_written_but_late_result_is_unknown (scripts.windows_portable.test_transport_deadlines.PipeChecks.test_success_read_go_and_written_but_late_result_is_unknown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/scripts/windows_portable/test_transport_deadlines.py", line 83, in test_success_read_go_and_written_but_late_result_is_unknown
+    self.assertEqual(self.adapter.worker_ready_frame(self.token,time.monotonic()+1),{'synthetic':'bounded'})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/scripts/windows_portable/processes.py", line 312, in guarded
+    try: return method(self,token,*args,**kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/scripts/windows_portable/processes.py", line 436, in worker_ready_frame
+    return operation(self,group,'read',group.resources['readiness_challenge'],deadline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/scripts/windows_portable/isolated_pipe.py", line 143, in operation
+    raise primary
+  File "/workspace/ParkWeave/scripts/windows_portable/isolated_pipe.py", line 117, in operation
+    if code!=0:raise PipeFailure('HELPER_EXIT',op)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts.windows_portable.isolated_pipe.PipeFailure: PIPE_OPERATION_UNKNOWN:HELPER_EXIT
+
+======================================================================
+FAIL: test_blocked_read_exits_reaps_and_releases_original_operation_lock (scripts.windows_portable.test_transport_deadlines.PipeChecks.test_blocked_read_exits_reaps_and_releases_original_operation_lock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/scripts/windows_portable/test_transport_deadlines.py", line 60, in test_blocked_read_exits_reaps_and_releases_original_operation_lock
+    self.assertEqual(caught.exception.phase,'DEADLINE');self.assertTrue(caught.exception.cleanup_confirmed)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'HELPER_EXIT' != 'DEADLINE'
+- HELPER_EXIT
++ DEADLINE
+
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.109s
+
+FAILED (failures=1, errors=1)

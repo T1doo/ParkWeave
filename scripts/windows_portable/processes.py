@@ -41,8 +41,8 @@ class Command:
                 or len(self.arguments) > 32 or any(type(v) is not str or '\x00' in v or len(v) > 2048 for v in self.arguments)
                 or sum(len(v) for v in self.arguments) > 8192
                 or self.model not in ('SINGLE_PROCESS_ELF', 'WINDOWS_JOB')
-                or self.stdio_contract not in ('NONE','WORKER_READINESS_V1')
-                or self.stdio_contract != 'NONE' and self.model != 'WINDOWS_JOB'):
+                or self.stdio_contract not in ('NONE','WORKER_READINESS_V1','PIPE_PROBE_V1')
+                or self.stdio_contract == 'WORKER_READINESS_V1' and self.model != 'WINDOWS_JOB'):
             raise ProcessRefused('FIXED_PRIVATE_COMMAND_REQUIRED')
 
 
@@ -425,20 +425,25 @@ class PrivateProcessAdapter:
             raise ProcessRefused('BOUNDED_WORKER_READINESS_CLOCK_REQUIRED')
         if group.command.stdio_contract!='WORKER_READINESS_V1' or group.resources.get('ready_read_attempted'):
             raise ProcessRefused('EXACT_UNCONSUMED_WORKER_PIPE_REQUIRED')
+        from parkweave.runtime_readiness import challenge
+        args=group.command.arguments
+        if args.count('--readiness-challenge')!=1:raise ProcessRefused('FROZEN_WORKER_CHALLENGE_REQUIRED')
+        index=args.index('--readiness-challenge')
+        if index+1>=len(args):raise ProcessRefused('FROZEN_WORKER_CHALLENGE_REQUIRED')
+        group.resources['readiness_challenge']=challenge(args[index+1])
         group.resources['ready_read_attempted']=True  # No replay after unknown read.
-        from parkweave.runtime_readiness import read_frame
-        return read_frame(group.resources['worker_ready_r'],deadline)
+        from .isolated_pipe import operation
+        return operation(self,group,'read',group.resources['readiness_challenge'],deadline)
 
     @_owned_operation
-    def worker_go(self, token, nonce):
+    def worker_go(self, token, nonce, deadline):
         group=self._group(token); self._live_identity(group)
         if (group.command.stdio_contract!='WORKER_READINESS_V1' or not group.resources.get('ready_read_attempted')
-                or group.resources.get('go_attempted')):
+                or group.resources.get('go_attempted') or nonce!=group.resources.get('readiness_challenge')):
             raise ProcessRefused('EXACT_WORKER_GO_REQUIRED')
         group.resources['go_attempted']=True  # Unknown write is never repeated.
-        from parkweave.runtime_readiness import write_frame, challenge
-        challenge(nonce)
-        write_frame(group.resources['worker_go_w'],{'schema':'parkweave-worker-go/1','challenge':nonce,'command':'GO'})
+        from .isolated_pipe import operation
+        return operation(self,group,'go',nonce,deadline)
 
     @_owned_operation
     def describe(self, group):
@@ -465,6 +470,8 @@ class PrivateProcessAdapter:
             if confirmed:
                 self.backend.close_observed(group)
                 group.executable.close()
+                if group.resources.get('active_pipe_helpers') or group.resources.get('stdio_close_unknown'):
+                    raise ProcessRefused('OWNED_HELPER_EXIT_UNKNOWN')
                 group.stopped = True
                 return True
             group.errors.append(('EXIT', ProcessRefused('OWNED_EXIT_UNKNOWN')))

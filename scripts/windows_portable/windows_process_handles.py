@@ -94,6 +94,12 @@ class WindowsJobProcess:
 
     def preflight(self, command):
         if command.model != 'WINDOWS_JOB': raise ProcessRefused('WINDOWS_JOB_PROFILE_REQUIRED')
+        if command.stdio_contract=='PIPE_PROBE_V1':
+            from .isolated_pipe import HELPER
+            from parkweave.runtime_readiness import challenge
+            if len(command.arguments)!=6 or command.arguments[:4]!=('-I','-B','-c',HELPER) or command.arguments[4] not in ('read','go'):
+                raise ProcessRefused('FROZEN_HELPER_REQUIRED')
+            challenge(command.arguments[5])
 
     def birth(self, process):
         created, exited, kernel, user = FileTime(), FileTime(), FileTime(), FileTime()
@@ -125,6 +131,8 @@ class WindowsJobProcess:
                     r['worker_go_r'],r['worker_go_w'] = os.pipe()
                     r['worker_ready_r'],r['worker_ready_w'] = os.pipe()
                     fds = [r['worker_go_r'],r['worker_ready_w'],null.fileno()]
+                if getattr(group.command,'stdio_contract','NONE')=='PIPE_PROBE_V1':
+                    fds=[r['pipe_borrowed'],r['pipe_result_w'],null.fileno()]
                 for fd in fds:
                     duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
                         win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
@@ -139,13 +147,19 @@ class WindowsJobProcess:
                 r.update(process=process, thread=thread, pid=pid, bound=False)
                 for key in ('worker_go_r','worker_ready_w'):
                     fd=r.pop(key,None)
-                    if fd is not None: os.close(fd)
+                    if fd is not None:
+                        try:os.close(fd)
+                        except BaseException:
+                            r.setdefault('stdio_close_unknown',[]).append(('CRT',fd))
+                            raise
             except BaseException as error: primary = error
             finally:
                 while duplicates:
                     handle = duplicates.pop()
                     try: backend.close(handle)
-                    except BaseException as error: cleanup.append(error)
+                    except BaseException as error:
+                        r.setdefault('stdio_close_unknown',[]).append(handle)  # Retain, never retry an unknown CloseHandle.
+                        cleanup.append(error)
         if primary is not None or cleanup:
             raise BaseExceptionGroup('NATIVE_CREATE_OR_STDIO_FAILED', ([primary] if primary is not None else []) + cleanup)
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
