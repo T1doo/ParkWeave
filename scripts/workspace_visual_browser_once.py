@@ -202,8 +202,9 @@ RESOURCE_NAME='合成资源：园区联合培训资料整理与设备说明核�
 RESOURCE_MEMBER=dict(resource_name=RESOURCE_NAME,purpose='长中文合成记录：须本人核对，外部未受理',starts_at='2026-10-23T10:00:00Z',ends_at='2026-10-23T11:00:00Z',quantity=1,state='CONFIRMED')
 RESOURCE_REPLIES={
     '/api/synthetic-resources':dict(server_time='2026-10-23T09:00:00Z',items=[dict(id='ui-resource-1',name=RESOURCE_NAME,capacity=3,revision=1,buffer_seconds=60,enabled=True,open_from='2026-10-23T00:00:00Z',open_until='2026-10-24T00:00:00Z',source=dict(kind='SYNTHETIC',id='ui-source-1',revision=1,statement='静态交互复放，非真实可用性'))]),
-    '/api/resource-bundles':dict(actor_id='SYNTHETIC_UI_ACTOR',items=[dict(id='ui-combination-1',state='CONFIRMED',members=[dict(RESOURCE_MEMBER,id='ui-member-'+str(i),resource_name=RESOURCE_NAME+' · '+str(i)) for i in range(1,4)])])}
-RESOURCE_LIMITS={'/api/synthetic-resources':2,'/api/resource-bundles':4}
+    '/api/resource-bundles':dict(actor_id='SYNTHETIC_UI_ACTOR',items=[dict(id='ui-combination-1',state='CONFIRMED',members=[dict(RESOURCE_MEMBER,id='ui-member-'+str(i),resource_name=RESOURCE_NAME+' · '+str(i)) for i in range(1,4)])]),
+    '/api/plan-approval/status':dict(enabled=False,approval_scope=None,source_reapproval_enabled=False,plan_replacement_enabled=False,known_not_started_enabled=False,p3_closure_enabled=False,production_execution_enabled=False,formal_release=False,role='enterprise_operator')}
+RESOURCE_LIMITS={'/api/synthetic-resources':2,'/api/resource-bundles':4,'/api/plan-approval/status':4}
 
 
 def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
