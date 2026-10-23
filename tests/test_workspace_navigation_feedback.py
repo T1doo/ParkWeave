@@ -4,6 +4,7 @@ from copy import deepcopy
 from html.parser import HTMLParser
 import json
 from pathlib import Path
+import re
 import subprocess
 
 import pytest
@@ -144,6 +145,112 @@ def driver_workspace_contract():
     return script, namespace['assert_navigation_workspace']
 
 
+RETURN_LINK_PROBE = r"""
+const vm=require('node:vm'),assert=require('node:assert/strict');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8')),rows=[];
+class Element{
+ constructor(id){this.id=id;this.tagName='A';}
+ closest(selector){
+  if(['button,a,[data-tab],form','button,a,[data-tab]','button,[data-tab],a'].includes(selector))return this;
+  if(['button','form','#receipt-local-execution-retry,#token'].includes(selector))return null;
+  throw Error('Unexpected selector '+selector);
+ }
+}
+(async()=>{
+ for(const mode of ['normal','active-flow','retained-lease','prep-unknown','receipt-unknown'])for(const link of input.links){
+  const nodes=new Map(),handlers=[],requests=[],clears=[],messages=[];
+  const $=id=>{if(!nodes.has(id))nodes.set(id,{value:'',hidden:false,textContent:'',replaceChildren(){this.textContent='';}});return nodes.get(id);};
+  const pending={key:'SYNTHETIC_ORIGINAL_KEY',state:'UNKNOWN',body:{action:'ADD_EVIDENCE',text:'SYNTHETIC saved draft'}};
+  const context=vm.createContext({console,Element,Map,RegExp,encodeURIComponent,$,
+   activeEntryWriteFlow:mode==='active-flow'?{kind:'SYNTHETIC_FLOW'}:null,
+   entryWriteRequests:new Map(mode==='retained-lease'?[['SYNTHETIC_KEY',{kind:'unrelated',path:'/api/runs/SYNTHETIC'}]]:[]),
+   caseFactPending:null,receiptLocalPending:mode==='receipt-unknown'?pending:null,
+   prepCommandPending:mode==='prep-unknown'?pending:null,prepRecoveryHandle:null,prepRecoveryChecking:false,materialReusePending:null,
+   pauseClockBusy:false,tiEpoch:0,templateEntryGeneration:0,existingPreparationGeneration:0,formalPreparationGeneration:0,
+   pauseClockHandles:()=>[],originalStoredWritePending:()=>false,
+   show:value=>messages.push(value),
+   clearGeneric:()=>clears.push('generic'),clearPreparation:()=>clears.push('preparation'),
+   prepCall:async()=>{requests.push('prepCall');throw Error('Unexpected request');},
+   fetch:async()=>{requests.push('fetch');throw Error('Unexpected fetch');},
+   document:{body:{dataset:{}},addEventListener(type,fn,capture){assert.equal(type,'click');assert.equal(capture,true);handlers.push(fn);}},
+  });
+  vm.runInContext(input.source,context);assert.equal(handlers.length,4);
+  for(const item of input.protectedElements){$(item.id).hidden=item.hidden;$(item.id).disabled=item.disabled;}
+  $('token').value='SYNTHETIC_IDENTITY';$('prep-text').value='SYNTHETIC unsubmitted draft';
+  $('existing-preparation-id').value='11111111-1111-4111-8111-111111111111';
+  const flow=context.activeEntryWriteFlow,leaseMap=context.entryWriteRequests,retained=[...leaseMap.values()];
+  const protectedState=()=>JSON.stringify({draft:$('prep-text').value,token:$('token').value,
+   oldID:$('existing-preparation-id').value,pending:context.prepCommandPending,receipt:context.receiptLocalPending,
+   flow:context.activeEntryWriteFlow,leases:[...context.entryWriteRequests],
+   workspace:context.document.body.dataset,controls:input.protectedElements.map(item=>({id:item.id,hidden:$(item.id).hidden,disabled:$(item.id).disabled})),clears,requests});
+  const before=protectedState();let prevented=false,stopped=false;
+  const event={target:new Element(link.id),preventDefault(){prevented=true;},stopImmediatePropagation(){stopped=true;}};
+  for(const fn of handlers){fn(event);if(stopped)break;}
+  const blocked=['active-flow','retained-lease','receipt-unknown'].includes(mode);
+  assert.equal(prevented,blocked);assert.equal(stopped,blocked);assert.equal(protectedState(),before);
+  assert.equal(context.activeEntryWriteFlow,flow);assert.equal(context.entryWriteRequests,leaseMap);
+  assert.equal(leaseMap.size,retained.length);assert.ok([...leaseMap.values()].every((value,index)=>value===retained[index]));
+  assert.equal(context.prepCommandPending,mode==='prep-unknown'?pending:null);
+  assert.equal(context.receiptLocalPending,mode==='receipt-unknown'?pending:null);
+  const epoch=mode==='receipt-unknown'?0:1;
+  assert.equal(context.tiEpoch,epoch);assert.equal(context.templateEntryGeneration,epoch);
+  if(mode==='prep-unknown'){
+   await context.openExistingPreparation();assert.match($('existing-preparation-status').textContent,/原入口只读核对/);
+   await context.checkFormalPreparationEntry();assert.match($('formal-preparation-status').textContent,/原入口核对/);
+   assert.equal(protectedState(),before);assert.equal(context.prepCommandPending,pending);
+  }
+  rows.push({mode,id:link.id,native_default_allowed:!prevented,tiEpoch:context.tiEpoch,
+   templateEntryGeneration:context.templateEntryGeneration,HTTP:requests.length,clearers:clears.length});
+ }
+ process.stdout.write(JSON.stringify({scope:'four_direct_capture_handlers_Node_model_not_browser',rows}));
+})().catch(e=>{console.error(e.stack);process.exitCode=1;});
+"""
+
+
+def probe_return_links():
+    """Exercise four direct captures; native scrolling/focus needs Chrome."""
+    page = (Path(__file__).resolve().parents[1] / 'src/parkweave/web.html').read_text()
+
+    class ReturnHTML(HTMLParser):
+        def __init__(self):
+            super().__init__(); self.links = []; self.targets = {}; self.protected_elements = []
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == 'a' and attrs.get('id') in ('existing-preparation-jump', 'formal-preparation-jump'):
+                assert set(attrs) == {'id', 'href'}
+                self.links.append(attrs)
+            if tag == 'section' and attrs.get('id') in ('existing-preparation-entry', 'formal-preparation-entry'):
+                self.targets[attrs['id']] = attrs
+            if attrs.get('id') in ('service', 'collaboration', 'resource', 'prep-create', 'existing-preparation-read', 'formal-preparation-check'):
+                self.protected_elements.append(dict(id=attrs['id'], hidden='hidden' in attrs, disabled='disabled' in attrs))
+
+    parsed = ReturnHTML(); parsed.feed(page)
+    assert [link['href'] for link in parsed.links] == ['#existing-preparation-entry', '#formal-preparation-entry']
+    assert all(parsed.targets[link['href'][1:]]['tabindex'] == '-1' for link in parsed.links)
+    assert not re.search(r'hashchange|popstate|location\.hash|history\.(?:pushState|replaceState)', page)
+    captures = re.findall(r"document\.addEventListener\('click',(?:event|e)=>\{.*?\},true\);", page, re.S)
+    assert len(captures) == 3 and page.count("document.addEventListener('click',") == 4
+    source = '\n'.join(captures)
+    start = page.index('function entryReadAllowed(')
+    end = page.index("document.addEventListener('submit',blockIndependentEntryUI,true);", start)
+    source += '\n' + page[start:end]
+    source += '\n' + next(line for line in page.splitlines() if line.startswith('function uuidHandle('))
+    for name in ('clearExistingPreparationEntry', 'clearFormalPreparationEntry'):
+        source += '\n' + next(line for line in page.splitlines() if line.startswith('function '+name+'('))
+    start = page.index('function existingPreparationBlocked(')
+    source += '\n' + page[start:page.index("$('existing-preparation-form').onsubmit=", start)]
+    start = page.index('async function checkFormalPreparationEntry(')
+    source += '\n' + page[start:page.index("$('formal-preparation-check').onclick=", start)]
+    run = subprocess.run(['node', '-e', RETURN_LINK_PROBE], input=json.dumps({'source': source, 'links': parsed.links,
+                         'protectedElements': parsed.protected_elements}),
+                         text=True, capture_output=True, timeout=10)
+    assert run.returncode == 0, run.stderr
+    result = json.loads(run.stdout)
+    assert len(result['rows']) == 10 and all(row['HTTP'] == row['clearers'] == 0 for row in result['rows'])
+    return result
+
+
 @pytest.mark.parametrize("mode", ["unknown-post", "unknown-readback", "normal", "discard", "objection"])
 def test_original_unknown_material_navigation_preserves_context(mode):
     source, wrapper = original_source()
@@ -179,3 +286,5 @@ def test_original_unknown_material_navigation_preserves_context(mode):
                               {'present': True, 'value': 'resource'}):
                 invalid = deepcopy(before); invalid['workspace'] = workspace
                 with pytest.raises(AssertionError): contract(invalid, deepcopy(invalid))
+    if mode == 'unknown-post':
+        probe_return_links()
