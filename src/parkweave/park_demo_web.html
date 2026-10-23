@@ -33,27 +33,74 @@ details{border-radius:10px;background:#fafcf8}summary{padding:15px 16px;font-siz
 @media(max-width:420px){header{padding:23px 18px}header h1{font-size:22px}main{padding:16px 14px 30px}aside,#workspace-panel{padding:20px 17px;border-radius:13px}aside>h2{font-size:17px}input,select{font-size:16px}summary{font-size:14px;padding:13px 14px}li{line-height:1.8}#workspace-panel h2{font-size:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 @media(forced-colors:active){header{background:Canvas;color:CanvasText}#status[data-tone],.notice{background:Canvas;color:CanvasText;border-color:CanvasText}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}}
+
+/* Warm guide surfaces: original file, window, roles and explicit-only actions stay unchanged. */
+:root{--ink:#3d3029;--muted:#6a5b50;--line:#ddcfc0;--green:#a54519;--focus:#315eae}
+body{background:#f3ede5;color:var(--ink)}
+body>header{background:#7b3d21;border-bottom:4px solid #d5a472;padding:28px max(24px,calc((100vw - 1220px)/2))}
+body>header h1{color:#fff}body>header p{color:#fae7d4}
+main{align-items:start;gap:24px}
+main>aside{display:block;min-width:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+main>aside>.notice{margin:0 0 18px}
+.guide-session,.guide-inputs,.guide-process{min-width:0;margin:0;padding:24px;border:1px solid #d5c7b6;border-radius:14px;background:#fffaf3}
+.guide-session{background:#fff3e3;border-color:#dfbc95}
+.guide-inputs{background:#e9edf0;border-color:#c7cfd5}
+.guide-process{margin-top:18px;background:#eee6db}
+:is(.guide-session,.guide-inputs,.guide-process)>h2{margin:0 0 14px;padding:0;border:0;font-size:18px;line-height:1.65;letter-spacing:-.2px}
+.guide-roles{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid #dfc8aa}
+.guide-roles>h3,.guide-roles>small{grid-column:1/-1;margin:0}
+.guide-roles>h3{padding:0;font-size:14px;line-height:1.7;color:#7b3215}
+.guide-roles>small{margin-bottom:4px}
+.guide-roles>[data-role]{min-width:0;margin:0;text-align:left}
+.guide-fill-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:10px 0}
+.guide-fill-actions>button{min-width:0;margin:0;white-space:normal}
+label{color:#554437}small{color:#6a5b50}
+input,select{border-color:#cbb9a4;background:#fff;color:#3d3029}
+input[type=file]{border-color:#bda07d;background:#fffaf3}
+input::file-selector-button{background:#fffdf9;color:#7b3215;border-color:#cbb292}
+input:focus,select:focus{border-color:#aa5427;box-shadow:0 0 0 3px #a5451912}
+button{background:#fffdf9;color:#7b3215;border-color:#cbb292}
+button:hover:not(:disabled){background:#f4e8d6;border-color:#a54519;box-shadow:0 3px 9px #4b2d1d0c}
+button:active:not(:disabled){box-shadow:inset 0 1px 3px #4b2d1d20}
+#workspace-open:not(:disabled){background:#a54519;border-color:#a54519;color:#fff}
+#workspace-open:hover:not(:disabled){background:#7b3215;border-color:#7b3215;color:#fff}
+button:disabled,#workspace-open:disabled{background:#eee7dd;border-color:#d9cbbb;color:#6f6255;box-shadow:none}
+#status{margin:16px 0 18px}
+#status:not([data-tone]),#status[data-tone=neutral]{background:#e5eef3;color:#375d74;border-color:#c9d9e3}
+.guide-process>details{border-color:#d5c7b6;background:#fffdf9}
+.guide-process>details>summary{color:#7b3215}
+.guide-process>details>summary:hover{background:#f4e8d6}
+.guide-process>details[open]>summary{border-bottom-color:#d5c7b6}
+.guide-process summary::marker,.guide-process li::marker{color:#9b4622}
+#workspace-panel{background:#e9edf0;border-color:#c7cfd5;border-top:3px solid #b18b62;box-shadow:none}
+#workspace-panel>h2{color:#3d3029}#workspace-panel>h3{color:#7b3215;border-top-color:#c7cfd5}
+#workspace-panel>p{color:#52606a}#workspace-panel>.notice{color:#75531d}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:var(--focus)}
+@media(min-width:900px){.guide-fill-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1100px){.guide-roles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){body>header{padding:23px 18px}.guide-session,.guide-inputs,.guide-process{padding:20px 18px}.guide-roles{grid-template-columns:minmax(0,1fr)}.guide-fill-actions{grid-template-columns:minmax(0,1fr)}#workspace-panel{padding:20px 18px}}
+@media(forced-colors:active){body,body>header,.guide-session,.guide-inputs,.guide-process,.guide-process>details,#workspace-panel,#status[data-tone],#status:not([data-tone]){background:Canvas;color:CanvasText;border-color:CanvasText}body>header h1,body>header p,.guide-roles>h3,.guide-roles>small,label,small,#workspace-panel>h2,#workspace-panel>h3,#workspace-panel>p,#workspace-panel>.notice{color:CanvasText;border-color:CanvasText}.guide-roles,.guide-process>details[open]>summary{border-color:CanvasText}.guide-process>details>summary,.guide-process summary::marker,.guide-process li::marker{color:LinkText}input,select,input[type=file],input::file-selector-button{background:Canvas;color:CanvasText;border-color:CanvasText}button,button:hover:not(:disabled),#workspace-open:not(:disabled),#workspace-open:hover:not(:disabled){background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:Highlight}}
 </style>
 <header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
 <main><aside>
 <p class="notice">所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。</p>
-<h2>1 · 载入本次演示身份</h2>
+<div class="guide-session"><h2>1 · 载入本次演示身份</h2>
 <label>选择新建演示库生成的 sessions.json<input id="sessions" type="file" accept=".json,application/json"></label>
 <small>文件只在此页内存读取，不上传、不放入网址或浏览器存储。刷新后需重新选择。</small>
 <button id="workspace-open" disabled>打开原办理页面（独立窗口）</button>
-<small>请先打开办理窗口，再选择下方人物。可将两个窗口并排；切换人物不会替你提交业务。</small>
+<div class="guide-roles"><h3>选择办理人物</h3><small>请先打开办理窗口，再选择下方人物。可将两个窗口并排；切换人物不会替你提交业务。</small>
 <button data-role="enterprise" disabled>林岚 · 虚构企业经办人</button>
 <button data-role="specialist" disabled>周禾 · 虚构园区专员</button>
-<button data-role="executor" disabled>许辰 · 虚构执行者</button>
+<button data-role="executor" disabled>许辰 · 虚构执行者</button></div></div>
 <p id="status" role="status" data-tone="neutral">等待选择本次模拟会话文件。</p>
-<h2>2 · 选择不同输入</h2>
+<div class="guide-inputs"><h2>2 · 选择不同输入</h2>
 <label for="scenario">演示事项</label><select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
-<button id="fill-goal" disabled>填入新事项目标</button>
+<div class="guide-fill-actions"><button id="fill-goal" disabled>填入新事项目标</button>
 <button id="fill-request" disabled>填入本事项诉求与五个办理目标</button>
 <button id="fill-need" disabled>填入独立诉求摘要</button>
-<button id="fill-outline" disabled>填入同用途通用材料目录</button>
+<button id="fill-outline" disabled>填入同用途通用材料目录</button></div>
 <small>这些按钮只填表，不提交、不采纳、不生成回执。请在办理窗口核对后明确点击原业务按钮。</small>
-<h2>3 · 按原办理流程操作</h2>
+</div><div class="guide-process"><h2>3 · 按原办理流程操作</h2>
 <details open><summary>首办：从新输入到回执</summary><ol>
 <li>选林岚。在办理窗口“服务”查看服务与专员，填入目标后点“开始资料准备”。这是新的Run、Case和资料。</li>
 <li>先点“查看此事项四步计划”，填入诉求与五目标并点“保存诉求与必需目标”；再从计划返回资料。等“已就绪”后，分别填两槽材料并点“追加材料版本”。</li>
@@ -72,7 +119,7 @@ details{border-radius:10px;background:#fafcf8}summary{padding:15px 16px;font-siz
 <li>取消不释放预约；在资源区按原权限单独取消或释放占用。已取消事项不支持假恢复。</li>
 </ol></details>
 <details><summary>错误处理与重启</summary><p>错角色、未审核、过期资源或旧版本请求应准确拒绝。刷新当前事项再按真实状态继续，不跳过审核或复用旧请求。</p><p>重新打开页面后选择同一个会话文件，在协同列表重读。服务停止后可用原state-dir和local-demo-config重启，数据保留；不要重复setup覆盖旧库。模拟目录包自新建起有效7天，期满拒绝，serve不会续期；旧记录和文件保留。</p></details>
-</aside><section id="workspace-panel"><h2>两个窗口，同一件虚构事项</h2><p>本页用于选择人物和填写示例；独立办理窗口用于查看记录并明确提交。</p><h3>首办 · 6台设备季度巡检资料</h3><p>林岚提出诉求，周禾审核，许辰接单并记录回执，再由林岚核对。</p><h3>再次使用 · 新增2台设备保养资料</h3><p>另建独立事项，明确复用通用目录，重新审核和确认；演示取消发生在方案采纳与分派之前，首办历史保留。</p><p class="notice">园区、企业、人员、资料和回执全部虚构；原办理窗口同样标记合成工程验证。</p></section></main>
+</div></aside><section id="workspace-panel"><h2>两个窗口，同一件虚构事项</h2><p>本页用于选择人物和填写示例；独立办理窗口用于查看记录并明确提交。</p><h3>首办 · 6台设备季度巡检资料</h3><p>林岚提出诉求，周禾审核，许辰接单并记录回执，再由林岚核对。</p><h3>再次使用 · 新增2台设备保养资料</h3><p>另建独立事项，明确复用通用目录，重新审核和确认；演示取消发生在方案采纳与分派之前，首办历史保留。</p><p class="notice">园区、企业、人员、资料和回执全部虚构；原办理窗口同样标记合成工程验证。</p></section></main>
 <script>
 'use strict';
 const $=id=>document.getElementById(id),roles=['enterprise','specialist','executor'];
