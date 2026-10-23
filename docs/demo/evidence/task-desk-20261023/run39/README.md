@@ -23,3 +23,14 @@ preflight记录5个纯来源合同正反例：精确39路径／父通过，旧�
 90s工作清理／85sworker／360s发布、原15／30秒等待、job10分钟／依赖3分钟，GET两侧各≤39／POST0及原Chrome sandbox/CSP、固定Noto/OFL、文件与凭据扫描、真实自有进程归属清理保持。不缩字／截断／删警告或扩viewport修取景；06新helper滚后必须真实重测所有约束，离线通过不是原生通过。
 
 run38原FAIL、父级两图／1200回访有限通过和390／guard／断点未执行范围照旧。无新真实模型、业务、秘密、费用、安全权限、部署或用户电脑动作，不改main。
+
+
+## 2026-10-23 唯一执行：官方作业success，原件待独立核验
+
+受测精确SHA `744d4c8aa762c9a1f675abb93426ce3dee1ee747`，真实直接父c20ff280。执行前再次实读原执行ref仍c20、最新仍38／completed、仓库公开、精确checkout clean；实际source_contract再次PASS，原始输出独立保存于[official-metadata](official-metadata/)，没有拿f322旧PASS或提交前preflight代签。随后仅一次正常快进该SHA，未合并／改SHA投递，没有自动重跑。
+
+官方 [run39／attempt1](https://github.com/T1doo/ParkWeave/actions/runs/39987731152)，job `120531179783`，GitHub-hosted ubuntu-24.04，16:33:23–16:34:20 UTC。官方run/job/all steps conclusion=success，browser步骤16:33:58–16:34:17、证据上传成功；watch exit0仅属于状态观察，不是完整原始job log或像素核验。
+
+新artifact ID `12515499290`，名称 `fictional-park-browser-39`，991207B，官方digest `sha256:66babed1cc13b0c8581fbf507b572db0ca2d091c162c215e460c8f80f531f2f0`，expires `2026-10-24T16:34:17Z`。执行器仅正常读取本轮run/jobs/artifacts三元数据端点，没有下载ZIP／log或查看PNG/result；8图齐全、实际请求、清理和具体原生观察仍待父级正常消费者核原件。不能只凭绿色签美观、完整体验、正式业务、设备性能或没重复的READY／次级入口／Forward。
+
+metadata目录有API原响应、摘要、这次提交后真实源码门原始stdout／完整binding、执行前fresh gate及公开仓库字段，全部有SHA256SUMS。它们不替代PNG／result／job原日志。run38旧FAIL及其未到阶段仍保留；旧拒绝附件没有读取，没有改变sandbox／CSP、预算或用户电脑权限。
