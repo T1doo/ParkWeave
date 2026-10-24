@@ -26,14 +26,21 @@ class InstanceProcesses:
     Its concrete production implementation is still absent. Tokens go directly
     to the controller at original creation time, before startup can finish.
     """
-    def __init__(self, cluster: ClusterProcesses, *, python_sha256, python_size, api_port, challenge):
+    def __init__(self, cluster: ClusterProcesses, *, python_sha256, python_size, api_port=None, challenge,
+                 endpoint_source=None):
         from parkweave.runtime_readiness import challenge as require_challenge
         require_challenge(challenge)
-        if type(api_port) is not int or not 1 <= api_port <= 65535:
-            raise CandidateRefused('fixed local API port required')
+        if endpoint_source is None:
+            if type(api_port) is not int or not 1 <= api_port <= 65535:
+                raise CandidateRefused('fixed local API port required')
+        else:
+            from .fixed_store_security import IsolatedFixedStoreSecurity
+            if type(endpoint_source) is not IsolatedFixedStoreSecurity or api_port is not None:
+                raise CandidateRefused('explicit endpoint source OR API port required')
         # Validate frozen payload identity without opening or executing anything.
         self.python = Command('runtime/python/python.exe', python_sha256, python_size, model='WINDOWS_JOB')
         self.cluster, self.api_port, self.challenge = cluster, api_port, challenge
+        self.endpoint_source = endpoint_source
         self.lease = self.inputs = self.application = None
         self.mode = None
         self.app_attempted = self.failed = False
@@ -54,12 +61,15 @@ class InstanceProcesses:
         lease._verify()
         self.mode, self.lease = mode, lease  # Consume before an uncertain external action.
         try:
+            if self.endpoint_source is not None and self.endpoint_source.mode.value != mode:
+                raise CandidateRefused('same endpoint lifecycle mode required')
             method = self.cluster.create_cluster if mode == 'NEW' else self.cluster.open_cluster
             inputs = method(lease, credentials, self._register(self.cluster, register))
             if not self._owned or type(inputs) is not DatabaseInputs:
                 raise CandidateRefused('registered explicit cluster inputs required')
             if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
                 raise CandidateRefused('held private cluster directory required')
+            if self.endpoint_source is not None:self.endpoint_source.require_inputs(lease,inputs)
             self.inputs = inputs
             return inputs
         except BaseException:
@@ -83,6 +93,9 @@ class InstanceProcesses:
         self.app_attempted = True
         try:
             from parkweave.installed_fixture_receipt import _dsn
+            if self.endpoint_source is not None:
+                ports = self.endpoint_source.require_inputs(lease,inputs)
+                self.api_port = ports['api_port']
             parsed = _dsn(inputs.application_dsn, 'parkweave')
             if int(parsed['port']) == self.api_port:
                 raise CandidateRefused('distinct fixed database and API ports required')

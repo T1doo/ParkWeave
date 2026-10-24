@@ -61,6 +61,8 @@ class FakeInstallation:
         self.locks -= 1
 
     def require_creation_support(self): self.event('creation_support')
+    def require_runtime_support(self, database, processes): self.event('runtime_support')
+    def bind_new_lease(self, lease): self.event('bind_new_lease')
     def create_credentials(self, lease): self.event('credentials'); return self.credentials
     def create_sessions_exclusive(self, lease): self.event('sessions'); return self.sessions
     def publish_configuration_exclusive(self, lease, inputs): self.event('config')
@@ -132,7 +134,7 @@ class ControllerChecks(unittest.TestCase):
     def test_new_order_and_confirmed_exit_separate_from_ready(self):
         result = self.create(lambda app: self.fake.event('use'))
         names = self.fake.events
-        expected = ['creation_support', 'prepare_roles', 'claim', 'credentials',
+        expected = ['runtime_support','creation_support', 'prepare_roles', 'claim','bind_new_lease', 'credentials',
                     'create_cluster_after_register', 'create_schema', 'roles', 'sessions',
                     'seed', 'config', 'verify_files', 'verify_schema', 'verify_physical_binding',
                     'checkpoint:READY', 'application_after_register', 'verify_physical_binding', 'use',

@@ -106,6 +106,8 @@ class Security(Protocol):
     this controller. No import or transfer of NativeDatabaseCreationEvidence.
     """
     def require_creation_support(self) -> None: ...
+    def require_runtime_support(self, database, processes) -> None: ...
+    def bind_new_lease(self, lease) -> None: ...
     def create_credentials(self, lease): ...
     def create_sessions_exclusive(self, lease):
         """Original secure path creates and verifies new sessions before seed."""
@@ -188,6 +190,7 @@ class Controller:
 
         try:
             db = self.database if self.database is not None else NativeDatabaseOperations()
+            self.security.require_runtime_support(db,self.processes)
             if fresh:
                 self.security.require_creation_support()
                 prepared = db.prepare_new()  # Verify original roles bytes before CREATE.
@@ -196,6 +199,7 @@ class Controller:
             if lease.status() != ('NEW' if fresh else 'READY_STOPPED'):
                 raise CandidateRefused('fresh or confirmed stopped installation required')
             if fresh:
+                self.security.bind_new_lease(lease)  # NEW plan must precede CREDENTIALS; mandatory, not optional.
                 checkpoint('CREDENTIALS')
                 credentials = self.security.create_credentials(lease)
             else:

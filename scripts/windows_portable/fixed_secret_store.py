@@ -121,6 +121,22 @@ class _EndpointRecovery:
     state: PrivateState
 
 
+@dataclass(frozen=True, repr=False)
+class _AuthenticationRecovery:
+    state: PrivateState
+    plan: object = None
+
+
+class StoreAuthentication:
+    __slots__=('__weakref__',)
+    def __reduce__(self): raise TypeError('STORE_AUTHENTICATION_NOT_TRANSFERABLE')
+    def __copy__(self): raise TypeError('STORE_AUTHENTICATION_NOT_TRANSFERABLE')
+    def __deepcopy__(self,memo): raise TypeError('STORE_AUTHENTICATION_NOT_TRANSFERABLE')
+
+
+_authenticated_reads=weakref.WeakKeyDictionary()
+
+
 class _ClosedEndpointRecovery:
     __slots__=('__weakref__',)
     def __reduce__(self): raise TypeError('CLOSED_RECOVERY_NOT_TRANSFERABLE')
@@ -307,6 +323,16 @@ class IsolatedFixedSecretStore:
     def config_format(self): return self._config_format
 
     def _operate(self, states, operation):
+        try:
+            return _under_lease(self.lease, lambda: self._operate_held(states,operation))
+        except BaseException as error:
+            if isinstance(error, StoreFailure): raise
+            if isinstance(error, LeaseRefused) and error.args == ('FIXED_LEASE_OPERATION_BUSY',): raise
+            self.failed = True
+            raise StoreFailure(error, (), None) from None
+
+    def _operate_held(self, states, operation):
+        need(self.lease._operation_owner == get_ident() and self.lease._operation_depth > 0)
         need(not self.failed)
         def run():
             context = _Operation(self); primary = None; cleanup = []; result = None
@@ -334,19 +360,29 @@ class IsolatedFixedSecretStore:
             # Registration must occur AFTER successful close of EVERY held
             # capability and the final lease/binding check, still under the
             # original entry gate. Its failure shares the UNKNOWN path below.
-            if primary is None and not cleanup and type(result) is _EndpointRecovery:
+            if primary is None and not cleanup and type(result) in (_EndpointRecovery,_AuthenticationRecovery):
                 try:
                     need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
                     request = context.consume_read_state(result.state)
-                    token = _ClosedEndpointRecovery()
-                    _closed_endpoint_recoveries[token] = (self,request)
-                    self._endpoint_finalizing = token
-                    try:
-                        plan = endpoints._register_held(self.lease, None, endpoints.PlanMode.REOPEN,closed_recovery=token)
-                        result = (result.state, plan)
-                    finally:
-                        self._endpoint_finalizing = None
-                        _closed_endpoint_recoveries.pop(token,None)
+                    if type(result) is _AuthenticationRecovery and result.plan is not None:
+                        plan = result.plan
+                        record = endpoints._record_held(self.lease,plan,mode=endpoints.PlanMode.NEW)
+                        need(endpoints.validate_record(record) == request)
+                    else:
+                        token = _ClosedEndpointRecovery()
+                        _closed_endpoint_recoveries[token] = (self,request)
+                        self._endpoint_finalizing = token
+                        try:
+                            plan = endpoints._register_held(self.lease, None, endpoints.PlanMode.REOPEN,closed_recovery=token)
+                        finally:
+                            self._endpoint_finalizing = None
+                            _closed_endpoint_recoveries.pop(token,None)
+                    if type(result) is _AuthenticationRecovery:
+                        authenticated = StoreAuthentication()
+                        digest = context._value_digest((result.state.database,result.state.sessions,result.state.config))
+                        _authenticated_reads[authenticated] = (self,self.lease.snapshot,result.state,plan,digest)
+                        result = authenticated
+                    else: result = (result.state, plan)
                 except BaseException as error: primary = error
             if primary is not None or cleanup:
                 journal_error = None; self.failed = True
@@ -357,20 +393,25 @@ class IsolatedFixedSecretStore:
                 finally: self.lease.poisoned = True
                 raise StoreFailure(primary, cleanup, journal_error) from None
             return result
-        try:
-            return _under_lease(self.lease, run)
-        except BaseException as error:
-            if isinstance(error, StoreFailure): raise
-            if isinstance(error, LeaseRefused) and error.args == ('FIXED_LEASE_OPERATION_BUSY',): raise
-            self.failed = True
-            raise StoreFailure(error, (), None) from None
+        return run()
 
     def create(self, purpose, payload):
         need(type(purpose) is e.Purpose and purpose in (e.Purpose.DATABASE, e.Purpose.SESSION))
         phase = 'CREDENTIALS' if purpose is e.Purpose.DATABASE else 'SESSIONS'
         return self._operate({phase: False}, lambda ctx: ctx.write(purpose, payload))
 
+    def _create_held(self, purpose, payload):
+        need(type(purpose) is e.Purpose and purpose in (e.Purpose.DATABASE,e.Purpose.SESSION))
+        phase = 'CREDENTIALS' if purpose is e.Purpose.DATABASE else 'SESSIONS'
+        return self._operate_held({phase:False},lambda ctx:ctx.write(purpose,payload))
+
     def publish_config(self, database, runtime, *, endpoint_plan=None):
+        return self._operate({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan))
+
+    def _publish_config_held(self, database, runtime, *, endpoint_plan):
+        return self._operate_held({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan))
+
+    def _config_writer(self, database, runtime, endpoint_plan):
         def publish(ctx):
             if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3:
                 endpoint_values = endpoints._record_held(self.lease, endpoint_plan, mode=endpoints.PlanMode.NEW)
@@ -383,7 +424,7 @@ class IsolatedFixedSecretStore:
             payload = dict(schema=self.config_format.value, files=refs, database=database, runtime=runtime)
             if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3: payload['endpoints'] = endpoint_values
             return ctx.write(e.Purpose.CONFIG, payload)
-        return self._operate({'CONFIG': False}, publish)
+        return publish
 
     def _read_state(self, ctx):
         caps = {e.Purpose.CONFIG: ctx.file(e.Purpose.CONFIG, False)}
@@ -403,3 +444,22 @@ class IsolatedFixedSecretStore:
     def read_existing_with_endpoint_plan(self):
         need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
         return self._operate({'READY_STOPPED': True}, lambda ctx: _EndpointRecovery(self._read_state(ctx)))
+
+    def _authenticate_new_held(self, plan):
+        need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
+        return self._operate_held({'VERIFY_FILES':False},lambda ctx:_AuthenticationRecovery(self._read_state(ctx),plan))
+
+    def _authenticate_existing_held(self):
+        need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
+        return self._operate_held({'READY_STOPPED':True},lambda ctx:_AuthenticationRecovery(self._read_state(ctx)))
+
+    def _consume_authentication_held(self, token):
+        need(self.lease._operation_owner == get_ident() and self.lease._operation_depth > 0 and not self.failed)
+        need(type(token) is StoreAuthentication)
+        record = _authenticated_reads.pop(token,None)
+        need(record is not None and record[0] is self)
+        _,snapshot,state,plan,digest = record
+        self.lease._verify()
+        need(self.lease.snapshot == snapshot and
+             _Operation._value_digest((state.database,state.sessions,state.config)) == digest)
+        return state,plan
