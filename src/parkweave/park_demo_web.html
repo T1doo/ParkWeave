@@ -141,6 +141,7 @@ $('sessions').onchange=async()=>{clear();const version=epoch,file=$('sessions').
  if(file.size>4096||file.size<1)throw Error();const parsed=JSON.parse(await file.text());
  if(version!==epoch)return;const keys=[...roles,...roles.map(x=>'second_'+x)].sort();
  if(!parsed||Array.isArray(parsed)||Object.keys(parsed).sort().join('|')!==keys.join('|')||keys.some(k=>typeof parsed[k]!=='string'||! /^[A-Za-z0-9_-]{43}$/.test(parsed[k])))throw Error();
+ if(new Set(keys.map(k=>parsed[k])).size!==keys.length)throw Error();
  sessions=parsed;controls();showStatus('模拟身份已在本页内存就绪。请明确选择人物；不会自动办理。','success');
  }catch{if(version===epoch){clear();showStatus('不是本次演示的六身份会话文件；未上传或使用其内容。','error');}}};
 document.querySelectorAll('[data-role]').forEach(button=>button.onclick=()=>act(()=>{
