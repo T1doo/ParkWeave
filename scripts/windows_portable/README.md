@@ -2,6 +2,8 @@
 
 目标是用户双击即可用，用户不安装Python、PostgreSQL、SDK或编译器，不输入开发DSN。本目录是云端构建代码，**当前不是可办理的成品或已验Windows安装器**。
 
+`credential_envelope.py`和`windows_user_protection.py`新增独立的纯字节封装/FakeAPI合同候选，未接目录、controller、构建器或入口。前者不加密或落盘；后者无DLL/native调用，原生入口继续拒绝。新数据库凭据持久设计及严格格式、CONFIG非自引用、SESSION三身份、漫游与同用户边界见[安全配置](../../docs/F1/SecurityConfiguration.md)。本片没有真实保护、凭据文件、ACL、PG或Windows验收；存储能力、CONFIG发布、UNKNOWN持久化与initdb非明文输入仍待后片。定向隔离命令：`python -B -m unittest scripts.windows_portable.test_credential_envelope scripts.windows_portable.test_windows_user_protection -v`。
+
 `build.py`只读取已下载的锁定资产，不联网、不运行安装器、pip、PE或数据库。它核对源码commit、构建器/校验器/资产锁blob、每件资产及原许可证hash，将内嵌Python、Windows wheel依赖、PG最小进程载荷和原页面/SQL封装进候选。三个启动文件来自同一冻结commit。PG选initdb、postgres、pg_ctl、默认plpgsql/文本搜索/编码转换动态模块及其私有静态依赖，排除pgAdmin、StackBuilder和开发工具；不承诺可选扩展或任意动态模块能力。
 
 云端离线命令（需已有Git/Python，**不是给端用户准备开发环境**）：

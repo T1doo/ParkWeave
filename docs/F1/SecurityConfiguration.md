@@ -1,6 +1,16 @@
 # F1安全配置与已知边界
 
-本轮默认LOCAL + SYNTHETIC + MODEL_MOCK，localhost单产品数据库/身份/端口/日志。普通应用角色无DDL/身份或Grant UPDATE；迁移owner只用于明确setup。运行CLI的LIVE激活关闭；HTTP代码须显式LIVE持久预算与owner授权证据，不通过env布尔值启用；不保存模型/数据库持续凭据。
+本轮默认LOCAL + SYNTHETIC + MODEL_MOCK，localhost单产品数据库/身份/端口/日志。普通应用角色无DDL/身份或Grant UPDATE；迁移owner只用于明确setup。运行CLI的LIVE激活关闭；HTTP代码须显式LIVE持久预算与owner授权证据，不通过env布尔值启用；模型密钥仍不持久保存。数据库持续凭据的产品设计已改为：仅在本机私有目录、由当前Windows用户保护后持久保存。当前只允许相应源码与隔离合成测试，未实际创建、保存或解密真实凭据；原权限、原生运行和安装门不因此解除。
+
+## 私有实例封装候选：未接存储或原生保护
+
+`scripts/windows_portable/credential_envelope.py`只编码/校验敏感**明文字节**，不加密、不落盘，也不取得OS身份。封闭用途为DATABASE、SESSION、CONFIG；规范JSON拒重复键、未知字段、非精确类型、超限、损坏摘要和绑定不匹配。绑定包含ParkWeave、格式版本、实例UUID、当前用户SID及稳定root/lock/journal身份；不含generation、sequence或postmaster_start。调用者传入这些数据不构成真实租约、Windows身份或数据库创建证明。
+
+DATABASE只含现有postgres与parkweave_app秘密；SESSION沿现有fixture-a/b/c三身份映射与互异要求，不套用导览六身份、不增Grant或补token。CONFIG schema2只引用DATABASE、SESSION两对象的最终文件身份和**密文**摘要，不引用自身ciphertext hash；还承载稳定数据库身份、schema32和载荷指纹。这些只是严格的候选格式，真实数据须由后续有权持句柄适配器核验，不能由同一份JSON自证。
+
+`windows_user_protection.py`只定义DATA_BLOB布局和显式FakeAPI隔离接口，无DLL加载、真实DPAPI调用、默认原生实例或路径接口。Fake输出不是加密或原生验收证据。参数固定为用户级用途、禁止机器级flags和交互提示；原生入口仍拒绝。未来原生实现遵循[CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata)/[CryptUnprotectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata)：保留用户配置漫游例外，不承诺防同用户恶意进程或管理员；不能只凭API成功或特定错误码判完整性。原生明文缓冲清理与LocalFree尚未实现/验收，Python/DSN副本也不承诺完全擦除。当前Fake只验证有界复制、已识别输出的zero/free顺序、双故障私有保留及公开错误脱敏；未知指针不解引用、不猜测释放，失败进入本适配器内sticky UNKNOWN，不代表安装状态已持久化。
+
+FixedDirectoryLease还没有三个secrets对象的能力；本片不使用任意Path/open，也不映射旧JSON名称或接controller。后续存储仍须固定私有路径、原owner/raw DACL/control保护、CONFIG最后发布完整引用、失败UNKNOWN poison及独立原生持久化准入。旧lifecycle schema1与原SESSION/CONFIG路径不改，不自动迁移、重签、覆盖或重新供应。现有initdb --pwfile的明文输入缺口仍未解决，不允许先落明文再删除作为替代；双击入口、OWNER暂停、固定文件和载荷加载门均不变。
 
 ## 文件私有根
 
