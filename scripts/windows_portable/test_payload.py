@@ -286,6 +286,7 @@ class PayloadChecks(unittest.TestCase):
     def test_older_abi3_and_compressed_pure_tags_remain_compatible(self):
         for version, tag, internal, pure, requirement in (
                 ('3.12.10', 'cp37-abi3-win_amd64', None, False, '>=3.6'),
+                ('3.12.10', 'cp312-abi3-win_amd64', None, False, '>=3.12'),
                 ('3.14.9', 'cp37-abi3-win_amd64', None, False, '>=3.6'),
                 ('3.12.10', 'py2.py3-none-any', 'py2-none-any\nTag: py3-none-any', True,
                  '!=3.0.*,!=3.1.*,>=2.7')):
@@ -305,6 +306,50 @@ class PayloadChecks(unittest.TestCase):
                 ([dict(row, version='3.13.17', file='python-3.13.17-embed-amd64.zip')], 'PYTHON_ASSET_LAYOUT')):
             with self.subTest(rows=rows), self.assertRaisesRegex(p.PayloadRefused, reason):
                 build.python_layout(rows)
+
+    def test_metadata_version_is_required_single_and_explicitly_supported(self):
+        asset = dict(file='fixture-1.0-py3-none-any.whl', version='1.0')
+        wheel = b'Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n'
+        fields = b'Name: fixture\nVersion: 1.0\nRequires-Python: >=3.9\n\n'
+        def verify(header):
+            build.verify_wheel(asset, {'fixture-1.0.dist-info/WHEEL': wheel,
+                'fixture-1.0.dist-info/METADATA': header + fields}, (3, 12, 10))
+        verify(b'Metadata-Version: 2.4\n')
+        for header, reason in (
+                (b'', 'WHEEL_METADATA_FIELD:Metadata-Version'),
+                (b'Metadata-Version: 2.4\nMetadata-Version: 2.4\n', 'WHEEL_METADATA_FIELD:Metadata-Version'),
+                (b'Metadata-Version: 3.0\n', 'WHEEL_CORE_METADATA_VERSION'),
+                (b'Metadata-Version: 999.0\n', 'WHEEL_CORE_METADATA_VERSION'),
+                (b'Metadata-Version: 2.0\n', 'WHEEL_CORE_METADATA_VERSION'),
+                (b'Metadata-Version: 2.7\n', 'WHEEL_CORE_METADATA_VERSION')):
+            with self.subTest(header=header), self.assertRaisesRegex(p.PayloadRefused, reason):
+                verify(header)
+
+    def test_leading_zero_interpreter_tags_do_not_claim_312_compatibility(self):
+        for tag, pure in (('cp3012-abi3-win_amd64', False), ('py3012-none-any', True),
+                          ('py3.py3012-none-any', True)):
+            with self.subTest(tag=tag), tempfile.TemporaryDirectory() as tmp:
+                previous = self.root; self.root = Path(tmp)
+                try:
+                    repo, assets, lock, source = self.assembly_fixture(wheel_tag=tag, pure=pure)
+                    with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_PYTHON_TAG'):
+                        build.assemble(repo, source, assets, lock)
+                finally: self.root = previous
+
+    def test_consistent_filename_lock_and_metadata_still_require_valid_identity(self):
+        wheel = b'Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n'
+        for name, version, reason in (('_fixture', '1.0', 'WHEEL_METADATA_NAME'),
+                ('fixture.', '1.0', 'WHEEL_METADATA_NAME'),
+                ('fixture', 'not_a_version', 'WHEEL_RELEASE_VERSION'),
+                ('fixture', '01.0', 'WHEEL_RELEASE_VERSION'),
+                ('fixture', '1.0rc1', 'WHEEL_RELEASE_VERSION'),
+                ('fixture', '1.0.0.1', 'WHEEL_RELEASE_VERSION')):
+            directory = name + '-' + version + '.dist-info/'
+            metadata = ('Metadata-Version: 2.4\nName: ' + name + '\nVersion: ' + version + '\n\n').encode()
+            asset = dict(file=name + '-' + version + '-py3-none-any.whl', version=version)
+            with self.subTest(name=name, version=version), self.assertRaisesRegex(p.PayloadRefused, reason):
+                build.verify_wheel(asset, {directory + 'WHEEL': wheel,
+                    directory + 'METADATA': metadata}, (3, 12, 10))
 
     def test_locked_python_archive_cannot_mix_312_and_314_layouts(self):
         repo, assets, lock, source = self.assembly_fixture('3.14.9',

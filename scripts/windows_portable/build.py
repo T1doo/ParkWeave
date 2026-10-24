@@ -57,6 +57,10 @@ def wheel_tags(value):
         r'[a-z0-9_]+(?:\.[a-z0-9_]+)*-[a-z0-9_]+(?:\.[a-z0-9_]+)*-[a-z0-9_]+(?:\.[a-z0-9_]+)*',
         value), 'WHEEL_TAG_SYNTAX')
     parts = [part.split('.') for part in value.split('-')]
+    require(all(re.fullmatch(r'(?:py[23](?:0|[1-9][0-9]*)?|cp3(?:0|[1-9][0-9]*))', tag)
+                for tag in parts[0]), 'WHEEL_PYTHON_TAG')
+    require(all(re.fullmatch(r'(?:none|abi3|cp3(?:0|[1-9][0-9]*)t?)', tag)
+                for tag in parts[1]), 'WHEEL_ABI_TAG')
     require(all(len(part) == len(set(part)) for part in parts), 'WHEEL_TAG_DUPLICATE')
     require(len(parts[0]) * len(parts[1]) * len(parts[2]) <= 32, 'WHEEL_TAG_COUNT')
     return set(product(*parts))
@@ -89,6 +93,9 @@ def verify_wheel(asset, members, version):
     parts = name[:-4].split('-')
     require(len(parts) in (5, 6) and re.fullmatch(r'[A-Za-z0-9_.]+', parts[0]) and
             parts[1] == asset['version'], 'WHEEL_FILENAME')
+    # The asset lock uses two/three-component canonical numeric releases only.
+    require(re.fullmatch(r'(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){1,2}', parts[1]),
+            'WHEEL_RELEASE_VERSION')
     if len(parts) == 6: require(re.fullmatch(r'[0-9][A-Za-z0-9_]*', parts[2]), 'WHEEL_BUILD_TAG')
     expected_tags = wheel_tags('-'.join(parts[-3:]))
     directory = parts[0] + '-' + parts[1] + '.dist-info/'
@@ -109,6 +116,8 @@ def verify_wheel(asset, members, version):
         values = message.get_all(key, [])
         require(len(values) == 1, 'WHEEL_METADATA_FIELD:' + key)
         return str(values[0]).strip()
+    require(one(metadata, 'Metadata-Version') in
+            ('1.0', '1.1', '1.2', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6'), 'WHEEL_CORE_METADATA_VERSION')
     require(one(wheel, 'Wheel-Version') == '1.0', 'WHEEL_FORMAT_VERSION')
     pure = one(wheel, 'Root-Is-Purelib')
     require(pure in ('true', 'false'), 'WHEEL_PURELIB')
@@ -120,8 +129,10 @@ def verify_wheel(asset, members, version):
         tags.update(row)
     require(tags == expected_tags, 'WHEEL_TAG_MISMATCH')
     require(all(tag[2] in ('any', 'win_amd64') for tag in tags), 'WHEEL_TARGET_TAG')
+    metadata_name = one(metadata, 'Name')
+    require(re.fullmatch(r'[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?', metadata_name), 'WHEEL_METADATA_NAME')
     normalize = lambda s: re.sub(r'[-_.]+', '_', s).lower()
-    require(normalize(one(metadata, 'Name')) == normalize(parts[0]) and
+    require(normalize(metadata_name) == normalize(parts[0]) and
             one(metadata, 'Version') == parts[1], 'WHEEL_METADATA_IDENTITY')
     requirements = metadata.get_all('Requires-Python', [])
     require(len(requirements) <= 1, 'WHEEL_METADATA_FIELD:Requires-Python')
