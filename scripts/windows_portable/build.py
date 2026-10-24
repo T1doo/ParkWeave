@@ -117,7 +117,7 @@ def verify_wheel(asset, members, version):
         require(len(values) == 1, 'WHEEL_METADATA_FIELD:' + key)
         return str(values[0]).strip()
     require(one(metadata, 'Metadata-Version') in
-            ('1.0', '1.1', '1.2', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6'), 'WHEEL_CORE_METADATA_VERSION')
+            ('1.1', '1.2', '2.1', '2.2', '2.3', '2.4', '2.5', '2.6'), 'WHEEL_CORE_METADATA_VERSION')
     require(one(wheel, 'Wheel-Version') == '1.0', 'WHEEL_FORMAT_VERSION')
     pure = one(wheel, 'Root-Is-Purelib')
     require(pure in ('true', 'false'), 'WHEEL_PURELIB')

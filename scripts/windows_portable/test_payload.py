@@ -314,12 +314,14 @@ class PayloadChecks(unittest.TestCase):
         def verify(header):
             build.verify_wheel(asset, {'fixture-1.0.dist-info/WHEEL': wheel,
                 'fixture-1.0.dist-info/METADATA': header + fields}, (3, 12, 10))
+        verify(b'Metadata-Version: 1.1\n')
         verify(b'Metadata-Version: 2.4\n')
         for header, reason in (
                 (b'', 'WHEEL_METADATA_FIELD:Metadata-Version'),
                 (b'Metadata-Version: 2.4\nMetadata-Version: 2.4\n', 'WHEEL_METADATA_FIELD:Metadata-Version'),
                 (b'Metadata-Version: 3.0\n', 'WHEEL_CORE_METADATA_VERSION'),
                 (b'Metadata-Version: 999.0\n', 'WHEEL_CORE_METADATA_VERSION'),
+                (b'Metadata-Version: 1.0\n', 'WHEEL_CORE_METADATA_VERSION'),
                 (b'Metadata-Version: 2.0\n', 'WHEEL_CORE_METADATA_VERSION'),
                 (b'Metadata-Version: 2.7\n', 'WHEEL_CORE_METADATA_VERSION')):
             with self.subTest(header=header), self.assertRaisesRegex(p.PayloadRefused, reason):
