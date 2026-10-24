@@ -17,13 +17,24 @@ from .payload import (MANIFEST, SCHEMA, archive_files, dll_closure, file_manifes
                       pe_imports, require, safe_name)
 from . import payload as payload_module
 
-PTH = b'python312.zip\n.\n../../vendor\n../../launcher\n../../app/src\n'
+PTH = b'python312.zip\n.\n../../vendor\n../../launcher\n../../app/src\n../../app\n'
+# Frozen runtime sources only: no tests, builder, or general CI command surface.
+RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
+    '__init__.py', 'application_readiness.py', 'cluster_processes.py', 'controller.py',
+    'credential_envelope.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
+    'fixed_journal.py', 'fixed_secret_store.py', 'fixed_store_security.py', 'fixed_windows_journal.py',
+    'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
+    'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
+    'windows_process_handles.py', 'windows_user_protection.py',
+)) + ('scripts/windows_ci/owned_job.py', 'scripts/windows_ci/job_stop_observation.py')
+LAUNCHER_SOURCES = ('scripts/windows_portable/entry.py', 'scripts/windows_portable/payload.py',
+                    'scripts/windows_portable/ParkWeave.cmd')
 REQUIRED = ('runtime/python/python.exe', 'runtime/python/pythonw.exe',
             'runtime/python/python312.dll', 'runtime/python/python312.zip',
             'runtime/postgresql/bin/postgres.exe', 'runtime/postgresql/bin/initdb.exe',
             'runtime/postgresql/bin/pg_ctl.exe', 'app/scripts/windows/lifecycle.py',
             'app/src/parkweave/api.py', 'app/src/parkweave/web.html',
-            'app/src/parkweave/park_demo_web.html')
+            'app/src/parkweave/park_demo_web.html') + tuple('app/' + name for name in RUNTIME_SOURCES)
 
 
 def assemble(repo, source, assets, lock_path):
@@ -99,18 +110,19 @@ def assemble(repo, source, assets, lock_path):
     require('runtime/python/python312._pth' in files, 'EMBEDDED_PTH_MISSING')
     files['runtime/python/python312._pth'] = PTH  # Explicitly locked application-private paths; no site.
     archive = git('archive', '--format=tar', source, '--', 'src/parkweave', 'scripts/windows',
-        'scripts/windows_portable/entry.py', 'scripts/windows_portable/payload.py',
-        'scripts/windows_portable/ParkWeave.cmd')
+                  *RUNTIME_SOURCES, *LAUNCHER_SOURCES)
     with tarfile.open(fileobj=BytesIO(archive)) as tar:
         for item in tar:
             if item.isdir(): continue
             require(item.isfile(), 'SOURCE_OBJECT')
             name = safe_name(item.name)
-            if name.startswith('scripts/windows_portable/'):
+            data = tar.extractfile(item).read()
+            if name in LAUNCHER_SOURCES:
                 base = Path(name).name
                 target = base if base == 'ParkWeave.cmd' else 'launcher/' + base
-            else: target = 'app/' + name
-            put(target, tar.extractfile(item).read())
+                put(target, data)
+                if name not in RUNTIME_SOURCES: continue
+            put('app/' + name, data)
     put('runtime-assets.json', lock_raw)
     for name in REQUIRED: require(name in files, 'REQUIRED_COMPONENT:' + name)
     closure = dll_closure(files)

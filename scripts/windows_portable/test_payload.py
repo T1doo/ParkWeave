@@ -14,6 +14,18 @@ import zipfile
 from . import build, entry, payload as p
 
 
+# Product packaging contract, independent of the builder's selection logic.
+RUNTIME_MODULES = (
+    '__init__.py', 'application_readiness.py', 'cluster_processes.py', 'controller.py',
+    'credential_envelope.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
+    'fixed_journal.py', 'fixed_secret_store.py', 'fixed_store_security.py', 'fixed_windows_journal.py',
+    'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
+    'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
+    'windows_process_handles.py', 'windows_user_protection.py',
+)
+JOB_MODULES = ('owned_job.py', 'job_stop_observation.py')
+
+
 def pe(names=(), delay=()):
     data = bytearray(2048); data[:2] = b'MZ'
     struct.pack_into('<I', data, 0x3c, 0x80); data[0x80:0x84] = b'PE\0\0'
@@ -128,7 +140,8 @@ class PayloadChecks(unittest.TestCase):
         self.assertIn('setlocal DisableDelayedExpansion', text)
         self.assertIn('"%~dp0runtime\\python\\python.exe" -I -B', text)
         self.assertNotIn('import site', build.PTH.decode())
-        self.assertEqual(build.PTH.splitlines(), [b'python312.zip', b'.', b'../../vendor', b'../../launcher', b'../../app/src'])
+        self.assertEqual(build.PTH.splitlines(), [b'python312.zip', b'.', b'../../vendor', b'../../launcher',
+                                                b'../../app/src', b'../../app'])
 
     def test_assembly_rejects_asset_hash_before_archive_or_source_use(self):
         f = self.root / 'bad.zip'; f.write_bytes(b'corrupt')
@@ -173,8 +186,11 @@ class PayloadChecks(unittest.TestCase):
             rows.append(dict(file=name, kind=kind, version='FIXTURE_ONLY', url='https://fixture.invalid/' + name,
                 bytes=path.stat().st_size, sha256=sha256(path.read_bytes()).hexdigest(), license_files=licenses))
         here = Path(build.__file__).parent; copied = repo / 'scripts/windows_portable'; copied.mkdir(parents=True)
-        for name in ('build.py', 'payload.py', 'entry.py', 'ParkWeave.cmd'):
+        for name in set(RUNTIME_MODULES) | {'build.py', 'entry.py', 'ParkWeave.cmd'}:
             (copied / name).write_bytes((here / name).read_bytes())
+        job_dir = repo / 'scripts/windows_ci'; job_dir.mkdir()
+        for name in JOB_MODULES:
+            (job_dir / name).write_bytes((here.parent / 'windows_ci' / name).read_bytes())
         lock = copied / 'runtime-assets.json'
         lock.write_text(json.dumps(dict(schema='parkweave-windows-runtime-assets/1', assets=rows)))
         for name in ('api.py', 'web.html', 'park_demo_web.html'):
@@ -187,6 +203,16 @@ class PayloadChecks(unittest.TestCase):
             subprocess.run(['git', *args], cwd=repo, check=True, capture_output=True)
         source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
         files, manifest = build.assemble(repo, source, assets, lock)
+        source_names = tuple('scripts/windows_portable/' + n for n in RUNTIME_MODULES) + tuple(
+            'scripts/windows_ci/' + n for n in JOB_MODULES)
+        for name in source_names:
+            frozen = subprocess.check_output(['git', 'show', source + ':' + name], cwd=repo)
+            self.assertEqual(files['app/' + name], frozen)
+            self.assertEqual(manifest['files']['app/' + name]['sha256'], sha256(frozen).hexdigest())
+        self.assertEqual({n for n in files if n.startswith('app/scripts/windows_portable/')},
+                         {'app/scripts/windows_portable/' + n for n in RUNTIME_MODULES})
+        self.assertEqual({n for n in files if n.startswith('app/scripts/windows_ci/')},
+                         {'app/scripts/windows_ci/' + n for n in JOB_MODULES})
         self.assertIn('runtime/postgresql/lib/plpgsql.dll', files)
         self.assertIn('runtime/postgresql/lib/dict_snowball.dll', files)
         self.assertFalse(manifest['usable_product']); self.assertEqual(manifest['status'], 'INITIALIZATION_NOT_ENABLED')
@@ -197,8 +223,11 @@ class PayloadChecks(unittest.TestCase):
         with patch.object(subprocess, 'Popen', side_effect=AssertionError('must not run native code')):
             self.assertEqual(entry.readiness(unpacked)['reason'], 'OWNER_MUTATION_PAUSED')
         (copied / 'entry.py').write_text('uncommitted changed launcher')
+        (copied / 'controller.py').write_text('uncommitted changed controller')
         again, _ = build.assemble(repo, source, assets, lock)
         self.assertEqual(again['launcher/entry.py'], files['launcher/entry.py'])
+        self.assertEqual(again['app/scripts/windows_portable/controller.py'],
+                         files['app/scripts/windows_portable/controller.py'])
 
 
 if __name__ == '__main__': unittest.main()
