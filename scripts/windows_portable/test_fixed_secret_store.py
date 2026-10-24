@@ -192,6 +192,23 @@ class FixedStoreChecks(unittest.TestCase):
         with self.assertRaises(s.StoreFailure):self.database()
         self.assertFalse(any(x[0]=='write'for x in self.api.events if isinstance(x,tuple)));self.assert_failed()
 
+    def test_creation_owner_drift_refuses_before_write_and_keeps_original(self):
+        originals=[]
+        def changed_owner(descriptor):
+            row=self.api.files[e.Purpose.DATABASE]
+            originals.append((row,dict(row)))
+            return ('S-1-5-21-1-2-3-1002',descriptor[1],descriptor[2])
+        self.api.before_change=changed_owner
+        with self.assertRaises(s.StoreFailure):self.database()
+        self.assertEqual(len(originals),1)
+        row,snapshot=originals[0]
+        self.assertIs(self.api.files[e.Purpose.DATABASE],row)
+        self.assertEqual(row,snapshot);self.assertEqual(row['raw'],b'')
+        self.assertFalse(any(x[0]in('write','flush')for x in self.api.events if isinstance(x,tuple)))
+        self.assertEqual(sum(x==('create','DATABASE')for x in self.api.events),1)
+        self.assertEqual(self.crypto.calls,[]);self.assertFalse(self.api.caps)
+        self.assert_failed()
+
     def test_primary_close_and_unknown_journal_failures_remain_private(self):
         self.phase('CREDENTIALS');self.api.write_error=True;self.api.close_errors=True;self.fs.fail_publish=True
         with self.assertRaises(s.StoreFailure)as raised:self.store.create(e.Purpose.DATABASE,self.values[e.Purpose.DATABASE])

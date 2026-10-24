@@ -175,7 +175,7 @@ class _Operation:
             need(type(before) is tuple and len(before) == 3 and type(before[0]) is str
                  and 0 < len(before[0]) <= 184 and type(before[1]) is int and 0 <= before[1] <= 65535
                  and type(before[2]) is bytes and 8 <= len(before[2]) <= 65535)
-            need(before[2] == after.raw_dacl and before[1] & ~1 == after.control & ~1)
+            need(before[0] == after.owner and before[2] == after.raw_dacl and before[1] & ~1 == after.control & ~1)
             need(after.size == 0)
         return cap
 
