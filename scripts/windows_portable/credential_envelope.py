@@ -11,6 +11,8 @@ import json
 import re
 from uuid import UUID
 
+from .endpoint_plan import EndpointRefused, validate_record as validate_endpoints
+
 
 MAX_PLAINTEXT = 16384
 MAX_CIPHERTEXT = 65536
@@ -27,6 +29,11 @@ class Purpose(Enum):
     DATABASE = 'DATABASE'
     SESSION = 'SESSION'
     CONFIG = 'CONFIG'
+
+
+class ConfigFormat(Enum):
+    SCHEMA2 = 2
+    INSTANCE_SCHEMA3 = 3
 
 
 def need(condition):
@@ -95,8 +102,8 @@ def canonical(value):
         raise EnvelopeRefused() from None
 
 
-def validate_payload(binding, purpose, payload):
-    need(type(binding) is InstanceBinding and type(purpose) is Purpose)
+def validate_payload(binding, purpose, payload, *, config_format=ConfigFormat.SCHEMA2):
+    need(type(binding) is InstanceBinding and type(purpose) is Purpose and type(config_format) is ConfigFormat)
     binding.record()
     if purpose is Purpose.DATABASE:
         exact(payload, ('postgres', 'parkweave_app'))
@@ -109,8 +116,13 @@ def validate_payload(binding, purpose, payload):
         need(len(set(payload.values())) == 3)
     else:
         # Final CONFIG references DATABASE and SESSION, never its own ciphertext.
-        exact(payload, ('schema', 'files', 'database', 'runtime'))
-        need(type(payload['schema']) is int and payload['schema'] == 2)
+        keys=('schema', 'files', 'database', 'runtime')
+        if config_format is ConfigFormat.INSTANCE_SCHEMA3: keys=keys+('endpoints',)
+        exact(payload,keys)
+        need(type(payload['schema']) is int and payload['schema'] == config_format.value)
+        if config_format is ConfigFormat.INSTANCE_SCHEMA3:
+            try: validate_endpoints(payload['endpoints'])
+            except EndpointRefused: raise EnvelopeRefused() from None
         refs = payload['files']; exact(refs, ('DATABASE', 'SESSION'))
         seen = {binding.root, binding.lock, binding.journal}
         for ref in refs.values():
@@ -139,9 +151,9 @@ def entropy_bytes(binding, purpose):
     return hashlib.sha256(b'ParkWeave/current-user/1\0'+canonical(dict(binding=binding.record(), purpose=purpose.value))).digest()
 
 
-def encode_plaintext(binding, purpose, payload):
+def encode_plaintext(binding, purpose, payload, *, config_format=ConfigFormat.SCHEMA2):
     """Sensitive return bytes must never be logged or stored as a plaintext file."""
-    validate_payload(binding, purpose, payload)
+    validate_payload(binding, purpose, payload, config_format=config_format)
     raw = canonical(dict(schema=SCHEMA, binding=binding.record(), purpose=purpose.value,
                          payload=payload, payload_sha256=hashlib.sha256(canonical(payload)).hexdigest()))
     need(0 < len(raw) <= MAX_PLAINTEXT)
@@ -156,8 +168,8 @@ def pairs(items):
     return result
 
 
-def decode_plaintext(binding, purpose, raw):
-    need(type(binding) is InstanceBinding and type(purpose) is Purpose)
+def decode_plaintext(binding, purpose, raw, *, config_format=ConfigFormat.SCHEMA2):
+    need(type(binding) is InstanceBinding and type(purpose) is Purpose and type(config_format) is ConfigFormat)
     expected = binding.record()
     need(type(raw) is bytes and 0 < len(raw) <= MAX_PLAINTEXT)
     try:
@@ -170,7 +182,7 @@ def decode_plaintext(binding, purpose, raw):
     need(canonical(value['binding']) == canonical(expected))
     need(type(value['purpose']) is str and value['purpose'] == purpose.value)
     digest(value['payload_sha256'])
-    validate_payload(binding, purpose, value['payload'])
+    validate_payload(binding, purpose, value['payload'], config_format=config_format)
     need(hmac.compare_digest(value['payload_sha256'], hashlib.sha256(canonical(value['payload'])).hexdigest()))
     need(canonical(value) == raw)
     return value['payload']

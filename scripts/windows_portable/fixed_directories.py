@@ -130,6 +130,10 @@ class FixedDirectoryLease(DirectoryLease):
 
     @_exclusive_entry
     def instance_uuid(self):
+        return self._verified_instance_uuid()
+
+    @_exclusive_operation
+    def _verified_instance_uuid(self):
         self._verify()
         if self._journal_format is not journal.FixedFormat.INSTANCE_V2:
             raise LeaseRefused('FIXED_INSTANCE_V2_REQUIRED')

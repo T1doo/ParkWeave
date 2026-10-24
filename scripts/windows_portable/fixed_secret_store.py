@@ -7,8 +7,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 import hashlib
 from types import MappingProxyType
+import weakref
+from threading import get_ident
 
 from . import credential_envelope as e
+from . import endpoint_plan as endpoints
 from .fixed_directories import FixedDirectoryLease, _exclusive_entry
 from .directories import LeaseRefused
 from .windows_user_protection import IsolatedUserProtection
@@ -113,17 +116,55 @@ class PrivateState:
     config: dict
 
 
+@dataclass(frozen=True, repr=False)
+class _EndpointRecovery:
+    state: PrivateState
+
+
+class _ClosedEndpointRecovery:
+    __slots__=('__weakref__',)
+    def __reduce__(self): raise TypeError('CLOSED_RECOVERY_NOT_TRANSFERABLE')
+    def __copy__(self): raise TypeError('CLOSED_RECOVERY_NOT_TRANSFERABLE')
+    def __deepcopy__(self,memo): raise TypeError('CLOSED_RECOVERY_NOT_TRANSFERABLE')
+
+
+_closed_endpoint_recoveries=weakref.WeakKeyDictionary()
+
+
+def _consume_closed_endpoint_recovery(lease,token):
+    if (type(lease) is not FixedDirectoryLease or lease._operation_owner != get_ident()
+            or lease._operation_depth <= 0):
+        raise endpoints.EndpointRefused()
+    if type(token) is not _ClosedEndpointRecovery: raise endpoints.EndpointRefused()
+    record=_closed_endpoint_recoveries.pop(token,None)  # Consume before any fallible validation.
+    if record is None: raise endpoints.EndpointRefused()
+    store,request=record
+    if (type(store) is not IsolatedFixedSecretStore or store.lease is not lease or store.failed
+            or store.config_format is not e.ConfigFormat.INSTANCE_SCHEMA3
+            or store._endpoint_finalizing is not token):
+        raise endpoints.EndpointRefused()
+    return request
+
+
 class _Operation:
     def __init__(self, store):
         self.store = store; self.directory = None; self.caps = []; self.pins = {}
+        self.config_format = store.config_format
 
-    def check(self):
+    def check_binding(self):
         s = self.store; s.lease._verify()
+        need(type(self.config_format) is e.ConfigFormat and s.config_format is self.config_format)
         need(s.api.binds(s.lease) is True)
         r = s.lease.record
         need(tuple(r['root']) == s.binding.root and tuple(r['lock']) == s.binding.lock
              and tuple(r['journal']) == s.binding.journal and r['handoff'] == 'OWNED')
         s.binding.record()
+        if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3:
+            need(s.lease._verified_instance_uuid() == s.binding.instance_id)
+
+    def check(self):
+        self.check_binding()
+        s = self.store
         for cap, old in self.pins.items():
             parent = None if old.directory else self.directory
             need(s.api.owns(cap, s.lease, parent) is True)
@@ -185,14 +226,14 @@ class _Operation:
         need(expected_ciphertext is None or raw == expected_ciphertext)
         self.check()
         plain = self.store.protection.unprotect(raw, e.entropy_bytes(self.store.binding, purpose))
-        value = e.decode_plaintext(self.store.binding, purpose, plain)
+        value = e.decode_plaintext(self.store.binding, purpose, plain, config_format=self.config_format)
         self.check()
         ref = dict(identity=list(self.pins[cap].identity), ciphertext_sha256=hashlib.sha256(raw).hexdigest())
         return value, ref
 
     def write(self, purpose, payload):
         self.check()
-        plain = e.encode_plaintext(self.store.binding, purpose, payload)
+        plain = e.encode_plaintext(self.store.binding, purpose, payload, config_format=self.config_format)
         cap = self.file(purpose, True); before = self.pins[cap]
         raw = self.store.protection.protect(plain, e.entropy_bytes(self.store.binding, purpose))
         need(type(raw) is bytes and 0 < len(raw) <= e.MAX_CIPHERTEXT)
@@ -213,11 +254,17 @@ class IsolatedFixedSecretStore:
     fixture_only = True
     native_acceptance = False
 
-    def __init__(self, lease, binding, api, protection):
+    def __init__(self, lease, binding, api, protection, *, config_format=e.ConfigFormat.SCHEMA2):
         need(type(lease) is FixedDirectoryLease and type(binding) is e.InstanceBinding
-             and isinstance(api, FakeSecretAPI) and type(protection) is IsolatedUserProtection)
+             and isinstance(api, FakeSecretAPI) and type(protection) is IsolatedUserProtection
+             and type(config_format) is e.ConfigFormat)
         self.lease, self.binding, self.api, self.protection = lease, binding, api, protection
+        self._config_format = config_format
+        self._endpoint_finalizing = None
         self.failed = False; self._unknown_caps = []
+
+    @property
+    def config_format(self): return self._config_format
 
     def _operate(self, states, operation):
         need(not self.failed)
@@ -239,8 +286,25 @@ class IsolatedFixedSecretStore:
                         if self.api.close(cap) is not True: raise StoreRefused('FIXED_SECRET_CLOSE_UNKNOWN')
                     except BaseException as error:
                         self._unknown_caps.append(cap); cleanup.append(error)
-                try: self.lease._verify()
+                try: context.check_binding()
                 except BaseException as error: cleanup.append(error)
+            # Registration must occur AFTER successful close of EVERY held
+            # capability and the final lease/binding check, still under the
+            # original entry gate. Its failure shares the UNKNOWN path below.
+            if primary is None and not cleanup and type(result) is _EndpointRecovery:
+                try:
+                    need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
+                    request = endpoints.validate_record(result.state.config['endpoints'])
+                    token = _ClosedEndpointRecovery()
+                    _closed_endpoint_recoveries[token] = (self,request)
+                    self._endpoint_finalizing = token
+                    try:
+                        plan = endpoints._register_held(self.lease, None, endpoints.PlanMode.REOPEN,closed_recovery=token)
+                        result = (result.state, plan)
+                    finally:
+                        self._endpoint_finalizing = None
+                        _closed_endpoint_recoveries.pop(token,None)
+                except BaseException as error: primary = error
             if primary is not None or cleanup:
                 journal_error = None; self.failed = True
                 try:
@@ -263,22 +327,32 @@ class IsolatedFixedSecretStore:
         phase = 'CREDENTIALS' if purpose is e.Purpose.DATABASE else 'SESSIONS'
         return self._operate({phase: False}, lambda ctx: ctx.write(purpose, payload))
 
-    def publish_config(self, database, runtime):
+    def publish_config(self, database, runtime, *, endpoint_plan=None):
         def publish(ctx):
+            if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3:
+                endpoint_values = endpoints._record_held(self.lease, endpoint_plan, mode=endpoints.PlanMode.NEW)
+            else:
+                need(endpoint_plan is None)
             refs = {}
             for purpose in (e.Purpose.DATABASE, e.Purpose.SESSION):
                 cap = ctx.file(purpose, False)
                 _, refs[purpose.value] = ctx.read(cap, purpose)
-            payload = dict(schema=2, files=refs, database=database, runtime=runtime)
+            payload = dict(schema=self.config_format.value, files=refs, database=database, runtime=runtime)
+            if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3: payload['endpoints'] = endpoint_values
             return ctx.write(e.Purpose.CONFIG, payload)
         return self._operate({'CONFIG': False}, publish)
 
+    def _read_state(self, ctx):
+        config, _ = ctx.read(ctx.file(e.Purpose.CONFIG, False), e.Purpose.CONFIG)
+        values = {}
+        for purpose in (e.Purpose.DATABASE, e.Purpose.SESSION):
+            values[purpose], ref = ctx.read(ctx.file(purpose, False), purpose)
+            need(ref == config['files'][purpose.value])
+        return PrivateState(values[e.Purpose.DATABASE], values[e.Purpose.SESSION], config)
+
     def read_existing(self):
-        def read(ctx):
-            config, _ = ctx.read(ctx.file(e.Purpose.CONFIG, False), e.Purpose.CONFIG)
-            values = {}
-            for purpose in (e.Purpose.DATABASE, e.Purpose.SESSION):
-                values[purpose], ref = ctx.read(ctx.file(purpose, False), purpose)
-                need(ref == config['files'][purpose.value])
-            return PrivateState(values[e.Purpose.DATABASE], values[e.Purpose.SESSION], config)
-        return self._operate({'READY_STOPPED': True, 'VERIFY_FILES': False}, read)
+        return self._operate({'READY_STOPPED': True, 'VERIFY_FILES': False}, self._read_state)
+
+    def read_existing_with_endpoint_plan(self):
+        need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
+        return self._operate({'READY_STOPPED': True}, lambda ctx: _EndpointRecovery(self._read_state(ctx)))
