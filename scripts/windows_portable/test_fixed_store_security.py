@@ -186,6 +186,36 @@ class SecurityLifecycleChecks(unittest.TestCase):
         self.assertFalse(any(x[0]in('create','write','flush')for x in self.file_apis[-1].events if type(x)is tuple))
         self.assertEqual(sum(x==('open','CONFIG')for x in self.file_apis[-1].events),1)
 
+    def refuse_changed_runtime(self,field):
+        self.new();original=deepcopy(self.files);self.events.clear()
+        expected=deepcopy(payloads()[e.Purpose.CONFIG]['runtime'])
+        expected[field]='b'*len(expected[field])
+        self.assertNotEqual(expected,payloads()[e.Purpose.CONFIG]['runtime'])
+        self.security=f.IsolatedFixedStoreSecurity(ep.PlanMode.REOPEN,request=None,api=self.api,
+            store_factory=self.security.store_factory,runtime=expected)
+        self.processes=Processes(self.security,self.api,self.events);self.api.runtime=(self.db,self.processes)
+        with self.assertRaises(c.ControlFailure)as raised:
+            self.controller().reopen('/synthetic-private/instance',lambda app:self.fail('use'))
+        self.assertIsInstance(raised.exception.surfaced,f.SecurityFailure)
+        for value in (self.security.plan,self.security._state,self.security._credential,
+                      self.security._secrets,self.security._inputs):self.assertIsNone(value)
+        self.assertTrue(self.security.failed and self.security.lease.poisoned)
+        self.assertEqual(self.security.lease.record['phase'],'UNKNOWN')
+        self.assertFalse(self.security.lease.active)
+        self.assertFalse({'cluster:REOPEN','database_observation','actor_observation','application','go',
+                         'prepare_roles','schema32','roles','seed','material:DATABASE','material:SESSION'}&set(self.events))
+        self.assertEqual(self.files,original)
+        file_api=self.file_apis[-1]
+        self.assertFalse(file_api.caps)
+        for purpose in e.Purpose:self.assertIn(('read',purpose.value),file_api.events)
+        self.assertFalse(any(x[0]in('create','write','flush')for x in file_api.events if type(x)is tuple))
+
+    def test_reopen_refuses_authenticated_config_from_another_source_commit_before_credentials(self):
+        self.refuse_changed_runtime('source_commit')
+
+    def test_reopen_refuses_authenticated_config_from_another_manifest_before_credentials(self):
+        self.refuse_changed_runtime('manifest_sha256')
+
     def manual_new(self):
         lease=self.dirs.claim_fresh('/synthetic-private/instance');self.leases.append(lease)
         self.security.bind_new_lease(lease);lease.checkpoint('CREDENTIALS',False,'STARTING')

@@ -256,6 +256,7 @@ class IsolatedFixedStoreSecurity:
         # No caller-supplied PrivateState/dict is an authentication source.
         state,plan=self.store._consume_authentication_held(token)
         need(type(state) is storage.PrivateState)
+        need(e.canonical(state.config['runtime'])==e.canonical(self.runtime))
         if self.mode is ep.PlanMode.NEW:need(plan is self.plan)
         else:need(self.plan is None)
         need(ep._record_held(self.lease,plan,mode=self.mode)==state.config['endpoints'])
