@@ -2,6 +2,8 @@
 import hashlib
 import json
 import struct
+from enum import Enum
+from uuid import UUID, RFC_4122
 
 from .directories import LeaseRefused, NEXT, PHASES, _pairs
 
@@ -13,18 +15,47 @@ HEADER = struct.Struct('<8sIIQQI32s32s28s')
 ZERO_HASH = bytes(32)
 
 
+class FixedFormat(Enum):
+    V1 = 1
+    INSTANCE_V2 = 2
+
+
+def require_format(value):
+    if type(value) is not FixedFormat: raise LeaseRefused('FIXED_FORMAT_REQUIRED')
+    return value
+
+
+def schema(format):
+    return 'parkweave-directory-fixed/' + str(require_format(format).value)
+
+
+def _magic(format):
+    return b'PWLJv001' if require_format(format) is FixedFormat.V1 else b'PWLJv002'
+
+
+def _instance_id(value):
+    if type(value) is not str or len(value) != 36: raise LeaseRefused('FIXED_INSTANCE_ID_INVALID')
+    try: parsed = UUID(value)
+    except (ValueError, AttributeError): raise LeaseRefused('FIXED_INSTANCE_ID_INVALID') from None
+    if str(parsed) != value or parsed.version != 4 or parsed.variant != RFC_4122:
+        raise LeaseRefused('FIXED_INSTANCE_ID_INVALID')
+    return value
+
+
 def encode(record):
     raw = json.dumps(record, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('ascii')
     if not 0 < len(raw) <= BODY_LIMIT: raise LeaseRefused('FIXED_BODY_LIMIT')
     return raw
 
 
-def decode(raw):
+def decode(raw, *, format=FixedFormat.V1):
+    require_format(format)
     if not 0 < len(raw) <= BODY_LIMIT: raise LeaseRefused('FIXED_BODY_LIMIT')
     try: record = json.loads(raw, object_pairs_hook=_pairs)
     except (ValueError, UnicodeError): raise LeaseRefused('FIXED_BODY_INVALID') from None
     keys = {'schema', 'root', 'lock', 'journal', 'generation', 'sequence', 'phase', 'initialized', 'runtime', 'handoff'}
-    if (type(record) is not dict or set(record) != keys or record['schema'] != SCHEMA
+    if format is FixedFormat.INSTANCE_V2: keys = keys | {'instance_id'}
+    if (type(record) is not dict or set(record) != keys or record['schema'] != schema(format)
             or any(type(record[k]) is not int or not 1 <= record[k] < 2**64 for k in ('generation', 'sequence'))
             or any(type(record[k]) is not list or len(record[k]) != 2 or
                    any(type(n) is not int or not 0 <= n < 2**64 for n in record[k]) for k in ('root', 'lock', 'journal'))
@@ -33,6 +64,11 @@ def decode(raw):
             or type(record['handoff']) is not str or record['handoff'] not in ('OWNED', 'RELEASE_PENDING')
             or encode(record) != raw):
         raise LeaseRefused('FIXED_BODY_INVALID')
+    if format is FixedFormat.INSTANCE_V2:
+        _instance_id(record['instance_id'])
+        identities = [tuple(record[k]) for k in ('root', 'lock', 'journal')]
+        if len(set(identities)) != 3 or len({x[0] for x in identities}) != 1:
+            raise LeaseRefused('FIXED_INSTANCE_OBJECTS_INVALID')
     phase, initialized, runtime = record['phase'], record['initialized'], record['runtime']
     if phase == 'NEW': valid = not initialized and runtime == 'STOPPED'
     elif phase == 'UNKNOWN': valid = runtime == 'UNKNOWN'
@@ -44,8 +80,12 @@ def decode(raw):
     return record
 
 
-def transition(old, new):
+def transition(old, new, *, format=FixedFormat.V1):
     """Every linked pair must be an original phase transition or handoff."""
+    require_format(format)
+    if format is FixedFormat.INSTANCE_V2:
+        decode(encode(old), format=format); decode(encode(new), format=format)
+        if new['instance_id'] != old['instance_id']: raise LeaseRefused('FIXED_INSTANCE_CHANGED')
     if (new['sequence'] != old['sequence'] + 1 or
             any(new[k] != old[k] for k in ('schema', 'root', 'lock', 'journal'))):
         raise LeaseRefused('FIXED_TRANSITION_INVALID')
@@ -69,61 +109,72 @@ def transition(old, new):
     if not valid: raise LeaseRefused('FIXED_TRANSITION_INVALID')
 
 
-def slot_bytes(record, index, previous_hash):
-    raw = encode(record); decode(raw)
-    header = HEADER.pack(b'PWLJv001', 1, index, record['generation'], record['sequence'], len(raw),
+def slot_bytes(record, index, previous_hash, *, format=FixedFormat.V1):
+    raw = encode(record); decode(raw, format=format)
+    header = HEADER.pack(_magic(format), format.value, index, record['generation'], record['sequence'], len(raw),
                          hashlib.sha256(raw).digest(), previous_hash, bytes(28))
     return header + raw + bytes(SLOT - 256 - len(raw)) + header
 
 
-def parse_slot(raw, index):
+def parse_slot(raw, index, *, format=FixedFormat.V1):
+    require_format(format)
     if len(raw) != SLOT: raise LeaseRefused('FIXED_SLOT_SHORT_READ')
     head = raw[:128]
     if head != raw[-128:]: raise LeaseRefused('FIXED_SLOT_TORN')
     magic, version, slot, generation, sequence, length, digest, previous, reserved = HEADER.unpack(head)
-    if (magic != b'PWLJv001' or version != 1 or slot != index or reserved != bytes(28)
+    if (magic != _magic(format) or version != format.value or slot != index or reserved != bytes(28)
             or not 0 < length <= BODY_LIMIT or (sequence - 1) % 2 != index
             or any(raw[128 + length:-128])):
         raise LeaseRefused('FIXED_SLOT_INVALID')
     body = raw[128:128 + length]
     if hashlib.sha256(body).digest() != digest: raise LeaseRefused('FIXED_SLOT_HASH')
-    record = decode(body)
+    record = decode(body, format=format)
     if record['generation'] != generation or record['sequence'] != sequence:
         raise LeaseRefused('FIXED_SLOT_COUNTS')
     return record, previous
 
 
-def pair(raw):
+def pair(raw, *, format=FixedFormat.V1):
+    require_format(format)
     if len(raw) != SIZE: raise LeaseRefused('FIXED_FILE_LENGTH')
     slots = [raw[:SLOT], raw[SLOT:]]
-    parsed = [parse_slot(value, index) for index, value in enumerate(slots)]  # BOTH required.
+    parsed = [parse_slot(value, index, format=format) for index, value in enumerate(slots)]  # BOTH required.
     order = sorted(range(2), key=lambda index: parsed[index][0]['sequence'])
     older, newer = order
     old, new = parsed[older][0], parsed[newer][0]
     if parsed[newer][1] != hashlib.sha256(slots[older]).digest(): raise LeaseRefused('FIXED_CHAIN_INVALID')
     if old['sequence'] == 1 and parsed[older][1] != ZERO_HASH: raise LeaseRefused('FIXED_GENESIS_INVALID')
-    transition(old, new)
+    transition(old, new, format=format)
     return new, newer
 
 
 class FixedJournal:
     """IO owns the held file. No rename, name repair, retries or slot fallback."""
-    def __init__(self, io): self.io = io
+    def __init__(self, io, *, format=FixedFormat.V1):
+        self.io, self._format = io, require_format(format)
+        self._check_format()
+
+    def _check_format(self):
+        if require_format(getattr(self.io, 'journal_format', FixedFormat.V1)) is not self._format:
+            raise LeaseRefused('FIXED_IO_FORMAT_CHANGED')
 
     def read(self):
+        self._check_format()
         self.io.verify()
         before = self.io.signature()
         if self.io.length() != SIZE: raise LeaseRefused('FIXED_FILE_LENGTH')
         raw = self.io.read_at(0, SLOT) + self.io.read_at(SLOT, SLOT)
         if before != self.io.signature(): raise LeaseRefused('FIXED_CHANGED_DURING_READ')
-        record, _ = pair(raw)
+        record, _ = pair(raw, format=self._format)
         if record['journal'] != self.io.identity() or record['root'] != self.io.root_id or record['lock'] != self.io.lock_id:
             raise LeaseRefused('FIXED_FILE_BINDING')
         self.io.verify()
+        self._check_format()
         return encode(record), raw
 
     def write(self, raw, expected):
-        proposed = decode(raw)
+        self._check_format()
+        proposed = decode(raw, format=self._format)
         self.io.verify()
         if proposed['journal'] != self.io.identity() or proposed['root'] != self.io.root_id or proposed['lock'] != self.io.lock_id:
             raise LeaseRefused('FIXED_FILE_BINDING')
@@ -131,17 +182,18 @@ class FixedJournal:
             if self.io.length() != 0 or proposed['generation'] != 1 or proposed['sequence'] != 2:
                 raise LeaseRefused('FIXED_INITIALIZATION_REFUSED')
             first = {**proposed, 'sequence': 1}
-            first_raw = slot_bytes(first, 0, ZERO_HASH)
-            target = first_raw + slot_bytes(proposed, 1, hashlib.sha256(first_raw).digest())
-            pair(target)
+            first_raw = slot_bytes(first, 0, ZERO_HASH, format=self._format)
+            target = first_raw + slot_bytes(proposed, 1, hashlib.sha256(first_raw).digest(), format=self._format)
+            pair(target, format=self._format)
             offset, pending = 0, target
         else:
             if self.read() != expected: raise LeaseRefused('FIXED_SNAPSHOT_CHANGED')
-            old, newest = pair(expected[1]); transition(old, proposed)
+            old, newest = pair(expected[1], format=self._format); transition(old, proposed, format=self._format)
             offset = (1 - newest) * SLOT
-            pending = slot_bytes(proposed, 1 - newest, hashlib.sha256(expected[1][newest*SLOT:(newest+1)*SLOT]).digest())
+            pending = slot_bytes(proposed, 1 - newest, hashlib.sha256(expected[1][newest*SLOT:(newest+1)*SLOT]).digest(), format=self._format)
             target = expected[1][:offset] + pending + expected[1][offset + SLOT:]
         # A short write is ambiguous. Preserve it, do not finish/retry/recover.
+        self._check_format()
         if self.io.write_at(offset, pending) != len(pending): raise LeaseRefused('FIXED_SHORT_WRITE_UNKNOWN')
         self.io.flush_file()
         actual = self.read()

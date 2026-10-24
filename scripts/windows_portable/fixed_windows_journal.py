@@ -7,13 +7,17 @@ import ctypes as C
 
 from .directories import LeaseRefused
 from .fixed_directories import FIXED_JOURNAL
-from .fixed_journal import FixedJournal, SIZE
+from .fixed_journal import FixedJournal, FixedFormat, require_format, SIZE
 from .windows_directory_handles import WindowsFilesystem, NativeLeaseAPI
 
 
 class FixedWindowsFilesystem(WindowsFilesystem):
-    def __init__(self, base, *, api=None):
+    def __init__(self, base, *, api=None, format=FixedFormat.V1):
+        self._journal_format = require_format(format)
         super().__init__(base, api=api); self.journal = None
+
+    @property
+    def journal_format(self): return self._journal_format
 
     def acquire(self, name, *, fresh):
         if fresh:
@@ -27,7 +31,7 @@ class FixedWindowsFilesystem(WindowsFilesystem):
                                    fresh=fresh, write=True, exclusive=True))
         self.journal_id = self.identity()
         self.journal_descriptor = self.api.descriptor(self.journal)
-        self.verify(); self.storage = FixedJournal(self)
+        self.verify(); self.storage = FixedJournal(self, format=self.journal_format)
 
     def identity(self, handle=None):
         return super().identity(self.journal if handle is None else handle)

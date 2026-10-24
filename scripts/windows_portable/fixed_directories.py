@@ -14,16 +14,44 @@ from .directories import DirectoryLease, LeaseRefused, PosixFilesystem, PrivateD
 FIXED_JOURNAL = '.parkweave-lease.slots'
 
 
+def _random_bytes():
+    from secrets import token_bytes
+    return token_bytes(16)
+
+
+def _new_instance_id(fs):
+    from uuid import UUID
+    fs.verify()
+    pinned = (tuple(fs.root_id), tuple(fs.lock_id), tuple(fs.identity()))
+    if (fs.journal_format is not journal.FixedFormat.INSTANCE_V2 or fs.length() != 0
+            or any(len(x) != 2 or any(type(n) is not int or not 0 <= n < 2**64 for n in x) for x in pinned)
+            or len(set(pinned)) != 3 or len({x[0] for x in pinned}) != 1):
+        raise LeaseRefused('FIXED_INSTANCE_ACQUISITION_REFUSED')
+    # Called once only after exclusive acquisition. Failure is not retried;
+    # the existing root/lock/journal must remain, not be claimed afresh.
+    raw = _random_bytes()
+    if type(raw) is not bytes or len(raw) != 16: raise LeaseRefused('FIXED_RANDOM_SOURCE_REFUSED')
+    fs.verify()
+    if (fs.journal_format is not journal.FixedFormat.INSTANCE_V2 or fs.length() != 0
+            or pinned != (tuple(fs.root_id), tuple(fs.lock_id), tuple(fs.identity()))):
+        raise LeaseRefused('FIXED_INSTANCE_ACQUISITION_CHANGED')
+    return str(UUID(bytes=raw, version=4))
+
+
 class FixedPosixFilesystem(PosixFilesystem):
-    def __init__(self, base):
+    def __init__(self, base, *, format=journal.FixedFormat.V1):
+        self._journal_format = journal.require_format(format)
         super().__init__(base); self.journal = None
+
+    @property
+    def journal_format(self): return self._journal_format
 
     def acquire(self, name, *, fresh):
         super().acquire(name, fresh=fresh)
         flags = os.O_RDWR | os.O_CLOEXEC | os.O_NOFOLLOW | (os.O_CREAT | os.O_EXCL if fresh else 0)
         self.journal = self.hold(os.open(FIXED_JOURNAL, flags, 0o600, dir_fd=self.root))
         self.journal_id = self.identity(self.journal)
-        self.verify(); self.storage = journal.FixedJournal(self)
+        self.verify(); self.storage = journal.FixedJournal(self, format=self.journal_format)
         if fresh: os.fsync(self.root)  # Linux only; never called a Windows barrier.
 
     def verify(self):
@@ -81,6 +109,7 @@ _exclusive_entry = _guard_operation(public=True)
 class FixedDirectoryLease(DirectoryLease):
     def __init__(self, *args):
         super().__init__(*args)
+        self._journal_format = journal.require_format(getattr(self.fs, 'journal_format', journal.FixedFormat.V1))
         self._operation_owner, self._operation_depth = None, 0
         self._entry_lock = threading.Lock()
 
@@ -99,10 +128,21 @@ class FixedDirectoryLease(DirectoryLease):
     @_exclusive_entry
     def release(self): return super().release()
 
+    @_exclusive_entry
+    def instance_uuid(self):
+        self._verify()
+        if self._journal_format is not journal.FixedFormat.INSTANCE_V2:
+            raise LeaseRefused('FIXED_INSTANCE_V2_REQUIRED')
+        record = journal.decode(self.snapshot[0], format=self._journal_format)
+        if record['phase'] == 'UNKNOWN': raise LeaseRefused('FIXED_INSTANCE_UNKNOWN')
+        return record['instance_id']  # No generation, caller UUID or plaintext secret lookup.
+
     @_exclusive_operation
     def _verify(self):
         if not self.active or self.poisoned: raise LeaseRefused('LEASE_NOT_WRITABLE')
         try:
+            if journal.require_format(getattr(self.fs, 'journal_format', journal.FixedFormat.V1)) is not self._journal_format:
+                raise LeaseRefused('FIXED_LEASE_FORMAT_CHANGED')
             self.fs.verify()
             if self.fs.read() != self.snapshot: raise LeaseRefused('FIXED_SNAPSHOT_CHANGED')
         except BaseException:
@@ -116,7 +156,7 @@ class FixedDirectoryLease(DirectoryLease):
         try:
             self._verify()
             value = {**self.record, **update, 'sequence': self.record['sequence'] + 1}
-            raw = journal.encode(value); journal.decode(raw)
+            raw = journal.encode(value); journal.decode(raw, format=self._journal_format)
             snapshot = self.fs.replace(raw, self.snapshot)
         except BaseException:
             self.poisoned = True
@@ -125,11 +165,18 @@ class FixedDirectoryLease(DirectoryLease):
 
 
 class FixedPrivateDirectories(PrivateDirectories):
+    def __init__(self, base, *, format=journal.FixedFormat.V1):
+        self._journal_format = journal.require_format(format)
+        super().__init__(base)
+
+    @property
+    def journal_format(self): return self._journal_format
+
     def _filesystem(self):
-        if os.name == 'posix': return FixedPosixFilesystem(self.base)
+        if os.name == 'posix': return FixedPosixFilesystem(self.base, format=self.journal_format)
         if os.name == 'nt':
             from .fixed_windows_journal import FixedWindowsFilesystem
-            return FixedWindowsFilesystem(self.base)
+            return FixedWindowsFilesystem(self.base, format=self.journal_format)
         raise LeaseRefused('UNSUPPORTED_DIRECTORY_BACKEND')
 
     def _acquire(self, root, *, fresh):
@@ -148,17 +195,25 @@ class FixedPrivateDirectories(PrivateDirectories):
         except PayloadRefused: raise LeaseRefused('EXACT_PRIVATE_CHILD_REQUIRED') from None
         fs = self._filesystem()
         try:
+            selected = journal.require_format(self.journal_format)
+            if journal.require_format(fs.journal_format) is not selected:
+                raise LeaseRefused('FIXED_ACQUISITION_FORMAT_MISMATCH')
             fs.acquire(path.name, fresh=fresh)
             if fresh:
-                record = dict(schema=journal.SCHEMA, root=fs.root_id, lock=fs.lock_id, journal=fs.identity(),
+                record = dict(schema=journal.schema(selected), root=fs.root_id, lock=fs.lock_id, journal=fs.identity(),
                               generation=1, sequence=2, phase='NEW', initialized=False, runtime='STOPPED', handoff='OWNED')
+                if selected is journal.FixedFormat.INSTANCE_V2: record['instance_id'] = _new_instance_id(fs)
+                fs.verify()
                 snapshot = fs.replace(journal.encode(record), None)
             else:
-                snapshot = fs.read(); record = journal.decode(snapshot[0])
+                snapshot = fs.read(); record = journal.decode(snapshot[0], format=selected)
                 if record['phase'] != 'READY_STOPPED' or record['handoff'] != 'RELEASE_PENDING':
                     raise LeaseRefused('CONFIRMED_HANDOFF_REQUIRED')
                 record = {**record, 'generation': record['generation'] + 1, 'sequence': record['sequence'] + 1, 'handoff': 'OWNED'}
+                fs.verify()
                 snapshot = fs.replace(journal.encode(record), snapshot)
+            if fs.journal_format is not selected or self.journal_format is not selected:
+                raise LeaseRefused('FIXED_ACQUISITION_FORMAT_CHANGED')
             return FixedDirectoryLease(fs, record, snapshot)
         except BaseException as primary:
             try: fs.close()
