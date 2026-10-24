@@ -144,10 +144,10 @@ class PayloadChecks(unittest.TestCase):
                                                 b'../../app/src', b'../../app'])
 
     def test_assembly_rejects_asset_hash_before_archive_or_source_use(self):
-        f = self.root / 'bad.zip'; f.write_bytes(b'corrupt')
+        f = self.root / 'python-3.12.10-embed-amd64.zip'; f.write_bytes(b'corrupt')
         lock = self.root / 'lock.json'
         lock.write_text(json.dumps(dict(schema='parkweave-windows-runtime-assets/1', assets=[dict(
-            file='bad.zip', bytes=7, sha256='0' * 64)])))
+            file=f.name, kind='python', version='3.12.10', bytes=7, sha256='0' * 64)])))
         def git(args, **kw):
             if args[1] == 'rev-parse': return b'a' * 40 + b'\n'
             if args[1] == 'show':
@@ -165,25 +165,35 @@ class PayloadChecks(unittest.TestCase):
         with patch.object(build.subprocess, 'check_output', side_effect=[b'a' * 40 + b'\n', b'wrong builder']):
             with self.assertRaisesRegex(p.PayloadRefused, 'BUILDER_SOURCE_DRIFT'): build.assemble(self.root, 'a' * 40, self.root, lock)
 
-    def test_full_frozen_fixture_assembly_verifies_and_preserves_original_block(self):
+    def assembly_fixture(self, version='3.12.10', wheel_tag='py3-none-any', *,
+                         internal_tag=None, requires_python='>=3.9', pure=True, extra_python=None):
         repo = self.root / 'repo'; repo.mkdir(); assets = self.root / 'assets'; assets.mkdir()
+        stem = 'python' + ''.join(version.split('.')[:2])
+        wheel_name = 'fixture-1.0-' + wheel_tag + '.whl'
         fixtures = {
-            'python.zip': ('python', {'python.exe': pe(('kernel32.dll',)), 'pythonw.exe': pe(),
-                'python312.dll': pe(), 'python312.zip': b'fixture-not-a-runtime',
-                'python312._pth': b'original fixture', 'LICENSE.txt': b'fixture license'}),
+            'python-' + version + '-embed-amd64.zip': ('python', {
+                'python.exe': pe(('kernel32.dll',)), 'pythonw.exe': pe(),
+                stem + '.dll': pe(), stem + '.zip': b'fixture-not-a-runtime',
+                stem + '._pth': b'original fixture', 'LICENSE.txt': b'fixture license'}),
             'postgres.zip': ('postgresql', {'pgsql/bin/postgres.exe': pe(), 'pgsql/bin/initdb.exe': pe(),
                 'pgsql/bin/pg_ctl.exe': pe(), 'pgsql/server_license.txt': b'fixture license',
                 'pgsql/share/extension/plpgsql.control': b"module_pathname='$libdir/plpgsql'",
                 'pgsql/share/snowball_create.sql': b"'$libdir/dict_snowball'",
                 'pgsql/lib/plpgsql.dll': pe(('postgres.exe',)), 'pgsql/lib/dict_snowball.dll': pe(('postgres.exe',))}),
-            'wheel.whl': ('wheel', {'fixture/__init__.py': b'', 'fixture.dist-info/LICENSE': b'fixture license'})}
+            wheel_name: ('wheel', {'fixture/__init__.py': b'', 'fixture-1.0.dist-info/LICENSE': b'fixture license',
+                'fixture-1.0.dist-info/WHEEL': ('Wheel-Version: 1.0\nRoot-Is-Purelib: ' +
+                    str(pure).lower() + '\nTag: ' + (internal_tag or wheel_tag) + '\n').encode(),
+                'fixture-1.0.dist-info/METADATA': ('Metadata-Version: 2.4\nName: fixture\nVersion: 1.0\n' +
+                    'Requires-Python: ' + requires_python + '\n\n').encode()})}
+        fixtures['python-' + version + '-embed-amd64.zip'][1].update(extra_python or {})
         rows = []
         for name, (kind, members) in fixtures.items():
             path = assets / name
             with zipfile.ZipFile(path, 'w') as z:
                 for n, data in members.items(): z.writestr(n, data)
             licenses = {n: sha256(data).hexdigest() for n, data in members.items() if 'license' in n.lower()}
-            rows.append(dict(file=name, kind=kind, version='FIXTURE_ONLY', url='https://fixture.invalid/' + name,
+            rows.append(dict(file=name, kind=kind, version=version if kind == 'python' else '1.0',
+                url='https://fixture.invalid/' + name,
                 bytes=path.stat().st_size, sha256=sha256(path.read_bytes()).hexdigest(), license_files=licenses))
         here = Path(build.__file__).parent; copied = repo / 'scripts/windows_portable'; copied.mkdir(parents=True)
         for name in set(RUNTIME_MODULES) | {'build.py', 'entry.py', 'ParkWeave.cmd'}:
@@ -202,6 +212,11 @@ class PayloadChecks(unittest.TestCase):
                      ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'offline fixture']):
             subprocess.run(['git', *args], cwd=repo, check=True, capture_output=True)
         source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
+        return repo, assets, lock, source
+
+    def test_full_frozen_fixture_assembly_verifies_and_preserves_original_block(self):
+        repo, assets, lock, source = self.assembly_fixture()
+        copied = repo / 'scripts/windows_portable'
         files, manifest = build.assemble(repo, source, assets, lock)
         source_names = tuple('scripts/windows_portable/' + n for n in RUNTIME_MODULES) + tuple(
             'scripts/windows_ci/' + n for n in JOB_MODULES)
@@ -228,6 +243,104 @@ class PayloadChecks(unittest.TestCase):
         self.assertEqual(again['launcher/entry.py'], files['launcher/entry.py'])
         self.assertEqual(again['app/scripts/windows_portable/controller.py'],
                          files['app/scripts/windows_portable/controller.py'])
+
+    def test_locked_314_layout_is_selected_without_312_fallback(self):
+        repo, assets, lock, source = self.assembly_fixture('3.14.9', 'cp314-cp314-win_amd64', pure=False)
+        files, manifest = build.assemble(repo, source, assets, lock)
+        self.assertEqual(files['runtime/python/python314._pth'],
+                         b'python314.zip\n.\n../../vendor\n../../launcher\n../../app/src\n../../app\n')
+        self.assertIn('runtime/python/python314.dll', files)
+        self.assertFalse(any('python312' in name for name in files))
+        self.assertFalse(manifest['usable_product'])
+
+    def test_filename_compatible_but_internal_wheel_abi_mismatch_is_refused(self):
+        for version, filename, internal in (
+                ('3.12.10', 'cp312-cp312-win_amd64', 'cp314-cp314-win_amd64'),
+                ('3.14.9', 'cp314-cp314-win_amd64', 'cp312-cp312-win_amd64')):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as tmp:
+                previous = self.root; self.root = Path(tmp)
+                try:
+                    repo, assets, lock, source = self.assembly_fixture(version,
+                        wheel_tag=filename, internal_tag=internal, pure=False)
+                    with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_TAG_MISMATCH'):
+                        build.assemble(repo, source, assets, lock)
+                finally: self.root = previous
+
+    def test_pure_python_tag_does_not_override_requires_python(self):
+        repo, assets, lock, source = self.assembly_fixture(requires_python='>=3.14')
+        with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_REQUIRES_PYTHON'):
+            build.assemble(repo, source, assets, lock)
+
+    def test_wheel_platform_and_abi_minimum_are_not_bypassed_by_broad_tags(self):
+        for tag in ('cp314-cp314-win_amd64', 'cp313-abi3-win_amd64',
+                    'cp37-abi3-manylinux_2_17_x86_64', 'py3-abi3-win_amd64',
+                    'py3-none-win32', 'cp312-cp312t-win_amd64'):
+            with self.subTest(tag=tag), tempfile.TemporaryDirectory() as tmp:
+                previous = self.root; self.root = Path(tmp)
+                try:
+                    repo, assets, lock, source = self.assembly_fixture(wheel_tag=tag, pure=False)
+                    with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_TARGET_TAG'):
+                        build.assemble(repo, source, assets, lock)
+                finally: self.root = previous
+
+    def test_older_abi3_and_compressed_pure_tags_remain_compatible(self):
+        for version, tag, internal, pure, requirement in (
+                ('3.12.10', 'cp37-abi3-win_amd64', None, False, '>=3.6'),
+                ('3.14.9', 'cp37-abi3-win_amd64', None, False, '>=3.6'),
+                ('3.12.10', 'py2.py3-none-any', 'py2-none-any\nTag: py3-none-any', True,
+                 '!=3.0.*,!=3.1.*,>=2.7')):
+            with self.subTest(version=version, tag=tag), tempfile.TemporaryDirectory() as tmp:
+                previous = self.root; self.root = Path(tmp)
+                try:
+                    repo, assets, lock, source = self.assembly_fixture(version, tag,
+                        internal_tag=internal, pure=pure, requires_python=requirement)
+                    files, _ = build.assemble(repo, source, assets, lock)
+                    self.assertIn('vendor/fixture/__init__.py', files)
+                finally: self.root = previous
+
+    def test_python_layout_is_closed_and_requires_one_exact_locked_asset(self):
+        row = dict(kind='python', version='3.12.10', file='python-3.12.10-embed-amd64.zip')
+        for rows, reason in (([], 'SINGLE_PYTHON_ASSET'), ([row, row], 'SINGLE_PYTHON_ASSET'),
+                ([dict(row, version='3.14.9')], 'PYTHON_ASSET_LAYOUT'),
+                ([dict(row, version='3.13.17', file='python-3.13.17-embed-amd64.zip')], 'PYTHON_ASSET_LAYOUT')):
+            with self.subTest(rows=rows), self.assertRaisesRegex(p.PayloadRefused, reason):
+                build.python_layout(rows)
+
+    def test_locked_python_archive_cannot_mix_312_and_314_layouts(self):
+        repo, assets, lock, source = self.assembly_fixture('3.14.9',
+            extra_python={'python312._pth': b'stale interpreter paths'})
+        with self.assertRaisesRegex(p.PayloadRefused, 'PYTHON_ARCHIVE_LAYOUT'):
+            build.assemble(repo, source, assets, lock)
+
+    def test_required_python_release_bounds_are_checked_or_fail_closed(self):
+        build.python_requirement('>=3.12.10,<3.13,!=3.11.*', (3, 12, 10))
+        for requirement, reason in (('>=3.12.11', 'WHEEL_REQUIRES_PYTHON'),
+                ('<3.12.10', 'WHEEL_REQUIRES_PYTHON'), ('!=3.12.*', 'WHEEL_REQUIRES_PYTHON'),
+                ('~=3.12', 'WHEEL_PYTHON_SPECIFIER'), ('>=3.12.*', 'WHEEL_PYTHON_SPECIFIER')):
+            with self.subTest(requirement=requirement), self.assertRaisesRegex(p.PayloadRefused, reason):
+                build.python_requirement(requirement, (3, 12, 10))
+
+    def test_actual_wheel_metadata_is_required_unambiguous_and_not_a_native_any_shortcut(self):
+        asset = dict(file='fixture-1.0-py3-none-any.whl', version='1.0')
+        wheel_path = 'fixture-1.0.dist-info/WHEEL'; metadata_path = 'fixture-1.0.dist-info/METADATA'
+        wheel = b'Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n'
+        metadata = b'Metadata-Version: 2.4\nName: fixture\nVersion: 1.0\nRequires-Python: >=3.9\n\n'
+        members = {wheel_path: wheel, metadata_path: metadata}
+        for changed, reason in (
+                ({metadata_path: metadata}, 'WHEEL_METADATA_FILES'),
+                ({**members, 'other-1.0.dist-info/WHEEL': wheel}, 'WHEEL_METADATA_FILES'),
+                ({**members, wheel_path: wheel + b'Tag: py3-none-any\n'}, 'WHEEL_TAG_DUPLICATE'),
+                ({**members, wheel_path: wheel.replace(b'1.0', b'2.0')}, 'WHEEL_FORMAT_VERSION'),
+                ({**members, metadata_path: metadata.replace(b'Name: fixture', b'Name: other')}, 'WHEEL_METADATA_IDENTITY'),
+                ({**members, 'fixture/native.pyd': pe()}, 'WHEEL_ANY_NATIVE_FILE')):
+            with self.subTest(reason=reason), self.assertRaisesRegex(p.PayloadRefused, reason):
+                build.verify_wheel(asset, changed, (3, 12, 10))
+        platform_asset = dict(asset, file='fixture-1.0-py3-none-win_amd64.whl')
+        platform_wheel = wheel.replace(b'Root-Is-Purelib: true', b'Root-Is-Purelib: false').replace(
+            b'py3-none-any', b'py3-none-win_amd64')
+        with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_NATIVE_ABI'):
+            build.verify_wheel(platform_asset,
+                {**members, wheel_path: platform_wheel, 'fixture/native.pyd': pe()}, (3, 12, 10))
 
 
 if __name__ == '__main__': unittest.main()

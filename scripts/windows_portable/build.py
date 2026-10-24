@@ -4,8 +4,11 @@ The trusted lock is an explicit build input, not a self-authenticating signature
 Native initialization is disabled in every candidate emitted by this builder.
 """
 import argparse
+from email import policy
+from email.parser import BytesHeaderParser
 from hashlib import sha256
 from io import BytesIO
+from itertools import product
 import json
 from pathlib import Path
 import re
@@ -37,6 +40,110 @@ REQUIRED = ('runtime/python/python.exe', 'runtime/python/pythonw.exe',
             'app/src/parkweave/park_demo_web.html') + tuple('app/' + name for name in RUNTIME_SOURCES)
 
 
+def python_layout(assets):
+    """Closed build layouts, not approval to acquire or execute either asset."""
+    rows = [a for a in assets if a.get('kind') == 'python']
+    require(len(rows) == 1, 'SINGLE_PYTHON_ASSET')
+    row = rows[0]
+    versions = {'3.12.10': (3, 12, 10), '3.14.9': (3, 14, 9)}
+    version = versions.get(row.get('version'))
+    require(version is not None and row['file'] ==
+            'python-' + row['version'] + '-embed-amd64.zip', 'PYTHON_ASSET_LAYOUT')
+    return version, 'python' + str(version[0]) + str(version[1])
+
+
+def wheel_tags(value):
+    require(type(value) is str and len(value) <= 256 and re.fullmatch(
+        r'[a-z0-9_]+(?:\.[a-z0-9_]+)*-[a-z0-9_]+(?:\.[a-z0-9_]+)*-[a-z0-9_]+(?:\.[a-z0-9_]+)*',
+        value), 'WHEEL_TAG_SYNTAX')
+    parts = [part.split('.') for part in value.split('-')]
+    require(all(len(part) == len(set(part)) for part in parts), 'WHEEL_TAG_DUPLICATE')
+    require(len(parts[0]) * len(parts[1]) * len(parts[2]) <= 32, 'WHEEL_TAG_COUNT')
+    return set(product(*parts))
+
+
+def python_requirement(value, version):
+    """Release-only subset used by this locked payload; refuse other syntax."""
+    require(len(value) <= 1024, 'WHEEL_PYTHON_SPECIFIER')
+    for clause in value.split(','):
+        match = re.fullmatch(r'\s*(>=|<=|==|!=|>|<)\s*([0-9]+(?:\.[0-9]+){0,2})(\.\*)?\s*', clause)
+        require(match is not None, 'WHEEL_PYTHON_SPECIFIER')
+        op, release, wildcard = match.groups()
+        numbers = tuple(map(int, release.split('.')))
+        if wildcard:
+            require(op in ('==', '!='), 'WHEEL_PYTHON_SPECIFIER')
+            equal = version[:len(numbers)] == numbers
+            accepted = equal if op == '==' else not equal
+        else:
+            target = numbers + (0,) * (3 - len(numbers))
+            accepted = {'>=': version >= target, '<=': version <= target,
+                        '==': version == target, '!=': version != target,
+                        '>': version > target, '<': version < target}[op]
+        require(accepted, 'WHEEL_REQUIRES_PYTHON')
+
+
+def verify_wheel(asset, members, version):
+    """Validate actual metadata, not just a compatible-looking archive name."""
+    name = Path(asset['file']).name
+    require(name.endswith('.whl'), 'WHEEL_FILENAME')
+    parts = name[:-4].split('-')
+    require(len(parts) in (5, 6) and re.fullmatch(r'[A-Za-z0-9_.]+', parts[0]) and
+            parts[1] == asset['version'], 'WHEEL_FILENAME')
+    if len(parts) == 6: require(re.fullmatch(r'[0-9][A-Za-z0-9_]*', parts[2]), 'WHEEL_BUILD_TAG')
+    expected_tags = wheel_tags('-'.join(parts[-3:]))
+    directory = parts[0] + '-' + parts[1] + '.dist-info/'
+    required = {directory + 'WHEEL', directory + 'METADATA'}
+    require({n for n in members if n.endswith(('.dist-info/WHEEL', '.dist-info/METADATA'))}
+            == required, 'WHEEL_METADATA_FILES')
+    parser = BytesHeaderParser(policy=policy.default)
+    def headers(path, limit):
+        raw = members[path]
+        require(len(raw) <= limit, 'WHEEL_METADATA_BYTES')
+        result = parser.parsebytes(raw)
+        require(not result.defects and not any(v.defects for _, v in result.items()), 'WHEEL_METADATA_HEADERS')
+        return result
+    wheel = headers(directory + 'WHEEL', 16384)
+    metadata = headers(directory + 'METADATA', 4 * 1024 * 1024)
+    require(not wheel.get_payload().strip(), 'WHEEL_METADATA_HEADERS')
+    def one(message, key):
+        values = message.get_all(key, [])
+        require(len(values) == 1, 'WHEEL_METADATA_FIELD:' + key)
+        return str(values[0]).strip()
+    require(one(wheel, 'Wheel-Version') == '1.0', 'WHEEL_FORMAT_VERSION')
+    pure = one(wheel, 'Root-Is-Purelib')
+    require(pure in ('true', 'false'), 'WHEEL_PURELIB')
+    tags = set(); declared = wheel.get_all('Tag', [])
+    require(0 < len(declared) <= 32, 'WHEEL_TAG_COUNT')
+    for value in declared:
+        row = wheel_tags(str(value).strip())
+        require(not tags & row, 'WHEEL_TAG_DUPLICATE')
+        tags.update(row)
+    require(tags == expected_tags, 'WHEEL_TAG_MISMATCH')
+    require(all(tag[2] in ('any', 'win_amd64') for tag in tags), 'WHEEL_TARGET_TAG')
+    normalize = lambda s: re.sub(r'[-_.]+', '_', s).lower()
+    require(normalize(one(metadata, 'Name')) == normalize(parts[0]) and
+            one(metadata, 'Version') == parts[1], 'WHEEL_METADATA_IDENTITY')
+    requirements = metadata.get_all('Requires-Python', [])
+    require(len(requirements) <= 1, 'WHEEL_METADATA_FIELD:Requires-Python')
+    if requirements: python_requirement(str(requirements[0]), version)
+    def compatible(tag):
+        interpreter, abi, platform = tag
+        if platform not in ('any', 'win_amd64'): return False
+        cp = re.fullmatch(r'cp3([0-9]+)', interpreter)
+        if abi == 'abi3':
+            return bool(cp and 2 <= int(cp[1]) <= version[1] and platform == 'win_amd64' and pure == 'false')
+        if abi != 'none':
+            return interpreter == abi == 'cp3' + str(version[1]) and platform == 'win_amd64' and pure == 'false'
+        py = re.fullmatch(r'py3([0-9]+)?', interpreter)
+        return bool((py and (py[1] is None or int(py[1]) <= version[1]) or
+                     cp and int(cp[1]) == version[1]) and (platform != 'any' or pure == 'true'))
+    require(any(compatible(tag) for tag in tags), 'WHEEL_TARGET_TAG')
+    if any(tag[2] == 'any' for tag in tags):
+        require(not any(n.lower().endswith(('.pyd', '.dll', '.exe')) for n in members), 'WHEEL_ANY_NATIVE_FILE')
+    if any(n.lower().endswith('.pyd') for n in members):
+        require(any(compatible(tag) and tag[1] != 'none' for tag in tags), 'WHEEL_NATIVE_ABI')
+
+
 def assemble(repo, source, assets, lock_path):
     require(len(source) == 40 and all(c in '0123456789abcdef' for c in source), 'FULL_SOURCE_SHA')
     def git(*args):
@@ -47,6 +154,7 @@ def assemble(repo, source, assets, lock_path):
     lock_raw = lock_path.read_bytes(); lock = json.loads(lock_raw)
     require(git('show', source + ':scripts/windows_portable/runtime-assets.json') == lock_raw, 'ASSET_LOCK_SOURCE_DRIFT')
     require(lock['schema'] == 'parkweave-windows-runtime-assets/1', 'ASSET_LOCK_SCHEMA')
+    version, stem = python_layout(lock['assets'])
     files = {}; asset_report = []
     def put(name, data):
         safe_name(name)
@@ -68,6 +176,11 @@ def assemble(repo, source, assets, lock_path):
         members = archive_files(path, selected=selected)
         for n, h in asset['license_files'].items():
             require(n in members and sha256(members[n]).hexdigest() == h, 'ASSET_LICENSE')
+        if group == 'wheel': verify_wheel(asset, members, version)
+        if group == 'python':
+            require({stem + suffix for suffix in ('.dll', '.zip', '._pth')} <= members.keys(), 'PYTHON_ARCHIVE_LAYOUT')
+            require(not any(re.fullmatch(r'python3[0-9]+\.(dll|zip|_pth)', n) and
+                            not n.startswith(stem + '.') for n in members), 'PYTHON_ARCHIVE_LAYOUT')
         if group == 'postgresql':
             # Include the server lifecycle executables and their static DLL
             # dependencies, not StackBuilder, wxWidgets, ecpg or other tools.
@@ -107,8 +220,8 @@ def assemble(repo, source, assets, lock_path):
                 target = 'runtime/postgresql/' + n[6:]
             put(target, data)
         asset_report.append({k: asset[k] for k in ('file', 'kind', 'version', 'url', 'bytes', 'sha256', 'license_files')})
-    require('runtime/python/python312._pth' in files, 'EMBEDDED_PTH_MISSING')
-    files['runtime/python/python312._pth'] = PTH  # Explicitly locked application-private paths; no site.
+    require('runtime/python/' + stem + '._pth' in files, 'EMBEDDED_PTH_MISSING')
+    files['runtime/python/' + stem + '._pth'] = PTH.replace(b'python312', stem.encode('ascii'))
     archive = git('archive', '--format=tar', source, '--', 'src/parkweave', 'scripts/windows',
                   *RUNTIME_SOURCES, *LAUNCHER_SOURCES)
     with tarfile.open(fileobj=BytesIO(archive)) as tar:
@@ -124,7 +237,9 @@ def assemble(repo, source, assets, lock_path):
                 if name not in RUNTIME_SOURCES: continue
             put('app/' + name, data)
     put('runtime-assets.json', lock_raw)
-    for name in REQUIRED: require(name in files, 'REQUIRED_COMPONENT:' + name)
+    for name in REQUIRED:
+        name = name.replace('python312', stem)
+        require(name in files, 'REQUIRED_COMPONENT:' + name)
     closure = dll_closure(files)
     # A static candidate can expose unresolved imports, but it cannot be
     # labelled closed or executed. The end-user entry always refuses startup.
