@@ -4,6 +4,8 @@
 
 `credential_envelope.py`和`windows_user_protection.py`新增独立的纯字节封装/FakeAPI合同候选，未接目录、controller、构建器或入口。前者不加密或落盘；后者无DLL/native调用，原生入口继续拒绝。新数据库凭据持久设计及严格格式、CONFIG非自引用、SESSION三身份、漫游与同用户边界见[安全配置](../../docs/F1/SecurityConfiguration.md)。本片没有真实保护、凭据文件、ACL、PG或Windows验收；存储能力、CONFIG发布、UNKNOWN持久化与initdb非明文输入仍待后片。定向隔离命令：`python -B -m unittest scripts.windows_portable.test_credential_envelope scripts.windows_portable.test_windows_user_protection -v`。
 
+`fixed_secret_store.py`接续三个固定对象的存储算法，仍只接受显式内存Fake capability与Fake保护器，不接controller或原生路径。复用原FixedDirectoryLease entry门直至关闭，拒重入/竞争；先核DATABASE、SESSION再独占写CONFIG，短写/同步/读回/关闭不明时UNKNOWN/poison且不覆盖重试。精确对象名、保护观测及不能证明原生持久性的边界见上述安全配置。定向命令：`python -B -m unittest scripts.windows_portable.test_fixed_secret_store -v`。测试没有实际凭据文件或Windows/PG运行，不把替身通过称安全存储完成。
+
 `build.py`只读取已下载的锁定资产，不联网、不运行安装器、pip、PE或数据库。它核对源码commit、构建器/校验器/资产锁blob、每件资产及原许可证hash，将内嵌Python、Windows wheel依赖、PG最小进程载荷和原页面/SQL封装进候选。三个启动文件来自同一冻结commit。PG选initdb、postgres、pg_ctl、默认plpgsql/文本搜索/编码转换动态模块及其私有静态依赖，排除pgAdmin、StackBuilder和开发工具；不承诺可选扩展或任意动态模块能力。
 
 云端离线命令（需已有Git/Python，**不是给端用户准备开发环境**）：

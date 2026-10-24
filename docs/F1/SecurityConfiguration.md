@@ -10,7 +10,11 @@ DATABASE只含现有postgres与parkweave_app秘密；SESSION沿现有fixture-a/b
 
 `windows_user_protection.py`只定义DATA_BLOB布局和显式FakeAPI隔离接口，无DLL加载、真实DPAPI调用、默认原生实例或路径接口。Fake输出不是加密或原生验收证据。参数固定为用户级用途、禁止机器级flags和交互提示；原生入口仍拒绝。未来原生实现遵循[CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata)/[CryptUnprotectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptunprotectdata)：保留用户配置漫游例外，不承诺防同用户恶意进程或管理员；不能只凭API成功或特定错误码判完整性。原生明文缓冲清理与LocalFree尚未实现/验收，Python/DSN副本也不承诺完全擦除。当前Fake只验证有界复制、已识别输出的zero/free顺序、双故障私有保留及公开错误脱敏；未知指针不解引用、不猜测释放，失败进入本适配器内sticky UNKNOWN，不代表安装状态已持久化。
 
-FixedDirectoryLease还没有三个secrets对象的能力；本片不使用任意Path/open，也不映射旧JSON名称或接controller。后续存储仍须固定私有路径、原owner/raw DACL/control保护、CONFIG最后发布完整引用、失败UNKNOWN poison及独立原生持久化准入。旧lifecycle schema1与原SESSION/CONFIG路径不改，不自动迁移、重签、覆盖或重新供应。现有initdb --pwfile的明文输入缺口仍未解决，不允许先落明文再删除作为替代；双击入口、OWNER暂停、固定文件和载荷加载门均不变。
+生产FixedDirectoryLease路径仍没有三个secrets对象的原生能力。新增`fixed_secret_store.py`只接受显式FakeSecretAPI、原FixedDirectoryLease对象与Fake保护器，使用原租约排他entry门覆盖整个校验、独占创建、单次写入、flush、精确密文读回、解封校验与关闭；没有Path/open、旧JSON映射或controller接线。三种Purpose仅映射已有secrets下database.dpapi、synthetic-sessions.dpapi、instance-config.dpapi。Fake观测核稳定root/lock/journal、对象/父身份、当前owner、raw DACL/control、private-ACL检查结果、链接/reparse及内容版本；private-ACL结果仍是假能力事实，不是Windows ACE解析证明。
+
+DATABASE与SESSION先核实，再从两者最终身份及密文摘要构造CONFIG并独占创建；不覆盖既有对象或重试不明结果。新建phase限定CREDENTIALS/SESSIONS/CONFIG；原对象读取仅VERIFY_FILES或READY_STOPPED对应的精确initialized状态，重开不create/write/flush，不迁移、换钥、补session或增Grant。CONFIG不是跨文件原子事务：只有全部写入、同步、读回及关闭成功，调用者后续才可提交READY。短写、同步/关闭未知、身份或内容变化均失败；持租约时尝试原journal UNKNOWN，随后poison。原验证失败或UNKNOWN落盘失败时保留原错误、原件和OWNED状态，不能假称UNKNOWN已耐久，也不继续重开。未知能力不猜关闭，已尝试关闭不重试，原始失败/清理错误私有保留；普通公开错误不含秘密。所有文件系统和保护操作目前只有内存替身，未写凭据文件、未调用安全API；原生存储工厂继续拒绝。Windows互斥/ACL/目录名称与文件持久性都未验，Linux线程只能核原Python操作门。
+
+旧lifecycle schema1与原SESSION/CONFIG路径不改，不自动迁移、重签、覆盖或重新供应。现有initdb --pwfile的明文输入缺口仍未解决，不允许先落明文再删除作为替代；双击入口、OWNER暂停、固定文件和载荷加载门均不变。
 
 ## 文件私有根
 
