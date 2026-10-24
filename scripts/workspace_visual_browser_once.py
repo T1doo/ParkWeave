@@ -1,72 +1,57 @@
-"""Run42/attempt1 candidate: isolated template UI and stable guide button; no product backend."""
-import hashlib,json,math,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
+"""Run43/attempt1: original template revision UI; static GET fixtures, no backend."""
+import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit,urlencode
 from playwright.sync_api import sync_playwright
 from scripts import fictional_park_browser_once as base
 from scripts.fictional_park_restart_browser_once import installed_font_environment,verify_rendered_font
 from scripts.visual_owned_launch import atomic_report,supervise
 
 ROOT=Path(__file__).resolve().parents[1]
-REPORT=dict(scope='REAL_CHROME_ORIGINAL_PAGES_PRESENTATION_NO_BACKEND',status='RUNNING',stage='START',
+REPORT=dict(scope='REAL_CHROME_TEMPLATE_UPGRADE_PRESENTATION_NO_BACKEND',status='RUNNING',stage='START',
     product_API=False,database=False,real_model_calls=0,business_POSTs=0,requests=[],browser_requests=[],
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
-OUT=None;PRIVATE=None;PAGE=None;START=0
-CHECKPOINT=None
-BASELINE_SHA='4406f5f254bb53e53ca08ba8bd50ea228e36b67e'
-SOURCE_SHA256='7798e0e5c08462fd98cc20382d9e429a57a58ca61bbe95513c32065c7d755884'
-GUIDE_SHA256='966f175764bdf323eea9c6e87f520c584da6ae03243b5c0396e492ce76a1af8c'
-TEMPLATE_SHA256='69882b775d78f571f3a1a70aeff1a38c4ae178df0e97f62cd9b4956b69b2e010'
-ISOLATED_ENTRY_SOURCES={'src/parkweave/template_isolated_app.py':'22eaee2712d5a5e83d7c9dbd397272d8d7dfdfe45b84438d2c31b06448bde27a','src/parkweave/template_candidate_api.py':'dc6522606369b9b06714491602649b006cde0fee9a0cbcbcae14946ab619bec4'}
-PNG_FILES=('01-template-entry-1200.png','02-template-entry-390.png','03-template-fields-1200.png',
-    '04-template-fields-390.png','05-template-return-1200.png','06-template-return-390.png','07-guide-stable-390.png')
+OUT=None;PRIVATE=None;PAGE=None;START=0;CHECKPOINT=None
+BASELINE_SHA='89cc51e2f161de87e4c5fe7bb44e893181853f96'
+PAGE_NAME='template_upgrade_web.html'
+PAGE_SHA256='410ab1080d3c714e98d550deb158697999ed3f7b557fb20666630b00d4b18c60'
+ISOLATED_ENTRY_SOURCES={'src/parkweave/template_isolated_app.py':'22eaee2712d5a5e83d7c9dbd397272d8d7dfdfe45b84438d2c31b06448bde27a',
+    'src/parkweave/template_upgrade.py':'901054f04b370eac2238e0c9e19b6512b7c7bded3de682405c2397a7137e8db9'}
+PNG_FILES=('01-upgrade-ready-1200.png','02-upgrade-ready-390.png','03-upgrade-unknown-1200.png','04-upgrade-unknown-390.png')
 PUBLIC_FILES=frozenset(PNG_FILES+('failure-visual.png','result.json'))
-EXPECTED_CHANGED_PATHS=frozenset((
-    '.github/workflows/fictional-park-browser-once.yml','scripts/workspace_visual_browser_once.py',
-    'scripts/fictional_park_font_once.py','docs/F2/evidence/eng057-job-shards.json',
-    'docs/demo/evidence/task-desk-20261023/run42/README.md',
-    'docs/demo/evidence/task-desk-20261023/run42/preflight.json',
-    'docs/demo/evidence/task-desk-20261023/run42/SHA256SUMS'))
-FIXTURE_SUMMARY='合成界面复放 · 无真实业务、身份或授权'
-FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE · 静态交互复放，非真实业务、身份或授权。'
+EXPECTED_CHANGED_PATHS=frozenset(('.github/workflows/fictional-park-browser-once.yml',
+    'scripts/workspace_visual_browser_once.py','scripts/fictional_park_font_once.py'))
+FIXTURE_SUMMARY='合成界面回放 · 无真实事项、身份或授权'
+FIXTURE_LABEL='SYNTHETIC UI_STATE_FIXTURE / READ_ONLY_RESPONSE_FIXTURE；仅静态原页面与合成GET响应，不是工厂、业务服务或权限验收。'
 
-
-def presentation_contract(reviewed,current,page='web.html'):
-    fingerprints={'web.html':SOURCE_SHA256,'park_demo_web.html':GUIDE_SHA256,'template_candidate_web.html':TEMPLATE_SHA256}
-    assert page in fingerprints,'only exact reviewed original pages permitted'
-    expected=fingerprints[page]
-    assert hashlib.sha256(reviewed).hexdigest()==expected,'reviewed page fingerprint mismatch'
-    assert current==reviewed,'current product page must equal the exact reviewed candidate'
-
+def presentation_contract(reviewed,current,page=PAGE_NAME):
+    assert page==PAGE_NAME and hashlib.sha256(reviewed).hexdigest()==PAGE_SHA256,'exact reviewed template upgrade page required'
+    assert current==reviewed,'product page must equal the reviewed parent bytes'
 
 def validate_source_listing(parent,changed,dirty):
     assert parent==BASELINE_SHA,'exact reviewed direct parent required'
     assert len(changed)==len(set(changed)) and set(changed)==EXPECTED_CHANGED_PATHS,'unreviewed commit paths'
     assert not dirty,'tracked or untracked workspace changes refused'
 
-
 def source_contract():
     parent=subprocess.check_output(['git','rev-parse','HEAD^'],cwd=ROOT,text=True).strip()
-    assert parent==BASELINE_SHA,'exact reviewed direct parent required'
     changed=subprocess.check_output(['git','diff','--name-only',BASELINE_SHA,'HEAD'],cwd=ROOT,text=True).splitlines()
     validate_source_listing(parent,changed,subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=ROOT,text=True))
-    pages={}
-    for name in ['web.html','park_demo_web.html','template_candidate_web.html']:
-        path='src/parkweave/'+name;current=(ROOT/path).read_bytes()
-        reviewed=subprocess.check_output(['git','show',BASELINE_SHA+':'+path],cwd=ROOT)
-        presentation_contract(reviewed,current,name);pages[name]=current
+    path='src/parkweave/'+PAGE_NAME;current=(ROOT/path).read_bytes()
+    presentation_contract(subprocess.check_output(['git','show',BASELINE_SHA+':'+path],cwd=ROOT),current)
     for path,digest in ISOLATED_ENTRY_SOURCES.items():
         reviewed=subprocess.check_output(['git','show',BASELINE_SHA+':'+path],cwd=ROOT)
         assert (ROOT/path).read_bytes()==reviewed and hashlib.sha256(reviewed).hexdigest()==digest,'isolated entry source changed'
-    return pages,dict(reviewed_product_sha=BASELINE_SHA,current_web_sha256=SOURCE_SHA256,
-        current_guide_sha256=GUIDE_SHA256,current_template_sha256=TEMPLATE_SHA256,isolated_entry_sources=ISOLATED_ENTRY_SOURCES,
-        isolated_entry_scope="Static replay of original /template bytes only; factory/API/engine not started or enabled",product_pages_identical_to_reviewed_baseline=True,
-        exact_changed_paths=sorted(changed),scope='CURRENT candidate only; no old-run pixels or script-permutation claim')
+    return {PAGE_NAME:current},dict(reviewed_product_sha=BASELINE_SHA,page=PAGE_NAME,page_sha256=PAGE_SHA256,
+        isolated_entry_sources=ISOLATED_ENTRY_SOURCES,exact_changed_paths=sorted(changed),
+        isolated_entry_scope='Original /template-upgrade bytes only; factory/checker/engine/API/PG never started',
+        product_page_identical_to_reviewed_baseline=True)
 
 
 def timeout(*_):raise TimeoutError('90s visual work and cleanup deadline')
+
 
 def checkpoint():
     if CHECKPOINT is None:return
@@ -74,35 +59,170 @@ def checkpoint():
     try:atomic_report(CHECKPOINT,REPORT)
     except Exception as error:REPORT.setdefault('checkpoint_errors',[]).append(dict(type=type(error).__name__,errno=getattr(error,'errno',None)))
 
+
 def stage(name):
     REPORT['stage']=name;checkpoint()
+
 
 def require_operation_time(seconds):
     if time.monotonic()-START+seconds+5>=90:raise TimeoutError('insufficient original operation time and cleanup reserve')
 
+
+
+# These constants are visibly synthetic UI fixtures, not issued business proofs.
+INSTANCE='11111111-1111-4111-8111-111111111111'
+TARGET='22222222-2222-4222-8222-222222222222'
+DIGEST='a'*64
+CHOICE_KEY='SYNTHETIC_VISUAL_CHOICE_KEY'
+APPLY_KEY='SYNTHETIC_VISUAL_APPLY_KEY'
+UPGRADE_PATH='/template-upgrade'
+CATALOG_URI='/api/template-consumer/catalog'
+CHECK_URI='/api/template-upgrade/'+INSTANCE+'/check?'+urlencode({'target_release_id':TARGET,'target_sha256':DIGEST})
+CHOICE_URI='/api/template-upgrade/'+INSTANCE+'/requests/'+CHOICE_KEY
+APPLY_URI='/api/template-upgrade/'+INSTANCE+'/apply-requests/'+APPLY_KEY
+FIXTURE_LIMITS={UPGRADE_PATH:2,CATALOG_URI:2,CHECK_URI:2,CHOICE_URI:2,APPLY_URI:4}
+FIXTURE_READS={}
+CHECK_REPLY=dict(revision=1,check_sha256=DIGEST,check=dict(classification='NEEDS_RECHECK',
+    allowed_choices=['KEEP_CURRENT','REQUEST_RECHECK','ACK_COMPATIBLE'],original_content_version=1,target_content_version=2,
+    original_source_revision='SYNTHETIC_OLD',target_source_revision='SYNTHETIC_NEW',changes=['SYNTHETIC_UI_RECHECK_ONLY'],
+    original_release_id='SYNTHETIC_OLD_RELEASE',target_release_id=TARGET,target_release_sha256=DIGEST),
+    application=dict(eligible=True,choice_revision=1,choice_event_sha256=DIGEST,plan_id='SYNTHETIC_PLAN',plan_revision=3,
+        preparation_revision=4,source_sha256=DIGEST,effective_release_id='SYNTHETIC_OLD_RELEASE',blockers=[],
+        affected=['P1','P2','P3','P4','P5'],preserved=[],requires_structure_confirmation=True,structure_sha256=DIGEST,
+        structure_change=dict(added_goals=['SYNTHETIC_UI_ONLY_新增模板必需目标待本人逐项重核'],added_template_steps=['P5'])))
+
+def fixture_response(uri):
+    # Exact URL+query, finite totals, and two precise recovery replies per width.
+    if uri=='/favicon.ico':
+        count=FIXTURE_READS.get(uri,0)+1;FIXTURE_READS[uri]=count
+        if count<=2:return 204,'image/x-icon',b''
+    elif uri in FIXTURE_LIMITS:
+        count=FIXTURE_READS.get(uri,0)+1;FIXTURE_READS[uri]=count
+        if count<=FIXTURE_LIMITS[uri]:
+            if uri==UPGRADE_PATH:return 200,'text/html; charset=utf-8',(PRIVATE/'upgrade.html').read_bytes()
+            if uri==CATALOG_URI:
+                body=dict(templates=[dict(name='SYNTHETIC 长中文模板名称：联合培训资料版本核对与历史保全，不代表真实资格或履约',release_id=TARGET,release_sha256=DIGEST)])
+            elif uri==CHECK_URI:body=CHECK_REPLY
+            elif uri==APPLY_URI and count%2==0:return 403,'application/json',b'{}'
+            else:body=dict(status='NOT_OBSERVED',event=None)
+            return 200,'application/json',json.dumps(body,ensure_ascii=False).encode()
+    REPORT['unexpected_GET'].append(uri)
+    return 404,'application/json',b'{}'
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*_):pass
     def do_GET(self):
-        path=urlsplit(self.path).path;row=dict(method='GET',path=path);REPORT['requests'].append(row)
+        row=dict(method='GET',path=self.path);REPORT['requests'].append(row)
         if len(REPORT['requests'])>=40:raise RuntimeError('40 GET allowance exhausted')
-        if path in ('/current','/','/guide','/template'):
-            body=(PRIVATE/('guide.html' if path=='/guide' else 'template.html' if path=='/template' else 'current.html')).read_bytes();kind='text/html; charset=utf-8';code=200
-        elif path in FIXTURE_REPLIES:
-            FIXTURE_READS[path]=FIXTURE_READS.get(path,0)+1
-            if FIXTURE_READS[path]>FIXTURE_LIMITS[path]:
-                REPORT['unexpected_GET'].append(path);body=b'{}';code=404
-            else:body=json.dumps(FIXTURE_REPLIES[path],ensure_ascii=False).encode();code=200
-            kind='application/json'
-        elif path=='/api/run-access/status':
-            body=b'{"enabled":false,"read_available":false,"scope":"PRESENTATION_REPLAY_DISABLED"}';kind='application/json';code=200
-        elif path=='/favicon.ico':body=b'';kind='image/x-icon';code=204
-        else:
-            REPORT['unexpected_GET'].append(path);body=b'{}';kind='application/json';code=404
-        row['status']=code
+        code,kind,body=fixture_response(self.path);row['status']=code
         self.send_response(code);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(body)))
         self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'")
         self.end_headers();self.wfile.write(body)
     def do_POST(self):REPORT['business_POSTs']+=1;self.send_error(405,'No writes in presentation review')
+
+def open_page(browser,origin,width):
+    global PAGE
+    require_operation_time(30)
+    context=browser.new_context(viewport={'width':width,'height':1000},service_workers='block')
+    def boundary(route):
+        request=route.request;a=urlsplit(request.url);b=urlsplit(origin)
+        uri=a.path+('?' + a.query if a.query else '')
+        allowed=((a.scheme,a.netloc)==(b.scheme,b.netloc) and not a.username and not a.password
+            and request.method=='GET' and len(REPORT['browser_requests'])+1<40
+            and uri in set(FIXTURE_LIMITS)|{'/favicon.ico'})
+        REPORT['browser_requests'].append(dict(method=request.method,path=uri,allowed=allowed))
+        if allowed:route.continue_()
+        else:
+            REPORT['violations'].append(dict(method=request.method,path=uri))
+            if request.method=='POST':REPORT['business_POSTs']+=1
+            route.abort()
+    context.route('**/*',boundary);page=context.new_page();PAGE=page
+    context.on('page',lambda new_page:new_page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error))))
+    page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error)))
+    page.set_default_timeout(15000)
+    response=page.goto(origin+UPGRADE_PATH,wait_until='load',timeout=15000)
+    assert response.status==200 and response.body()==(PRIVATE/'upgrade.html').read_bytes()
+    page.wait_for_load_state('networkidle',timeout=15000)  # Settle optional favicon before exact request deltas.
+    return context,page
+
+def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
+
+def mark_fixture(page):
+    page.evaluate("""([summary,text])=>{const n=document.createElement('details');n.dataset.visualFixture='true';
+        n.style.cssText='margin:12px 0;padding:8px 10px;border:1px dashed #b2a16e;border-radius:8px;background:#fff6dc;color:#614b19;font-size:12px;line-height:1.5';
+        const s=document.createElement('summary');s.textContent=summary;const p=document.createElement('p');p.textContent=text;n.append(s,p);document.querySelector('main').before(n)}""",[FIXTURE_SUMMARY,FIXTURE_LABEL])
+    assert page.locator('[data-visual-fixture]>summary').inner_text()==FIXTURE_SUMMARY
+
+def capture(page,name):
+    require_operation_time(15)
+    assert name in PNG_FILES and page.locator('[data-visual-fixture]>summary').is_visible()
+    # Full-page captures retain all four original regions/warnings; viewport
+    # remains unchanged. Actual CDP font observations are viewport-scoped only.
+    page.screenshot(path=str(OUT/name),timeout=15000,full_page=True,mask=[page.locator('#token')])
+
+UNKNOWN_FIXTURE=r"""([kind,key])=>{
+ const original={kind,url:'/api/template-upgrade/'+$('instance').value+(kind==='choice'?'/choices':'/apply'),key,
+   body:{scope:'SYNTHETIC_UI_STATE_ONLY',target_release_id:$('target').value,reason:'合成未知结果界面复放，不是已发生的提交'}};
+ pending=original;window.__upgradeVisualPending={original,body:original.body,before:JSON.stringify(original)};
+ $(kind==='choice'?'key':'apply-key').value=key;fail(context(),{unknown:true});buttons();
+}"""
+
+def pending_state(page):
+    return page.evaluate("""()=>({same:pending===window.__upgradeVisualPending.original,
+        bodySame:pending?.body===window.__upgradeVisualPending.body,bodyUnchanged:JSON.stringify(pending)===window.__upgradeVisualPending.before,
+        busy,choice:pending?.kind,applyDisabled:$('apply').disabled,checkDisabled:$('check').disabled,
+        choicesDisabled:[...document.querySelectorAll('[data-choice]')].every(e=>e.disabled)})""")
+
+def upgrade_observation(page,width):
+    mark_fixture(page)
+    assert page.locator('.upgrade-panel').count()==4
+    assert page.locator('#check').is_disabled() and page.locator('#apply').is_disabled()
+    assert page.locator('[data-choice]:not(:disabled)').count()==0
+    assert page.locator('#original-case').is_hidden()
+    page.locator('#token').fill('SYNTHETIC_UI_NOT_A_REAL_SESSION')
+    page.locator('#instance').fill(INSTANCE)
+    page.locator('#catalog').click()
+    page.wait_for_function('()=>!busy&&$("target").options.length===1',timeout=15000)
+    page.locator('#check').click()
+    page.wait_for_function('()=>!busy&&inspection!==null&&$("result").textContent.includes("需人工重验")',timeout=15000)
+    assert page.locator('#structure-confirm-label').is_visible() and page.locator('#note-carry-confirm-label').is_hidden()
+    before=request_counts();page.locator('#reason').fill('SYNTHETIC：长中文选择说明，仅核对当前事项版本、原目标和历史，不代表正式批准或履约。')
+    page.locator('#reason').focus();page.keyboard.press('Tab')
+    focus=page.evaluate("""()=>({choice:document.activeElement.dataset.choice,visible:document.activeElement.matches(':focus-visible'),
+        outline:getComputedStyle(document.activeElement).outlineStyle,width:getComputedStyle(document.activeElement).outlineWidth})""")
+    assert focus['choice']=='KEEP_CURRENT' and focus['visible'] and focus['outline']=='solid' and focus['width']=='3px',focus
+    page.locator('#apply-reason').fill('SYNTHETIC：当前版本需要本人再次核对；保持原事项、步骤编号和历史，仍须逐项重核。')
+    page.locator('#apply-confirm').check();assert page.locator('#apply').is_disabled()
+    page.locator('#structure-confirm').check();assert page.locator('#apply').is_enabled()
+    page.locator('#structure-confirm').uncheck();page.locator('#apply-confirm').uncheck()
+    assert page.locator('#apply').is_disabled() and request_counts()==before
+    REPORT.setdefault('keyboard_and_confirmation',[]).append(dict(width=width,focus=focus,request_delta=0,submit_clicked=False))
+    page.evaluate('window.scrollTo(0,0)');observe(page,'upgrade-ready-'+str(width),True)
+    capture(page,'01-upgrade-ready-1200.png' if width==1200 else '02-upgrade-ready-390.png')
+    for kind,key,control,result_id in [('choice',CHOICE_KEY,'recover','receipt'),('apply',APPLY_KEY,'apply-recover','apply-receipt')]:
+        before=request_counts();page.evaluate(UNKNOWN_FIXTURE,[kind,key]);assert request_counts()==before
+        page.locator('#'+control).click()
+        page.wait_for_function('id=>!busy&&$(id).textContent.includes("NOT_OBSERVED")',arg=result_id,timeout=15000)
+        row=pending_state(page)
+        assert all(row[k] for k in ('same','bodySame','bodyUnchanged','applyDisabled','checkDisabled','choicesDisabled')) and not row['busy'] and row['choice']==kind,row
+        assert request_counts()==(before[0]+1,before[1]+1,0)
+        REPORT.setdefault('unknown_readonly_recovery',[]).append(dict(width=width,kind=kind,state=row,GETs=1,POSTs=0,
+            scope='Explicit unsubmitted UI pending fixture; not a real lost business response'))
+    page.locator('.recovery-panel').scroll_into_view_if_needed(timeout=15000)
+    observe(page,'upgrade-unknown-'+str(width),True)
+    capture(page,'03-upgrade-unknown-1200.png' if width==1200 else '04-upgrade-unknown-390.png')
+    before=request_counts();page.locator('#apply-recover').click()
+    page.wait_for_function('()=>!busy&&$("error").textContent==="当前身份或范围无权访问"',timeout=15000)
+    cleared=page.evaluate("""()=>({pending:pending===null,inspection:inspection===null,target:$('target').options.length,
+        fields:['key','reason','apply-key','apply-reason'].every(id=>$(id).value===''),
+        views:['result','receipt','application','apply-receipt'].every(id=>$(id).textContent===''),
+        confirmations:['apply-confirm','structure-confirm','note-carry-confirm'].every(id=>!$(id).checked),
+        applyDisabled:$('apply').disabled,originalHidden:$('original-case').hidden,originalHref:$('original-case').getAttribute('href')})""")
+    assert cleared==dict(pending=True,inspection=True,target=0,fields=True,views=True,confirmations=True,applyDisabled=True,originalHidden=True,originalHref=''),cleared
+    assert request_counts()==(before[0]+1,before[1]+1,0)
+    REPORT.setdefault('denied_clearing',[]).append(dict(width=width,cleared=cleared,GETs=1,status=403,POSTs=0,
+        scope='Static denial response through original renderer; not actual business authorization'))
+
 
 @contextmanager
 def owned_browser(font_env):
@@ -124,25 +244,6 @@ def owned_browser(font_env):
             try:browser.close();REPORT['browser_close']='CLOSED'
             except Exception as e:REPORT['cleanup_errors'].append('browser:'+type(e).__name__)
 
-def open_page(browser,origin,path,width):
-    global PAGE
-    require_operation_time(30)
-    context=browser.new_context(viewport={'width':width,'height':1000},service_workers='block')
-    def boundary(route):
-        request=route.request;a=urlsplit(request.url);b=urlsplit(origin)
-        allowed=(a.scheme,a.netloc)==(b.scheme,b.netloc) and request.method=='GET' and len(REPORT['browser_requests'])+1<40
-        REPORT['browser_requests'].append(dict(method=request.method,path=a.path,allowed=allowed))
-        if allowed:route.continue_()
-        else:
-            REPORT['violations'].append(dict(method=request.method,path=a.path))
-            if request.method=='POST':REPORT['business_POSTs']+=1
-            route.abort()
-    context.route('**/*',boundary);page=context.new_page();PAGE=page
-    context.on('page',lambda new_page:new_page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error))))
-    page.on('pageerror',lambda error:REPORT['page_errors'].append(str(error)))
-    response=page.goto(origin+path,wait_until='load',timeout=15000)
-    assert response.status==200 and response.body()==(PRIVATE/('guide.html' if path=='/guide' else 'template.html' if path=='/template' else 'current.html')).read_bytes()
-    return context,page
 
 def observe(page,label,font=False):
     require_operation_time(5 if font else 1)
@@ -157,238 +258,31 @@ def observe(page,label,font=False):
         REPORT['font_observations'].append(dict(label=label,width=row['width'],nodes=REPORT['installed_CJK_font']['visible_node_font_usage']))
     return row
 
-def mark_fixture(page):
-    page.evaluate("""([summary,text])=>{
-        const n=document.createElement('details');n.dataset.visualFixture='true';
-        n.style.cssText='margin:0 0 12px;padding:8px 10px;border:1px dashed #b2a16e;border-radius:8px;background:#fff6dc;color:#614b19;font-size:12px;line-height:1.5';
-        const s=document.createElement('summary');s.textContent=summary;s.style.cssText='cursor:pointer;min-height:24px';
-        const p=document.createElement('p');p.textContent=text;p.style.cssText='margin:8px 0 0;overflow-wrap:anywhere';
-        n.append(s,p);$('prep-catalog').before(n);
-    }""",[FIXTURE_SUMMARY,FIXTURE_LABEL])
-    marker=page.locator('[data-visual-fixture="true"]')
-    assert marker.count()==1 and marker.locator('summary').is_visible()
-    assert marker.locator('summary').inner_text()==FIXTURE_SUMMARY
-    assert marker.locator('p').text_content()==FIXTURE_LABEL
-
-
-def visible_in_viewport(page,ids):
-    rows=page.evaluate("""ids=>ids.map(id=>{const e=$(id),r=e.getBoundingClientRect();return {id,
-        visible:!!e.getClientRects().length,top:r.top,bottom:r.bottom,height:innerHeight,text:e.textContent}})""",ids)
-    assert all(r['visible'] and 0<=r['top'] and r['bottom']<=r['height'] for r in rows),rows
-    return rows
-
-
-def capture(page,name):
-    require_operation_time(15)
-    assert name in PUBLIC_FILES and name.endswith('.png')
-    assert page.locator('[data-visual-fixture] > summary').evaluate("e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth}")
-    page.screenshot(path=str(OUT/name),timeout=15000,full_page=False)
-
-
-def compose_fixture(page,selector):
-    # Only after raw native/geometry measurements. This is screenshot framing,
-    # never the oracle for browser navigation landing or original target focus.
-    page.evaluate("""selector=>{const n=document.querySelector('[data-visual-fixture]'),target=document.querySelector(selector);
-        if(!n||!target)throw Error('fixture composition target missing');if(target.tagName==='FIELDSET')target.querySelector('legend').after(n);else target.prepend(n);target.scrollIntoView({block:'start',behavior:'instant'});} """,selector)
-    REPORT.setdefault('screenshot_composition',[]).append(dict(selector=selector,scope='Move only the explicit fixture marker, then frame original section; not native landing proof'))
-
-
-def dispatch_frame_delta(rows,height):
-    margin=16
-    assert height==1000 and rows,'original viewport and required framing nodes must exist'
-    assert all(isinstance(r[k],(int,float)) and not isinstance(r[k],bool) and math.isfinite(r[k]) for r in rows for k in ('top','bottom'))
-    assert all(r['bottom']>r['top'] for r in rows),'required framing node is not visible'
-    minimum=math.ceil(max(r['bottom'] for r in rows)-(height-margin))
-    maximum=math.floor(min(r['top'] for r in rows)-margin)
-    assert minimum<=maximum,'complete markers, warnings and records do not fit the unchanged viewport'
-    return minimum if minimum>0 else maximum if maximum<0 else 0
-
-
-FIXTURE_READS={}
-FIXTURE_REPLIES={'/api/template-candidate/status':dict(enabled_for_isolated_tests=False,isolated_personas=[],isolated_principals=[],registered_goals=['LOCAL_MATERIAL_PREPARATION'],namespace='ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE',candidate_demo=False,business_publication=False,deployment_enabled=False,new_grants=False,automatic_execution=False,case_goal_completed=False,contract_revision=1,compatible_publication_only=False)}
-FIXTURE_LIMITS={'/api/template-candidate/status':2}
-TEMPLATE_FIXTURE=r"""() => {
- const f=window.__templateVisual={sentinel:crypto.randomUUID()};
- f.draft='SYNTHETIC 界面复放：为园区联合培训准备资料，不是正式事项或资格结论。';
- const goals=['LOCAL_MATERIAL_PREPARATION','SYNTHETIC_EXTERNAL_AUTHORITY_APPROVAL'];
- renderPlanning({plan_id:null,request_intent:{current_request:f.draft,required_goals:goals,planning_constraints:{excluded_roles:['service_executor'],additional_requirements:['SYNTHETIC 待人工核对的附加条件，不自动判为满足']}},current:{state:'PARTIAL',preparation_revision:1,partial_offer:{can_adopt:true,step_ids:['P1'],waiting_step_ids:['P2'],manual_goals:['SYNTHETIC_EXTERNAL_AUTHORITY_APPROVAL']},steps:[]},service_case_plan:{can_adopt_partial:true}});
- f.fields={};for(const id of ['consumer-release','consumer-reviewer','consumer-goal','consumer-need-summary','consumer-material-outline','consumer-need-source','consumer-outline-source','consumer-exclude-owner','consumer-exclude-specialist','consumer-exclude-executor','consumer-additional','consumer-plan-reason','consumer-partial-confirm']){
-  if(['consumer-need-summary','consumer-material-outline'].includes(id))$(id).value=f.draft;
-  f.fields[id]={value:$(id).value,checked:$(id).checked};
- }
- f.goals=[...document.querySelectorAll('[data-consumer-goal]')].map(e=>[e.dataset.consumerGoal,e.checked]);
- f.snapshot=()=>JSON.stringify({fields:Object.fromEntries(Object.keys(f.fields).map(id=>[id,{value:$(id).value,checked:$(id).checked,disabled:$(id).disabled}])),goals:[...document.querySelectorAll('[data-consumer-goal]')].map(e=>({goal:e.dataset.consumerGoal,checked:e.checked,disabled:e.disabled})),cp,planningView,confirmed,instance,catalog,handle:adoptionHandle,storage:Object.keys(localStorage).sort().map(k=>[k,localStorage.getItem(k)])});
- f.mode=mode=>{cp=mode?{state:mode,action:'CREATE',key:'SYNTHETIC_VISUAL_ONLY',body:{goal:f.draft},fields:structuredClone(f.fields),goals:structuredClone(f.goals)}:null;buttons();f.cp=cp;f.body=cp?.body;f.before=f.snapshot();};
- f.same=()=>({sentinel:f.sentinel,cpSame:cp===f.cp,bodySame:cp?.body===f.body,snapshotSame:f.snapshot()===f.before});
- f.mode(null);window.__sameTemplateDocument=f.sentinel;
-}"""
-
-
-def request_counts():return (len(REPORT['requests']),len(REPORT['browser_requests']),REPORT['business_POSTs'])
-
-
-def rectangles(page,selectors):
-    return page.evaluate("""selectors=>selectors.map(selector=>{const e=document.querySelector(selector);if(!e)throw Error('required node missing '+selector);const r=e.getBoundingClientRect();return {selector,visible:!!e.getClientRects().length,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,viewportWidth:innerWidth,viewportHeight:innerHeight}})""",selectors)
-
-
-def bounded_rectangles(rows,viewport=False):
-    assert all(x['visible'] and x['width']>0 and x['height']>0 and 0<=x['left']<x['right']<=x['viewportWidth'] for x in rows),rows
-    if viewport:assert all(0<=x['top']<x['bottom']<=x['viewportHeight'] for x in rows),rows
-
-
-def frame_required(page,selectors):
-    require_operation_time(5);counts=request_counts();viewport=dict(page.viewport_size)
-    rows=rectangles(page,selectors);delta=dispatch_frame_delta(rows,1000)
-    page.evaluate('delta=>window.scrollBy({top:delta,behavior:"instant"})',delta)
-    rows=rectangles(page,selectors);bounded_rectangles(rows,True)
-    assert all(16<=x['top'] and x['bottom']<=984 for x in rows),rows
-    assert counts==request_counts() and dict(page.viewport_size)==viewport
-    REPORT.setdefault('screenshot_framing',[]).append(dict(selectors=selectors,scroll_delta=delta,rectangles=rows))
-
-
-def template_marker(page):
-    page.evaluate("""([summary,text])=>{const n=document.createElement('details');n.dataset.visualFixture='true';n.style.cssText='padding:8px;border:1px dashed #b2a16e;background:#fff6dc;color:#614b19;font-size:12px;line-height:1.5';const s=document.createElement('summary');s.textContent=summary;const p=document.createElement('p');p.textContent=text;n.append(s,p);$('banner').after(n)}""",['候选未启用 · '+FIXTURE_SUMMARY,FIXTURE_LABEL])
-
-    assert page.locator('[data-visual-fixture]>summary').inner_text()=='候选未启用 · '+FIXTURE_SUMMARY
-
-def template_safety(page):
-    assert page.locator('#banner').inner_text()=='候选未启用：没有显式隔离合同，审核发布与新建事项均不可用。'
-    assert page.evaluate('()=>status.enabled_for_isolated_tests===false&&status.isolated_personas.length===0&&instance===null&&catalog===null&&confirmed===null&&view===null')
-    assert page.locator('[data-template-action]:not(:disabled)').count()==0
-    for name in ['consumer-create','consumer-resume','consumer-confirm','consumer-save-request','consumer-adopt','consumer-adoption-finalize']:
-        assert page.locator('#'+name).is_disabled(),name
-
-
-def native_template_link(page,link,target,first,method):
-    require_operation_time(15);counts=request_counts()
-    before=page.evaluate('()=>({hash:location.hash,history:history.length,sentinel:window.__sameTemplateDocument,proof:window.__templateVisual.same()})')
-    assert before['hash']!='#'+target
-    locator=page.locator(link)
-    if method=='mouse':locator.click(timeout=15000)
-    else:locator.focus();page.keyboard.press('Enter')
-    page.wait_for_function('target=>location.hash==="#"+target',arg=target,timeout=15000)
-    at=page.evaluate('()=>({hash:location.hash,history:history.length,sentinel:window.__sameTemplateDocument,active:document.activeElement.id,focusVisible:document.activeElement.matches(":focus-visible"),heading:(()=>{const e=document.activeElement.querySelector(":scope>h2");if(!e)return null;const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:innerWidth,height:innerHeight}})(),proof:window.__templateVisual.same()})')
-    assert at['sentinel']==before['sentinel'] and at['active']==target and at['history'] in (before['history'],before['history']+1),dict(before=before,at=at)
-    heading=at['heading'];assert heading and 0<=heading['top']<heading['bottom']<=heading['height'] and 0<=heading['left']<heading['right']<=heading['width'],at
-    if method=='Enter':assert at['focusVisible'],at
-    assert all(at['proof'][k] for k in ['cpSame','bodySame','snapshotSame']),at
-    # Back retains a forward entry; the next native anchor may replace it rather than grow length.
-    page.keyboard.press('Tab');tab=page.evaluate("()=>({id:document.activeElement.id,focusVisible:document.activeElement.matches(':focus-visible')})");assert tab==dict(id=first,focusVisible=True),tab
-    page.go_back(timeout=15000,wait_until='load')
-    page.wait_for_function('hash=>location.hash===hash',arg=before['hash'],timeout=15000)
-    after=page.evaluate('()=>({hash:location.hash,sentinel:window.__sameTemplateDocument,proof:window.__templateVisual.same()})')
-    assert after['sentinel']==before['sentinel'] and all(after['proof'][k] for k in ['cpSame','bodySame','snapshotSame']) and counts==request_counts(),after
-    REPORT.setdefault('template_navigation',[]).append(dict(method=method,target=target,landed=at,after_back=after,subsequent_Tab=tab,request_delta=0))
-
-
-def template_breakpoints(page):
-    counts=request_counts();viewport=dict(page.viewport_size);scroll=page.evaluate('()=>({x:scrollX,y:scrollY})')
-    try:
-        for width in [700,899,900]:
-            page.set_viewport_size(dict(width=width,height=1000))
-            row=page.evaluate("""()=>({width:innerWidth,documentWidth:document.documentElement.scrollWidth,session:getComputedStyle(document.querySelector('.consumer-session')).gridTemplateColumns,draft:getComputedStyle(document.querySelector('.consumer-draft')).display,draftColumns:getComputedStyle(document.querySelector('.consumer-draft')).gridTemplateColumns})""")
-            assert row['documentWidth']<=width
-            assert len(row['session'].split())==(1 if width<=700 else 2),row
-            assert row['draft']==('grid' if width>=900 else 'block'),row
-            if width>=900:assert len(row['draftColumns'].split())==2,row
-            bounded_rectangles(rectangles(page,['.consumer-session','.consumer-draft','.consumer-return','.consumer-plan','#consumer-partial-label']))
-            REPORT.setdefault('template_breakpoints_geometry_only',[]).append(row)
-    finally:page.set_viewport_size(viewport);page.evaluate('p=>scrollTo({left:p.x,top:p.y,behavior:"instant"})',scroll)
-    assert dict(page.viewport_size)==viewport and page.evaluate('()=>({x:scrollX,y:scrollY})')==scroll and counts==request_counts()
-
-
-def template_observation(page,width):
-    page.wait_for_function('()=>status!==null',timeout=15000);template_safety(page);template_marker(page)
-    page.evaluate('()=>scrollTo(0,0)')
-    bounded_rectangles(rectangles(page,['body>h1','#banner','.template-entry-nav']),True)
-    observe(page,'template-entry-'+str(width),True);capture(page,'01-template-entry-1200.png' if width==1200 else '02-template-entry-390.png')
-    page.evaluate(TEMPLATE_FIXTURE);template_safety(page)
-    for link,target,first in [('a[href="#template-consumer-workspace"]','template-consumer-workspace','consumer-token'),('a[href="#template-governance-workspace"]','template-governance-workspace','template-actor')]:
-        for method in ['mouse','Enter']:native_template_link(page,link,target,first,method)
-    for mode in ['SUBMITTING','UNKNOWN']:
-        guard_counts=request_counts()
-        page.evaluate('mode=>window.__templateVisual.mode(mode)',mode);template_safety(page)
-        rows=page.evaluate("""()=>Object.keys(window.__templateVisual.fields).map(id=>({id,disabled:$(id).disabled,color:getComputedStyle($(id)).color,background:getComputedStyle($(id)).backgroundColor}))""")
-        assert all(r['disabled'] for r in rows),rows
-        native_template_link(page,'a[href="#template-consumer-workspace"]','template-consumer-workspace','consumer-token','Enter')
-        # Controlled DOM mutation on a disabled draft tests the original restore handler, not native typing.
-        page.evaluate("()=>{$('consumer-goal').value='SYNTHETIC rejected visual edit';$('consumer-goal').dispatchEvent(new Event('input',{bubbles:true}))}")
-        assert page.evaluate('()=>window.__templateVisual.same().snapshotSame') and guard_counts==request_counts()
-        REPORT.setdefault('template_pending_guards',[]).append(dict(width=width,state=mode,disabled=rows,original_object_body_draft_preserved=True,request_delta=0,scope='transparent client UI-state only; no actual submitted request/permission'))
-    if width==1200:template_breakpoints(page)
-    # Long original PARTIAL checkbox is measured/font-read without a dedicated PNG or real eligibility claim.
-    page.locator('#consumer-partial-label').evaluate("e=>e.scrollIntoView({block:'start',behavior:'instant'})")
-    partial=rectangles(page,['#consumer-partial-label']);bounded_rectangles(partial,True)
-    assert not page.locator('#consumer-partial-confirm').is_checked() and page.locator('#consumer-partial-confirm').is_disabled()
-    observe(page,'template-long-partial-label-geometry-only-'+str(width),True)
-    REPORT.setdefault('template_partial_label_geometry_only',[]).append(dict(width=width,rows=partial,scope='renderer fixture, not a real partial offer or authorization'))
-    compose_fixture(page,'.consumer-draft>fieldset:first-of-type')
-    frame_required(page,['[data-visual-fixture]','.consumer-draft>fieldset:nth-of-type(1)','.consumer-draft>fieldset:nth-of-type(2)'])
-    observe(page,'template-fields-'+str(width),True);capture(page,'03-template-fields-1200.png' if width==1200 else '04-template-fields-390.png')
-    compose_fixture(page,'.consumer-return');frame_required(page,['.consumer-return'])
-    observe(page,'template-return-'+str(width),True);capture(page,'05-template-return-1200.png' if width==1200 else '06-template-return-390.png')
-    template_safety(page)
-
-
-def rgba_color(value):
-    import re
-    m=re.fullmatch(r'rgba?\(([^)]+)\)',value);assert m,value
-    numbers=[float(n.strip()) for n in m[1].split(',')];assert len(numbers) in (3,4) and (len(numbers)==3 or numbers[3]==1),value
-    assert all(0<=n<=255 for n in numbers[:3]);return numbers[:3]
-
-
-def contrast_ratio(foreground,background):
-    def luminance(channels):
-        values=[n/255 for n in channels];values=[n/12.92 if n<=.04045 else ((n+.055)/1.055)**2.4 for n in values]
-        return sum(n*w for n,w in zip(values,[.2126,.7152,.0722]))
-    low,high=sorted([luminance(rgba_color(foreground)),luminance(rgba_color(background))]);return (high+.05)/(low+.05)
-
-
-GUIDE_BUTTON_STYLE="""()=>{const e=$('workspace-open'),s=getComputedStyle(e);return {color:s.color,background:s.backgroundColor,opacity:s.opacity,disabled:e.disabled,transitionDuration:s.transitionDuration,transitionProperty:s.transitionProperty,animations:e.getAnimations({subtree:true}).map(a=>({playState:a.playState,currentTime:a.currentTime,duration:a.effect.getTiming().duration}))}}"""
-
-
-def guide_stable_observation(page):
-    page.evaluate("([summary,text])=>{const d=document.createElement('details');d.dataset.visualFixture='true';const h=document.createElement('summary');h.textContent=summary;const p=document.createElement('p');p.textContent=text;d.append(h,p);document.querySelector('aside').prepend(d)}",[FIXTURE_SUMMARY,FIXTURE_LABEL])
-    payload={name:str(i)*43 for i,name in enumerate(['enterprise','specialist','executor','second_enterprise','second_specialist','second_executor'])}
-    page.locator('#sessions').set_input_files(dict(name='synthetic-six-role-local-only.json',mimeType='application/json',buffer=json.dumps(payload).encode()))
-    page.wait_for_function("()=>$('status').dataset.tone==='success'&&!$('workspace-open').disabled",timeout=15000)
-    # Keep the original transition intact and wait for its actual completion.
-    page.wait_for_function("()=>$('workspace-open').getAnimations({subtree:true}).every(a=>a.playState==='finished'||a.playState==='idle')",timeout=15000)
-    page.evaluate('()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))')
-    compose_fixture(page,'.guide-session');frame_required(page,['[data-visual-fixture]','#sessions','#workspace-open','#status'])
-    before=page.evaluate(GUIDE_BUTTON_STYLE);assert not before['disabled'] and before['opacity']=='1' and not before['animations'],before
-    ratio=contrast_ratio(before['color'],before['background']);assert ratio>=4.5,(before,ratio)
-    observe(page,'guide-stable-enabled-button-390',True);capture(page,'07-guide-stable-390.png')
-    after=page.evaluate(GUIDE_BUTTON_STYLE);assert after==before,(before,after)
-    REPORT['guide_stable_button']=dict(before=before,after=after,contrast_ratio=ratio,viewport=dict(page.viewport_size),scope='actual stable computed state around PNG; not causation proof for old08 frame or full accessibility')
-
 
 def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='42')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='43')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
-        (PRIVATE/'current.html').write_bytes(pages['web.html']);(PRIVATE/'guide.html').write_bytes(pages['park_demo_web.html']);(PRIVATE/'template.html').write_bytes(pages['template_candidate_web.html'])
-        REPORT['fixture_scope']='Transparent closed-status UI projection and client renderer fixtures; not create_isolated_template_app execution, business or permission acceptance'
+        (PRIVATE/'upgrade.html').write_bytes(pages[PAGE_NAME])
+        REPORT['fixture_scope']='Transparent original template-upgrade GET projections and explicitly unsubmitted pending UI state; not factory/API/PG, real authority or committed business recovery'
         env=dict(os.environ)
         for key,name in [('XDG_CONFIG_HOME','chrome-config'),('XDG_CACHE_HOME','chrome-cache')]:
             p=PRIVATE/name;p.mkdir(mode=0o700);env[key]=str(p)
-        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+pages['template_candidate_web.html'].decode('utf-8'))
+        env=installed_font_environment(env,PRIVATE/'fontconfig',REPORT,extra_text=FIXTURE_SUMMARY+FIXTURE_LABEL+pages[PAGE_NAME].decode('utf-8')+json.dumps(CHECK_REPLY,ensure_ascii=False))
         signal.signal(signal.SIGALRM,timeout);signal.alarm(max(1,int(90-(time.monotonic()-START))))
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start();origin='http://127.0.0.1:'+str(server.server_port)
         with owned_browser(env) as browser:
             base.resource.verify_sandbox(browser,REPORT);REPORT['browser_version']=browser.version
             for width in (1200,390):
-                stage('TEMPLATE_'+str(width));context,page=open_page(browser,origin,'/template',width)
-                try:template_observation(page,width)
+                stage('UPGRADE_'+str(width));context,page=open_page(browser,origin,width)
+                try:upgrade_observation(page,width)
                 finally:context.close()
-            stage('GUIDE_STABLE_390');context,page=open_page(browser,origin,'/guide',390)
-            try:guide_stable_observation(page)
-            finally:context.close()
-            assert FIXTURE_READS==FIXTURE_LIMITS,'each exact closed template status GET must be consumed'
+            assert {uri:FIXTURE_READS.get(uri,0) for uri in FIXTURE_LIMITS}==FIXTURE_LIMITS,'each exact GET fixture quota must be consumed'
+            assert FIXTURE_READS.get('/favicon.ico',0)<=2
             assert {p.name for p in OUT.glob('*.png')}==set(PNG_FILES)
             assert len(REPORT['requests'])<40 and len(REPORT['browser_requests'])<40
             assert not any(REPORT[k] for k in ('page_errors','violations','unexpected_GET','business_POSTs'))
@@ -413,6 +307,7 @@ def run_flow(started):
         REPORT['worker_final']=True;checkpoint()
     return 0 if REPORT['status']=='PASS' and not REPORT.get('checkpoint_errors') else 1
 
+
 def worker_main(path):
     global CHECKPOINT
     hand=json.loads(sys.stdin.buffer.readline(4096))
@@ -421,11 +316,12 @@ def worker_main(path):
     CHECKPOINT=Path(path)
     return run_flow(hand['started'])
 
+
 def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='42')
+        source=base.require_hosted(os.environ,run_number='43')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
