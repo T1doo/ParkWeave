@@ -150,6 +150,45 @@ class _Operation:
     def __init__(self, store):
         self.store = store; self.directory = None; self.caps = []; self.pins = {}
         self.config_format = store.config_format
+        self._read_facts = {}; self._state_fact = None; self._state_consumed = False
+        self.closed_caps = []; self.final_verified = False
+
+    @staticmethod
+    def _value_digest(value):
+        raw = e.canonical(value)
+        need(len(raw) <= 3*e.MAX_PLAINTEXT)
+        return hashlib.sha256(raw).digest()
+
+    def bind_read_state(self, state, caps):
+        # Facts originate only in successful read/decode/check below, and are
+        # tied to these exact held capabilities in this one operation.
+        need(self._state_fact is None and type(state) is PrivateState
+             and set(caps) == set(e.Purpose) and len(self.caps) == 4
+             and set(caps.values()) == set(self.caps[1:]))
+        facts = []
+        for purpose, cap in caps.items():
+            fact = self._read_facts.get(cap)
+            value = state.config if purpose is e.Purpose.CONFIG else (
+                state.database if purpose is e.Purpose.DATABASE else state.sessions)
+            need(fact is not None and fact[0] is purpose and fact[1] == self._value_digest(value)
+                 and fact[3] == self.pins[cap])
+            if purpose is not e.Purpose.CONFIG:
+                need(fact[2] == e.canonical(state.config['files'][purpose.value]))
+            facts.append((cap, fact))
+        digest = self._value_digest((state.database,state.sessions,state.config))
+        self._state_fact = (state,digest,tuple(facts))
+
+    def consume_read_state(self, state):
+        need(self._state_fact is not None and not self._state_consumed)
+        self._state_consumed = True  # Never retry a rejected or uncertain consumption.
+        original,digest,facts = self._state_fact
+        need(self.store.lease._operation_owner == get_ident() and self.store.lease._operation_depth > 0
+             and self.final_verified and len(self.closed_caps) == len(self.caps) == 4
+             and set(self.closed_caps) == set(self.caps) and state is original
+             and digest == self._value_digest((state.database,state.sessions,state.config))
+             and len(facts) == 3 and set(self._read_facts) == {cap for cap,_ in facts}
+             and all(self._read_facts[cap] == fact and self.pins.get(cap) == fact[3] for cap,fact in facts))
+        return endpoints.validate_record(state.config['endpoints'])
 
     def check_binding(self):
         s = self.store; s.lease._verify()
@@ -229,6 +268,7 @@ class _Operation:
         value = e.decode_plaintext(self.store.binding, purpose, plain, config_format=self.config_format)
         self.check()
         ref = dict(identity=list(self.pins[cap].identity), ciphertext_sha256=hashlib.sha256(raw).hexdigest())
+        self._read_facts[cap] = (purpose,self._value_digest(value),e.canonical(ref),self.pins[cap])
         return value, ref
 
     def write(self, purpose, payload):
@@ -284,9 +324,12 @@ class IsolatedFixedSecretStore:
                         if self.api.owns(cap, self.lease, parent) is not True:
                             raise StoreRefused('FIXED_SECRET_CLOSE_OWNERSHIP_UNKNOWN')
                         if self.api.close(cap) is not True: raise StoreRefused('FIXED_SECRET_CLOSE_UNKNOWN')
+                        context.closed_caps.append(cap)
                     except BaseException as error:
                         self._unknown_caps.append(cap); cleanup.append(error)
-                try: context.check_binding()
+                try:
+                    context.check_binding()
+                    context.final_verified = True
                 except BaseException as error: cleanup.append(error)
             # Registration must occur AFTER successful close of EVERY held
             # capability and the final lease/binding check, still under the
@@ -294,7 +337,7 @@ class IsolatedFixedSecretStore:
             if primary is None and not cleanup and type(result) is _EndpointRecovery:
                 try:
                     need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
-                    request = endpoints.validate_record(result.state.config['endpoints'])
+                    request = context.consume_read_state(result.state)
                     token = _ClosedEndpointRecovery()
                     _closed_endpoint_recoveries[token] = (self,request)
                     self._endpoint_finalizing = token
@@ -343,12 +386,16 @@ class IsolatedFixedSecretStore:
         return self._operate({'CONFIG': False}, publish)
 
     def _read_state(self, ctx):
-        config, _ = ctx.read(ctx.file(e.Purpose.CONFIG, False), e.Purpose.CONFIG)
+        caps = {e.Purpose.CONFIG: ctx.file(e.Purpose.CONFIG, False)}
+        config, _ = ctx.read(caps[e.Purpose.CONFIG], e.Purpose.CONFIG)
         values = {}
         for purpose in (e.Purpose.DATABASE, e.Purpose.SESSION):
-            values[purpose], ref = ctx.read(ctx.file(purpose, False), purpose)
+            caps[purpose] = ctx.file(purpose, False)
+            values[purpose], ref = ctx.read(caps[purpose], purpose)
             need(ref == config['files'][purpose.value])
-        return PrivateState(values[e.Purpose.DATABASE], values[e.Purpose.SESSION], config)
+        state = PrivateState(values[e.Purpose.DATABASE], values[e.Purpose.SESSION], config)
+        ctx.bind_read_state(state,caps)
+        return state
 
     def read_existing(self):
         return self._operate({'READY_STOPPED': True, 'VERIFY_FILES': False}, self._read_state)

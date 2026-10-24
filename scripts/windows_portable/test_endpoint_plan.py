@@ -190,6 +190,72 @@ class EndpointPlanChecks(unittest.TestCase):
         _,plan=self.store.read_existing_with_endpoint_plan()
         self.assertEqual(p.endpoint_record(self.lease,plan,mode=p.PlanMode.REOPEN)['api_port'],58000)
 
+    def test_operation_marker_without_three_file_reads_cannot_mint_a_plan(self):
+        self.reopen();self.api.files.clear();self.api.events.clear();self.crypto.calls.clear()
+        forged=s.PrivateState({}, {}, dict(endpoints=dict(schema='parkweave-private-endpoints/1',
+            host='127.0.0.1',database_port=54001,api_port=58001)))
+        with patch.object(p,'_register_held',wraps=p._register_held)as minted:
+            with self.assertRaises(s.StoreFailure):
+                self.store._operate({'READY_STOPPED':True},lambda ctx:s._EndpointRecovery(forged))
+        minted.assert_not_called();self.assertEqual(self.crypto.calls,[])
+        self.assertEqual(self.api.events,['open_secrets',('close','secrets')])
+        self.assertNotIn(self.lease,p._by_lease);self.assertTrue(self.store.failed and self.lease.poisoned)
+
+    def test_equal_state_copy_is_not_the_actual_read_state(self):
+        self.reopen()
+        def operation(ctx):
+            state=self.store._read_state(ctx)
+            return s._EndpointRecovery(s.PrivateState(deepcopy(state.database),deepcopy(state.sessions),deepcopy(state.config)))
+        with patch.object(p,'_register_held',wraps=p._register_held)as minted:
+            with self.assertRaises(s.StoreFailure):self.store._operate({'READY_STOPPED':True},operation)
+        minted.assert_not_called();self.assertEqual(len(self.crypto.calls),3)
+        self.assertFalse(self.api.caps);self.assertNotIn(self.lease,p._by_lease)
+
+    def test_actual_read_state_cannot_be_mutated_before_completion(self):
+        self.reopen()
+        def operation(ctx):
+            state=self.store._read_state(ctx)
+            state.config['endpoints']['api_port']=58001
+            return s._EndpointRecovery(state)
+        with patch.object(p,'_register_held',wraps=p._register_held)as minted:
+            with self.assertRaises(s.StoreFailure):self.store._operate({'READY_STOPPED':True},operation)
+        minted.assert_not_called();self.assertNotIn(self.lease,p._by_lease)
+        self.assertTrue(self.store.failed and self.lease.poisoned)
+
+    def test_state_from_another_completed_operation_is_not_a_recovery_source(self):
+        self.reopen();saved=self.store.read_existing();self.crypto.calls.clear();self.api.events.clear()
+        with patch.object(p,'_register_held',wraps=p._register_held)as minted:
+            with self.assertRaises(s.StoreFailure):
+                self.store._operate({'READY_STOPPED':True},lambda ctx:s._EndpointRecovery(saved))
+        minted.assert_not_called();self.assertEqual(self.crypto.calls,[])
+        self.assertEqual(self.api.events,['open_secrets',('close','secrets')])
+        self.assertNotIn(self.lease,p._by_lease)
+
+    def test_missing_verified_read_fact_cannot_be_replaced_by_complete_state_fields(self):
+        self.reopen()
+        def operation(ctx):
+            state=self.store._read_state(ctx)
+            cap=next(cap for cap,fact in ctx._read_facts.items()if fact[0] is e.Purpose.CONFIG)
+            del ctx._read_facts[cap]
+            return s._EndpointRecovery(state)
+        with patch.object(p,'_register_held',wraps=p._register_held)as minted:
+            with self.assertRaises(s.StoreFailure):self.store._operate({'READY_STOPPED':True},operation)
+        minted.assert_not_called();self.assertEqual(len(self.crypto.calls),3)
+        self.assertNotIn(self.lease,p._by_lease);self.assertFalse(self.api.caps)
+
+    def test_actual_operation_read_facts_can_only_be_consumed_once_after_close(self):
+        self.reopen();original=s._Operation.consume_read_state;observed=[]
+        def consume(ctx,state):
+            self.assertFalse(self.api.caps);self.assertTrue(ctx.final_verified)
+            request=original(ctx,state)
+            with self.assertRaises(s.StoreRefused):original(ctx,state)
+            observed.append(True)
+            return request
+        with patch.object(s._Operation,'consume_read_state',autospec=True,side_effect=consume):
+            _,plan=self.store.read_existing_with_endpoint_plan()
+        self.assertEqual(observed,[True])
+        self.assertEqual(p.endpoint_record(self.lease,plan,mode=p.PlanMode.REOPEN)['api_port'],58000)
+
     def test_closed_completion_proof_is_exact_single_use_and_cleared(self):
         self.reopen();captured=[];original=p._register_held
         def register(lease,request,mode,**kwargs):
