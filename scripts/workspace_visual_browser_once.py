@@ -1,4 +1,4 @@
-"""Run44/attempt1: paired record details; historical synthetic views, no backend."""
+"""Run45/attempt1: paired record details; historical synthetic views, no backend."""
 import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -14,7 +14,7 @@ REPORT=dict(scope='REAL_CHROME_RECORD_DETAILS_PAIRED_PRESENTATION_NO_BACKEND',st
     product_API=False,database=False,real_model_calls=0,business_POSTs=0,requests=[],browser_requests=[],
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0;CHECKPOINT=None
-BASELINE_SHA='8c5a93b793137504303f5c6325c1ada6e912d56e'
+BASELINE_SHA='baa294e5ea3894b9b54e34b8e586aef5b72300c8'
 BEFORE_SHA='aef270c81545161cce694b3e24b36cf90896816a'
 PAGE_NAME='web.html'
 PAGE_SHA256='ea2619e143893d6b6560526d689a05bdd17215d8490da4ae7c2add8afa18a5f1'
@@ -218,17 +218,71 @@ def presentation(page,component,variant,width):
     panel.screenshot(path=str(OUT/name),timeout=15000,mask=[page.locator('#token')])
 
 
+def startup_resources(label):
+    """Two small read-only Linux snapshots; not a resource-causality verdict.
+
+    Per-file byte limits bound diagnostic input. Existing worker/overall clocks
+    still bound execution; these reads do not create a new deadline or retry.
+    """
+    assert label in ('BEFORE_CHROME_LAUNCH','AFTER_CHROME_READY','AFTER_CHROME_LAUNCH_ERROR')
+    row=dict(label=label,seconds=round(time.monotonic()-START,6),scope='HOST_READ_ONLY_RESOURCE_OBSERVATION',errors=[])
+    def failed(name,error):
+        code=getattr(error,'errno',None)
+        row['errors'].append(dict(metric=name,type=type(error).__name__,errno=code if type(code) is int and 0<=code<=65535 else None))
+    for name,path,limit in (('load','/proc/loadavg',256),('memory','/proc/meminfo',8192),
+            ('pressure_cpu','/proc/pressure/cpu',512),('pressure_memory','/proc/pressure/memory',512),
+            ('pressure_io','/proc/pressure/io',512)):
+        try:
+            with open(path,'rb') as stream:raw=stream.read(limit+1)
+            assert len(raw)<=limit,'diagnostic byte limit'
+            text=raw.decode('ascii')
+            if name=='load':
+                values=[float(x) for x in text.split()[:3]]
+                assert len(values)==3 and all(0<=x<=1000000 for x in values)
+                row['load_1_5_15_minutes']=values
+            elif name=='memory':
+                values={}
+                for line in text.splitlines():
+                    key,_,value=line.partition(':')
+                    if key not in ('MemTotal','MemAvailable','MemFree','SwapTotal','SwapFree'):continue
+                    parts=value.split();assert len(parts)==2 and parts[1]=='kB'
+                    number=int(parts[0]);assert 0<=number<2**64 and key not in values;values[key]=number
+                assert 'MemTotal' in values and 'MemAvailable' in values
+                row['memory_kib']=values
+            else:
+                values={}
+                for line in text.splitlines():
+                    parts=line.split();assert len(parts)==5 and parts[0] in ('some','full') and parts[0] not in values
+                    fields=dict(part.split('=',1) for part in parts[1:]);assert set(fields)=={'avg10','avg60','avg300','total'}
+                    averages={key:float(fields[key]) for key in ('avg10','avg60','avg300')}
+                    assert all(0<=value<=100 for value in averages.values())
+                    total=int(fields['total']);assert 0<=total<2**64
+                    values[parts[0]]=dict(averages,total_us=total)
+                assert 'some' in values;row[name]=values
+        except Exception as error:failed(name,error)
+    try:
+        info=os.statvfs(os.environ['RUNNER_TEMP'])
+        assert info.f_frsize>0 and info.f_bavail>=0 and info.f_blocks>=0
+        row['runner_temp_space_bytes']=dict(available=info.f_frsize*info.f_bavail,total=info.f_frsize*info.f_blocks)
+    except Exception as error:failed('runner_temp_space',error)
+    rows=REPORT.setdefault('startup_resources',[]);assert len(rows)<2
+    rows.append(row)
+
+
 @contextmanager
 def owned_browser(font_env):
     with sync_playwright() as pw:
-        stage('CHROME_SANDBOX');require_operation_time(15)
+        stage('CHROME_SANDBOX');startup_resources('BEFORE_CHROME_LAUNCH');require_operation_time(15)
         try:
             browser=pw.chromium.launch(channel='chrome',headless=True,chromium_sandbox=True,args=['--enable-automation'],env=font_env,timeout=15000)
         except BaseException as error:
             REPORT['status']='FAIL';REPORT['error_type']=type(error).__name__;REPORT['error']=str(error)
+            startup_resources('AFTER_CHROME_LAUNCH_ERROR')
             checkpoint() # Preserve the primary launch failure before SDK teardown.
             raise
-        try:yield browser
+        try:
+            startup_resources('AFTER_CHROME_READY')
+            yield browser
         except BaseException:
             if PAGE is not None and not PAGE.is_closed():
                 try:PAGE.screenshot(path=str(OUT/'failure-visual.png'),timeout=5000)
@@ -257,7 +311,7 @@ def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='44')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='45')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
@@ -318,7 +372,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='44')
+        source=base.require_hosted(os.environ,run_number='45')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
