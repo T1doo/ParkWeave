@@ -62,6 +62,13 @@ class InitdbPipeSourceChecks(unittest.TestCase):
         self.assertEqual(read.args[1].value, 5)
         close_attrs = {x.attr for x in ast.walk(methods['close']) if isinstance(x, ast.Attribute)}
         self.assertFalse(close_attrs & {'_verify', '_query', '_key_held'})
+        use = next(x for x in tree.body if isinstance(x, ast.FunctionDef) and x.name == '_pwfile_name_held')
+        handlers = [x for x in ast.walk(use) if isinstance(x, ast.ExceptHandler)]
+        failure = handlers[0]
+        self.assertTrue(any(isinstance(x, ast.Assign) and ast.unparse(x.targets[0]) == 'server.failed'
+                            and x.value.value is True for x in failure.body if isinstance(x, ast.Assign)))
+        self.assertTrue(any(isinstance(x, ast.Call) and isinstance(x.func, ast.Attribute)
+                            and ast.unparse(x.func) == 'server.close' for x in ast.walk(failure)))
 
 
 if __name__ == '__main__': unittest.main()

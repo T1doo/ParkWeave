@@ -83,6 +83,7 @@ def native_initdb_pipe():
 
 
 _by_lease = weakref.WeakKeyDictionary()
+_by_owner = weakref.WeakKeyDictionary()
 
 
 def _owner_sid_held(lease, server):
@@ -90,6 +91,8 @@ def _owner_sid_held(lease, server):
     _need(type(owner) is _RestrictedPrimaryCandidate and owner._profile is TokenProfile.CREATE_CANDIDATE)
     _need(not owner._failed and not owner._closed and owner._derived is not None
           and owner._prepared_dacl is not None)
+    binding = _by_owner.get(owner)
+    _need(binding is not None and binding[0] is lease and binding[1] == server._key)
     snapshot = owner._query(owner._derived)
     _need(snapshot == owner._restricted_snapshot)
     _need(owner._read_default_dacl() == owner._prepared_dacl)
@@ -106,11 +109,13 @@ def _create(lease, server):
     _need(type(lease) is FixedDirectoryLease and type(lease.fs) is FixedWindowsFilesystem
           and type(lease.fs.api) is NativeFixedLeaseAPI and server._lease is lease)
     with server._owner._lock, server._lock:  # fixed lease -> token -> server order
-        _need(lease not in _by_lease and not server._closed and not server.failed)
+        _need(lease not in _by_lease and server._owner not in _by_owner
+              and not server._closed and not server.failed)
         lease._verify()
         key = _key_held(lease)
         _need(lease.record['phase'] == 'CLUSTER')
         _by_lease[lease] = server  # reserve one attempt before native actions
+        _by_owner[server._owner] = (lease, key)
         server._key = key
         try:
             sid, canonical = _owner_sid_held(lease, server)
@@ -136,12 +141,21 @@ def _pwfile_name_held(lease, server, owner):
           and server._owner is owner and _by_lease.get(lease) is server)
     with owner._lock, server._lock:
         _need(server._ready and not server._closed and not server.failed)
-        lease._verify()
-        _need(_key_held(lease) == server._key and lease.record['phase'] == 'CLUSTER')
-        sid, _ = _owner_sid_held(lease, server)
-        server._verify_native(sid)
-        lease._verify()
-        return server._name  # only this registered object can supply a future command
+        try:
+            lease._verify()
+            _need(_key_held(lease) == server._key and lease.record['phase'] == 'CLUSTER')
+            sid, _ = _owner_sid_held(lease, server)
+            server._verify_native(sid)
+            lease._verify()
+            return server._name  # only this registered object can supply a future command
+        except BaseException as error:
+            phase, primary = server.phase, type(error).__name__
+            server.failed = True
+            try:
+                server.close()
+            except BaseException:
+                pass
+            raise PipeFailure(phase, primary, server.cleanup_errors, server.winerror) from None
 
 
 class _OwnedInitdbPipe:
