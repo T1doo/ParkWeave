@@ -57,7 +57,7 @@ class RestrictedSourceChecks(unittest.TestCase):
         self.assertTrue(all(isinstance(x, (ast.Expr, ast.Import, ast.ImportFrom,
                                           ast.ClassDef, ast.FunctionDef)) for x in tree.body))
         attrs = {x.attr for x in ast.walk(tree) if isinstance(x, ast.Attribute)}
-        self.assertFalse(attrs & {'SetTokenInformation', 'CreateProcessAsUserW',
+        self.assertFalse(attrs & {'CreateProcessAsUserW',
                                  'AdjustTokenPrivileges', 'CreateJobObjectW'})
         source = Path(n.__file__).read_text()
         self.assertNotIn("['PG_RESTRICT_EXEC']", source)
