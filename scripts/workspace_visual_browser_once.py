@@ -1,4 +1,4 @@
-"""Run45/attempt1: paired record details; historical synthetic views, no backend."""
+"""Run46/attempt1: paired record details; historical synthetic views, no backend."""
 import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -14,10 +14,10 @@ REPORT=dict(scope='REAL_CHROME_RECORD_DETAILS_PAIRED_PRESENTATION_NO_BACKEND',st
     product_API=False,database=False,real_model_calls=0,business_POSTs=0,requests=[],browser_requests=[],
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0;CHECKPOINT=None
-BASELINE_SHA='baa294e5ea3894b9b54e34b8e586aef5b72300c8'
+BASELINE_SHA='e146b3cc403324c817ec4c60e37ce391d90ab83d'
 BEFORE_SHA='aef270c81545161cce694b3e24b36cf90896816a'
 PAGE_NAME='web.html'
-PAGE_SHA256='ea2619e143893d6b6560526d689a05bdd17215d8490da4ae7c2add8afa18a5f1'
+PAGE_SHA256='c1a2fe0f7e052277761fb497be36ac41c8abb794958c49235d2a202f6c2b9024'
 BEFORE_SHA256='7798e0e5c08462fd98cc20382d9e429a57a58ca61bbe95513c32065c7d755884'
 PNG_FILES=tuple(f'{i:02d}-{variant}-{component}-{width}.png'
     for i,(component,width,variant) in enumerate(
@@ -314,7 +314,7 @@ def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='45')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='46')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
@@ -375,7 +375,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='45')
+        source=base.require_hosted(os.environ,run_number='46')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
