@@ -1,0 +1,50 @@
+name: ParkWeave portable native load preparation (closed)
+
+# No ordinary review-branch push matches this reserved branch/path. The job is
+# also unconditionally closed. A future reviewed, specifically approved binding
+# must replace both this guard and the driver's closed guards before execution.
+on:
+  push:
+    branches: [dev/portable-native-load-once-20261025]
+    paths: [scripts/windows_ci/portable_native_load_once.py]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-portable-native-load-once-20261025
+  cancel-in-progress: false
+
+jobs:
+  native-load:
+    if: ${{ false }}
+    runs-on: windows-2025
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        timeout-minutes: 1
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+          sparse-checkout: |
+            scripts/windows_ci
+            scripts/windows_portable
+            .github/workflows/portable-native-load-once.yml
+          sparse-checkout-cone-mode: false
+      - name: Closed candidate; no pip, PG, credentials, ACL or app entry
+        timeout-minutes: 5
+        shell: pwsh
+        env:
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (!$env:RUNNER_TOOL_CACHE) { throw 'EXISTING_BOOTSTRAP_REQUIRED' }
+          $bootstrap = Join-Path $env:RUNNER_TOOL_CACHE 'Python\3.12.10\x64\python.exe'
+          if (!(Test-Path -LiteralPath $bootstrap -PathType Leaf)) { throw 'EXISTING_BOOTSTRAP_REQUIRED' }
+          & $bootstrap -B -m scripts.windows_ci.portable_native_load_once
+          if ($LASTEXITCODE -ne 0) { throw 'NATIVE_LOAD_NOT_ACCEPTED' }
