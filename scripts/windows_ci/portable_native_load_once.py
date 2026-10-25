@@ -4,6 +4,11 @@ No PG asset, app entry, credentials, security mutation or system trust update.
 Temporary files are retained until disposable-runner disposal, never recursively
 deleted by pathname. Cooperative identity checks do not claim same-user attack
 resistance or production directory/OWNER acceptance.
+
+180/60/300 seconds are cooperative phase checks, not per-operation hard real-
+time guarantees. The existing owned_job.stop_tree uses its own five-second
+deadline; no additional thirty-second cleanup loop is introduced. The workflow
+six-minute timeout is the outer execution bound.
 """
 import hashlib
 import json
@@ -103,8 +108,20 @@ def verify_source(repo, context):
                  'scripts/windows_portable/runtime-assets.json', 'scripts/windows_ci/owned_job.py',
                  'scripts/windows_ci/job_stop_observation.py'):
         require((repo / name).read_bytes() == git('show', probe.PRODUCT_SOURCE + ':' + name), 'PRODUCT_SOURCE_DRIFT')
+    frozen_probe = None
     for name in NEW_PATHS:
-        require((repo / name).read_bytes() == git('show', 'HEAD:' + name), 'INVOCATION_SOURCE_DRIFT')
+        path = repo / name
+        if name == 'scripts/windows_ci/portable_native_load_probe.py':
+            before = probe.file_state(path)
+            raw = path.read_bytes()
+            require(probe.file_state(path) == before and before[1] == {
+                'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}, 'PROBE_SOURCE_CHANGED_DURING_READ')
+            frozen_probe = raw
+        else:
+            raw = path.read_bytes()
+        require(raw == git('show', context['GITHUB_SHA'] + ':' + name), 'INVOCATION_SOURCE_DRIFT')
+    require(type(frozen_probe) is bytes and 0 < len(frozen_probe) <= 128 * 1024, 'VERIFIED_PROBE_BYTES_REQUIRED')
+    return frozen_probe
 
 
 def selected_assets(raw):
@@ -302,7 +319,7 @@ def run(repo, context):
     window_gate(context)
     started = time.monotonic()
     require(os.name == 'nt', 'WINDOWS_REQUIRED')
-    verify_source(repo, context)
+    frozen_probe = verify_source(repo, context)
     rows = selected_assets((repo / 'scripts/windows_portable/runtime-assets.json').read_bytes())
     workspace = None
     result = {'status': 'PARTIAL', 'product_source': probe.PRODUCT_SOURCE, 'phase': 'PREPARATION',
@@ -312,6 +329,8 @@ def run(repo, context):
               'file_cleanup': 'RETAINED_UNTIL_DISPOSABLE_RUNNER_DISPOSAL'}
     try:
         workspace = Workspace(context['RUNNER_TEMP']); workspace.checkpoint(result)
+        frozen_path = workspace.put('evidence/frozen-probe.py', frozen_probe)
+        result['frozen_probe'] = {'bytes': len(frozen_probe), 'sha256': hashlib.sha256(frozen_probe).hexdigest()}
         def checkpoint(index, name):
             result['asset_completed_count'] = index; result['asset_in_flight'] = name
             workspace.checkpoint(result)
@@ -328,7 +347,7 @@ def run(repo, context):
             backend = MonitoredBackend(workspace, (stdout, stderr))
             try:
                 completed = owned_job.run([str(executable), '-I', '-B', '-S',
-                    str(repo / 'scripts/windows_ci/portable_native_load_probe.py'), str(root), str(contract)],
+                    str(frozen_path), str(root), str(contract)],
                     timeout=NATIVE_SECONDS, stdout=stdout, stderr=stderr, cwd=workspace.root,
                     env=child_environment(context, workspace), _backend=backend)
             finally:

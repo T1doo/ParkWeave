@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -15,6 +16,58 @@ from . import owned_job
 
 
 class NativeLoadPreparationChecks(unittest.TestCase):
+    def run_preparation_drift_fixture(self, *, change_frozen=False):
+        """Exercise real parent sequencing/files, replace only native/network seams."""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp); repo = base / 'repo'
+            original = repo / 'scripts/windows_ci/portable_native_load_probe.py'
+            original.parent.mkdir(parents=True); original.write_bytes(b'ORIGINAL_REVIEWED_PROBE')
+            lock = repo / 'scripts/windows_portable/runtime-assets.json'
+            lock.parent.mkdir(parents=True); lock.write_bytes(b'fictional lock')
+            dispatched = []
+            def verified(*args):
+                raw = original.read_bytes()
+                self.assertEqual(raw, b'ORIGINAL_REVIEWED_PROBE')
+                return raw
+            def prepare(workspace, rows, deadline, checkpoint):
+                original.write_bytes(b'CHANGED_DURING_PREPARATION')
+                if change_frozen:
+                    frozen = workspace.root / 'evidence/frozen-probe.py'
+                    if frozen.exists(): frozen.write_bytes(b'CHANGED_FROZEN_COPY')
+                workspace.put('payload/runtime/python/python.exe', b'fictional executable')
+                return driver.payload.file_manifest({'runtime/python/python.exe': b'fictional executable'})
+            def owned(args, **kwargs):
+                dispatched.append((Path(args[4]), Path(args[4]).read_bytes()))
+                kwargs['stdout'].write(json.dumps({'status': 'OBSERVED',
+                    'product_source': probe.PRODUCT_SOURCE, 'pid': 17}).encode())
+                return SimpleNamespace(returncode=0, cleanup='OWNED_TREE_STOPPED')
+            context = {'RUNNER_TEMP': str(base), 'GITHUB_SHA': 'a' * 40, 'GITHUB_REF': driver.EXECUTION_REF}
+            with patch.object(driver, 'window_gate'), patch.object(driver, 'verify_source', side_effect=verified), \
+                    patch.object(driver, 'selected_assets', return_value=[]), \
+                    patch.object(driver, 'prepare', side_effect=prepare), \
+                    patch.object(driver, 'os', SimpleNamespace(name='nt')), \
+                    patch.object(driver, 'child_environment', return_value={}), \
+                    patch.object(driver, 'MonitoredBackend', return_value=SimpleNamespace(_owned_parent_pid=17)), \
+                    patch.object(driver.owned_job, 'run', side_effect=owned) as dispatch, \
+                    redirect_stdout(io.StringIO()):
+                result = driver.run(repo, context)
+            return result, dispatched, dispatch.call_count, original.read_bytes()
+
+    def test_prepare_drift_can_only_dispatch_original_verified_probe_bytes(self):
+        result, dispatched, count, repository_bytes = self.run_preparation_drift_fixture()
+        self.assertEqual(result['status'], 'OBSERVED_NOT_PRODUCT_ACCEPTANCE')  # Mock observation only.
+        self.assertEqual(count, 1)
+        self.assertEqual(repository_bytes, b'CHANGED_DURING_PREPARATION')
+        self.assertEqual(dispatched[0][1], b'ORIGINAL_REVIEWED_PROBE')
+        self.assertEqual(dispatched[0][0].parts[-2:], ('evidence', 'frozen-probe.py'))
+
+    def test_changed_frozen_copy_refuses_before_owned_dispatch(self):
+        result, dispatched, count, _ = self.run_preparation_drift_fixture(change_frozen=True)
+        self.assertEqual(result['status'], 'FAIL')
+        self.assertEqual(result['primary_error']['reason'], 'WORKSPACE_FILE_CHANGED')
+        self.assertEqual(count, 0)
+        self.assertEqual(dispatched, [])
+
     def test_both_clis_refuse_before_work_or_native_access(self):
         with patch.object(driver, 'verify_source') as source, patch.object(driver, 'Workspace') as workspace, \
                 patch.object(driver, 'fetch_asset') as fetch, patch.object(probe, 'own_windows_modules') as native:
