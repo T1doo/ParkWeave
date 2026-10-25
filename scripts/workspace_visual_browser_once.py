@@ -78,7 +78,7 @@ def require_operation_time(seconds):
 
 
 # Four separate contexts load both exact pages twice. No business endpoint exists.
-FIXTURE_LIMITS={'/before':2,'/after':2,'/api/run-access/status':4}
+FIXTURE_LIMITS={'/before':2,'/after':2}
 FIXTURE_READS={}
 
 def fixture_response(uri):
@@ -88,10 +88,7 @@ def fixture_response(uri):
     elif uri in FIXTURE_LIMITS:
         count=FIXTURE_READS.get(uri,0)+1;FIXTURE_READS[uri]=count
         if count<=FIXTURE_LIMITS[uri]:
-            if uri in ('/before','/after'):
-                return 200,'text/html; charset=utf-8',(PRIVATE/(uri[1:]+'.html')).read_bytes()
-            body=dict(enabled=False,read_available=False,scope='PRESENTATION_REPLAY_DISABLED')
-            return 200,'application/json',json.dumps(body).encode()
+            return 200,'text/html; charset=utf-8',(PRIVATE/(uri[1:]+'.html')).read_bytes()
     REPORT['unexpected_GET'].append(uri)
     return 404,'application/json',b'{}'
 
@@ -215,7 +212,13 @@ def presentation(page,component,variant,width):
     number=(0 if component=='dispatch' else 4)+(0 if width==1200 else 2)+(1 if variant=='before' else 2)
     name=f'{number:02d}-{variant}-{component}-{width}.png';assert name in PNG_FILES
     assert panel.locator('[data-visual-fixture]').inner_text()==FIXTURE_LABEL
-    panel.screenshot(path=str(OUT/name),timeout=15000,mask=[page.locator('#token')])
+    # This driver uses only an explicit synthetic value and clips this panel.
+    # Never apply a page-wide password mask at coordinates outside its clip.
+    assert page.locator('#token').input_value()=='SYNTHETIC_VIEW_REPLAY_NO_AUTHORITY'
+    assert panel.locator('#token').count()==0
+    assert panel.evaluate("""e=>{const a=e.getBoundingClientRect(),b=document.getElementById('token').getBoundingClientRect();
+        return b.bottom<=a.top||b.top>=a.bottom||b.right<=a.left||b.left>=a.right}""")
+    panel.screenshot(path=str(OUT/name),timeout=15000)
 
 
 def startup_resources(label):
