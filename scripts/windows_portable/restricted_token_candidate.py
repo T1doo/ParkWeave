@@ -46,9 +46,15 @@ def _dacl_bytes(buffer, used):
     return bytes(buffer[offset:offset + size])
 
 
-def _admit_default_dacl(raw):
+def _admit_default_dacl(raw, current_sid):
     """Narrow canonical subset, after the native builder validated the ACL."""
     _need(type(raw) is bytes and 8 <= len(raw) <= 65532 and len(raw) % 4 == 0)
+    _need(type(current_sid) is bytes and 8 <= len(current_sid) <= 68
+          and current_sid[0] == 1 and current_sid[1] <= 15
+          and len(current_sid) == 8 + 4 * current_sid[1])
+    nt_authority = b'\x00' * 5 + b'\x05'
+    trusted = {current_sid, b'\x01\x01' + nt_authority + struct.pack('<I', 18),
+               b'\x01\x02' + nt_authority + struct.pack('<II', 32, 544)}
     revision, zero1, size, count, zero2 = struct.unpack_from('<BBHHH', raw)
     _need(revision in (2, 4) and zero1 == zero2 == 0 and size == len(raw) and count <= 2048)
     offset, seen_allow = 8, False
@@ -61,6 +67,7 @@ def _admit_default_dacl(raw):
         seen_allow = seen_allow or kind == 0
         sid = raw[offset + 8:offset + size]
         _need(sid[0] == 1 and sid[1] <= 15 and len(sid) == 8 + 4 * sid[1])
+        _need(kind == 1 or sid in trusted)  # never preserve an unknown allow
         offset += size
     _need(offset <= len(raw))  # remaining free space belongs to the original ACL
 
@@ -266,7 +273,7 @@ class _RestrictedPrimaryCandidate:
             from .default_dacl_candidate import _NativeDefaultDaclBuilder
             candidate = _NativeDefaultDaclBuilder().build(original, current[1])
             self._phase = 'ADMIT_DEFAULT_DACL_SUBSET'
-            _admit_default_dacl(original)
+            _admit_default_dacl(original, current[1])
             _need(self._read_default_dacl() == original)
             _need(self._query(self._derived) == current)
             allocation = C.create_string_buffer(candidate, len(candidate))

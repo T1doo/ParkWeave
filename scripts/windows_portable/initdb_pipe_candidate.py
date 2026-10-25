@@ -189,6 +189,7 @@ class _OwnedInitdbPipe:
             function = getattr(library, name)
             function.argtypes, function.restype = arguments, result
         self._handle = self._sd = self._name = self._key = None
+        self._claimed_group = None
         self._ready = self._closed = self._sd_release_attempted = self.failed = False
         self.phase, self.winerror, self.cleanup_errors = 'NEW', None, []
 

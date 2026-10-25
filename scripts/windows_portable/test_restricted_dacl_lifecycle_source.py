@@ -36,11 +36,16 @@ class RestrictedDaclLifecycleSourceChecks(unittest.TestCase):
         with self.assertRaises(n.TokenRefused): n._dacl_bytes(buffer, C.sizeof(buffer))
 
     def test_only_understood_canonical_explicit_ace_subset_admitted(self):
-        n._admit_default_dacl(acl())  # empty ACL is not NULL
-        n._admit_default_dacl(acl(ace(1), ace(0, 1)))
+        n._admit_default_dacl(acl(), SID)  # empty ACL is not NULL
+        n._admit_default_dacl(acl(ace(1), ace(0, 1)), SID)
         for raw in (acl(ace(0), ace(1)), acl(ace(0, 0x10)), acl(ace(5)),
                     acl(ace(0, 0x40)), acl(ace(sid=SID+b'EXTR')), acl(ace(sid=b'\x02'+SID[1:]))):
-            with self.assertRaises(n.TokenRefused): n._admit_default_dacl(raw)
+            with self.assertRaises(n.TokenRefused): n._admit_default_dacl(raw, SID)
+        everyone = b'\x01\x01' + b'\x00'*5 + b'\x01' + struct.pack('<I', 0)
+        with self.assertRaises(n.TokenRefused): n._admit_default_dacl(acl(ace(sid=everyone)), SID)
+        n._admit_default_dacl(acl(ace(kind=1, sid=everyone), ace()), SID)
+        system = b'\x01\x01' + b'\x00'*5 + b'\x05' + struct.pack('<I', 18)
+        n._admit_default_dacl(acl(ace(sid=system), ace()), SID)
 
     def test_setter_is_derived_only_serialized_and_factory_stays_closed(self):
         self.assertEqual(n.TokenProfile.DERIVE_ONLY.value, 0xa)
