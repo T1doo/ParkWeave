@@ -103,7 +103,7 @@ class NativePreparationChecks(unittest.TestCase):
         call=next(x for x in ast.walk(method) if isinstance(x,ast.Call) and isinstance(x.func,ast.Attribute) and x.func.attr=='ntcreate')
         self.assertEqual(call.args[7].value,2)
         self.assertEqual(call.args[6].value,3)
-        need=next(x for x in ast.walk(method) if isinstance(x,ast.Call) and isinstance(x.func,ast.Name) and x.func.id=='need' and 'status == 0' in ast.unparse(x))
+        need=next(x for x in ast.walk(method) if isinstance(x,ast.Call) and isinstance(x.func,ast.Name) and x.func.id=='need' and 'completed_nt_handle' in ast.unparse(x))
         own=next(x for x in ast.walk(method) if isinstance(x,ast.Call) and isinstance(x.func,ast.Attribute) and x.func.attr=='append' and ast.unparse(x.func)=='self.handles.append')
         self.assertLess(need.lineno,own.lineno)
         attrs={x.attr for x in ast.walk(tree) if isinstance(x,ast.Attribute)}

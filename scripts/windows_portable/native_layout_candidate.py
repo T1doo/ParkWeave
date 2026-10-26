@@ -10,7 +10,8 @@ import os
 import time
 import weakref
 
-from parkweave.windows_handles import PTR,UnicodeString,ObjectAttributes,IOStatus
+from parkweave.windows_handles import (PTR,UnicodeString,ObjectAttributes,IOStatus,
+    nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
 from parkweave.windows_files import private_acl,DIRECTORY,REPARSE,UNSAFE_ATTRIBUTES
 from .fixed_directories import FixedDirectoryLease,_exclusive_entry,_exclusive_operation
 from .fixed_windows_journal import FixedWindowsFilesystem,NativeFixedLeaseAPI
@@ -119,6 +120,7 @@ class _NativeLayout:
         rows=[];identities={tuple(self.lease.fs.root_id),tuple(self.lease.fs.lock_id),tuple(self.lease.fs.journal_id)}
         for leaf in NAMES:
             self._root(key,descriptor,path)
+            require_nt_create_ready(self.api.readonly)
             raw=leaf.encode('utf-16-le');buffer=C.create_string_buffer(raw+b'\0\0')
             name=UnicodeString(len(raw),len(raw)+2,C.cast(buffer,PTR))
             sd=C.create_string_buffer(private_file_descriptor(self.probe.sid_bytes))
@@ -126,8 +128,13 @@ class _NativeLayout:
             handle,io=PTR(),IOStatus()
             status=self.api.ntcreate(C.byref(handle),0x120081,C.byref(attrs),C.byref(io),None,
                 0x10,3,2,0x20|0x200000|1,None,0)  # FILE_CREATE only, no existing fallback.
-            need(status==0 and handle.value not in (None,PTR(-1).value))
+            status=nt_status(status)
+            if status==0x103:
+                retain_pending_nt_create(self.api.readonly,handle,io,attrs,name,buffer,sd)
+                need(False)
+            need(completed_nt_handle(status,handle.value))
             self.handles.append(handle.value)
+            need(status==0)
             need(io.Information==2)
             identity,security=self._inspect(handle.value,leaf,path)
             need(identity not in identities);identities.add(identity)

@@ -85,7 +85,9 @@ class NativeLeaseAPI:
                     raise
 
     def relative_file(self, parent, name, *, fresh=False, write=False, exclusive=False, rename=False):
-        from parkweave.windows_handles import UnicodeString, ObjectAttributes, IOStatus, PTR
+        from parkweave.windows_handles import (UnicodeString, ObjectAttributes, IOStatus, PTR,
+            nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
+        require_nt_create_ready(self.readonly)
         from parkweave.windows_files import component
         component(name)
         raw = name.encode('utf-16-le'); text = C.create_string_buffer(raw + b'\0\0')
@@ -100,9 +102,14 @@ class NativeLeaseAPI:
         options = 0x20 | 0x200000 | 0x40 | (2 if write else 0)
         status = self.ntcreate(C.byref(handle), access, C.byref(attributes), C.byref(io), None,
                                0x80, 0 if exclusive else 1, 2 if fresh else 1, options, None, 0)
-        if status != 0 or not handle.value:
+        status=nt_status(status)
+        if status==0x103:
+            retain_pending_nt_create(self.readonly,handle,io,attributes,unicode,text)
+            raise LeaseRefused('NATIVE_RELATIVE_FILE_PENDING_UNKNOWN')
+        owned=completed_nt_handle(status,handle.value)
+        if status != 0 or not owned:
             primary = LeaseRefused('NATIVE_RELATIVE_FILE_REFUSED')
-            if handle.value:
+            if owned:
                 try: self.close(handle.value)
                 except BaseException as cleanup:
                     raise BaseExceptionGroup('NATIVE_OPEN_CLEANUP_UNKNOWN', [primary, cleanup]) from primary

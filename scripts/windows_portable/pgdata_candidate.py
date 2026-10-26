@@ -20,7 +20,8 @@ import weakref
 
 from parkweave.windows_files import (Ace, Security, DIRECTORY, REPARSE,
     UNSAFE_ATTRIBUTES, PROTECTED, DACL_PRESENT, component, private_acl)
-from parkweave.windows_handles import UnicodeString, ObjectAttributes, IOStatus, PTR
+from parkweave.windows_handles import (UnicodeString, ObjectAttributes, IOStatus, PTR,
+    nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
 from .default_dacl_candidate import _sid_buffer
 from .endpoint_plan import _key_held
 from .fixed_directories import FixedDirectoryLease, _exclusive_entry, _exclusive_operation
@@ -290,6 +291,7 @@ class _NewDataTarget:
 
     def _open(self, parent, name, *, create=False, descriptor=None, anchor=False):
         self._time(); component(name)
+        require_nt_create_ready(self.api.readonly)
         raw = name.encode('utf-16-le'); text = C.create_string_buffer(raw+b'\0\0')
         unicode = UnicodeString(len(raw), len(raw)+2, C.cast(text, PTR))
         sd = C.create_string_buffer(descriptor) if descriptor is not None else None
@@ -299,9 +301,13 @@ class _NewDataTarget:
         status = self.api.ntcreate(C.byref(handle), 0x120081, C.byref(attrs), C.byref(io),
             None, 0x10 if create else 0, 3 if anchor else 7, 2 if create else 1,
             0x20|0x200000|(1 if create else 0), None, 0)
-        # A failed NTSTATUS does not transfer ownership of an output integer.
-        _need(status == 0 and handle.value not in (None, PTR(-1).value))
-        self.handles.append(handle.value)  # Success-owned before further checks.
+        status=nt_status(status)
+        if status==0x103:
+            retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
+            _need(False)
+        owned=completed_nt_handle(status,handle.value)
+        if owned:self.handles.append(handle.value)
+        _need(status==0 and owned)  # Information-success is owned, but not admitted.
         if create: _need(io.Information == 2)  # FILE_CREATED, never OPEN_IF.
         return handle.value
 

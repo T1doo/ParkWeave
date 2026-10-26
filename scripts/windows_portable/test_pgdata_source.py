@@ -137,7 +137,11 @@ class PGDataSourceChecks(unittest.TestCase):
                       isinstance(x.func, ast.Attribute) and x.func.attr == 'append')
         status = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Call) and
                       isinstance(x.func, ast.Name) and x.func.id == '_need' and 'status == 0' in ast.unparse(x))
-        self.assertLess(status.lineno, append.lineno)
+        ownership = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Assign) and
+                         isinstance(x.value, ast.Call) and isinstance(x.value.func, ast.Name) and
+                         x.value.func.id == 'completed_nt_handle')
+        self.assertLess(ownership.lineno, append.lineno)
+        self.assertLess(append.lineno, status.lineno)  # Information success is owned before refusal.
         created = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Call) and
                        isinstance(x.func, ast.Name) and x.func.id == '_need' and 'io.Information' in ast.unparse(x))
         self.assertLess(append.lineno, created.lineno)

@@ -52,6 +52,8 @@ CurrentUser保护包装仅内部持精确`_NativeDPAPI`，不接受隔离保护�
 
 异步Connect使用原owned手工复位event与实际OVERLAPPED，提交前挂入server及全局强登记。一次总截止最多5秒且预留0.5秒清理；CancelIoEx仅请求取消，GetOverlappedResult对Connect的字节数未定义，不能作为证据。取消后未确认completion则UNKNOWN，原OV/event/pipe HANDLE保留，不释放或报告cleanup完成；server.close对任何未退役记录拒绝，明确cleanup-only观察也不能自动重新Connect。event关闭FALSE或异常都保留UNKNOWN且只尝试一次。此为有截止的合作式等待与未知隔离，不承诺所有同步元数据/关闭调用的硬实时上限。
 
+所有相对NtCreateFile调用统一按signed 32-bit NTSTATUS区分所有权与准入：warning/error的非空输出不是自有HANDLE，不猜关闭；completed NT_SUCCESS包含信息状态，有效非pseudo原HANDLE先登记，仍仅STATUS_SUCCESS进入正常路径，信息成功拒绝后只清理该已拥有句柄并保主因/关闭错误。STATUS_PENDING不当普通失败退栈：强保留原API、PHANDLE、IO_STATUS_BLOCK、ObjectAttributes、UnicodeString、名称及可选SD存储，同一API后续打开保持拒绝；不自动wait/重试/转成功，也不猜关闭pending输出。本修复不改访问掩码、ACL、路径或原生门，纯分类函数不构成原生能力证明。
+
 下一实际验证仅为待审方案，未创建workflow/触发运行：先选择明确授权的隔离Windows x64环境，固定源码/已锁载荷，仅自建私有临时子目录、单次最多6分钟/512MiB、无模型/业务网络/PG/传秘/用户电脑。先核真实固定租约/目录保护与互斥准入；原门未闭合时必须按真实拒绝记录，不绕门构造“已接受”lease。实际创建私有DACL目录、派生Token/默认DACL/TokenOwner、DPAPI合成哨兵等安全动作须逐项另批。当前NO_RESUME窗口不能验证真实initdb客户端成功；若后续验证客户端，须另外明确原自有测试进程创建/恢复范围与清理合同。任何窗都不能代签完整安装、数据库/actor权威或产品可用。
 
 process_env.py只读取/转发白名单OS执行必需项：PATH、Windows系统目录/COMSPEC/PATHEXT、临时目录、locale/TZ。调用者显式添加该进程的Park DSN/模式/私有路径。未知环境项、HOME、PYTHONPATH、代理、模型token、其他项目密钥、迁移owner及测试owner不传给API/worker。CLI迁移/隔离测试owner仅传给明确对应进程，不打印值；本轮测试用虚构哨兵验证未知键不读取/不转发。

@@ -16,7 +16,8 @@ import weakref
 from threading import get_ident
 
 from parkweave.windows_files import private_acl, DIRECTORY, REPARSE, UNSAFE_ATTRIBUTES
-from parkweave.windows_handles import PTR, UnicodeString, ObjectAttributes, IOStatus, FileInfo
+from parkweave.windows_handles import (PTR, UnicodeString, ObjectAttributes, IOStatus, FileInfo,
+    nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
 from . import credential_envelope as e, endpoint_plan as ep, fixed_secret_store as s
 from .dpapi_native_candidate import _NativeDPAPI
 from .fixed_directories import FixedDirectoryLease
@@ -138,6 +139,7 @@ class _NativeSecretFiles:
 
     def _open(self,parent,leaf,*,directory,create):
         self._gate()
+        require_nt_create_ready(self.api.readonly)
         if directory:
             need(leaf=='secrets' and parent==self.lease.fs.root and self._parent_cap is None and not create)
         else:
@@ -154,9 +156,14 @@ class _NativeSecretFiles:
         status=self.api.ntcreate(C.byref(handle),access,C.byref(attributes),C.byref(io),None,
             0x10 if directory else 0x80,0 if create else 1,2 if create else 1,
             0x20|0x200000|(1 if directory else 0x40),None,0)
-        need(status==0 and handle.value not in (None,PTR(-1).value))
+        status=nt_status(status)
+        if status==0x103:
+            retain_pending_nt_create(self.api.readonly,handle,io,attributes,name,buffer,descriptor)
+            need(False)
+        need(completed_nt_handle(status,handle.value))
         cap=_NativeCapability();self.caps[cap]=_Owned(handle.value,self._parent_cap,leaf,directory,create)
         try:
+            need(status==0)
             need(io.Information==(2 if create else 1))  # CREATED / OPENED.
             self.inspect(cap)
             self.caps[cap].creation_descriptor=self.api.descriptor(handle.value)

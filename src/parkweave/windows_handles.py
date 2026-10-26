@@ -30,6 +30,26 @@ FILE_OPEN=1
 SYNC_NONALERT=0x20
 OPEN_REPARSE=0x200000
 
+# Pending output storage must outlive the native operation. There is no
+# automatic completion/recovery path and no handle ownership inferred here.
+_NT_CREATE_PENDING={}
+
+def nt_status(value):
+    if type(value) is not int or not -(2**31)<=value<2**32:raise Denied('invalid NTSTATUS')
+    return C.c_int32(value).value
+
+def completed_nt_handle(status,handle):
+    return (nt_status(status)>=0 and nt_status(status)!=0x103 and type(handle) is int
+            and 0<handle<PTR(-1).value-15)
+
+def require_nt_create_ready(api):
+    if getattr(api,'_nt_create_pending',False):raise Denied('NT create outcome unknown; no retry')
+
+def retain_pending_nt_create(api,handle,io,attributes,name,buffer,descriptor=None):
+    # Retain the original PHANDLE/IOSB/OA/name storage, never copied outputs.
+    api._nt_create_pending=True
+    _NT_CREATE_PENDING[id(io)]=(api,handle,io,attributes,name,buffer,descriptor)
+
 class WinAPI:
     def __init__(self):
         if os.name!='nt' or C.sizeof(PTR)!=8:raise Denied('native Windows x64 only')
@@ -65,11 +85,13 @@ class WinAPI:
         if not result:raise Denied('Windows handle operation refused; error='+str(C.get_last_error()))
     def close(self,handle):self.need(self._close(handle))
     def open_drive(self,drive):
+        require_nt_create_ready(self)
         # Drive-root path only; no arbitrary complete business path passed to Win32.
         handle=self.create('\\\\?\\'+drive,READ_CONTROL|READ_ATTRIBUTES,SHARE_READ,None,3,0x02000000|0x00200000,None)
         if handle in (None,C.c_void_p(-1).value):raise Denied('Windows drive open refused')
         return handle
     def open_relative(self,parent,name,read_data):
+        require_nt_create_ready(self)
         component(name)
         raw=name.encode('utf-16-le');buf=C.create_string_buffer(raw+b'\0\0')
         u=UnicodeString(len(raw),len(raw)+2,C.cast(buf,PTR))
@@ -77,9 +99,17 @@ class WinAPI:
         handle=PTR();io=IOStatus()
         access=READ_CONTROL|READ_ATTRIBUTES|SYNCHRONIZE|(FILE_READ_DATA if read_data else 0)
         status=self.ntcreate(C.byref(handle),access,C.byref(oa),C.byref(io),None,0,SHARE_READ,FILE_OPEN,SYNC_NONALERT|OPEN_REPARSE,None,0)
-        if status!=0 or not handle.value:
-            if handle.value:self.close(handle.value)
-            raise Denied('Windows relative open refused; status='+hex(status&0xffffffff))
+        status=nt_status(status)
+        if status==0x103:
+            retain_pending_nt_create(self,handle,io,oa,u,buf)
+            raise Denied('Windows relative open pending; outcome unknown')
+        owned=completed_nt_handle(status,handle.value)
+        if status!=0 or not owned:
+            primary=Denied('Windows relative open refused; status='+hex(status&0xffffffff))
+            if owned:
+                try:self.close(handle.value)
+                except BaseException as cleanup:raise BaseExceptionGroup('WINDOWS_OPEN_AND_CLOSE_UNKNOWN',[primary,cleanup])
+            raise primary
         return handle.value
     def info(self,handle):
         if self.gettype(handle)!=1:raise Denied('Windows non-disk handle refused')
