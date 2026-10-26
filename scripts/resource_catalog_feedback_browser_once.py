@@ -30,7 +30,7 @@ ROW=dict(id='00000000-0000-4000-8000-000000000061',name='合成园区共享空�
     source=dict(kind='SYNTHETIC',id='fixture-visual-catalog-only',revision=1,statement='虚构目录，只为核对界面；外部未受理，无线下履约。'),
     open_from='2026-10-26T00:00:00Z',open_until='2026-10-27T00:00:00Z')
 FIXTURES=dict(resource=ROW)
-FIXTURE_LIMITS={'/before':2,'/after':2,'/api/synthetic-resources':7,'/api/resource-bundles':5,'/api/plan-approval/status':5}
+FIXTURE_LIMITS={'/before':2,'/after':2,'/api/synthetic-resources':7,'/api/resource-bundles':5,'/api/plan-approval/status':5,'/api/run-access/status':4}
 FIXTURE_READS={};FIXTURE_LOCK=threading.Lock();RELEASE=threading.Event();PHASE='READY';HOLD=False
 
 def presentation_contract(before,after):
@@ -67,6 +67,7 @@ def fixture_response(uri):
         if phase in ('ERROR','DENIED'):return (500 if phase=='ERROR' else 403),'application/json',b'{}'
         value=dict(server_time='2026-10-26T12:00:00Z',items=[] if phase=='EMPTY' else [ROW])
     elif uri=='/api/resource-bundles':value=dict(actor_id='SYNTHETIC_VIEW_REPLAY_NO_AUTHORITY',items=[])
+    elif uri=='/api/run-access/status':value=dict(enabled=False,read_available=False,role=None,can_approve=False,can_revoke=False,actual_run_access=False,deployment_enabled=False)
     else:value=dict(enabled=False,approval_scope=None,source_reapproval_enabled=False,
         plan_replacement_enabled=False,known_not_started_enabled=False,p3_closure_enabled=False)
     return 200,'application/json',json.dumps(value,ensure_ascii=False).encode()
