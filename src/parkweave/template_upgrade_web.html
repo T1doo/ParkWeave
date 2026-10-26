@@ -41,7 +41,18 @@ function current(c){return JSON.stringify(c)===JSON.stringify(context());}
 function buttons(){const blocked=busy||!!pending;$('catalog').disabled=blocked;$('check').disabled=blocked||!$('target').value||!$('instance').value;document.querySelectorAll('[data-choice]').forEach(b=>b.disabled=blocked||!inspection?.check.allowed_choices.includes(b.dataset.choice));$('reason').disabled=blocked;$('recover').disabled=busy||pending?.kind==='apply';$('key').disabled=busy||!!pending;$('apply').disabled=blocked||!applicationReady()||!$('apply-confirm').checked||!structureConfirmed()||!noteCarryConfirmed()||!$('apply-reason').value.trim();$('apply-confirm').disabled=blocked;$('structure-confirm').disabled=blocked;$('note-carry-confirm').disabled=blocked;$('apply-reason').disabled=blocked;$('apply-recover').disabled=busy||pending?.kind==='choice';$('apply-key').disabled=busy||!!pending;}
 function resetConfirmations(){$('apply-confirm').checked=false;$('structure-confirm').checked=false;$('structure-confirm-label').hidden=true;$('note-carry-confirm').checked=false;$('note-carry-confirm-label').hidden=true;$('note-carry-preview').hidden=true;$('note-carry-preview').textContent='';}
 function clear(dropCatalog=false){generation++;inspection=null;pending=null;busy=false;for(const id of ['result','error','receipt','application','apply-receipt'])$(id).textContent='';$('key').value='';$('reason').value='';$('apply-key').value='';$('apply-reason').value='';resetConfirmations();$('original-case').hidden=true;$('original-case').href='';if(dropCatalog)$('target').replaceChildren();buttons();}
-async function call(c,url,method='GET',body,key){let r,x;try{r=await fetch(url,{method,headers:{Authorization:'Bearer '+c.token,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});x=await r.json();}catch(e){if(!current(c))throw Error('STALE');e.unknown=method==='POST';throw e;}if(!current(c))throw Error('STALE');if(!r.ok){const e=Error(r.status===403?'当前身份或范围无权访问':r.status===409?'版本、来源或选择记录已变化，请重新检查':r.status===422?'输入不符合检查合同':'请求未完成');e.unknown=method==='POST'&&r.status>=500;e.denied=r.status===403;throw e;}return x;}
+async function call(c,url,method='GET',body,key){
+ let r,x;
+ try{r=await fetch(url,{method,headers:{Authorization:'Bearer '+c.token,'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:body?JSON.stringify(body):undefined});}
+ catch(e){if(!current(c))throw Error('STALE');e.unknown=method==='POST';throw e;}
+ if(!current(c))throw Error('STALE');
+ // Keep the existing 403 clear/refusal semantics independent of error-body JSON.
+ if(r.status===403){const e=Error('当前身份或范围无权访问');e.unknown=false;e.denied=true;throw e;}
+ try{x=await r.json();}catch(e){if(!current(c))throw Error('STALE');e.unknown=method==='POST';throw e;}
+ if(!current(c))throw Error('STALE');
+ if(!r.ok){const e=Error(r.status===409?'版本、来源或选择记录已变化，请重新检查':r.status===422?'输入不符合检查合同':'请求未完成');e.unknown=method==='POST'&&r.status>=500;throw e;}
+ return x;
+}
 function fail(c,e){if(e.message==='STALE'||!current(c))return;if(e.denied)clear(true);$('error').textContent=e.unknown?'结果未知，请保留原请求键并只读核对；未观察到记录不等于原请求不会迟到。':e.message;}
 function applicationReady(){const a=inspection?.application;return !!((a?.requires_note_carry_confirmation===true?noteCarryReady(a):a?.eligible===true) && a.choice_revision===inspection.revision && a.choice_revision>0 && a.choice_event_sha256 && a.plan_id && a.plan_revision>0 && a.preparation_revision>0 && a.source_sha256 && (a.requires_structure_confirmation!==true||(a.structure_change&&/^[a-f0-9]{64}$/.test(a.structure_sha256))) && ['COMPATIBLE','NEEDS_RECHECK'].includes(inspection.check.classification));}
 function structureConfirmed(){return inspection?.application?.requires_structure_confirmation!==true||$('structure-confirm').checked===true;}
