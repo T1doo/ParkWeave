@@ -38,7 +38,30 @@ if(mode==='intake_cold_asgi'){
  context.fetch=async(path,options={})=>{calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};};
 }
 (async()=>{
- if(mode==='same_batch_receipt_navigation'){
+ if(mode.startsWith('resource_catalog_chain_')){
+  const scenario=mode.slice('resource_catalog_chain_'.length),opening=$('resource-catalog').onclick(),catalog=calls.at(-1);
+  check(catalog.path==='/api/synthetic-resources');check(catalog.options.headers.Authorization==='Bearer SYNTHETIC_SESSION_A');
+  if(scenario==='denied'){
+   finish(catalog,403,{});await tick();check(calls.length===1);await opening;
+   check($('resource-form').hidden);check(run('bundleActor===null'));check($('resource-error').textContent.includes('权限'));
+  }else if(scenario==='identity_switch'){
+   $('token').value='SYNTHETIC_SESSION_B';$('token').oninput();
+   finish(catalog,200,{server_time:'2026-10-26T12:00:00Z',items:[]});await tick();check(calls.length===1);await opening;
+   check($('resource-catalog-view').children.length===0);check(run('bundleActor===null'));
+  }else if(scenario==='superseded'){
+   const latest=$('resource-catalog').onclick(),fresh=calls.at(-1);
+   finish(catalog,403,{});await tick();check(calls.length===2);await opening;
+   finish(fresh,200,{server_time:'2026-10-26T12:00:00Z',items:[]});await tick();
+   check(calls.length===4);for(const call of calls.slice(2))finish(call,200,call.path==='/api/resource-bundles'?{actor_id:'SYNTHETIC_ACTOR_A',items:[]}:{enabled:false,approval_scope:null});await latest;
+   check(run('bundleActor')==='SYNTHETIC_ACTOR_A');check($('resource-error').textContent==='');
+  }else{
+   check(['empty','populated'].includes(scenario));
+   const items=scenario==='empty'?[]:[{id:id(61),name:'合成资源',capacity:3,revision:1,buffer_seconds:0,enabled:true,source:{kind:'SYNTHETIC',id:'fixture',revision:1,statement:'非真实资源'},open_from:'2026-10-26T00:00:00Z',open_until:'2026-10-27T00:00:00Z'}];
+   finish(catalog,200,{server_time:'2026-10-26T12:00:00Z',items});await tick();check(calls.length===3);
+   for(const call of calls.slice(1)){check(call.options.headers.Authorization==='Bearer SYNTHETIC_SESSION_A');check(['/api/resource-bundles','/api/plan-approval/status'].includes(call.path));finish(call,200,call.path==='/api/resource-bundles'?{actor_id:'SYNTHETIC_ACTOR_A',items:[]}:{enabled:false,approval_scope:null});}
+   await opening;check(run('bundleActor')==='SYNTHETIC_ACTOR_A');check(run('planApprovalEnabled')===false);check($('resource-form').hidden===(scenario==='empty'));
+  }
+ }else if(mode==='same_batch_receipt_navigation'){
   const rows=[{id:id(21),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1},{id:id(22),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1}];
   const listing=$('receipt-list').onclick();finish(calls.at(-1),200,{role:'enterprise_operator',items:rows});await listing;
   const buttons=$('receipt-items').children.filter(e=>e.tagName==='button');check(buttons.length===2);
