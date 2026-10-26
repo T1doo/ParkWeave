@@ -48,6 +48,14 @@ if(mode==='intake_cold_asgi'){
    $('token').value='SYNTHETIC_SESSION_B';$('token').oninput();
    finish(catalog,200,{server_time:'2026-10-26T12:00:00Z',items:[]});await tick();check(calls.length===1);await opening;
    check($('resource-catalog-view').children.length===0);check(run('bundleActor===null'));
+  }else if(scenario==='handoff_identity_switch'){
+   catalog.resolve({status:200,ok:true,json:async()=>{
+    let change=()=>{$('token').value='SYNTHETIC_SESSION_B';$('token').oninput();};
+    for(let n=0;n<5;n++){const next=change;change=()=>Promise.resolve().then(next);}change();
+    return {server_time:'2026-10-26T12:00:00Z',items:[]};
+   }});
+   await tick();check(calls.length===1);await opening;
+   check($('resource-catalog-view').children.length===0);check(run('bundleActor===null'));
   }else if(scenario==='superseded'){
    const latest=$('resource-catalog').onclick(),fresh=calls.at(-1);
    finish(catalog,403,{});await tick();check(calls.length===2);await opening;

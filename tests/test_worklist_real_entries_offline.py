@@ -4,7 +4,7 @@ import pytest
 from test_preparation import preparation_fixture,headers
 
 
-@pytest.mark.parametrize('scenario',['denied','identity_switch','superseded','empty','populated'])
+@pytest.mark.parametrize('scenario',['denied','identity_switch','handoff_identity_switch','superseded','empty','populated'])
 def test_resource_catalog_followups_keep_originating_read(scenario):
     result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),
         'resource_catalog_chain_'+scenario],cwd=Path(__file__).resolve().parents[1],
