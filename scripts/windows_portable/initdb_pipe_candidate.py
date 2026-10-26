@@ -95,6 +95,7 @@ def _owner_sid_held(lease, server):
     _need(binding is not None and binding[0] is lease and binding[1] == server._key)
     snapshot = owner._query(owner._derived)
     _need(snapshot == owner._restricted_snapshot)
+    _need(owner._prepared_owner == snapshot[1] and owner._read_owner() == owner._prepared_owner)
     _need(owner._read_default_dacl() == owner._prepared_dacl)
     sid = snapshot[1]
     storage = _sid_buffer(sid)

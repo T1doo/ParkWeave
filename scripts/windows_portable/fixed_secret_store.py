@@ -214,7 +214,7 @@ class _Operation:
         need(tuple(r['root']) == s.binding.root and tuple(r['lock']) == s.binding.lock
              and tuple(r['journal']) == s.binding.journal and r['handoff'] == 'OWNED')
         s.binding.record()
-        if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3:
+        if self.config_format in (e.ConfigFormat.INSTANCE_SCHEMA3,e.ConfigFormat.PGDATA_SCHEMA4):
             need(s.lease._verified_instance_uuid() == s.binding.instance_id)
 
     def check(self):
@@ -405,15 +405,21 @@ class IsolatedFixedSecretStore:
         phase = 'CREDENTIALS' if purpose is e.Purpose.DATABASE else 'SESSIONS'
         return self._operate_held({phase:False},lambda ctx:ctx.write(purpose,payload))
 
-    def publish_config(self, database, runtime, *, endpoint_plan=None):
-        return self._operate({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan))
+    def publish_config(self, database, runtime, *, endpoint_plan=None, pgdata_target=None):
+        return self._operate({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan,pgdata_target))
 
-    def _publish_config_held(self, database, runtime, *, endpoint_plan):
-        return self._operate_held({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan))
+    def _publish_config_held(self, database, runtime, *, endpoint_plan, pgdata_target=None):
+        return self._operate_held({'CONFIG':False},self._config_writer(database,runtime,endpoint_plan,pgdata_target))
 
-    def _config_writer(self, database, runtime, endpoint_plan):
+    def _config_writer(self, database, runtime, endpoint_plan, pgdata_target):
         def publish(ctx):
-            if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3:
+            pgdata = None
+            if self.config_format is e.ConfigFormat.PGDATA_SCHEMA4:
+                from .pgdata_candidate import _profile_held
+                pgdata = _profile_held(self.lease, pgdata_target)
+            else:
+                need(pgdata_target is None)
+            if self.config_format in (e.ConfigFormat.INSTANCE_SCHEMA3,e.ConfigFormat.PGDATA_SCHEMA4):
                 endpoint_values = endpoints._record_held(self.lease, endpoint_plan, mode=endpoints.PlanMode.NEW)
             else:
                 need(endpoint_plan is None)
@@ -422,8 +428,12 @@ class IsolatedFixedSecretStore:
                 cap = ctx.file(purpose, False)
                 _, refs[purpose.value] = ctx.read(cap, purpose)
             payload = dict(schema=self.config_format.value, files=refs, database=database, runtime=runtime)
-            if self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3: payload['endpoints'] = endpoint_values
-            return ctx.write(e.Purpose.CONFIG, payload)
+            if self.config_format in (e.ConfigFormat.INSTANCE_SCHEMA3,e.ConfigFormat.PGDATA_SCHEMA4): payload['endpoints'] = endpoint_values
+            if pgdata is not None: payload['pgdata'] = pgdata
+            result = ctx.write(e.Purpose.CONFIG, payload)
+            if pgdata is not None:
+                need(_profile_held(self.lease, pgdata_target) == pgdata)
+            return result
         return publish
 
     def _read_state(self, ctx):

@@ -123,6 +123,10 @@ def _parse(buffer, length, kind):
         _need(length >= C.sizeof(SidAttributes))
         row = SidAttributes.from_buffer(buffer)
         return _sid(buffer, length, row.sid, C.sizeof(SidAttributes))
+    if kind == 4:  # TOKEN_OWNER, distinct from TOKEN_USER.
+        _need(length >= C.sizeof(C.c_void_p))
+        pointer = C.c_void_p.from_buffer(buffer).value
+        return _sid(buffer, length, pointer, C.sizeof(C.c_void_p))
     _need(kind in (2, 3) and length >= 4)
     count = C.c_uint32.from_buffer(buffer).value
     offset, row_type = ((GroupLayout.groups.offset, SidAttributes) if kind == 2
@@ -189,6 +193,7 @@ class _RestrictedPrimaryCandidate:
         self._phase, self._winerror = 'NEW', None
         self._restricted_snapshot = self._prepared_dacl = None
         self._dacl_attempted = False
+        self._owner_attempted, self._prepared_owner = False, None
 
     def _api(self, ok):
         if not ok:
@@ -260,6 +265,39 @@ class _RestrictedPrimaryCandidate:
                                                C.sizeof(buffer), C.byref(used)))
         return _dacl_bytes(buffer, used.value)
 
+    def _read_owner(self, token=None):
+        buffer, used = C.create_string_buffer(4096), C.c_uint32()
+        self._phase = 'QUERY_TOKEN_OWNER'
+        self._api(self._adv.GetTokenInformation(self._derived if token is None else token,
+            4, buffer, C.sizeof(buffer), C.byref(used)))
+        return _parse(buffer, used.value, 4)
+
+    @_serialized
+    def prepare_owner(self):
+        """Source-only owned derived token setter; no factory invokes it."""
+        _need(self._profile is TokenProfile.CREATE_CANDIDATE and self._derived is not None
+              and not self._failed and not self._closed and not self._owner_attempted)
+        self._owner_attempted = True
+        try:
+            current = self._query(self._derived)
+            _need(current == self._restricted_snapshot)
+            original = self._read_owner()
+            from .default_dacl_candidate import _sid_buffer
+            storage = _sid_buffer(current[1])
+            value = C.c_void_p(C.addressof(storage))  # TOKEN_OWNER is one PSID.
+            _need(self._read_owner() == original and self._query(self._derived) == current)
+            self._phase = 'SET_OWNED_DERIVED_TOKEN_OWNER'
+            self._api(self._adv.SetTokenInformation(self._derived, 4, C.byref(value), C.sizeof(value)))
+            _need(self._read_owner() == current[1] and self._query(self._derived) == current)
+            self._prepared_owner = current[1]
+        except BaseException as error:
+            primary_type, phase, winerror = type(error).__name__, self._phase, self._winerror
+            self._failed = True
+            cleanup_type = None
+            try: self.close()
+            except BaseException as cleanup_error: cleanup_type = type(cleanup_error).__name__
+            raise TokenFailure(primary_type, cleanup_type, phase, winerror) from None
+
     @_serialized
     def prepare_default_dacl(self):
         """Serialize this owner; repeated reads are not an OS atomic CAS."""
@@ -308,6 +346,7 @@ class _RestrictedPrimaryCandidate:
             except BaseException:
                 errors += 1
         self._derived = None
+        self._prepared_owner = None
         self._prepared_dacl = self._restricted_snapshot = None
         if errors:
             self._failed = True

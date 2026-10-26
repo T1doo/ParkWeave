@@ -28,7 +28,13 @@ PGDATA专用源码候选`pgdata_candidate.py`仅限同一V2租约、generation=1
 
 根能力仅登记于本次原租约，绑定实例UUID、root/lock/journal身份与generation、data/PGDATA物理身份、冻结描述符及规则版本`parkweave-pgdata-current-user-inheritance/1`；不按路径认领，不接旧目录/迁移或持久JSON恢复。initdb冻结命令及每次创建前freshcheck须消费同一精确目录能力。源中提供有界held-parent枚举/相对打开/owner/raw ACL/文件身份/单硬链接/reparse/同卷核验及两轮所选元数据一致性检查，文件大小不套用资源TXT预算；不读取业务内容、不宣称全DB不变或原子树快照。外部tablespace/WAL重解析逃逸拒绝。漂移或未知关闭在内存标记UNKNOWN并poison租约；保留原件和已尝试关闭的未知句柄记录，不删目录、不修ACL、不重试未知关闭；不宣称journal UNKNOWN已耐久。
 
-该候选未接生产工厂/打包入口，`launch_ready=False`，NO_RESUME/NO_SECRET保留。原生NtCreateFile/目录枚举/继承结果、TokenOwner当前用户设置与实际child读回均未执行或验收；仅检查owner不能保证未来创建者默认owner。持久认证CONFIG中的profile绑定与REOPEN尚未实现，旧实例不能借本能力重开。当前held VolumeGUID路径尚未获PostgreSQL canonicalize路径兼容验收，禁止因此恢复执行；需后续绑定可供PG使用且解析到同一held物理根的受约束路径。源码检查不授权任何实际TokenOwner/DACL变更、原生进程、凭据传送或数据库启动，也不防恶意同用户/管理员并发或撤回已打开句柄。普通原子创建并不构成断电目录持久性证明。
+该候选未接生产工厂/打包入口，`launch_ready=False`，NO_RESUME/NO_SECRET保留。原生NtCreateFile/目录枚举/继承结果、TokenOwner当前用户设置与实际child读回均未执行或验收；仅检查owner不能保证未来创建者默认owner。`prepare_owner`源码只对自有derived token显式设置fresh TokenUser为TokenOwner，读回并核原其他令牌观测不变；pipe fresh与真实child token查询代码均要求相同owner。失败不重试setter，仍关闭自有句柄并保留UNKNOWN。该方法没有默认工厂调用，不代表实际权限调整已获准。
+
+PG命令路径源码通过同一held PGDATA根的VOLUME_NAME_DOS观测，仅接纳精确扩展盘符前缀，剥前缀后转换为`C:/...`式普通路径。逐组件拒绝ADS、设备名、短名别名、尾点/空格及相对段；根长度最多240个UTF-16单元。代码独立打开并保留drive与每级目录句柄，核同卷、无reparse、描述符和最终根物理身份，使用前再核DOS映射与原VolumeGUID根绑定；字符串不单独授能力。中文窄API/PG17规范化和动态后缀长度仍未获Windows兼容验收，根长度通过不能外推整树可用。没有换盘、重解析或任意路径回退。
+
+CONFIG新增显式`PGDATA_SCHEMA4`：保留schema3端点，增加封闭profile版本、实例UUID、当前SID、data父及PGDATA根物理身份、冻结root control与精确私有ACL摘要；根须与database.data_identity相同，同卷且不与root/lock/journal/secret引用/父对象冲突。schema2默认与schema3字节合同不改，也不自动探测升级。NEW发布仅从当前精确PGDATA能力在原lease门内读回profile，DATABASE/SESSION核实后CONFIG最后写，写后再次检查profile；不把CONFIG阶段当PG已停止，不据此调用scan_stopped。
+
+严格原生REOPEN仍未实现：现`IsolatedFixedSecretStore`只接受FakeSecretAPI和隔离保护器，读取事实不是Windows原生认证来源；因此schema4不能走其schema3的endpoint/authentication恢复口，更不能给native目录签发恢复能力。还缺真实三对象原生存储/CurrentUser解封到“全部关闭并最终核lease”的一次消费来源接线；这是源码依赖缺口，不以再次泛授权代替。旧/缺失/损坏profile不迁移、不认领，旧实例不能借NEW能力重开。源码检查不授权实际TokenOwner/DACL变更、原生进程、凭据传送或数据库启动，也不防恶意同用户/管理员并发或撤回已打开句柄。普通原子创建并不构成断电目录持久性证明。
 
 process_env.py只读取/转发白名单OS执行必需项：PATH、Windows系统目录/COMSPEC/PATHEXT、临时目录、locale/TZ。调用者显式添加该进程的Park DSN/模式/私有路径。未知环境项、HOME、PYTHONPATH、代理、模型token、其他项目密钥、迁移owner及测试owner不传给API/worker。CLI迁移/隔离测试owner仅传给明确对应进程，不打印值；本轮测试用虚构哨兵验证未知键不读取/不转发。
 

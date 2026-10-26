@@ -10,6 +10,7 @@ implemented by this invocation-local capability. No directory durability claim.
 """
 import ctypes as C
 from dataclasses import dataclass
+import hashlib
 import math
 import os
 import re
@@ -60,6 +61,23 @@ def check_descriptor(value, sid, *, root, directory):
     check_security(Security(owner, control, (Ace(0, flags, FILE_ALL, _sid_text(sid)),)),
                    _sid_text(sid), root=root, directory=directory)
     _need(type(raw) is bytes and raw == expected)  # No ignored payload/free ACE area.
+
+
+def pg_command_path(value):
+    """A conservative DOS argv representation, never filesystem authority."""
+    _need(type(value) is str and re.match(r'^\\\\\?\\[A-Za-z]:\\', value) is not None)
+    path = value[4:]
+    _need(len(path.encode('utf-16-le', errors='strict'))//2 <= 240)
+    parts = path[3:].split('\\')
+    _need(parts and len(parts) <= 64)
+    for part in parts: component(part)
+    return path.replace('\\', '/'), path[:3], tuple(parts)
+
+
+def descriptor_digest(value):
+    from .credential_envelope import canonical
+    owner, control, raw = value
+    return hashlib.sha256(canonical([owner, control, raw.hex()])).hexdigest()
 
 
 def check_security(value, user, *, root, directory):
@@ -116,6 +134,8 @@ class _Binding:
     data_sd: tuple
     root_sd: tuple
     path: str
+    command_path: str
+    command_chain: tuple
     profile: str = PROFILE
 
 
@@ -147,7 +167,7 @@ def _path_held(lease, target):
     _need(type(target) is _NewDataTarget and target.lease is lease and _by_lease.get(lease) is target)
     try:
         binding = target._verify()
-        return binding.path
+        return binding.command_path
     except BaseException:
         target._fail()
         raise
@@ -170,6 +190,20 @@ def _scan_entry(lease, target):
 def _close_entry(lease, target):
     _need(type(target) is _NewDataTarget and target.lease is lease)
     target._close_native()
+
+
+@_exclusive_operation
+def _profile_held(lease, target):
+    _need(type(target) is _NewDataTarget and target.lease is lease and _by_lease.get(lease) is target)
+    try:
+        binding = target._verify()
+        _need(binding.key[-1] == 1)  # Invocation-local NEW capability only.
+        return dict(profile=PROFILE, instance_id=binding.key[0], sid=binding.user,
+                    parent_identity=list(binding.data_id), root_identity=list(binding.root_id),
+                    root_control=binding.root_sd[1], root_security_sha256=descriptor_digest(binding.root_sd))
+    except BaseException:
+        target._fail()
+        raise
 
 
 class _NewDataTarget:
@@ -223,6 +257,26 @@ class _NewDataTarget:
         info = self.api.info(handle)
         return _metadata(info, self.lease.fs.root_id[0], directory=directory)
 
+    def _dos_path(self):
+        self._time()
+        buffer = C.create_unicode_buffer(4096)
+        count = self.api.getpath(self.root, buffer, len(buffer), 0)  # VOLUME_NAME_DOS.
+        _need(0 < count < len(buffer))
+        return pg_command_path(buffer.value)
+
+    def _pin_command_path(self, root_id, guid_path):
+        before, drive, parts = self._dos_path()
+        handle = self.api.open_drive(drive)
+        self.handles.append(handle)
+        chain = []
+        for name in (None, *parts):
+            if name is not None: handle = self._open(handle, name, anchor=True)
+            identity = self._identity(handle, directory=True)
+            chain.append((handle, identity, self.api.descriptor(handle)))
+        _need(chain[-1][1] == root_id and self.api.final_path(handle) == guid_path and
+              self._dos_path()[0] == before)
+        return before, tuple(chain)  # Held until this target closes, not just path resolution.
+
     def _create_native(self, key):
         self.lease._verify()
         self.user = self.api.user_sid()
@@ -261,7 +315,8 @@ class _NewDataTarget:
         path = self.api.final_path(self.data).rstrip('\\')+'\\postgresql'
         _need(self.api.final_path(self.root) == path)
         check_descriptor(root_sd, sid, root=True, directory=True)
-        binding = _Binding(key, self.user, sid, data_id, root_id, data_sd, root_sd, path)
+        command_path, chain = self._pin_command_path(root_id, path)
+        binding = _Binding(key, self.user, sid, data_id, root_id, data_sd, root_sd, path, command_path, chain)
         _issued[self] = binding
         self._verify()
         _need(self._entries(self.root) == ())  # Only this invocation's new empty root.
@@ -282,6 +337,9 @@ class _NewDataTarget:
               self.api.final_path(self.data) == self.api.final_path(self.lease.fs.root).rstrip('\\')+'\\data' and
               self.api.final_path(self.root) == binding.path)
         check_security(self.api.security(self.root), binding.user, root=True, directory=True)
+        for handle, identity, descriptor in binding.command_chain:
+            _need(self._identity(handle, directory=True) == identity and self.api.descriptor(handle) == descriptor)
+        _need(self._dos_path()[0] == binding.command_path)
         self.lease._verify()
         return binding
 

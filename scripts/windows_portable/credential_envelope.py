@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import re
+import struct
 from uuid import UUID
 
 from .endpoint_plan import EndpointRefused, validate_record as validate_endpoints
@@ -34,6 +35,7 @@ class Purpose(Enum):
 class ConfigFormat(Enum):
     SCHEMA2 = 2
     INSTANCE_SCHEMA3 = 3
+    PGDATA_SCHEMA4 = 4
 
 
 def need(condition):
@@ -117,10 +119,11 @@ def validate_payload(binding, purpose, payload, *, config_format=ConfigFormat.SC
     else:
         # Final CONFIG references DATABASE and SESSION, never its own ciphertext.
         keys=('schema', 'files', 'database', 'runtime')
-        if config_format is ConfigFormat.INSTANCE_SCHEMA3: keys=keys+('endpoints',)
+        if config_format in (ConfigFormat.INSTANCE_SCHEMA3, ConfigFormat.PGDATA_SCHEMA4): keys=keys+('endpoints',)
+        if config_format is ConfigFormat.PGDATA_SCHEMA4: keys=keys+('pgdata',)
         exact(payload,keys)
         need(type(payload['schema']) is int and payload['schema'] == config_format.value)
-        if config_format is ConfigFormat.INSTANCE_SCHEMA3:
+        if config_format in (ConfigFormat.INSTANCE_SCHEMA3, ConfigFormat.PGDATA_SCHEMA4):
             try: validate_endpoints(payload['endpoints'])
             except EndpointRefused: raise EnvelopeRefused() from None
         refs = payload['files']; exact(refs, ('DATABASE', 'SESSION'))
@@ -144,6 +147,32 @@ def validate_payload(binding, purpose, payload, *, config_format=ConfigFormat.SC
         need(data_id[0] == binding.root[0] and data_id not in seen)
         runtime = payload['runtime']; exact(runtime, ('source_commit', 'manifest_sha256'))
         digest(runtime['source_commit'], 40); digest(runtime['manifest_sha256'])
+        if config_format is ConfigFormat.PGDATA_SCHEMA4:
+            profile = payload['pgdata']
+            exact(profile, ('profile','instance_id','sid','parent_identity','root_identity',
+                            'root_control','root_security_sha256'))
+            from .pgdata_candidate import PROFILE, root_descriptor, check_descriptor, descriptor_digest
+            need(type(profile['profile']) is str and profile['profile'] == PROFILE and
+                 type(profile['instance_id']) is str and profile['instance_id'] == binding.instance_id and
+                 type(profile['sid']) is str and profile['sid'] == binding.sid)
+            for field in ('parent_identity','root_identity'):
+                need(type(profile[field]) is list)
+                identity(tuple(profile[field]))
+            parent = tuple(profile['parent_identity'])
+            need(parent[0] == binding.root[0] and parent[1] > 0 and data_id[1] > 0
+                 and parent not in seen and parent != data_id
+                 and profile['root_identity'] == db['data_identity'])
+            # The format pins this one concrete ACL policy, not caller-chosen
+            # principals/permissions or a generic 'verified' JSON flag.
+            parts = binding.sid.split('-')
+            sid = bytes((1, len(parts)-3)) + int(parts[2]).to_bytes(6,'big') + b''.join(
+                struct.pack('<I', int(x)) for x in parts[3:])
+            descriptor = root_descriptor(sid)
+            descriptor = (binding.sid, profile['root_control'], descriptor[20+len(sid):])
+            try: check_descriptor(descriptor, sid, root=True, directory=True)
+            except RuntimeError: raise EnvelopeRefused() from None
+            digest(profile['root_security_sha256'])
+            need(profile['root_security_sha256'] == descriptor_digest(descriptor))
 
 
 def entropy_bytes(binding, purpose):

@@ -159,6 +159,8 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
                 r.setdefault('stdio_close_unknown', []).append(('INVALID_CHILD_TOKEN_RESULT', token))
                 _need(False)
             _need(self.owner._query(token) == self.owner._restricted_snapshot)
+            _need(self.owner._read_owner(token) == self.owner._prepared_owner
+                  == self.owner._restricted_snapshot[1])
             buffer, used = C.create_string_buffer(65536), C.c_uint32()
             self._native_result(group, self.owner._adv.GetTokenInformation(
                 token, 6, buffer, C.sizeof(buffer), C.byref(used)), 'GetTokenInformation_child_DACL')
