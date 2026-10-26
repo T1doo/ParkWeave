@@ -148,12 +148,18 @@ def native_pgdata():
 
 
 @_exclusive_entry
-def _create_entry(lease, target):
+def _create_entry(lease, target, *, layout):
+    return _create_target_held(lease,target,layout=layout)
+
+
+@_exclusive_operation
+def _create_target_held(lease,target,*,layout):
     _need(type(lease) is FixedDirectoryLease and type(lease.fs) is FixedWindowsFilesystem
           and type(lease.fs.api) is NativeFixedLeaseAPI and type(target) is _NewDataTarget and target.lease is lease)
     _need(lease not in _by_lease)
     _by_lease[lease] = target  # One attempt, including an unknown create outcome.
     try:
+        target.layout=layout  # Freeze only after entry and single-attempt ownership.
         key = _key_held(lease)
         _need(key[-1] == 1 and lease.record['phase'] == 'CLUSTER' and not lease.record['initialized'])
         target._create_native(key)
@@ -271,8 +277,8 @@ class _NewDataTarget:
     def __copy__(self): raise TypeError('PGDATA_NOT_TRANSFERABLE')
     def __deepcopy__(self, memo): raise TypeError('PGDATA_NOT_TRANSFERABLE')
 
-    def create(self):
-        _create_entry(self.lease, self)
+    def create(self,*,layout):
+        _create_entry(self.lease, self,layout=layout)
 
     def scan_stopped(self):
         # Caller must independently establish owned PG stopped. This method
@@ -325,6 +331,8 @@ class _NewDataTarget:
 
     def _create_native(self, key):
         self.lease._verify()
+        from .native_layout_candidate import _leaf_held
+        _,_,expected_data,expected_sd=_leaf_held(self.lease,self.layout,'data')
         self.user = self.api.user_sid()
         # Read the actual current TOKEN_USER through existing API; never accept
         # an imported SID or substitute token owner for the user principal.
@@ -351,6 +359,7 @@ class _NewDataTarget:
         data_id = self._identity(self.data, directory=True)
         private_acl(self.api.security(self.data), self.user)
         data_sd = self.api.descriptor(self.data)
+        _need(data_id==expected_data and data_sd==expected_sd)
         _need(self.api.final_path(self.data) == self.api.final_path(self.lease.fs.root).rstrip('\\')+'\\data')
         self.root = self._open(self.data, 'postgresql', create=True,
                               descriptor=root_descriptor(sid), anchor=True)
@@ -383,6 +392,10 @@ class _NewDataTarget:
               self.api.final_path(self.data) == self.api.final_path(self.lease.fs.root).rstrip('\\')+'\\data' and
               self.api.final_path(self.root) == binding.path)
         check_security(self.api.security(self.root), binding.user, root=True, directory=True)
+        if binding.key[-1]==1:
+            from .native_layout_candidate import _leaf_held
+            _,_,identity,sd=_leaf_held(self.lease,self.layout,'data')
+            _need(identity==binding.data_id and sd==binding.data_sd)
         for handle, identity, descriptor in binding.command_chain:
             _need(self._identity(handle, directory=True) == identity and self.api.descriptor(handle) == descriptor)
         _need(self._dos_path()[0] == binding.command_path)

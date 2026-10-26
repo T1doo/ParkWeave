@@ -60,12 +60,14 @@ class _Owned:
 
 class _NativeSecretFiles:
     """Fixed names and private original-HANDLE registry, no arbitrary Path API."""
-    def __init__(self,lease,deadline):
+    def __init__(self,lease,deadline,*,layout=None):
         need(os.name=='nt' and C.sizeof(PTR)==8 and type(lease) is FixedDirectoryLease
              and type(lease.fs) is FixedWindowsFilesystem and type(lease.fs.api) is NativeFixedLeaseAPI)
         need(type(deadline) in (int,float) and math.isfinite(deadline))
         self.lease,self.api,self.deadline=lease,lease.fs.api,deadline
         self.key=ep._key_held(lease)
+        self.layout=layout
+        need(self.key[-1]==1 or layout is None)
         self.caps={}; self.temporary=[]; self.failed=False; self.unknown=[]
         self.thread=self.api.k.GetCurrentThread
         self.thread.argtypes,self.thread.restype=[],PTR
@@ -119,7 +121,11 @@ class _NativeSecretFiles:
         self._time();need(ep._key_held(self.lease)==self.key and self.current_sid_bytes()==self.sid_bytes)
 
     def binds(self,lease):
-        need(lease is self.lease);self._gate();return True
+        need(lease is self.lease);self._gate()
+        if self.key[-1]==1:
+            from .native_layout_candidate import _leaf_held
+            _leaf_held(lease,self.layout,'secrets')
+        return True
 
     def owns(self,cap,lease,parent):
         # Cleanup must remain possible after poisoning/identity or time failure.
@@ -163,6 +169,7 @@ class _NativeSecretFiles:
 
     def open_secrets(self,lease):
         need(lease is self.lease and not any(not r.close_attempted for r in self.caps.values()))
+        self.binds(lease)  # NEW must consume the exact layout capability; REOPEN never creates it.
         self._parent_cap=None
         return self._open(lease.fs.root,'secrets',directory=True,create=False)
 
@@ -180,6 +187,10 @@ class _NativeSecretFiles:
         descriptor=self.api.descriptor(row.handle)
         private_acl(self.api.security(row.handle),self.user)
         need(descriptor[0]==self.user)
+        if row.directory and self.key[-1]==1:
+            from .native_layout_candidate import _leaf_held
+            _,_,identity,sd=_leaf_held(self.lease,self.layout,'secrets')
+            need((info.volume,info.identity)==identity and descriptor==sd)
         if not row.directory:
             raw=private_file_descriptor(self.sid_bytes)[20+len(self.sid_bytes):]
             need(descriptor[2]==raw and descriptor[1]&~1 in (0x1004,0x9004))
@@ -299,8 +310,10 @@ class _NativeFixedSecretStore(s.IsolatedFixedSecretStore):
     native_acceptance=False
     launch_ready=False
 
-    def __init__(self,lease,runtime,deadline):
-        self.api=_NativeSecretFiles(lease,deadline)
+    def __init__(self,lease,runtime,deadline,*,layout=None):
+        self.api=object.__new__(_NativeSecretFiles)
+        _NativeSecretFiles.__init__(self.api,lease,deadline,layout=layout)
+        self.api.binds(lease)
         self.lease=lease;key=self.api.key
         self.binding=e.InstanceBinding(key[0],self.api.user,key[1],key[2],key[3]);self.binding.record()
         e.exact(runtime,('source_commit','manifest_sha256'))

@@ -162,7 +162,7 @@ def _pwfile_name_held(lease, server, owner):
 class _OwnedInitdbPipe:
     native_acceptance = False
     launch_ready = False
-    client_authentication = 'NOT_IMPLEMENTED'
+    client_authentication = 'UNWIRED_VERIFIER_NOT_NATIVE_ACCEPTED'
     metadata_readback = 'GET_NAMED_PIPE_INFO_NOT_OBSERVED'
 
     def __init__(self, lease, owner):
@@ -191,6 +191,8 @@ class _OwnedInitdbPipe:
             function.argtypes, function.restype = arguments, result
         self._handle = self._sd = self._name = self._key = None
         self._claimed_group = None
+        self._pending_connection = None
+        self._client_attempted = False
         self._ready = self._closed = self._sd_release_attempted = self.failed = False
         self.phase, self.winerror, self.cleanup_errors = 'NEW', None, []
 
@@ -262,6 +264,12 @@ class _OwnedInitdbPipe:
         with self._lock:
             if self._closed:
                 return
+            pending = self._pending_connection
+            if pending is not None:
+                self.failed = True
+                # Keep original pipe HANDLE and strong OVERLAPPED/event record.
+                # CancelIoEx alone is never authority to release these objects.
+                raise PipeFailure('CONNECT_COMPLETION_UNKNOWN',None,self.cleanup_errors,self.winerror)
             self._closed, self._ready = True, False
             if self._handle is not None:
                 try:
