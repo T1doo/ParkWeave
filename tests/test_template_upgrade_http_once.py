@@ -72,10 +72,10 @@ def test_shared_clock_does_not_restart_for_cleanup():
     now=[299];clock=m.Clock(0,now=lambda:now[0]);assert clock.left(10)==1
     now[0]=301
     with pytest.raises(TimeoutError):clock.left()
-    assert clock.left(30,cleanup=True)==24
+    assert clock.left(30,cleanup=True)==14
     clock.stopped=True
     with pytest.raises(m.Closed):clock.left()
-    assert clock.left(30,cleanup=True)==24
+    assert clock.left(30,cleanup=True)==14
 
 
 def test_report_blocks_raw_fields_and_secret_output(tmp_path):
@@ -141,11 +141,11 @@ def test_api_setup_and_cleanup_double_failure_preserves_primary(monkeypatch):
 
 
 def test_approved_invocation_cannot_self_attest_source(monkeypatch):
-    monkeypatch.setattr(m,'WINDOW_ENABLED',True);monkeypatch.setattr(m,'APPROVED_INVOCATION','SYNTHETIC_APPROVAL')
-    monkeypatch.setattr(m,'APPROVED_SOURCE','a'*40)
-    monkeypatch.setattr(m.subprocess,'check_output',lambda *a,**kw:pytest.fail('unapproved source reached Git'))
-    with pytest.raises(m.Closed):m.authorize('b'*40,'SYNTHETIC_APPROVAL')
-    with pytest.raises(m.Closed):m.Permit(m._SEAL,'b'*40,'SYNTHETIC_APPROVAL')
+    approval=SimpleNamespace(invocation='PW_HTTP_SYNTHETIC',check=lambda:None,reviewed_source='a'*40)
+    monkeypatch.setattr(m.activation,'load',lambda invocation:approval)
+    monkeypatch.setattr(m.activation,'git',lambda args,started:b'b'*40+b'\n' if args==['rev-parse','HEAD'] else b'wrong')
+    with pytest.raises(m.Closed):m.authorize('c'*40,'PW_HTTP_SYNTHETIC')
+    with pytest.raises(m.Closed):m.Permit(m._SEAL,'b'*40,'PW_HTTP_OTHER',approval)
 
 
 def test_delete_and_publication_expired_deadline_preserve_original(monkeypatch,tmp_path):

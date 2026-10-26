@@ -56,13 +56,13 @@ def atomic_report(path,value):
         if os.path.exists(name):os.unlink(name)
 
 
-def supervise(argv,*,env,cwd,directory,started,overall_seconds=355,work_seconds=325,term_seconds=10,kill_seconds=10,minimum_operation_seconds=15):
+def supervise(argv,*,env,cwd,directory,started,overall_seconds=330,work_seconds=315,term_seconds=5,kill_seconds=5,minimum_operation_seconds=15):
     """Run only a caller-specified trusted worker; this is not an API endpoint.
 
-    All configurable limits can only stay within the dedicated355s work/cleanup
-    bound. Its parent reserves the final5s of the one360s invocation.
+    All configurable limits can only stay within the dedicated330s work/cleanup
+    bound. Its parent reserves the final30s of the one360s invocation.
     """
-    assert 0<work_seconds<overall_seconds<=355
+    assert 0<work_seconds<overall_seconds<=330
     assert 0<term_seconds and 0<kill_seconds and work_seconds+term_seconds+kill_seconds<overall_seconds
     assert 0<minimum_operation_seconds<=15
     owner=os.getpid();libc=ctypes.CDLL(None,use_errno=True)

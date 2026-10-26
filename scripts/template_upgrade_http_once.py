@@ -23,13 +23,11 @@ from urllib.parse import urlencode,urlsplit
 from uuid import UUID,uuid4
 
 from scripts import template_http_supervision as tree
+from scripts import template_http_activation as activation
 
 ROOT=Path(__file__).resolve().parents[1]
-WINDOW_ENABLED=False
-APPROVED_INVOCATION=None
-APPROVED_SOURCE=None
 PRODUCT_SOURCE='cd44b2e4ac6ae375cb34f8e4749e591999dc4474'
-WORK=300;INNER=325;TREE=355;TOTAL=360
+WORK=300;INNER=315;TREE=330;TOTAL=360
 FRAME=1024*1024;DISK_STOP=480*1024*1024;DISK_BUDGET=512*1024*1024
 PLACEHOLDER='Bearer SYNTHETIC_HTTP_SESSION'
 _SEAL=object()
@@ -38,24 +36,21 @@ PAGE_SHA256='d957c7d9193c76e3f8f5b1024e1e16d1fb3da5991867070464bdf3b23e764212'
 PG_HASHES={'initdb':'c725d1d5c4073f3eb95335f296685ed1b4822e9f7d35fea09916d52e58b0ddf2','postgres':'ae05b2a1b0685f2c69b8b9eb3765b1429a5c173c64b248f7f157de2af9db768d'}
 
 
-class Closed(RuntimeError):pass
+Closed=activation.Closed
 
 
 class Permit:
-    def __init__(self,seal,source,invocation):
-        if seal is not _SEAL or not WINDOW_ENABLED or not APPROVED_INVOCATION or invocation!=APPROVED_INVOCATION or source!=APPROVED_SOURCE:raise Closed('window closed')
-        self.source=source;self.invocation=invocation
-    def check(self):
-        if not WINDOW_ENABLED or self.invocation!=APPROVED_INVOCATION or self.source!=APPROVED_SOURCE:raise Closed('window closed')
+    def __init__(self,seal,source,invocation,approval=None):
+        if seal is not _SEAL or approval is None or approval.invocation!=invocation:raise Closed('window closed')
+        self.source=source;self.invocation=invocation;self.approval=approval
+    def check(self):self.approval.check()
 
 
-def authorize(source,invocation):
-    if not WINDOW_ENABLED or invocation!=APPROVED_INVOCATION or not invocation or source!=APPROVED_SOURCE:raise Closed('window closed')
-    if not re.fullmatch('[0-9a-f]{40}',source):raise Closed('source binding')
+def authorize(source,invocation,approval=None,started=None):
+    approval=approval or activation.load(invocation)
     if sys.platform!='linux' or os.geteuid()==0:raise Closed('unprivileged Linux required')
-    if subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()!=source:raise Closed('source drift')
-    if subprocess.check_output(['git','status','--porcelain'],cwd=ROOT):raise Closed('dirty source')
-    return Permit(_SEAL,source,invocation)
+    activation.verify_source(source,approval,time.monotonic() if started is None else started)
+    return Permit(_SEAL,source,invocation,approval)
 
 
 def fault(error):
@@ -338,6 +333,28 @@ def api_server(app,clock):
             error=Closed('API cleanup unknown');error.http_cleanup_errors=errors;raise error
 
 
+def freeze_client(permit,path,clock):
+    permit.check()
+    original=ROOT/'scripts/template_upgrade_http_client.js'
+    raw,identity=activation.regular_bytes(original,65536)
+    expected=activation.git(['show',permit.source+':scripts/template_upgrade_http_client.js'],clock.started)
+    if raw!=expected:raise Closed('client source drift')
+    dest=path/'frozen-client.js'
+    fd=os.open(dest,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    try:
+        if os.write(fd,raw)!=len(raw):raise Closed('short frozen client write')
+    finally:os.close(fd)
+    frozen,held=activation.regular_bytes(dest,65536)
+    if frozen!=expected:raise Closed('frozen client mismatch')
+    return dest,held,sha256(raw).hexdigest()
+
+
+def verify_frozen_client(frozen):
+    path,identity,digest=frozen;raw,now=activation.regular_bytes(path,65536)
+    if now!=identity or sha256(raw).hexdigest()!=digest:raise Closed('frozen client changed')
+    return path
+
+
 def real_worker(permit,path,clock,report):
     """Only called after the independent, presently closed invocation gate."""
     permit.check()
@@ -352,6 +369,7 @@ def real_worker(permit,path,clock,report):
     from parkweave.process_env import minimal_environment
     bins=Path(importlib.metadata.distribution('pgserver').locate_file('pgserver/pginstall/bin'))
     for name in ('socket','tmp','logs'): (path/name).mkdir(mode=0o700)
+    frozen_client=freeze_client(permit,path,clock)
     env=minimal_environment(os.environ,TMPDIR=str(path/'tmp'),PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(ROOT/'src')+':'+str(ROOT/'tests')+':'+str(ROOT))
     for name,digest in PG_HASHES.items():
         binary=bins/name
@@ -399,7 +417,7 @@ def real_worker(permit,path,clock,report):
             params=dict(instance=http.instance,page=str(ROOT/'src/parkweave/template_upgrade_web.html'),page_sha256=PAGE_SHA256)
             report['phase']='ORIGINAL_PAGE_REAL_HTTP';checkpoint()
             with (path/'logs/node.log').open('xb') as log:
-                node=subprocess.Popen(['node',str(ROOT/'scripts/template_upgrade_http_client.js')],cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log)
+                node=subprocess.Popen(['node',str(verify_frozen_client(frozen_client))],cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log)
                 run_page(node,http,owner,clock,params)
             report.update(status='PASS',GET=http.gets,POST=http.posts,API='REAL_LOOPBACK_HTTP',PG='REAL_PRIVATE_UNIX_SOCKET',page='NODE_VM_ORIGINAL_SCRIPT_NOT_BROWSER')
     except BaseException as error:primary=error;report.update(status='FAIL',error=fault(error))
@@ -465,8 +483,12 @@ def validate_fault(value):
             or value['errno'] is not None and (type(value['errno']) is not int or not 0<=value['errno']<=4095)):raise Closed('worker fault shape')
 
 
-def worker(permit,path,identity):
+def worker(permit,path,identity,claim_args):
     hand=json.loads(sys.stdin.buffer.readline(4096));started=hand['started']
+    claim_path,claim_dev,claim_ino,file_dev,file_ino=claim_args
+    parent=tree.identity(os.getppid())
+    claim=activation.OnceClaim.restore(claim_path,(int(claim_dev),int(claim_ino)),(int(file_dev),int(file_ino)),permit.source,permit.invocation,os.getppid(),parent['start_ticks'])
+    if started!=claim.value['started']:raise Closed('worker cannot reset original clock')
     if hand['parent_pid']!=os.getppid() or hand['worker_pid']!=os.getpid() or not 0<=time.monotonic()-started<300:raise Closed('worker handshake')
     st=path.lstat()
     if (path.parent!=Path('/tmp') or re.fullmatch('pw-api-[0-9a-f]{32}',path.name) is None or path.resolve()!=path
@@ -504,13 +526,29 @@ def worker(permit,path,identity):
 
 def main(argv=None):
     parser=argparse.ArgumentParser();parser.add_argument('--source',required=True);parser.add_argument('--invocation',required=True)
-    parser.add_argument('--owned-worker',nargs=3);args=parser.parse_args(argv)
-    try:permit=authorize(args.source,args.invocation)
-    except Closed:return 2 # Closed before mkdir, native loading or credentials.
+    parser.add_argument('--owned-worker',nargs=3);parser.add_argument('--claim',nargs=5);args=parser.parse_args(argv)
+    started=time.monotonic()
+    try:approval=activation.load(args.invocation)
+    except (Closed,ValueError,OSError):return 2 # Default closed before process/directory/credential actions.
     if args.owned_worker:
-        path,dev,ino=args.owned_worker
-        return worker(permit,Path(path),(int(dev),int(ino)))
-    started=time.monotonic();deadline=started+TOTAL;os.umask(0o077)
+        if not args.claim:return 2
+        # The claim/handshake supplies the original clock, never this parse time.
+        claim_path,dev,ino,file_dev,file_ino=args.claim
+        try:
+            parent=tree.identity(os.getppid())
+            claim=activation.OnceClaim.restore(claim_path,(int(dev),int(ino)),(int(file_dev),int(file_ino)),args.source,args.invocation,os.getppid(),parent['start_ticks'])
+            permit=authorize(args.source,args.invocation,approval,claim.value['started'])
+            path,root_dev,root_ino=args.owned_worker
+            return worker(permit,Path(path),(int(root_dev),int(root_ino)),args.claim)
+        except BaseException:return 1
+    if args.claim:return 2
+    watchdog=activation.TotalDeadline(started);watchdog.arm()
+    try:
+        permit=authorize(args.source,args.invocation,approval,started)
+        claim=activation.OnceClaim.create(permit.source,permit.invocation,started,tree.identity(os.getpid())['start_ticks'])
+    except BaseException as error:
+        print(json.dumps(dict(status='NOT_STARTED',stage='SOURCE_AND_CLAIM',error=fault(error))),flush=True);return 1
+    deadline=started+TOTAL;os.umask(0o077)
     evidence=None;root=None
     report=dict(status='PENDING_FINALIZATION',scope='ONE_TEMPORARY_REAL_HTTP_FIXTURE',source=permit.source)
     try:
@@ -518,7 +556,9 @@ def main(argv=None):
         root=PrivateRoot.create(permit)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env.update(PYTHONPATH=str(ROOT/'src')+':'+str(ROOT/'tests')+':'+str(ROOT),PYTHONDONTWRITEBYTECODE='1')
-        argv=[sys.executable,'-B','-m','scripts.template_upgrade_http_once','--source',permit.source,'--invocation',permit.invocation,'--owned-worker',str(root.path),str(root.identity.st_dev),str(root.identity.st_ino)]
+        argv=[sys.executable,'-B','-m','scripts.template_upgrade_http_once','--source',permit.source,'--invocation',permit.invocation,'--owned-worker',str(root.path),str(root.identity.st_dev),str(root.identity.st_ino),'--claim',str(claim.path),str(claim.identity[0]),str(claim.identity[1]),str(claim.file_identity[0]),str(claim.file_identity[1])]
+        report.update(directory_retained=str(root.path),claim_directory=str(claim.path),total_seconds=TOTAL,cleanup_reserve_seconds=30,required_exit=0)
+        save(evidence.path/'result.json',report,deadline=deadline)
         owned=tree.supervise(argv,env=env,cwd=ROOT,directory=root.path,started=started)
         result=root.path/'result.json'
         if not result.is_file():result=root.path/'partial.json'
@@ -530,9 +570,9 @@ def main(argv=None):
         evidence.verify();save(evidence.path/'result.json',report,deadline=deadline)
         print(json.dumps(dict(status='PENDING_FINALIZATION',evidence_directory=str(evidence.path))),flush=True)
         if success:
-            root.remove(owned,data,deadline=deadline);report['directory_removed']=True
+            root.remove(owned,data,deadline=deadline);report['directory_removed']=True;report.pop('directory_retained',None)
         else:report['directory_retained']=str(root.path)
-        report['status']='PASS' if success else 'FAIL'
+        report['status']='OBSERVED_COMPLETE_REQUIRES_EXIT_0' if success else 'FAIL'
     except BaseException as error:
         report.update(status='FAIL',parent_error=fault(error))
         if hasattr(error,'private_created_path'):
@@ -553,7 +593,7 @@ def main(argv=None):
     except BaseException:
         # Never print a PASS that could precede failed publication.
         return 1
-    return 0 if report['status']=='PASS' else 1
+    return 0 if report['status']=='OBSERVED_COMPLETE_REQUIRES_EXIT_0' else 1
 
 
 if __name__=='__main__':raise SystemExit(main())
