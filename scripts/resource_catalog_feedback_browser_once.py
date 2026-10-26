@@ -1,4 +1,4 @@
-"""Prepared run47/attempt1: exact paired resource UI, synthetic GETs, no backend."""
+"""Prepared run48/attempt1: exact paired resource UI, synthetic GETs, no backend."""
 import hashlib,json,os,signal,socket,subprocess,sys,tempfile,threading,time,traceback
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
@@ -14,9 +14,9 @@ REPORT=dict(scope='REAL_CHROME_RESOURCE_CATALOG_PRESENTATION_SIMULATED_GET_ONLY'
     product_API=False,database=False,real_model_calls=0,business_POSTs=0,requests=[],browser_requests=[],
     checks=[],font_observations=[],page_errors=[],violations=[],unexpected_GET=[],cleanup_errors=[])
 OUT=None;PRIVATE=None;PAGE=None;START=0;CHECKPOINT=None
-BASELINE_SHA='f32741dcdbaf4fa5d1d1e3a0cc0fc91c429878cd'
+BASELINE_SHA='f6d9077ecae7166fde43b1a39a50c34a9509c5b3'
 BEFORE_SHA='dc0df5aa40f3a8e400da7dfc9fb3ab01eb725406'
-PAGE_SHA256='043c27da7374f2fe1782e9b789b401e05f18cceab1802fde9a021b1ed9059c16'
+PAGE_SHA256='c52acb4262a6f530ea97f9f0e5c29c16688622c68a7e3e798ec96622202fbee3'
 BEFORE_SHA256='81939da2c779849e6e4785e28d283f6519afd554f94f475376b286e45c20cc37'
 PNG_FILES=('01-before-ready-1200.png','02-after-ready-1200.png','03-before-ready-390.png',
     '04-after-ready-390.png','05-after-loading-1200.png','06-after-empty-1200.png',
@@ -103,7 +103,37 @@ def capture(page,name,state,variant,width):
     assert all(r['left']>=0 and r['right']<=width and r['top']>=0 and r['bottom']<=1000 for r in row['regions']),row['regions']
     assert page.locator('[data-visual-fixture]').inner_text()==FIXTURE_LABEL
     assert page.locator('#token').input_value()=='SYNTHETIC_VIEW_REPLAY_NO_AUTHORITY'
-    page.screenshot(path=str(OUT/name),mask=[page.locator('#token')],timeout=15000)
+    label=page.locator('[data-visual-fixture]').bounding_box();assert label
+    picture=page.screenshot(path=str(OUT/name),mask=[page.locator('#token')],timeout=15000)
+    after_label=page.locator('[data-visual-fixture]').bounding_box();assert after_label
+    row['marker_bounds']=dict(before=label,after=after_label)
+    assert all(abs(label[k]-after_label[k])<=.5 for k in label),'marker moved across original PNG capture'
+    # Read this exact unedited PNG back in an off-DOM canvas; never paint a label
+    # into the output. A DOM rectangle alone did not prove run47 image06 pixels.
+    import base64
+    pixels=page.evaluate("""async ({png,box})=>{
+        const bytes=Uint8Array.from(atob(png),c=>c.charCodeAt(0));
+        const bitmap=await createImageBitmap(new Blob([bytes],{type:'image/png'}));
+        try{const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+            const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(bitmap,0,0);
+            const x=Math.ceil(box.x+3),y=Math.ceil(box.y+3),width=Math.floor(box.width-6),height=Math.floor(box.height-6);
+            if(width<1||height<1||x<0||y<0||x+width>canvas.width||y+height>canvas.height)throw Error('marker PNG bounds');
+            const data=ctx.getImageData(x,y,width,height).data;let dark=0,white=0;
+            for(let i=0;i<data.length;i+=4){if(data[i]===23&&data[i+1]===50&&data[i+2]===77&&data[i+3]===255)dark++;
+                if(data[i]>=235&&data[i+1]>=235&&data[i+2]>=235&&data[i+3]===255)white++;}
+            return {area:width*height,dark,white,pngWidth:canvas.width,pngHeight:canvas.height};
+        }finally{bitmap.close();}
+    }""",dict(png=base64.b64encode(picture).decode('ascii'),box=label))
+    validate_marker_pixels(pixels,width);row['marker_PNG_pixels']=pixels
+
+
+def validate_marker_pixels(value,width):
+    assert type(value) is dict and set(value)=={'area','dark','white','pngWidth','pngHeight'}
+    assert all(type(n) is int for n in value.values())
+    assert value['pngWidth']==width and value['pngHeight']==1000
+    area=value['area'];assert 0<area<=width*1000
+    assert 0<=value['dark']<=area and 0<=value['white']<=area-value['dark']
+    assert value['dark']>=area*.5 and value['white']>=max(10,area*.002),'simulated marker not proven in original PNG'
 
 def contrast(first,second):
     import re
@@ -122,7 +152,7 @@ def presentation(page,variant,width):
     require_operation_time(30)
     page.locator('#token').fill('SYNTHETIC_VIEW_REPLAY_NO_AUTHORITY')
     page.locator('[data-tab="resource"]').click()
-    page.evaluate("label=>{const p=document.createElement('p');p.dataset.visualFixture='true';p.className='notice';p.textContent=label;$('resource-catalog-view').before(p);}",FIXTURE_LABEL)
+    page.evaluate("label=>{const p=document.createElement('p');p.dataset.visualFixture='true';p.className='visual-fixture-label';p.textContent=label;p.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;position:static!important;box-sizing:border-box!important;margin:12px 0!important;padding:12px 14px!important;border:2px solid #17324d!important;border-radius:6px!important;background:#17324d!important;color:#fff!important;font:600 13px/1.8 system-ui,sans-serif!important;overflow-wrap:anywhere!important';$('resource-catalog-view').before(p);}",FIXTURE_LABEL)
     phase('READY',hold=variant=='after' and width==1200)
     page.locator('#resource-catalog').click()
     if variant=='after' and width==1200:
@@ -295,7 +325,7 @@ def run_flow(started):
     global OUT,PRIVATE,START
     os.umask(0o077);START=started;server=None;thread=None
     try:
-        REPORT['source_sha']=base.require_hosted(os.environ,run_number='47')
+        REPORT['source_sha']=base.require_hosted(os.environ,run_number='48')
         checkpoint()
         PRIVATE=Path(tempfile.mkdtemp(prefix='parkweave-visual-'));OUT=Path(os.environ['RUNNER_TEMP'])/'parkweave-fictional-browser-candidate';OUT.mkdir(mode=0o700,exist_ok=False)
         pages,binding=source_contract();REPORT['source_binding']=binding
@@ -354,7 +384,7 @@ def main():
     started=time.monotonic();os.umask(0o077)
     report=dict(REPORT);public=None
     try:
-        source=base.require_hosted(os.environ,run_number='47')
+        source=base.require_hosted(os.environ,run_number='48')
         report['source_sha']=source
         private=Path(tempfile.mkdtemp(prefix='parkweave-visual-supervisor-'))
         state=private/'worker-state.json'
