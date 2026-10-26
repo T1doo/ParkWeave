@@ -24,7 +24,7 @@ from .restricted_startup_candidate import _OwnedStartup, _utf16, command_buffer,
 from .restricted_token_candidate import _RestrictedPrimaryCandidate, _dacl_bytes
 from .runtime_payload import RuntimePayloadPrerequisite
 from .windows_process_handles import WindowsJobProcess
-from .pgdata_candidate import _NewDataTarget, _path_held
+from .pgdata_candidate import _NewDataTarget, _path_held, _profile_held
 
 
 class ProcessInformation(C.Structure):
@@ -69,6 +69,7 @@ def _freeze(lease, owner, server, specification, *, data_target):
           and specification.stdio_contract == 'NONE')
     with owner._lock, server._lock:
         key = _key_held(lease)
+        _profile_held(lease, data_target)  # NEW only: recovered targets cannot rerun initdb.
         name = _pwfile_name_held(lease, server, owner)
         command = Command(specification.relative_executable, specification.sha256, specification.size,
                           _arguments(_path_held(lease, data_target), name), 'WINDOWS_JOB')

@@ -206,6 +206,52 @@ def _profile_held(lease, target):
         raise
 
 
+@_exclusive_operation
+def _recover_held(lease, ticket, deadline):
+    from .native_secret_store_candidate import _consume_ticket
+    store,state,_ = _consume_ticket(lease,ticket,'PGDATA')
+    _need(type(lease) is FixedDirectoryLease and type(lease.fs) is FixedWindowsFilesystem
+          and type(lease.fs.api) is NativeFixedLeaseAPI and lease not in _by_lease)
+    key=_key_held(lease)
+    _need(key[-1]>=2 and lease.record['phase']=='READY_STOPPED' and lease.record['initialized'] is True
+          and lease.record['runtime']=='STOPPED')
+    target=_NewDataTarget(lease,deadline)
+    _by_lease[lease]=target  # One recovery attempt, not a missing-directory creation route.
+    try:
+        profile=state.config['pgdata']
+        # Revalidate the exact authenticated schema, never an imported profile dict.
+        from .credential_envelope import validate_payload, Purpose, ConfigFormat
+        validate_payload(store.binding,Purpose.CONFIG,state.config,config_format=ConfigFormat.PGDATA_SCHEMA4)
+        _need(profile['instance_id']==key[0] and profile['sid']==store.binding.sid)
+        target.user=store.binding.sid
+        sid=store.api.sid_bytes
+        target.data=target._open(lease.fs.root,'data',anchor=True)
+        data_id=target._identity(target.data,directory=True)
+        private_acl(target.api.security(target.data),target.user)
+        data_sd=target.api.descriptor(target.data)
+        _need(data_id==tuple(profile['parent_identity']))
+        target.root=target._open(target.data,'postgresql',anchor=True)  # FILE_OPEN only.
+        root_id=target._identity(target.root,directory=True)
+        _need(root_id==tuple(profile['root_identity'])==tuple(state.config['database']['data_identity']))
+        root_sd=target.api.descriptor(target.root)
+        check_descriptor(root_sd,sid,root=True,directory=True)
+        _need(root_sd[1]==profile['root_control'] and descriptor_digest(root_sd)==profile['root_security_sha256'])
+        path=target.api.final_path(lease.fs.root).rstrip('\\')+'\\data\\postgresql'
+        _need(target.api.final_path(target.data)==target.api.final_path(lease.fs.root).rstrip('\\')+'\\data'
+              and target.api.final_path(target.root)==path)
+        command_path,chain=target._pin_command_path(root_id,path)
+        _issued[target]=_Binding(key,target.user,sid,data_id,root_id,data_sd,root_sd,path,command_path,chain)
+        target._verify()
+        # Journal STOPPED is the lifecycle precondition, not independent proof
+        # of zero OS processes. These are cooperative selected observations.
+        before=target._walk();_need(target._walk()==before)
+        target._verify();store._native_check()
+        target.outcome='REOPEN_OBSERVED_NOT_NATIVE_ACCEPTANCE'
+        return target
+    except BaseException:
+        target._fail();raise
+
+
 class _NewDataTarget:
     native_acceptance = False
     launch_ready = False

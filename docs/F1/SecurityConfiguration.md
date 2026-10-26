@@ -34,7 +34,15 @@ PG命令路径源码通过同一held PGDATA根的VOLUME_NAME_DOS观测，仅接�
 
 CONFIG新增显式`PGDATA_SCHEMA4`：保留schema3端点，增加封闭profile版本、实例UUID、当前SID、data父及PGDATA根物理身份、冻结root control与精确私有ACL摘要；根须与database.data_identity相同，同卷且不与root/lock/journal/secret引用/父对象冲突。schema2默认与schema3字节合同不改，也不自动探测升级。NEW发布仅从当前精确PGDATA能力在原lease门内读回profile，DATABASE/SESSION核实后CONFIG最后写，写后再次检查profile；不把CONFIG阶段当PG已停止，不据此调用scan_stopped。
 
-严格原生REOPEN仍未实现：现`IsolatedFixedSecretStore`只接受FakeSecretAPI和隔离保护器，读取事实不是Windows原生认证来源；因此schema4不能走其schema3的endpoint/authentication恢复口，更不能给native目录签发恢复能力。还缺真实三对象原生存储/CurrentUser解封到“全部关闭并最终核lease”的一次消费来源接线；这是源码依赖缺口，不以再次泛授权代替。旧/缺失/损坏profile不迁移、不认领，旧实例不能借NEW能力重开。源码检查不授权实际TokenOwner/DACL变更、原生进程、凭据传送或数据库启动，也不防恶意同用户/管理员并发或撤回已打开句柄。普通原子创建并不构成断电目录持久性证明。
+`native_secret_store_candidate.py`现提供未接入口的真实三文件来源源码：原`IsolatedFixedSecretStore`仍只接受FakeSecretAPI和隔离保护器；新NativeStore只复用其已审读写/关闭算法，构造、Operation、原句柄capability及恢复票据域分离。NativeFiles不继承Fake API，不接受外部ObjectInfo/已验证字典；仅持同一V2租约的NativeFixedLeaseAPI，从真实成功返回的原HANDLE登记能力。既有`secrets`目录必须已私有保护，缺失拒绝；Purpose仅映射三个固定文件。NEW文件以FILE_CREATE和显式当前用户PROTECTED/单U-only ACE原子占名；REOPEN仅FILE_OPEN/read，零create/write/flush，不补文件、不修权限或自动迁移。缺少首次私有布局创建接线时仍拒绝，不能把该存储源码说成完整安装器。
+
+Native Operation核owner/control/raw DACL、同卷父链与对象身份、reparse/单硬链接、内容长度及元数据变化；单次write、flush、原句柄精确密文读回、解封后规范payload一致才成功。短写、未知flush/close拒绝，未知关闭记录原件并只尝试一次；清理不依赖仍有效的租约/当前SID，防止poison后漏关。SID字符串和安全描述符的LocalFree也核NULL成功，读取主因及清理错误同时保留；DPAPI失败out没有成功所有权转移，不据它LocalSize/read/erase/free，进入UNKNOWN。不会把文件flush或三文件依次发布称目录断电耐久或跨文件原子事务。
+
+CurrentUser保护包装仅内部持精确`_NativeDPAPI`，不接受隔离保护器；DPAPI前后都读有效线程身份和fresh进程TokenUser。OpenThreadToken只允许FALSE+ERROR_NO_TOKEN，无impersonation；成功取得的原thread token关闭一次后拒绝，其他错误拒绝，不Revert/Impersonate或启用权限。进程SID须与V2租约封装绑定相同，DPAPI保持flags=UI_FORBIDDEN、NULL描述/保留/提示及原purpose entropy。用户配置漫游、同用户/管理员和不可完全擦除的Python明文副本边界不变。
+
+严格重开的来源接线现有候选源码：实际三文件读取/DPAPI解封/规范绑定和CONFIG引用全部核实，capability全部关闭且最终核lease后，原Operation只消费一次read事实；期望runtime指纹不匹配拒绝。独立native票据先只准PGDATA恢复：核schema4、UUID/当前SID/父与根物理身份/冻结ACL摘要、held DOS链及两轮协作观察，缺/坏/旧profile拒绝。随后用另一明确阶段消费注册端点，终末核验后才签发opaque恢复结果；替身闭后proof和任意JSON不能进入此域。恢复结果在确认属于本store后先消费，任何后续失败sticky UNKNOWN、poison并关闭自有目录能力，不能恢复状态后重试；他人结果不销毁。原journal STOPPED只是生命周期前置，不独立证明OS零进程；恢复元数据也不证明数据库/socket/角色/SESSION当前权威。NEW与REOPEN分流，恢复根禁止再冻结initdb。
+
+以上均仅源码、离线字节/ABI/拒绝与故障注入审查，真实三文件/DPAPI/Windows恢复未执行。原生存储、保护、目录和启动工厂及控制器/打包入口继续关闭，NO_RESUME/NO_SECRET与`launch_ready=False`不变，不授权实际TokenOwner/DACL变更、凭据传送或PG启动。首次布局、真实原生互斥/持久性/加载验收与后续独立物理库/身份验证仍未闭合；不以模拟成功代签。
 
 process_env.py只读取/转发白名单OS执行必需项：PATH、Windows系统目录/COMSPEC/PATHEXT、临时目录、locale/TZ。调用者显式添加该进程的Park DSN/模式/私有路径。未知环境项、HOME、PYTHONPATH、代理、模型token、其他项目密钥、迁移owner及测试owner不传给API/worker。CLI迁移/隔离测试owner仅传给明确对应进程，不打印值；本轮测试用虚构哨兵验证未知键不读取/不转发。
 

@@ -240,8 +240,12 @@ class _Operation:
              and type(info.revision) is int and info.revision >= 0)
         return info
 
+    def _admit_cap(self, cap):
+        need(type(cap) is FakeCapability)
+
     def hold(self, cap, leaf, parent, directory):
-        need(type(cap) is FakeCapability and cap not in self.caps
+        self._admit_cap(cap)
+        need(cap not in self.caps
              and self.store.api.owns(cap, self.store.lease, self.directory) is True)
         self.caps.append(cap)  # Cleanup registration precedes inspect/callbacks.
         info = self.info(cap, leaf, parent, directory)
@@ -331,11 +335,39 @@ class IsolatedFixedSecretStore:
             self.failed = True
             raise StoreFailure(error, (), None) from None
 
+    def _new_operation(self):
+        return _Operation(self)
+
+    def _finalize_closed(self, context, result):
+        if type(result) not in (_EndpointRecovery,_AuthenticationRecovery): return result
+        need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
+        request = context.consume_read_state(result.state)
+        if type(result) is _AuthenticationRecovery and result.plan is not None:
+            plan = result.plan
+            record = endpoints._record_held(self.lease,plan,mode=endpoints.PlanMode.NEW)
+            need(endpoints.validate_record(record) == request)
+        else:
+            token = _ClosedEndpointRecovery()
+            _closed_endpoint_recoveries[token] = (self,request)
+            self._endpoint_finalizing = token
+            try:
+                plan = endpoints._register_held(self.lease, None, endpoints.PlanMode.REOPEN,closed_recovery=token)
+            finally:
+                self._endpoint_finalizing = None
+                _closed_endpoint_recoveries.pop(token,None)
+        if type(result) is _AuthenticationRecovery:
+            authenticated = StoreAuthentication()
+            digest = context._value_digest((result.state.database,result.state.sessions,result.state.config))
+            _authenticated_reads[authenticated] = (self,self.lease.snapshot,result.state,plan,digest)
+            result = authenticated
+        else: result = (result.state, plan)
+        return result
+
     def _operate_held(self, states, operation):
         need(self.lease._operation_owner == get_ident() and self.lease._operation_depth > 0)
         need(not self.failed)
         def run():
-            context = _Operation(self); primary = None; cleanup = []; result = None
+            context = self._new_operation(); primary = None; cleanup = []; result = None
             try:
                 phase = self.lease.record['phase']
                 need(phase in states and self.lease.record['initialized'] is states[phase])
@@ -360,29 +392,8 @@ class IsolatedFixedSecretStore:
             # Registration must occur AFTER successful close of EVERY held
             # capability and the final lease/binding check, still under the
             # original entry gate. Its failure shares the UNKNOWN path below.
-            if primary is None and not cleanup and type(result) in (_EndpointRecovery,_AuthenticationRecovery):
-                try:
-                    need(self.config_format is e.ConfigFormat.INSTANCE_SCHEMA3)
-                    request = context.consume_read_state(result.state)
-                    if type(result) is _AuthenticationRecovery and result.plan is not None:
-                        plan = result.plan
-                        record = endpoints._record_held(self.lease,plan,mode=endpoints.PlanMode.NEW)
-                        need(endpoints.validate_record(record) == request)
-                    else:
-                        token = _ClosedEndpointRecovery()
-                        _closed_endpoint_recoveries[token] = (self,request)
-                        self._endpoint_finalizing = token
-                        try:
-                            plan = endpoints._register_held(self.lease, None, endpoints.PlanMode.REOPEN,closed_recovery=token)
-                        finally:
-                            self._endpoint_finalizing = None
-                            _closed_endpoint_recoveries.pop(token,None)
-                    if type(result) is _AuthenticationRecovery:
-                        authenticated = StoreAuthentication()
-                        digest = context._value_digest((result.state.database,result.state.sessions,result.state.config))
-                        _authenticated_reads[authenticated] = (self,self.lease.snapshot,result.state,plan,digest)
-                        result = authenticated
-                    else: result = (result.state, plan)
+            if primary is None and not cleanup:
+                try: result = self._finalize_closed(context, result)
                 except BaseException as error: primary = error
             if primary is not None or cleanup:
                 journal_error = None; self.failed = True

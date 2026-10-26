@@ -63,6 +63,7 @@ class NativeLeaseAPI:
         owner, dacl, sd = PTR(), PTR(), PTR()
         if self.readonly.getsecurity(handle, 1, 1 | 4, C.byref(owner), None, C.byref(dacl), None, C.byref(sd)):
             raise LeaseRefused('DESCRIPTOR_READ_REFUSED')
+        primary = None
         try:
             self.need(self.readonly.valid_sd(sd)); control, revision = U16(), U32()
             self.need(self.readonly.control(sd, C.byref(control), C.byref(revision)))
@@ -71,8 +72,17 @@ class NativeLeaseAPI:
             size = C.c_uint16.from_address(dacl.value + 2).value
             if not 8 <= size <= 65535: raise LeaseRefused('DACL_LIMIT')
             return (self.sid(owner), control.value, C.string_at(dacl, size))
+        except BaseException as error:
+            primary = error
+            raise
         finally:
-            if sd.value: self.localfree(sd)
+            if sd.value:
+                try:
+                    if self.localfree(sd): raise LeaseRefused('DESCRIPTOR_ALLOCATION_CLOSE_UNKNOWN')
+                except BaseException as cleanup:
+                    if primary is not None:
+                        raise BaseExceptionGroup('DESCRIPTOR_AND_FREE_UNKNOWN', [primary, cleanup])
+                    raise
 
     def relative_file(self, parent, name, *, fresh=False, write=False, exclusive=False, rename=False):
         from parkweave.windows_handles import UnicodeString, ObjectAttributes, IOStatus, PTR

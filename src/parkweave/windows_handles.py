@@ -97,8 +97,17 @@ class WinAPI:
     def sid(self,pointer):
         self.need(self.valid_sid(pointer));out=PTR()
         self.need(self.sidstring(pointer,C.byref(out)))
+        primary=None
         try:return C.wstring_at(out)
-        finally:self.localfree(out)
+        except BaseException as error:
+            primary=error;raise
+        finally:
+            if out.value:
+                try:
+                    if self.localfree(out):raise Denied('Windows SID allocation close unknown')
+                except BaseException as cleanup:
+                    if primary is not None:raise BaseExceptionGroup('WINDOWS_SID_AND_FREE_UNKNOWN',[primary,cleanup])
+                    raise
     def _user_sid(self):
         token=PTR();self.need(self.opentoken(self.process(),8,C.byref(token)))
         try:
@@ -112,6 +121,7 @@ class WinAPI:
         owner=PTR();dacl=PTR();sd=PTR()
         status=self.getsecurity(handle,1,1|4,C.byref(owner),None,C.byref(dacl),None,C.byref(sd))
         if status!=0:raise Denied('Windows security read refused')
+        primary=None
         try:
             self.need(self.valid_sd(sd));control=U16();revision=U32()
             self.need(self.control(sd,C.byref(control),C.byref(revision)))
@@ -132,8 +142,15 @@ class WinAPI:
                 if sidlength>size-8 or sidlength<8:raise Denied('invalid ACE SID bounds')
                 aces.append(Ace(kind,flags,int.from_bytes(head[4:8],'little'),self.sid(sidptr)))
             return Security(user,control.value,tuple(aces))
+        except BaseException as error:
+            primary=error;raise
         finally:
-            if sd.value:self.localfree(sd)
+            if sd.value:
+                try:
+                    if self.localfree(sd):raise Denied('Windows security allocation close unknown')
+                except BaseException as cleanup:
+                    if primary is not None:raise BaseExceptionGroup('WINDOWS_SECURITY_AND_FREE_UNKNOWN',[primary,cleanup])
+                    raise
     def read(self,handle,limit):
         buf=C.create_string_buffer(limit);length=U32()
         self.need(self.readfile(handle,buf,limit,C.byref(length),None))

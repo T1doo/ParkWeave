@@ -95,6 +95,7 @@ class _NativeDPAPI:
         cleanup = []
         result = None
         allocation_size = 0
+        owned_output = False
         winerror = None
         try:
             extra = _InputBlob(entropy, 32)
@@ -106,8 +107,9 @@ class _NativeDPAPI:
                           None, None, CRYPTPROTECT_UI_FORBIDDEN, C.byref(output))
             if not ok:
                 winerror = C.get_last_error()  # before any cleanup/LocalSize call
+            owned_output = bool(ok and output.pbData)
             phase = 'ALLOCATION'
-            if output.pbData:
+            if owned_output:
                 allocation_size = int(self._size(output.pbData))
             if not ok:
                 raise ProtectionRefused('NATIVE_DPAPI_CALL_FAILED')
@@ -122,7 +124,7 @@ class _NativeDPAPI:
         except BaseException as error:
             primary = type(error).__name__
         finally:
-            if output.pbData:
+            if owned_output:
                 try:
                     if not 0 < allocation_size <= MAX_CIPHERTEXT * 2:
                         raise ProtectionRefused('NATIVE_DPAPI_ERASURE_UNKNOWN')
@@ -134,6 +136,12 @@ class _NativeDPAPI:
                         raise ProtectionRefused('NATIVE_DPAPI_FREE_UNKNOWN')
                 except BaseException as error:
                     cleanup.append(type(error).__name__)
+                output.pbData = None
+                output.cbData = 0
+            elif output.pbData:
+                # Failure output integers have no documented ownership
+                # transfer. Never inspect/erase/free an unknown allocation.
+                cleanup.append('FAILED_OUTPUT_OWNERSHIP_UNKNOWN')
                 output.pbData = None
                 output.cbData = 0
             for item in (extra, source):

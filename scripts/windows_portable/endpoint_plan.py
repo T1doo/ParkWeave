@@ -80,7 +80,7 @@ def _key_held(lease):
     return (instance_id,tuple(record['root']),tuple(record['lock']),tuple(record['journal']),record['generation'])
 
 
-def _register_held(lease,request,mode,*,closed_recovery=None):
+def _register_held(lease,request,mode,*,closed_recovery=None,native_recovery=None):
     # This private function is not a JSON/import API or native authorization.
     # Exact registry membership is checked at every later use of its result.
     need(type(mode) is PlanMode)
@@ -88,14 +88,19 @@ def _register_held(lease,request,mode,*,closed_recovery=None):
     need(lease not in _by_lease)
     record=journal.decode(lease.snapshot[0],format=journal.FixedFormat.INSTANCE_V2)
     if mode is PlanMode.NEW:
-        need(closed_recovery is None and type(request) is EndpointRequest)
+        need(closed_recovery is None and native_recovery is None and type(request) is EndpointRequest)
         need(record['phase']=='NEW' and record['initialized'] is False and key[-1]==1)
     else:
         # An arbitrary request/dict, even under this same gate, cannot stand
         # in for the completed fixed-store read and successful close sequence.
         need(request is None)
-        from .fixed_secret_store import _consume_closed_endpoint_recovery
-        request=_consume_closed_endpoint_recovery(lease,closed_recovery)
+        if native_recovery is not None:
+            need(closed_recovery is None)
+            from .native_secret_store_candidate import _consume_ticket
+            _,_,request=_consume_ticket(lease,native_recovery,'ENDPOINT')
+        else:
+            from .fixed_secret_store import _consume_closed_endpoint_recovery
+            request=_consume_closed_endpoint_recovery(lease,closed_recovery)
         need(record['phase']=='READY_STOPPED' and record['initialized'] is True and key[-1]>=2)
     request=EndpointRequest(request.database_port,request.api_port)
     plan=InstanceEndpointPlan()
