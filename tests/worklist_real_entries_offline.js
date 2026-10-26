@@ -6,7 +6,7 @@ const check=v=>{checks++;assert(v);};
 class Element{
  constructor(tag='div'){this.tagName=tag;this.children=[];const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.options=[];this.listeners={};}
  append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
- reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(){}
+ reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(n,v){(this.attributes??={})[n]=String(v);}removeAttribute(n){if(this.attributes)delete this.attributes[n];}
  closest(){return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
  get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
 }
@@ -38,7 +38,25 @@ if(mode==='intake_cold_asgi'){
  context.fetch=async(path,options={})=>{calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};};
 }
 (async()=>{
- if(mode.startsWith('resource_catalog_chain_')){
+ if(mode==='resource_catalog_feedback_invalidated'){
+  const opening=$('resource-catalog').onclick(),catalog=calls.at(-1),mine=$('resource-mine').onclick(),holds=calls.at(-1);
+  check(holds.path==='/api/resource-holds');finish(holds,200,{items:[]});await mine;
+  finish(catalog,200,{server_time:'2026-10-26T12:00:00Z',items:[]});await opening;
+  check(calls.length===2);check($('resource-catalog-status').dataset.state==='UNREAD');check($('resource-catalog-view').attributes['aria-busy']==='false');
+  const old=$('resource-catalog').onclick(),oldCall=calls.at(-1),latest=$('resource-catalog').onclick(),latestCall=calls.at(-1);
+  finish(oldCall,403,{});await old;check($('resource-catalog-status').dataset.state==='LOADING');check($('resource-catalog-view').attributes['aria-busy']==='true');
+  finish(latestCall,403,{});await latest;check($('resource-catalog-status').dataset.state==='DENIED');check($('resource-catalog-view').attributes['aria-busy']==='false');
+ }else if(mode==='resource_catalog_feedback'){
+  const status=$('resource-catalog-status'),view=$('resource-catalog-view');
+  const start=()=>{const promise=$('resource-catalog').onclick();check(status.dataset.state==='LOADING');check(view.attributes['aria-busy']==='true');check(status.textContent.includes('尚未预检'));return {promise,call:calls.at(-1)};};
+  let a=start();a.call.reject(Error('SYNTHETIC_NETWORK_FAILURE'));await a.promise;
+  check(status.dataset.state==='ERROR');check(view.attributes['aria-busy']==='false');check(status.textContent.includes('手动'));check($('resource-form').hidden);
+  a=start();finish(a.call,200,{server_time:'2026-10-26T12:00:00Z',items:[]});await tick();
+  for(const call of calls.slice(-2))finish(call,200,call.path==='/api/resource-bundles'?{actor_id:'SYNTHETIC_ACTOR_A',items:[]}:{enabled:false,approval_scope:null});await a.promise;
+  check(status.dataset.state==='EMPTY');check(view.attributes['aria-busy']==='false');check(status.textContent.includes('不是资源已用完'));
+  a=start();finish(a.call,403,{});await a.promise;check(status.dataset.state==='DENIED');check(view.attributes['aria-busy']==='false');check(view.children.length===0);
+  $('token').value='SYNTHETIC_SESSION_B';$('token').oninput();check(status.dataset.state==='UNREAD');check(view.attributes['aria-busy']==='false');
+ }else if(mode.startsWith('resource_catalog_chain_')){
   const scenario=mode.slice('resource_catalog_chain_'.length),opening=$('resource-catalog').onclick(),catalog=calls.at(-1);
   check(catalog.path==='/api/synthetic-resources');check(catalog.options.headers.Authorization==='Bearer SYNTHETIC_SESSION_A');
   if(scenario==='denied'){
@@ -68,6 +86,11 @@ if(mode==='intake_cold_asgi'){
    finish(catalog,200,{server_time:'2026-10-26T12:00:00Z',items});await tick();check(calls.length===3);
    for(const call of calls.slice(1)){check(call.options.headers.Authorization==='Bearer SYNTHETIC_SESSION_A');check(['/api/resource-bundles','/api/plan-approval/status'].includes(call.path));finish(call,200,call.path==='/api/resource-bundles'?{actor_id:'SYNTHETIC_ACTOR_A',items:[]}:{enabled:false,approval_scope:null});}
    await opening;check(run('bundleActor')==='SYNTHETIC_ACTOR_A');check(run('planApprovalEnabled')===false);check($('resource-form').hidden===(scenario==='empty'));
+   if(scenario==='populated'){
+    const card=$('resource-catalog-view').children.find(e=>e.className==='resource-catalog-card');check(!!card);
+    const text=e=>e.textContent+' '+e.children.map(text).join(' '),value=text(card);
+    for(const field of ['合成资源','目录启用','容量 3','合成版本 1','0秒缓冲','SYNTHETIC / fixture / v1','非真实资源','2026-10-26T00:00:00Z','2026-10-27T00:00:00Z','UTC'])check(value.includes(field));
+   }
   }
  }else if(mode==='same_batch_receipt_navigation'){
   const rows=[{id:id(21),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1},{id:id(22),goal:'SYNTHETIC SAME GOAL',state:'AWAITING_RECEIPT',revision:1}];
