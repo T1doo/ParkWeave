@@ -24,6 +24,12 @@ Linux从根及files的已打开descriptor核对：目录属主须当前有效UID
 
 ## 子进程与环境
 
+PGDATA专用源码候选`pgdata_candidate.py`仅限同一V2租约、generation=1且CLUSTER未初始化状态下的全新`data/postgresql`。已有私有`data`父目录保持原owner/raw DACL/control；以held父句柄相对NtCreateFile的FILE_CREATE独占新建PGDATA根，显式当前用户owner、PROTECTED DACL及唯一当前用户FILE_ALL_ACCESS的OI/CI ACE。不增加SYSTEM/Administrators等allow，其他目录和原`windows_files.private_acl`完全不改。后代仅接纳该具体SID/具体权限的精确继承投影：目录flags=0x13、文件flags=0x10；不接受generic rights、CREATOR_OWNER、额外/未知ACE、空DACL或后代私自PROTECTED。原始ACL字节也核对，不能仅凭解析后的INHERITED标志自证来源。这是批准的新专用规则，后代对父ACL变化的隔离弱于逐对象PROTECTED，不宣传完全等价。
+
+根能力仅登记于本次原租约，绑定实例UUID、root/lock/journal身份与generation、data/PGDATA物理身份、冻结描述符及规则版本`parkweave-pgdata-current-user-inheritance/1`；不按路径认领，不接旧目录/迁移或持久JSON恢复。initdb冻结命令及每次创建前freshcheck须消费同一精确目录能力。源中提供有界held-parent枚举/相对打开/owner/raw ACL/文件身份/单硬链接/reparse/同卷核验及两轮所选元数据一致性检查，文件大小不套用资源TXT预算；不读取业务内容、不宣称全DB不变或原子树快照。外部tablespace/WAL重解析逃逸拒绝。漂移或未知关闭在内存标记UNKNOWN并poison租约；保留原件和已尝试关闭的未知句柄记录，不删目录、不修ACL、不重试未知关闭；不宣称journal UNKNOWN已耐久。
+
+该候选未接生产工厂/打包入口，`launch_ready=False`，NO_RESUME/NO_SECRET保留。原生NtCreateFile/目录枚举/继承结果、TokenOwner当前用户设置与实际child读回均未执行或验收；仅检查owner不能保证未来创建者默认owner。持久认证CONFIG中的profile绑定与REOPEN尚未实现，旧实例不能借本能力重开。当前held VolumeGUID路径尚未获PostgreSQL canonicalize路径兼容验收，禁止因此恢复执行；需后续绑定可供PG使用且解析到同一held物理根的受约束路径。源码检查不授权任何实际TokenOwner/DACL变更、原生进程、凭据传送或数据库启动，也不防恶意同用户/管理员并发或撤回已打开句柄。普通原子创建并不构成断电目录持久性证明。
+
 process_env.py只读取/转发白名单OS执行必需项：PATH、Windows系统目录/COMSPEC/PATHEXT、临时目录、locale/TZ。调用者显式添加该进程的Park DSN/模式/私有路径。未知环境项、HOME、PYTHONPATH、代理、模型token、其他项目密钥、迁移owner及测试owner不传给API/worker。CLI迁移/隔离测试owner仅传给明确对应进程，不打印值；本轮测试用虚构哨兵验证未知键不读取/不转发。
 
 官方PowerShell工具只安装在忽略的工作区缓存作LinuxAST检查，使用显式XDG缓存/配置/数据目录，不改HOME/全局策略。Windows脚本仅支持原生平台；签名/执行策略由既有授权流程处理，不用Bypass/Set-ExecutionPolicy。Stop核对稳定PID身份和可信命令，AccessDenied不会被误报“进程不存在”，不强杀/停止数据库服务。

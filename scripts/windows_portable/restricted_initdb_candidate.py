@@ -1,8 +1,8 @@
 """Unwired suspended initdb creation core; NO resume or password transmission.
 
 Original OWNER/runtime-loading gates remain before native creation. Even after
-all process checks this core leaves started=False: data-target protection and
-client authentication still must be implemented before any future resume.
+all process checks this core leaves started=False: PGDATA source checks are
+unaccepted natively and client authentication is still absent before resume.
 No production factory/build wiring, credentials, SQL or filesystem writes.
 Native calls below would require separate authorization; source checks do not
 claim Windows loading or initialization. Deadlines are cooperative, not a
@@ -19,11 +19,12 @@ import weakref
 from .fixed_directories import FixedDirectoryLease, _exclusive_entry, _exclusive_operation
 from .endpoint_plan import _key_held
 from .initdb_pipe_candidate import _OwnedInitdbPipe, _pwfile_name_held
-from .processes import Command, PinnedExecutable, _ProcessState, ProcessRefused, private_root
+from .processes import Command, PinnedExecutable, _ProcessState, ProcessRefused
 from .restricted_startup_candidate import _OwnedStartup, _utf16, command_buffer, environment_buffer, _handle
 from .restricted_token_candidate import _RestrictedPrimaryCandidate, _dacl_bytes
 from .runtime_payload import RuntimePayloadPrerequisite
 from .windows_process_handles import WindowsJobProcess
+from .pgdata_candidate import _NewDataTarget, _path_held
 
 
 class ProcessInformation(C.Structure):
@@ -58,9 +59,10 @@ _frozen_by_lease = weakref.WeakKeyDictionary()
 
 
 @_exclusive_entry
-def _freeze(lease, owner, server, specification):
+def _freeze(lease, owner, server, specification, *, data_target):
     _need(type(lease) is FixedDirectoryLease and lease not in _frozen_by_lease)
     _need(type(owner) is _RestrictedPrimaryCandidate and type(server) is _OwnedInitdbPipe)
+    _need(type(data_target) is _NewDataTarget)
     _need(type(specification) is Command and specification.model == 'WINDOWS_JOB'
           and specification.relative_executable == 'runtime/postgresql/bin/initdb.exe'
           and specification.arguments == specification.environment == ()
@@ -69,12 +71,13 @@ def _freeze(lease, owner, server, specification):
         key = _key_held(lease)
         name = _pwfile_name_held(lease, server, owner)
         command = Command(specification.relative_executable, specification.sha256, specification.size,
-                          _arguments(str(private_root(lease) / 'data' / 'postgresql'), name), 'WINDOWS_JOB')
+                          _arguments(_path_held(lease, data_target), name), 'WINDOWS_JOB')
         lease._verify()
         _need(_key_held(lease) == key)
         frozen = object.__new__(_FrozenInitdb)
         frozen.lease, frozen.owner, frozen.server = lease, owner, server
         frozen.key, frozen.command = key, command
+        frozen.data_target = data_target
         _frozen_by_lease[lease] = frozen
         return frozen
 
@@ -93,7 +96,7 @@ def _create_held(lease, backend, group, register, environment, deadline):
 class _RestrictedInitdbBackend(WindowsJobProcess):
     native_acceptance = False
     launch_ready = False
-    scope = 'SUSPENDED_INITDB_CORE_NO_DATA_TARGET_OR_CLIENT_ACCEPTANCE'
+    scope = 'SUSPENDED_INITDB_CORE_PGDATA_CANDIDATE_NO_CLIENT_ACCEPTANCE'
 
     def __init__(self, frozen, payload, deadline):
         _need(type(frozen) is _FrozenInitdb and _frozen_by_lease.get(frozen.lease) is frozen)
@@ -139,7 +142,7 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
               and group.executable.command is group.command and group.executable.lease is self.lease)
         _need(_frozen_by_lease.get(self.lease) is self.frozen and _key_held(self.lease) == self.frozen.key)
         name = _pwfile_name_held(self.lease, self.server, self.owner)
-        _need(group.command.arguments == _arguments(str(private_root(self.lease)/'data'/'postgresql'), name))
+        _need(group.command.arguments == _arguments(_path_held(self.lease, self.frozen.data_target), name))
         group.executable.verify()
         _need(_handle(self.owner._derived))  # NULL must never select caller token
 
