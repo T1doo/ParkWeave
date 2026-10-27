@@ -88,7 +88,7 @@ def source_bytes(source,relative,started):
 
 def helper(source,name,started):
     raw=source_bytes(source,'scripts/'+name+'.py',started)
-    module=types.ModuleType('_cft_'+name);module.__file__=str(ROOT/'scripts'/name+'.py');sys.modules[module.__name__]=module
+    module=types.ModuleType('_cft_'+name);module.__file__=str(ROOT/'scripts'/(name+'.py'));sys.modules[module.__name__]=module
     exec(compile(raw,module.__file__,'exec'),module.__dict__)
     return module
 
@@ -350,7 +350,7 @@ def finish(out,report):
             'publication_error':fault(error)}),flush=True)
         return 1
     try:print(json.dumps({'status':report['status'],'scope':report['scope'],
-        'phase':report.get('phase'),'reason_code':report.get('reason_code')}),flush=True)
+        'phase':report.get('phase'),'reason_code':report.get('reason_code'),'error_type':report.get('error_type')}),flush=True)
     except BaseException:return 1
     return 0 if report['status']=='PREPARED_FOR_REVIEW_REQUIRES_EXIT_0' else 1
 

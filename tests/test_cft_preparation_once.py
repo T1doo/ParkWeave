@@ -128,6 +128,7 @@ def test_worker_close_and_save_failures_preserve_original_fault(tmp_path,monkeyp
     monkeypatch.setattr(m.os,'open',open_fd)
     def close_fd(fd):raise OSError('SYNTHETIC_CLOSE')
     monkeypatch.setattr(m.os,'close',close_fd)
+    monkeypatch.setattr(m,'ROOT',m.ROOT) # Restore worker's process-local ROOT after this in-process fault fixture.
     monkeypatch.setattr(m,'gate',lambda *a:None)
     monkeypatch.setattr(m,'root_verify',lambda *a:None)
     monkeypatch.setattr(m,'regular',lambda *a:b'SYNTHETIC_FIXED_SOURCE')
@@ -184,3 +185,12 @@ def test_owned_cleanup_requires_original_identity_then_removes_only_own_tree(tmp
         m.remove(path,fd,(st.st_dev,st.st_ino),time.monotonic()+10)
         assert not path.exists() and foreign.read_bytes()==b'KEEP'
     finally:os.close(fd)
+
+
+@pytest.mark.parametrize('name',['template_http_supervision','template_http_activation'])
+def test_real_reviewed_helper_bytes_load_without_running_any_operation(name):
+    import subprocess
+    source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=m.ROOT,text=True).strip()
+    loaded=m.helper(source,name,time.monotonic())
+    assert loaded.__file__==str(m.ROOT/'scripts'/(name+'.py'))
+    assert loaded.ROOT==m.ROOT if name=='template_http_activation' else callable(loaded.supervise)
