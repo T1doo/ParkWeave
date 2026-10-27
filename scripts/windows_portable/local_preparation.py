@@ -5,6 +5,7 @@ generator or native admission is implemented here. Individual role actions are
 explicit; there is no automatic review/confirmation or write retry.
 """
 from dataclasses import dataclass, field
+from hashlib import sha256
 import json
 import re
 import time
@@ -12,7 +13,8 @@ from typing import Protocol
 from uuid import UUID
 
 from parkweave.domain import Intake
-from parkweave.preparation import CreatePreparation, PreparationCommand
+from parkweave.preparation import CreatePreparation, PreparationCommand, canonical
+from parkweave.store import digest
 
 from .application_readiness import ExistingActorProbe
 from .cluster_processes import FixedClusterProcesses, ClusterPrerequisites
@@ -40,8 +42,9 @@ class PreparationRequestPort(Protocol):
 
 
 class PreparationCommandUnknown(RuntimeError):
-    def __init__(self, action, request_key, primary):
+    def __init__(self, action, request_key, primary, recovery_intent=None):
         self.action, self.request_key, self.primary = action, request_key, primary
+        self.recovery_intent = recovery_intent
         # Never include material, bearer, DSN or transport exception text.
         super().__init__('LOCAL_PREPARATION_COMMAND_UNKNOWN:' + action)
 
@@ -80,6 +83,27 @@ class PreparationReference:
 
 
 @dataclass(frozen=True, repr=False)
+class EvidenceRecoveryIntent:
+    action: str
+    request_key: str
+    fingerprint: str
+    actor: tuple
+    bearer_sha256: str = field(repr=False)
+    previous: PreparationReference
+    application: object = field(repr=False)
+
+    def __reduce__(self):
+        raise TypeError('unknown command binding cannot be serialized')
+
+
+@dataclass(frozen=True)
+class PreparationRecovery:
+    status: str
+    reason: str
+    reference: PreparationReference | None = None
+
+
+@dataclass(frozen=True, repr=False)
 class PreparationCheckpoint:
     reference: PreparationReference
     view: bytes = field(repr=False)
@@ -98,12 +122,17 @@ class PreparationClient:
         if self.actor.actor[3] != expected:
             raise CandidateRefused('explicit preparation action role required')
 
-    def _request(self, method, path, body=None, key=None):
+    def _request(self, method, path, body=None, key=None, *, binding=None):
         self.workspace.check()
+        application, actor = self.workspace.application, self.actor
+        if binding is not None and (application is not binding[0] or actor is not binding[1]):
+            raise CandidateRefused('original recovery dispatch binding changed')
         deadline = time.monotonic() + 30
-        result = self.workspace.transport.request(self.workspace.application, self.actor,
+        result = self.workspace.transport.request(application, actor,
                                                   method, path, body, key, deadline)
         self.workspace.check()
+        if binding is not None and (self.workspace.application is not application or self.actor is not actor):
+            raise CandidateRefused('original recovery response binding changed')
         if time.monotonic() >= deadline:
             raise CandidateRefused('local preparation request deadline')
         # Copy provider-owned objects and enforce the shared response bound.
@@ -115,7 +144,7 @@ class PreparationClient:
             raise CandidateRefused('preparation JSON object required')
         return result
 
-    def _write(self, action, key, method, path, body, consume):
+    def _write(self, action, key, method, path, body, consume, *, recovery_intent=None):
         self.workspace.check()  # Known expired/pre-dispatch refusal is not a write outcome.
         _key(key)
         try:
@@ -124,7 +153,7 @@ class PreparationClient:
             # A lost response may follow a committed SQL transaction. Retain the
             # SAME caller key/previous reference for explicit recovery; no retry,
             # compensating delete, fabricated rollback or local state advance.
-            raise PreparationCommandUnknown(action, key, error) from None
+            raise PreparationCommandUnknown(action, key, error, recovery_intent) from None
 
     def submit_case(self, goal, key):
         self._role('enterprise_operator')
@@ -167,8 +196,19 @@ class PreparationClient:
         if type(ref) is not PreparationReference:
             raise CandidateRefused('explicit preparation reference required')
         ref.validate()
+        recovery = None
+        if data.action == 'ADD_EVIDENCE':
+            # Exact existing server fingerprint: normalized defaults included,
+            # correction_slots omitted when None; no raw material body retained.
+            normalized = data.model_dump(mode='json', exclude={'correction_slots'}
+                                         if data.correction_slots is None else set())
+            recovery = EvidenceRecoveryIntent(data.action, key,
+                digest(canonical({'preparation_id': ref.preparation_id, **normalized})),
+                self.actor.actor, sha256(self.actor.bearer.encode('ascii')).hexdigest(),
+                ref, self.workspace.application)
         return self._write(data.action, key, 'POST', '/api/preparations/' + ref.preparation_id + '/commands',
-                           data.model_dump(mode='json', exclude_unset=True), lambda value: self._event(value, data.action, ref))
+                           data.model_dump(mode='json', exclude_unset=True),
+                           lambda value: self._event(value, data.action, ref), recovery_intent=recovery)
 
     def add_evidence(self, ref, key, *, slot, text, source_label):
         self._role('enterprise_operator')
@@ -186,11 +226,86 @@ class PreparationClient:
         return self._command(ref, key, PreparationCommand(action='CONFIRM',
                                                         expected_revision=ref.revision, reason=reason))
 
-    def read(self, ref):
+    def recover_unknown(self, pending):
+        """Explicit read-only ADD_EVIDENCE check; never resends any command.
+
+        Existing server protocol supports canonical UUID keys for this action
+        only. Missing/old binding fields, unobserved/historical records and all
+        other actions stay UNKNOWN. A matching receipt must also be the exact
+        CURRENT owner view before a replacement reference is returned.
+        """
+        def unknown(reason):
+            return PreparationRecovery('UNKNOWN', reason)
+
+        if type(pending) is not PreparationCommandUnknown:
+            return unknown('NO_ORIGINAL_UNKNOWN_COMMAND')
+        intent = pending.recovery_intent
+        if (type(intent) is not EvidenceRecoveryIntent or pending.action != 'ADD_EVIDENCE'
+                or intent.action != pending.action or intent.request_key != pending.request_key):
+            return unknown('NO_RELIABLE_QUERY_CONTRACT')
+        try:
+            _uuid(intent.request_key)  # Existing recovery endpoint accepts UUID handles only.
+        except (ValueError, TypeError, CandidateRefused):
+            return unknown('NO_RELIABLE_QUERY_CONTRACT')
+        if self.workspace.application is not intent.application:
+            return unknown('OWNED_INVOCATION_CHANGED')
+        actor = self.actor  # Frozen actor/application arguments for BOTH read dispatches.
+        binding = (intent.application, actor)
+
+        def original_binding():
+            actor.expected()
+            return (self.workspace.application is intent.application and self.actor is actor
+                    and actor.actor == intent.actor
+                    and sha256(actor.bearer.encode('ascii')).hexdigest() == intent.bearer_sha256
+                    and actor.actor[3] == 'enterprise_operator')
+
+        try:
+            if not original_binding():
+                return unknown('IDENTITY_CHANGED')
+            intent.previous.validate()
+            observed = self._request('GET', '/api/preparations/' +
+                                     intent.previous.preparation_id + '/command-recovery',
+                                     key=intent.request_key, binding=binding)
+            if observed.get('status') != 'COMMITTED':
+                return unknown('COMMIT_NOT_CONFIRMED')  # NOT_OBSERVED never means not executed.
+            expected_actor = dict(zip(('id', 'park_id', 'org_id', 'role'), intent.actor))
+            if (observed.get('recovery_contract') != 'parkweave-evidence-recovery/1'
+                    or observed.get('preparation_id') != intent.previous.preparation_id
+                    or observed.get('historical_only') is not True
+                    or observed.get('automatically_replayed') is not False
+                    or any(observed.get(k) != v for k, v in SCOPE.items() if k != 'scope')
+                    or observed.get('request_binding') != dict(request_key=intent.request_key,
+                        fingerprint=intent.fingerprint, actor=expected_actor)):
+                return unknown('ORIGINAL_BINDING_NOT_CONFIRMED')
+            receipt = observed.get('event')
+            replacement = self._event(receipt, 'ADD_EVIDENCE', intent.previous)
+            if (type(observed.get('current_revision')) is not int
+                    or observed['current_revision'] != replacement.revision):
+                return unknown('HISTORICAL_RECEIPT_ONLY')
+            if not original_binding():
+                return unknown('IDENTITY_CHANGED')
+            current = self.read(replacement, _binding=binding)
+            row = current['preparation']
+            matches = [h for h in current.get('history', []) if type(h) is dict
+                       and type(h.get('revision')) is int and h['revision'] == replacement.revision]
+            if (row.get('revision') != replacement.revision or row.get('state') != replacement.state
+                    or row.get('owner_id') != intent.actor[0] or row.get('park_id') != intent.actor[1]
+                    or row.get('org_id') != intent.actor[2] or row.get('namespace') != 'SYNTHETIC'
+                    or current['snapshot_sha256'] != receipt.get('snapshot_sha256')
+                    or len(matches) != 1 or matches[0].get('action') != 'ADD_EVIDENCE'
+                    or matches[0].get('payload') != receipt):
+                return unknown('CURRENT_EXACT_RECEIPT_NOT_CONFIRMED')
+            if not original_binding():
+                return unknown('IDENTITY_CHANGED')
+            return PreparationRecovery('COMMITTED', 'EXACT_CURRENT_ORIGINAL_RECEIPT', replacement)
+        except Exception:
+            return unknown('READ_NOT_CONFIRMED')  # Retain original pending key/ref, no repair.
+
+    def read(self, ref, *, _binding=None):
         if type(ref) is not PreparationReference:
             raise CandidateRefused('explicit preparation reference required')
         ref.validate()
-        value = self._request('GET', '/api/preparations/' + ref.preparation_id)
+        value = self._request('GET', '/api/preparations/' + ref.preparation_id, binding=_binding)
         _scope(value)
         row = value['preparation']
         if (row['id'], row['run_id'], row['case_id']) != (ref.preparation_id, ref.run_id, ref.case_id):

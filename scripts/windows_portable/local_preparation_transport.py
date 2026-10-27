@@ -30,10 +30,14 @@ class OwnedPreparationRequest:
             raise CandidateRefused('bounded original application request required')
         actor.expected()
         reads = re.fullmatch('/api/(?:runs/' + UUID_PATH + '|preparations/' + UUID_PATH + ')', path)
+        recovery = re.fullmatch('/api/preparations/' + UUID_PATH + '/command-recovery', path)
         writes = path in ('/api/runs', '/api/preparations') or re.fullmatch(
             '/api/preparations/' + UUID_PATH + '/commands', path)
         if method == 'GET':
-            if not reads or body is not None or request_key is not None:
+            if (not (reads or recovery) or body is not None
+                    or (recovery and (type(request_key) is not str
+                                      or re.fullmatch(UUID_PATH, request_key) is None))
+                    or (not recovery and request_key is not None)):
                 raise CandidateRefused('fixed preparation read required')
             encoded = b''
         elif method == 'POST':
