@@ -1,5 +1,6 @@
 """Actual ABI/source and negative pending-lifetime checks, native NOT_RUN."""
 import ast
+from contextlib import ExitStack
 import ctypes as C
 from pathlib import Path
 from threading import RLock,Lock
@@ -23,27 +24,74 @@ from threading import get_ident
 
 
 class NativePreparationChecks(unittest.TestCase):
+    def _refuse_new_ports(self, stack):
+        # Patch the actual composition ports before construction; never mock the
+        # owner gate or let any Windows security/credential operation execute.
+        ports = [
+            (prep.secrets, 'token_urlsafe'),
+            (prep, '_under_lease'),
+            (prep._NativeLayout, '__init__'),
+            (prep, 'create_layout_held'),
+            (prep.ep, '_register_held'),
+            (prep._NativeFixedSecretStore, '__init__'),
+            (prep._NativeFixedSecretStore, '_create_held'),
+            (prep._NewDataTarget, '__init__'),
+            (prep, '_create_target_held'),
+            (prep.FixedDirectoryLease, 'checkpoint'),
+            (prep._RestrictedPrimaryCandidate, '__init__'),
+            (prep._RestrictedPrimaryCandidate, 'derive'),
+            (prep._RestrictedPrimaryCandidate, 'prepare_default_dacl'),
+            (prep._RestrictedPrimaryCandidate, 'prepare_owner'),
+            (prep._OwnedInitdbPipe, '__init__'),
+            (prep._OwnedInitdbPipe, 'create'),
+            (prep, '_freeze'),
+            (prep.RuntimePayloadPrerequisite, '__init__'),
+            (prep._RestrictedInitdbBackend, '__init__'),
+            (prep.PrivateProcessAdapter, '__init__'),
+            (prep.PrivateProcessAdapter, 'launch'),
+        ]
+        return [stack.enter_context(patch.object(
+            target, name, side_effect=AssertionError('SIDE_EFFECT_PORT_CALLED: '+name)))
+            for target, name in ports]
+
     def test_composition_constructor_is_pure_and_original_owner_gate_precedes_all_new_ports(self):
+        # Import outside the assertion: an import/dependency failure is a failure,
+        # never evidence that the original owner gate refused initialization.
+        from scripts.windows import lifecycle
         request=ep.EndpointRequest(54000,58000)
         command=Command('runtime/postgresql/bin/initdb.exe','a'*64,100,model='WINDOWS_JOB')
-        with patch.object(prep.secrets,'token_urlsafe',side_effect=AssertionError('NO_REAL_CREDENTIALS')):
+        with ExitStack() as stack:
+            ports=self._refuse_new_ports(stack)
             owner=prep._NativePreparationController(ep.PlanMode.NEW,
                 runtime=dict(source_commit='b'*40,manifest_sha256='c'*64),request=request,initdb=command)
             self.assertFalse(owner.started)
             self.assertEqual(owner._resources,[])
             self.assertIsNot(owner.spec.initdb,command)
-            with self.assertRaises(Exception):owner.prepare(object(),deadline=time.monotonic()+5,register=lambda x:None)
+            registered=[]
+            with self.assertRaises(lifecycle.BoundaryError) as refused:
+                owner.prepare(object(),deadline=time.monotonic()+5,register=registered.append)
+            self.assertIs(type(refused.exception),lifecycle.BoundaryError)
+            self.assertEqual(refused.exception.parkweave_lifecycle_reason,'OWNER_MUTATION_PAUSED')
+            self.assertEqual(str(refused.exception),lifecycle.setup_readiness()['next_step'])
+            self.assertEqual(registered,[])
+            for port in ports:port.assert_not_called()
         self.assertFalse(owner.started);self.assertIsNone(owner.lease)
         self.assertFalse(owner.launch_ready)
-        with self.assertRaises(Exception):prep.native_preparation_controller()
+        with self.assertRaisesRegex(prep.CandidateRefused,'^NATIVE_PREPARATION_CONTROLLER_NOT_ACCEPTED$'):
+            prep.native_preparation_controller()
 
     def test_reopen_composition_refuses_new_inputs_and_invalid_lease_without_side_effects(self):
         runtime=dict(source_commit='b'*40,manifest_sha256='c'*64)
-        with self.assertRaises(Exception):prep._NativePreparationController(ep.PlanMode.REOPEN,
-            runtime=runtime,request=ep.EndpointRequest(54000,58000))
-        owner=prep._NativePreparationController(ep.PlanMode.REOPEN,runtime=runtime)
-        with self.assertRaises(Exception):owner.prepare(object(),deadline=time.monotonic()+5)
-        self.assertFalse(owner.started);self.assertEqual(owner._resources,[])
+        with ExitStack() as stack:
+            ports=self._refuse_new_ports(stack)
+            with self.assertRaisesRegex(prep.CandidateRefused,'^NATIVE_PREPARATION_REFUSED$'):
+                prep._NativePreparationController(ep.PlanMode.REOPEN,
+                    runtime=runtime,request=ep.EndpointRequest(54000,58000))
+            owner=prep._NativePreparationController(ep.PlanMode.REOPEN,runtime=runtime)
+            with self.assertRaisesRegex(prep.CandidateRefused,'^NATIVE_PREPARATION_REFUSED$'):
+                owner.prepare(object(),deadline=time.monotonic()+5)
+            self.assertFalse(owner.started);self.assertEqual(owner._resources,[])
+            for port in ports:port.assert_not_called()
 
     def test_preparation_cleanup_continues_after_first_owned_file_close_fails(self):
         owner=object.__new__(prep._NativePreparationController)
