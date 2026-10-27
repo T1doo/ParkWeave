@@ -33,6 +33,13 @@ jobs:
           persist-credentials: false
           fetch-depth: 2
           ref: ${{ github.ref_name }}
+      - name: Resolve canonical public evidence path without parent traversal
+        id: evidence
+        run: |
+          set -eu
+          reviewed_workspace=$(realpath -- "$GITHUB_WORKSPACE")
+          test "$reviewed_workspace" = "$GITHUB_WORKSPACE"
+          echo "directory=$(dirname "$reviewed_workspace")/scratch" >> "$GITHUB_OUTPUT"
       - name: Bootstrap existing locked tools and approved private font
         timeout-minutes: 3
         run: |
@@ -55,7 +62,8 @@ jobs:
         with:
           name: template-real-http-browser-${{ github.run_number }}
           path: |
-            ${{ github.workspace }}/../scratch/parkweave-http-evidence-*/result.json
-            ${{ github.workspace }}/../scratch/parkweave-http-evidence-*/*.png
+            ${{ runner.temp }}/template-browser-hosted-evidence/hosted-preparation.json
+            ${{ steps.evidence.outputs.directory }}/parkweave-http-evidence-*/result.json
+            ${{ steps.evidence.outputs.directory }}/parkweave-http-evidence-*/*.png
           if-no-files-found: warn
           retention-days: 1
