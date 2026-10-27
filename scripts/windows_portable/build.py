@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import subprocess
 import tarfile
+import tomllib
 import zipfile
 
 from .payload import (MANIFEST, SCHEMA, archive_files, dll_closure, file_manifest,
@@ -84,6 +85,20 @@ def python_requirement(value, version):
                         '==': version == target, '!=': version != target,
                         '>': version > target, '<': version < target}[op]
         require(accepted, 'WHEEL_REQUIRES_PYTHON')
+
+
+def verify_application_python(raw, version):
+    """Check the frozen application's own contract, not just dependency wheel tags."""
+    require(type(raw) is bytes and 0 < len(raw) <= 1024 * 1024, 'APPLICATION_PYTHON_METADATA')
+    try:
+        requirement = tomllib.loads(raw.decode('utf-8'))['project']['requires-python']
+    except (UnicodeDecodeError, ValueError, KeyError, TypeError):
+        raise payload_module.PayloadRefused('APPLICATION_PYTHON_METADATA') from None
+    require(type(requirement) is str and bool(requirement.strip()), 'APPLICATION_PYTHON_METADATA')
+    try:
+        python_requirement(requirement, version)
+    except payload_module.PayloadRefused:
+        raise payload_module.PayloadRefused('APPLICATION_REQUIRES_PYTHON') from None
 
 
 def verify_wheel(asset, members, version):
@@ -166,6 +181,7 @@ def assemble(repo, source, assets, lock_path):
     require(git('show', source + ':scripts/windows_portable/runtime-assets.json') == lock_raw, 'ASSET_LOCK_SOURCE_DRIFT')
     require(lock['schema'] == 'parkweave-windows-runtime-assets/1', 'ASSET_LOCK_SCHEMA')
     version, stem = python_layout(lock['assets'])
+    verify_application_python(git('show', source + ':pyproject.toml'), version)
     files = {}; asset_report = []
     def put(name, data):
         safe_name(name)

@@ -153,6 +153,7 @@ class PayloadChecks(unittest.TestCase):
             if args[1] == 'show':
                 name = args[2].split(':', 1)[1]
                 if name.endswith('runtime-assets.json'): return lock.read_bytes()
+                if name == 'pyproject.toml': return b'[project]\nrequires-python = ">=3.12,<3.13"\n'
                 return (Path(build.__file__).parent / Path(name).name).read_bytes()
             raise AssertionError('must not archive source after bad asset')
         with patch.object(build.subprocess, 'check_output', side_effect=git):
@@ -166,8 +167,10 @@ class PayloadChecks(unittest.TestCase):
             with self.assertRaisesRegex(p.PayloadRefused, 'BUILDER_SOURCE_DRIFT'): build.assemble(self.root, 'a' * 40, self.root, lock)
 
     def assembly_fixture(self, version='3.12.10', wheel_tag='py3-none-any', *,
-                         internal_tag=None, requires_python='>=3.9', pure=True, extra_python=None):
+                         internal_tag=None, requires_python='>=3.9', pure=True, extra_python=None,
+                         app_requires_python='>=3.12,<3.15'):
         repo = self.root / 'repo'; repo.mkdir(); assets = self.root / 'assets'; assets.mkdir()
+        (repo / 'pyproject.toml').write_text('[project]' + chr(10) + 'requires-python = "' + app_requires_python + '"' + chr(10), encoding='utf-8')
         stem = 'python' + ''.join(version.split('.')[:2])
         wheel_name = 'fixture-1.0-' + wheel_tag + '.whl'
         fixtures = {
@@ -388,6 +391,24 @@ class PayloadChecks(unittest.TestCase):
         with self.assertRaisesRegex(p.PayloadRefused, 'WHEEL_NATIVE_ABI'):
             build.verify_wheel(platform_asset,
                 {**members, wheel_path: platform_wheel, 'fixture/native.pyd': pe()}, (3, 12, 10))
+
+
+
+
+    def test_application_contract_refuses_a_compatible_dependency_on_wrong_runtime(self):
+        repo, assets, lock, source = self.assembly_fixture(
+            '3.14.9', 'cp314-cp314-win_amd64', pure=False, app_requires_python='>=3.12,<3.13')
+        with self.assertRaisesRegex(p.PayloadRefused, 'APPLICATION_REQUIRES_PYTHON'):
+            build.assemble(repo, source, assets, lock)
+
+    def test_application_python_metadata_is_required_and_fail_closed(self):
+        for raw in (b'', b'[project]', b'not toml', b'[project]\nrequires-python = 312'):
+            with self.subTest(raw=raw), self.assertRaisesRegex(p.PayloadRefused, 'APPLICATION_PYTHON_METADATA'):
+                build.verify_application_python(raw, (3, 12, 10))
+        valid = b'[project]\nrequires-python = ">=3.12,<3.13"'
+        build.verify_application_python(valid, (3, 12, 10))
+        with self.assertRaisesRegex(p.PayloadRefused, 'APPLICATION_REQUIRES_PYTHON'):
+            build.verify_application_python(valid, (3, 14, 9))
 
 
 if __name__ == '__main__': unittest.main()
