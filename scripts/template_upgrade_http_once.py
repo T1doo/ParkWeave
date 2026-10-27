@@ -33,6 +33,8 @@ PLACEHOLDER='Bearer SYNTHETIC_HTTP_SESSION'
 _SEAL=object()
 SQL_GRANTS=('GRANT USAGE ON SCHEMA public TO parkweave_app', 'GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app', 'GRANT SELECT,INSERT ON fact_assertions TO parkweave_app', 'GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app', 'GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app', 'GRANT SELECT ON action_grants TO parkweave_app', 'GRANT INSERT ON authorization_audit TO parkweave_app', 'GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app', 'GRANT SELECT,INSERT ON model_plans TO parkweave_app', 'GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app', 'GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app', 'GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app', 'GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app', 'GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app', 'GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app', 'GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app', 'GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app', 'GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app', 'GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app', 'GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app', 'GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app', 'GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app', 'GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app', 'GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app', 'GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app', 'GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app', 'GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app', 'GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app', 'GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app', 'GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app', 'GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
 PAGE_SHA256='d957c7d9193c76e3f8f5b1024e1e16d1fb3da5991867070464bdf3b23e764212'
+BROWSER_PAGE_SHA256='1312ee1577969bc950bc48d62f89bf35fedfd2cc56df9156b704ba76380cf859'
+ENTRIES={'NODE':'scripts.template_upgrade_http_once','BROWSER':'scripts.template_upgrade_browser_once'}
 PG_HASHES={'initdb':'c725d1d5c4073f3eb95335f296685ed1b4822e9f7d35fea09916d52e58b0ddf2','postgres':'ae05b2a1b0685f2c69b8b9eb3765b1429a5c173c64b248f7f157de2af9db768d'}
 
 
@@ -40,17 +42,17 @@ Closed=activation.Closed
 
 
 class Permit:
-    def __init__(self,seal,source,invocation,approval=None):
-        if seal is not _SEAL or approval is None or approval.invocation!=invocation:raise Closed('window closed')
-        self.source=source;self.invocation=invocation;self.approval=approval
+    def __init__(self,seal,source,invocation,approval=None,mode='NODE'):
+        if seal is not _SEAL or approval is None or approval.invocation!=invocation or mode not in ENTRIES or approval.relative!=activation.PROFILES[mode]:raise Closed('window closed')
+        self.source=source;self.invocation=invocation;self.approval=approval;self.mode=mode
     def check(self):self.approval.check()
 
 
-def authorize(source,invocation,approval=None,started=None):
-    approval=approval or activation.load(invocation)
+def authorize(source,invocation,approval=None,started=None,mode='NODE'):
+    approval=approval or (activation.load(invocation) if mode=='NODE' else activation.load(invocation,mode))
     if sys.platform!='linux' or os.geteuid()==0:raise Closed('unprivileged Linux required')
     activation.verify_source(source,approval,time.monotonic() if started is None else started)
-    return Permit(_SEAL,source,invocation,approval)
+    return Permit(_SEAL,source,invocation,approval,mode)
 
 
 def fault(error):
@@ -136,19 +138,23 @@ class PrivateRoot:
 
 
 class BudgetHTTP:
-    def __init__(self,origin,client,clock,token,checkpoint=lambda:None):
+    def __init__(self,origin,client,clock,token,checkpoint=lambda:None,*,browser=False):
         parsed=urlsplit(origin)
         if parsed.scheme!='http' or parsed.hostname!='127.0.0.1' or not parsed.port or parsed.path or parsed.username or parsed.password:raise Closed('loopback origin required')
-        self.origin=origin;self.client=client;self.clock=clock;self.token=token;self.checkpoint=checkpoint
+        self.origin=origin;self.client=client;self.clock=clock;self.token=token;self.checkpoint=checkpoint;self.browser=browser
         self.gets=0;self.posts=0;self.traffic=[];self.instance=None;self.target=None;self.target_hash=None
-    def request(self,method,path,*,body=None,actor=None,stage='read',key=None):
+    def request(self,method,path,*,body=None,actor=None,stage='read',key=None,raw=False):
         self.clock.left()
         pub='/api/template-candidate/park-a/new-enterprise-material-template'
         base='/api/template-consumer/instances/'+str(self.instance)
         check='/api/template-upgrade/'+str(self.instance)+'/check?'+urlencode(dict(target_release_id=self.target,target_sha256=self.target_hash))
+        browser_read=stage=='browser'
+        if browser_read and (not self.browser or method!='GET' or body is not None or actor is not None or key is not None):raise Closed('browser GET boundary')
+        if raw is not browser_read:raise Closed('raw response boundary')
         if method not in ('GET','POST') or '#' in path:raise Closed('route')
         if method=='GET':
-            if path not in (pub,'/api/template-consumer/catalog',base+'/planning',check):raise Closed('GET route')
+            allowed=('/template-upgrade','/favicon.ico','/api/template-consumer/catalog',check) if browser_read else (pub,'/api/template-consumer/catalog',base+'/planning',check)
+            if path not in allowed:raise Closed('GET route')
             if self.gets>=20:raise Closed('GET budget')
             self.gets+=1
         else:
@@ -161,6 +167,7 @@ class BudgetHTTP:
             if stage=='publication' and actor!=expected or stage!='publication' and actor is not None:raise Closed('POST actor')
             self.posts+=1
         headers={'X-Isolated-Template-Actor':actor} if actor else {'Authorization':'Bearer '+self.token}
+        if browser_read and path in ('/template-upgrade','/favicon.ico'):headers={}
         if key:headers['Idempotency-Key']=key
         if body is not None and len(json.dumps(body).encode())>65536:raise Closed('request length')
         event=dict(sequence=len(self.traffic)+1,method=method,stage=stage,status=None)
@@ -174,7 +181,14 @@ class BudgetHTTP:
                 chunks.append(chunk)
             if 300<=response.status_code<400:raise Closed('redirect refused')
             event['status']=response.status_code
-            value=json.loads(b''.join(chunks))
+            data=b''.join(chunks)
+            if browser_read:
+                if response.headers.get('content-encoding','identity')!='identity' or response.headers.get('set-cookie'):raise Closed('unexpected relay encoding or cookie')
+                if self.token.encode() in data:raise Closed('secret in relay body')
+                copied={k:v for k,v in response.headers.items() if k.lower() not in ('content-length','transfer-encoding','connection')}
+                if any(self.token in v for v in copied.values()):raise Closed('secret in relay headers')
+                value=(data,copied)
+            else:value=json.loads(data)
         self.checkpoint()
         return response.status_code,value
     def page_read(self,path,options):
@@ -327,7 +341,7 @@ def api_server(app,clock):
                 except ConnectionRefusedError:pass
         except BaseException as error:errors.append(fault(error))
         if primary is not None:
-            primary.http_cleanup_errors=errors
+            primary.http_cleanup_errors=list(getattr(primary,'http_cleanup_errors',()))+errors
             raise primary
         if errors:
             error=Closed('API cleanup unknown');error.http_cleanup_errors=errors;raise error
@@ -355,7 +369,17 @@ def verify_frozen_client(frozen):
     return path
 
 
-def real_worker(permit,path,clock,report):
+def load_browser_client(permit,started):
+    import types
+    permit.check();client_path=ROOT/'scripts/template_browser_client.py'
+    raw,identity=activation.regular_bytes(client_path,65536)
+    if raw!=activation.git(['show',permit.source+':scripts/template_browser_client.py'],started):raise Closed('browser client source drift')
+    module=types.ModuleType('reviewed_template_browser_client');module.__file__=str(client_path)
+    exec(compile(raw,str(client_path),'exec'),module.__dict__)
+    return module
+
+
+def real_worker(permit,path,clock,report,mode='NODE'):
     """Only called after the independent, presently closed invocation gate."""
     permit.check()
     import importlib.metadata
@@ -369,12 +393,15 @@ def real_worker(permit,path,clock,report):
     from parkweave.process_env import minimal_environment
     bins=Path(importlib.metadata.distribution('pgserver').locate_file('pgserver/pginstall/bin'))
     for name in ('socket','tmp','logs'): (path/name).mkdir(mode=0o700)
-    frozen_client=freeze_client(permit,path,clock)
+    browser_client=None
+    if mode=='NODE':frozen_client=freeze_client(permit,path,clock)
+    else:
+        browser_client=load_browser_client(permit,clock.started);browser_client.preflight(ROOT,path)
     env=minimal_environment(os.environ,TMPDIR=str(path/'tmp'),PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(ROOT/'src')+':'+str(ROOT/'tests')+':'+str(ROOT))
     for name,digest in PG_HASHES.items():
         binary=bins/name
         if binary.is_symlink() or sha256(binary.read_bytes()).hexdigest()!=digest:raise Closed('fixed PG binary drift')
-    if sha256((ROOT/'src/parkweave/template_upgrade_web.html').read_bytes()).hexdigest()!=PAGE_SHA256:raise Closed('original page drift')
+    if sha256((ROOT/'src/parkweave/template_upgrade_web.html').read_bytes()).hexdigest()!=(PAGE_SHA256 if mode=='NODE' else BROWSER_PAGE_SHA256):raise Closed('original page drift')
     postgres=None;node=None;http=None;tokens={};sanitized=False;primary=None
     def checkpoint():
         if http is not None:report.update(GET=http.gets,POST=http.posts,traffic=http.traffic)
@@ -412,14 +439,16 @@ def real_worker(permit,path,clock,report):
             for grant in SQL_GRANTS:c.execute(grant)
         app_store=Store(make_conninfo(owner.dsn,user='parkweave_app'));app,engine,consumer,checker=configure_template(permit,app_store,path)
         with api_server(app,clock) as origin,httpx.Client(trust_env=False,follow_redirects=False) as client:
-            http=BudgetHTTP(origin,client,clock,tokens['fixture-a'],checkpoint);report['phase']='BOOTSTRAP_NEW_CASE';checkpoint()
+            http=BudgetHTTP(origin,client,clock,tokens['fixture-a'],checkpoint,browser=mode=='BROWSER');report['phase']='BOOTSTRAP_NEW_CASE';checkpoint()
             row=bootstrap_case(http,app_store,engine)
             params=dict(instance=http.instance,page=str(ROOT/'src/parkweave/template_upgrade_web.html'),page_sha256=PAGE_SHA256)
             report['phase']='ORIGINAL_PAGE_REAL_HTTP';checkpoint()
-            with (path/'logs/node.log').open('xb') as log:
-                node=subprocess.Popen(['node',str(verify_frozen_client(frozen_client))],cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log)
-                run_page(node,http,owner,clock,params)
-            report.update(status='PASS',GET=http.gets,POST=http.posts,API='REAL_LOOPBACK_HTTP',PG='REAL_PRIVATE_UNIX_SOCKET',page='NODE_VM_ORIGINAL_SCRIPT_NOT_BROWSER')
+            if mode=='NODE':
+                with (path/'logs/node.log').open('xb') as log:
+                    node=subprocess.Popen(['node',str(verify_frozen_client(frozen_client))],cwd=ROOT,env=env,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log)
+                    run_page(node,http,owner,clock,params)
+            else:browser_client.run(http,owner,path,clock,report,business_snapshot,BROWSER_PAGE_SHA256,checkpoint)
+            report.update(status='PASS',GET=http.gets,POST=http.posts,API='REAL_LOOPBACK_HTTP',PG='REAL_PRIVATE_UNIX_SOCKET',page='NODE_VM_ORIGINAL_SCRIPT_NOT_BROWSER' if mode=='NODE' else 'REAL_CHROME_READ_ONLY_HTTP_RELAY')
     except BaseException as error:primary=error;report.update(status='FAIL',error=fault(error))
     finally:
         failures=list(getattr(primary,'http_cleanup_errors',()))
@@ -455,8 +484,8 @@ def directory_bytes(path):
     return total
 
 
-def validate_worker_report(value):
-    allowed={'status','phase','real_models','error','sanitized','cleanup_errors','worker_final','partial','GET','POST','traffic','API','PG','page','business_outcome','disk_errors'}
+def validate_worker_report(value,*,browser_client=None):
+    allowed={'status','phase','real_models','error','sanitized','cleanup_errors','worker_final','partial','GET','POST','traffic','API','PG','page','business_outcome','disk_errors','browser'}
     if type(value) is not dict or set(value)-allowed:raise Closed('worker report shape')
     if value.get('status') not in ('PASS','FAIL') or value.get('phase') not in ('START','INITDB','SCHEMA_AND_SYNTHETIC_AUTHORITY','BOOTSTRAP_NEW_CASE','ORIGINAL_PAGE_REAL_HTTP'):raise Closed('worker report state')
     if value.get('real_models') is not False or type(value.get('worker_final')) is not bool or type(value.get('partial')) is not bool:raise Closed('worker report completion')
@@ -470,11 +499,14 @@ def validate_worker_report(value):
         for item in errors:validate_fault(item)
     if 'error' in value:validate_fault(value['error'])
     for k,v in [('API','REAL_LOOPBACK_HTTP'),('PG','REAL_PRIVATE_UNIX_SOCKET'),('page','NODE_VM_ORIGINAL_SCRIPT_NOT_BROWSER'),('business_outcome','PARTIAL_OR_UNKNOWN')]:
-        if k in value and value[k]!=v:raise Closed('worker label')
+        if k in value and value[k]!=v and not (k=='page' and value[k]=='REAL_CHROME_READ_ONLY_HTTP_RELAY'):raise Closed('worker label')
+    if 'browser' in value:
+        if browser_client is None:raise Closed('frozen browser report verifier required')
+        browser_client.validate_report(value['browser'])
     traffic=value.get('traffic',[])
     if type(traffic) is not list or len(traffic)>32:raise Closed('worker traffic')
     for index,event in enumerate(traffic,1):
-        if type(event) is not dict or set(event)!={'sequence','method','stage','status'} or event['sequence']!=index or event['method'] not in ('GET','POST') or event['stage'] not in ('read','publication','create','resume','adopt') or (event['status'] is not None and (type(event['status']) is not int or not 100<=event['status']<=599)):raise Closed('worker traffic row')
+        if type(event) is not dict or set(event)!={'sequence','method','stage','status'} or event['sequence']!=index or event['method'] not in ('GET','POST') or event['stage'] not in ('read','publication','create','resume','adopt','browser') or (event['status'] is not None and (type(event['status']) is not int or not 100<=event['status']<=599)):raise Closed('worker traffic row')
 
 
 def validate_fault(value):
@@ -483,7 +515,7 @@ def validate_fault(value):
             or value['errno'] is not None and (type(value['errno']) is not int or not 0<=value['errno']<=4095)):raise Closed('worker fault shape')
 
 
-def worker(permit,path,identity,claim_args):
+def worker(permit,path,identity,claim_args,mode='NODE'):
     hand=json.loads(sys.stdin.buffer.readline(4096));started=hand['started']
     claim_path,claim_dev,claim_ino,file_dev,file_ino=claim_args
     parent=tree.identity(os.getppid())
@@ -508,7 +540,7 @@ def worker(permit,path,identity,claim_args):
     monitor_thread=threading.Thread(target=monitor,daemon=False)
     def alarm(*_):raise TimeoutError('business deadline')
     old=signal.signal(signal.SIGALRM,alarm);signal.setitimer(signal.ITIMER_REAL,clock.left(300));monitor_thread.start()
-    try:real_worker(permit,path,clock,report)
+    try:real_worker(permit,path,clock,report,mode)
     except BaseException as error:report.update(status='FAIL',error=fault(error))
     finally:
         stop.set()
@@ -524,11 +556,12 @@ def worker(permit,path,identity,claim_args):
     return 0 if report['status']=='PASS' else 1
 
 
-def main(argv=None):
+def main(argv=None,*,mode='NODE'):
     parser=argparse.ArgumentParser();parser.add_argument('--source',required=True);parser.add_argument('--invocation',required=True)
     parser.add_argument('--owned-worker',nargs=3);parser.add_argument('--claim',nargs=5);args=parser.parse_args(argv)
     started=time.monotonic()
-    try:approval=activation.load(args.invocation)
+    if mode not in ENTRIES:return 2
+    try:approval=activation.load(args.invocation) if mode=='NODE' else activation.load(args.invocation,mode)
     except (Closed,ValueError,OSError):return 2 # Default closed before process/directory/credential actions.
     if args.owned_worker:
         if not args.claim:return 2
@@ -537,14 +570,16 @@ def main(argv=None):
         try:
             parent=tree.identity(os.getppid())
             claim=activation.OnceClaim.restore(claim_path,(int(dev),int(ino)),(int(file_dev),int(file_ino)),args.source,args.invocation,os.getppid(),parent['start_ticks'])
-            permit=authorize(args.source,args.invocation,approval,claim.value['started'])
+            permit=authorize(args.source,args.invocation,approval,claim.value['started'],mode)
             path,root_dev,root_ino=args.owned_worker
-            return worker(permit,Path(path),(int(root_dev),int(root_ino)),args.claim)
+            return worker(permit,Path(path),(int(root_dev),int(root_ino)),args.claim,mode)
         except BaseException:return 1
     if args.claim:return 2
     watchdog=activation.TotalDeadline(started);watchdog.arm()
+    parent_browser_client=None
     try:
-        permit=authorize(args.source,args.invocation,approval,started)
+        permit=authorize(args.source,args.invocation,approval,started,mode)
+        if mode=='BROWSER':parent_browser_client=load_browser_client(permit,started)
         claim=activation.OnceClaim.create(permit.source,permit.invocation,started,tree.identity(os.getpid())['start_ticks'])
     except BaseException as error:
         print(json.dumps(dict(status='NOT_STARTED',stage='SOURCE_AND_CLAIM',error=fault(error))),flush=True);return 1
@@ -556,19 +591,21 @@ def main(argv=None):
         root=PrivateRoot.create(permit)
         env={k:os.environ[k] for k in ('PATH','LANG','LC_ALL','TZ') if k in os.environ}
         env.update(PYTHONPATH=str(ROOT/'src')+':'+str(ROOT/'tests')+':'+str(ROOT),PYTHONDONTWRITEBYTECODE='1')
-        argv=[sys.executable,'-B','-m','scripts.template_upgrade_http_once','--source',permit.source,'--invocation',permit.invocation,'--owned-worker',str(root.path),str(root.identity.st_dev),str(root.identity.st_ino),'--claim',str(claim.path),str(claim.identity[0]),str(claim.identity[1]),str(claim.file_identity[0]),str(claim.file_identity[1])]
+        argv=[sys.executable,'-B','-m',ENTRIES[mode],'--source',permit.source,'--invocation',permit.invocation,'--owned-worker',str(root.path),str(root.identity.st_dev),str(root.identity.st_ino),'--claim',str(claim.path),str(claim.identity[0]),str(claim.identity[1]),str(claim.file_identity[0]),str(claim.file_identity[1])]
         report.update(directory_retained=str(root.path),claim_directory=str(claim.path),total_seconds=TOTAL,cleanup_reserve_seconds=30,required_exit=0)
         save(evidence.path/'result.json',report,deadline=deadline)
         owned=tree.supervise(argv,env=env,cwd=ROOT,directory=root.path,started=started)
         result=root.path/'result.json'
         if not result.is_file():result=root.path/'partial.json'
         data=json.loads(result.read_text()) if result.is_file() and result.stat().st_size<=FRAME else {}
-        validate_worker_report(data)
+        validate_worker_report(data,browser_client=parent_browser_client)
         success=(data.get('status')=='PASS' and data.get('worker_final') is True and data.get('partial') is False
                  and owned['operation_status']=='PASS' and owned['status']=='CLEANUP_CONFIRMED')
         report.update(worker=data,owned=owned,operation_status='PASS' if success else 'FAIL')
         evidence.verify();save(evidence.path/'result.json',report,deadline=deadline)
         print(json.dumps(dict(status='PENDING_FINALIZATION',evidence_directory=str(evidence.path))),flush=True)
+        if success and mode=='BROWSER':
+            report['images']=parent_browser_client.publish_images(root,evidence,data['browser'],deadline)
         if success:
             root.remove(owned,data,deadline=deadline);report['directory_removed']=True;report.pop('directory_retained',None)
         else:report['directory_retained']=str(root.path)

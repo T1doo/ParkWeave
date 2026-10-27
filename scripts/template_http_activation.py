@@ -20,6 +20,7 @@ import time
 
 ROOT=Path(__file__).resolve().parents[1]
 RELATIVE='scripts/template_http_approval.json'
+PROFILES={'NODE':RELATIVE,'BROWSER':'scripts/template_browser_approval.json'}
 BRANCH='dev/pgdata-inheritance-source-20261026'
 
 
@@ -53,13 +54,16 @@ class Approval:
     expires:float
     raw:bytes
     identity:tuple
+    relative:str=RELATIVE
     def check(self):
-        raw,identity=regular_bytes(ROOT/RELATIVE,2048)
+        raw,identity=regular_bytes(ROOT/self.relative,2048)
         if raw!=self.raw or identity!=self.identity or time.time()>=self.expires:raise Closed('activation changed or expired')
 
 
-def load(invocation):
-    raw,identity=regular_bytes(ROOT/RELATIVE,2048)
+def load(invocation,mode='NODE'):
+    if mode not in PROFILES:raise Closed('fixed profile required')
+    relative=PROFILES[mode]
+    raw,identity=regular_bytes(ROOT/relative,2048)
     value=json.loads(raw,object_pairs_hook=unique_pairs)
     if type(value) is not dict or set(value)!={'version','enabled','reviewed_source','invocation','expires_utc'} or type(value['version']) is not int or value['version']!=1 or type(value['enabled']) is not bool:raise Closed('activation shape')
     if value['enabled'] is not True:raise Closed('window closed')
@@ -69,7 +73,7 @@ def load(invocation):
             or re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z',value['expires_utc']) is None):raise Closed('activation binding')
     expires=datetime.strptime(value['expires_utc'],'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc).timestamp()
     if not time.time()+360<=expires<=time.time()+3600:raise Closed('admission must cover360s and expire within one hour')
-    return Approval(value['reviewed_source'],invocation,expires,raw,identity)
+    return Approval(value['reviewed_source'],invocation,expires,raw,identity,relative)
 
 
 def git(args,started):
@@ -85,8 +89,8 @@ def verify_source(source,approval,started):
     if git(['branch','--show-current'],started).decode().strip()!=BRANCH:raise Closed('fixed development branch required')
     if git(['status','--porcelain'],started):raise Closed('dirty source')
     if git(['rev-parse','HEAD^'],started).decode().strip()!=approval.reviewed_source:raise Closed('reviewed direct parent required')
-    if git(['diff','--name-only','-z',approval.reviewed_source,source],started)!=RELATIVE.encode()+b'\0':raise Closed('activation may change only its contract')
-    if git(['show',source+':'+RELATIVE],started)!=approval.raw:raise Closed('activation not committed exactly')
+    if git(['diff','--name-only','-z',approval.reviewed_source,source],started)!=approval.relative.encode()+b'\0':raise Closed('activation may change only its contract')
+    if git(['show',source+':'+approval.relative],started)!=approval.raw:raise Closed('activation not committed exactly')
     approval.check()
 
 

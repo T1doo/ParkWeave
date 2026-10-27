@@ -188,3 +188,27 @@ def test_deadline_during_walk_retains_remaining_owned_file(monkeypatch):
     finally:
         monkeypatch.setattr(m.os,'unlink',original);now[0]=359
         root.remove({'status':'CLEANUP_CONFIRMED'},{'status':'PASS','sanitized':True,'worker_final':True,'partial':False},deadline=360);os.close(root.fd)
+
+
+def test_nested_browser_and_api_cleanup_errors_both_survive(monkeypatch):
+    import uvicorn
+    class Listener:
+        def bind(self,address):pass
+        def getsockname(self):return ('127.0.0.1',12345)
+        def close(self):raise OSError(5,'SYNTHETIC API close failed')
+    class Thread:
+        ident=1
+        def __init__(self,**kw):pass
+        def start(self):pass
+        def join(self,*args):raise TimeoutError('SYNTHETIC API join failed')
+    monkeypatch.setattr(m.socket,'socket',Listener)
+    monkeypatch.setattr(m.socket,'create_connection',lambda *a,**kw:(_ for _ in ()).throw(ConnectionRefusedError()))
+    monkeypatch.setattr(m.threading,'Thread',Thread)
+    monkeypatch.setattr(uvicorn,'Config',lambda *a,**kw:None)
+    monkeypatch.setattr(uvicorn,'Server',lambda *a,**kw:SimpleNamespace(started=True,run=lambda:None))
+    primary=ValueError('SYNTHETIC original browser failure')
+    primary.http_cleanup_errors=[{'type':'RuntimeError','errno':None}]
+    with pytest.raises(ValueError) as caught:
+        with m.api_server(object(),m.Clock(0,now=lambda:1)):raise primary
+    assert caught.value is primary
+    assert primary.http_cleanup_errors==[{'type':'RuntimeError','errno':None},{'type':'TimeoutError','errno':None},{'type':'OSError','errno':5}]
