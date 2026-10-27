@@ -80,9 +80,24 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 @media(min-width:1100px){.guide-roles{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:600px){body>header{padding:23px 18px}.guide-session,.guide-inputs,.guide-process{padding:20px 18px}.guide-roles{grid-template-columns:minmax(0,1fr)}.guide-fill-actions{grid-template-columns:minmax(0,1fr)}#workspace-panel{padding:20px 18px}}
 @media(forced-colors:active){body,body>header,.guide-session,.guide-inputs,.guide-process,.guide-process>details,#workspace-panel,#status[data-tone],#status:not([data-tone]){background:Canvas;color:CanvasText;border-color:CanvasText}body>header h1,body>header p,.guide-roles>h3,.guide-roles>small,label,small,#workspace-panel>h2,#workspace-panel>h3,#workspace-panel>p,#workspace-panel>.notice{color:CanvasText;border-color:CanvasText}.guide-roles,.guide-process>details[open]>summary{border-color:CanvasText}.guide-process>details>summary,.guide-process summary::marker,.guide-process li::marker{color:LinkText}input,select,input[type=file],input::file-selector-button{background:Canvas;color:CanvasText;border-color:CanvasText}button,button:hover:not(:disabled),#workspace-open:not(:disabled),#workspace-open:hover:not(:disabled){background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:Highlight}}
+
+:root{--ink:#141413;--muted:#625d57;--green:#D97757;--line:#e1ddd5}
+html{background:#FAF9F5}body.park-guide{margin:0;padding:0;max-width:none;background:#FAF9F5;color:#141413;font:14px/1.65 "Segoe UI","Microsoft YaHei",sans-serif}
+.park-guide main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:0;margin:0;max-width:none;height:100dvh}
+.park-guide aside{min-height:0;overflow:auto;padding:18px;border-right:1px solid #e1ddd5;background:#f1efe8}
+.park-guide aside>header{margin:0 0 16px;padding:0;background:none;border:0;color:#141413}
+.park-guide h1{font-size:21px;line-height:1.5;margin:0 0 6px}.park-guide h2{font-size:17px;margin:16px 0 8px}
+.park-guide #workspace-panel{min-width:0;overflow:auto;margin:0;padding:22px 28px;border:0;border-radius:0;background:#FAF9F5;box-shadow:none}
+.park-guide button{min-height:36px;padding:7px 10px;border-radius:6px;background:#D97757;color:#141413;border:1px solid #be6347;font-size:14px}
+.park-guide button:disabled{background:#edeae3;color:#79736a;border-color:#ddd8cf}
+.park-guide input,.park-guide select{min-width:0;max-width:100%;padding:8px;border:1px solid #ccc6bc;border-radius:6px;background:#fffefa;color:#141413}
+.park-guide .notice{padding:10px;border:1px solid #dfbaaa;background:#f5e5dd;color:#76351f}
+.park-guide details{border:1px solid #e1ddd5;border-radius:6px;margin:10px 0;padding:8px}
+.park-guide :focus-visible{outline:3px solid #9c482f;outline-offset:3px}
+@media(max-width:700px){.park-guide main{display:block;height:auto}.park-guide aside{border-right:0;border-bottom:1px solid #e1ddd5}.park-guide #workspace-panel{padding:18px}}
 </style>
-<header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
-<main><aside>
+
+<body class="park-guide"><main><aside><header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
 <p class="notice">所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。</p>
 <div class="guide-session"><h2>1 · 载入本次演示身份</h2>
 <label>选择新建演示库生成的 sessions.json<input id="sessions" type="file" accept=".json,application/json"></label>
@@ -155,4 +170,4 @@ function material(slot,text){field('prep-slot',slot);field('prep-text',text);fie
 $('fill-need').onclick=()=>act(()=>material('need_summary',examples[$('scenario').value].need));
 $('fill-outline').onclick=()=>act(()=>material('material_outline',outline));
 window.addEventListener('pagehide',()=>{clear();showStatus('等待选择本次模拟会话文件。');});controls();
-</script></html>
+</script></body></html>
