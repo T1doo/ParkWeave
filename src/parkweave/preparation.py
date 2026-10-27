@@ -115,17 +115,21 @@ def recover_evidence_command(store,token,id,key):
     Absence is an observation, never proof that a delayed request cannot arrive.
     """
     with store.connect() as c:
+        c.execute('SET TRANSACTION READ ONLY')
         c.execute("SET LOCAL lock_timeout='3s'")
         p=store.auth(c,token,lock=True)
         if p['role']!='enterprise_operator':raise Denied('original enterprise owner required')
         key_lock(c,p,key)
-        row=scoped(store,c,p,id)
-        record=c.execute('SELECT preparation_id,action,payload FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        row=scoped(store,c,p,id,read_only=True)
+        record=c.execute('SELECT preparation_id,action,payload,fingerprint FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if record and (record['preparation_id']!=id or record['action']!='ADD_EVIDENCE'):
             raise Conflict('original evidence recovery scope mismatch')
         return dict(preparation_id=str(id),status='COMMITTED' if record else 'NOT_OBSERVED',
                     event=record['payload'] if record else None,current_revision=row['revision'],
                     historical_only=True,automatically_replayed=False,
+                    recovery_contract='parkweave-evidence-recovery/1',
+                    request_binding=dict(request_key=key,fingerprint=record['fingerprint'] if record else None,
+                        actor={name:p[name] for name in ('id','park_id','org_id','role')}),
                     qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
 
 def create(store,token,key,data):
