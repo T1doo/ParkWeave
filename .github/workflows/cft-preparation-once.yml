@@ -17,7 +17,7 @@ jobs:
       github.repository == 'T1doo/ParkWeave' && github.event_name == 'push' &&
       github.ref == 'refs/heads/dev/pgdata-inheritance-source-20261026' &&
       github.event.repository.private == false &&
-      github.run_attempt == 1 && github.run_number == 1
+      github.run_attempt == 1 && github.run_number == 3
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -37,7 +37,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: cft-preparation-only-1
+          name: cft-preparation-only-3
           path: ${{ runner.temp }}/cft-preparation-evidence/result.json
           if-no-files-found: warn
           retention-days: 1

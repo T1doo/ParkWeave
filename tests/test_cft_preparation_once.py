@@ -194,3 +194,13 @@ def test_real_reviewed_helper_bytes_load_without_running_any_operation(name):
     loaded=m.helper(source,name,time.monotonic())
     assert loaded.__file__==str(m.ROOT/'scripts'/(name+'.py'))
     assert loaded.ROOT==m.ROOT if name=='template_http_activation' else callable(loaded.supervise)
+
+
+def test_repaired_preparation_exact_fresh_binding():
+    assert m.PARENT=='6d1d498acccb1fe11ff87cc3628cbe2a0ff8dd8e'
+    assert m.INVOCATION=='PW_HTTP_CFT_PREPARATION_RUN3'
+    workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/cft-preparation-once.yml').read_text()
+    assert 'github.run_number == 3' in workflow
+    assert 'github.run_attempt == 1' in workflow
+    assert 'cft-preparation-only-3' in workflow
+    assert (m.WORK,m.TREE,m.TOTAL)==(150,165,180)

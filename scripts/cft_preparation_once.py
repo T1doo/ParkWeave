@@ -22,14 +22,14 @@ from uuid import uuid4
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-PARENT='149febc95800789e5e454ab804754d6dc7523b57'
+PARENT='6d1d498acccb1fe11ff87cc3628cbe2a0ff8dd8e'
 BRANCH='dev/pgdata-inheritance-source-20261026'
 PATHS={'.github/workflows/cft-preparation-once.yml','scripts/cft_preparation_once.py','tests/test_cft_preparation_once.py'}
 GENERATION='1791250380097835';SIZE=198195769;MD5='lK7krcvsKsrVgyUPt+qhEA==';CRC32C='vpjgUg=='
 OBJECT='155.0.8059.39/linux64/chrome-linux64.zip'
 META='https://storage.googleapis.com/storage/v1/b/chrome-for-testing-public/o/155.0.8059.39%2Flinux64%2Fchrome-linux64.zip?generation='+GENERATION+'&fields=name,size,md5Hash,crc32c,generation'
 MEDIA='https://storage.googleapis.com/chrome-for-testing-public/'+OBJECT+'?generation='+GENERATION
-INVOCATION='PW_HTTP_CFT_PREPARATION_RUN1'
+INVOCATION='PW_HTTP_CFT_PREPARATION_RUN3'
 MiB=1024*1024;UNPACK=768*MiB;SINGLE=512*MiB;CONTENT=960*MiB;EARLY=1152*MiB;MONITOR=1280*MiB
 WORK=150;TREE=165;TOTAL=180;REPORT=16384
 
@@ -71,7 +71,7 @@ def git(args,started):
 
 
 def gate(source,started):
-    expected={'GITHUB_REPOSITORY':'T1doo/ParkWeave','GITHUB_REF':'refs/heads/'+BRANCH,'GITHUB_EVENT_NAME':'push','GITHUB_RUN_ATTEMPT':'1','GITHUB_RUN_NUMBER':'1','RUNNER_ENVIRONMENT':'github-hosted','RUNNER_OS':'Linux','PW_PUBLIC':'true'}
+    expected={'GITHUB_REPOSITORY':'T1doo/ParkWeave','GITHUB_REF':'refs/heads/'+BRANCH,'GITHUB_EVENT_NAME':'push','GITHUB_RUN_ATTEMPT':'1','GITHUB_RUN_NUMBER':'3','RUNNER_ENVIRONMENT':'github-hosted','RUNNER_OS':'Linux','PW_PUBLIC':'true'}
     if any(os.environ.get(k)!=v for k,v in expected.items()) or any(k.startswith('PARKWEAVE_') for k in os.environ):raise Closed('host gate')
     if not re.fullmatch('[a-f0-9]{40}',source) or source!=os.environ.get('GITHUB_SHA'):raise Closed('source shape')
     if git(['rev-parse','HEAD'],started).decode().strip()!=source or git(['branch','--show-current'],started).decode().strip()!=BRANCH or git(['status','--porcelain'],started):raise Closed('source checkout')
