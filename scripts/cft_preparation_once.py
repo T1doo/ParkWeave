@@ -149,7 +149,9 @@ def get_fixed_archive(path,deadline,report):
     with response(MEDIA,deadline) as stream,(path/'original.zip.partial').open('xb') as output:
         if stream.headers.get('x-goog-generation')!=GENERATION or stream.headers.get('Content-Length')!=str(SIZE):raise Closed('fixed object headers')
         connection=stream.fp.raw._sock
-        while True:
+        # HTTPResponse may close its socket immediately at Content-Length.
+        # Headers are pinned above; never touch that socket after exact receipt.
+        while report['received']<SIZE:
             connection.settimeout(left(deadline))
             block=stream.read1(min(MiB,SIZE-report['received']+1));left(deadline)
             if not block:break

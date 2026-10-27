@@ -204,3 +204,34 @@ def test_repaired_preparation_exact_fresh_binding():
     assert 'github.run_attempt == 1' in workflow
     assert 'cft-preparation-only-3' in workflow
     assert (m.WORK,m.TREE,m.TOTAL)==(150,165,180)
+
+
+def test_exact_content_length_can_close_socket_before_next_read(tmp_path,monkeypatch):
+    """HTTPResponse closes its socket when the pinned Content-Length is consumed."""
+    import io,socket
+    payload=b'SYNTHETIC_EXACT_LENGTH';size=len(payload)
+    monkeypatch.setattr(m,'SIZE',size)
+    monkeypatch.setattr(m,'MD5',m.base64.b64encode(m.md5(payload,usedforsecurity=False).digest()).decode())
+    sock,peer=socket.socketpair()
+    class Stream(io.BytesIO):
+        def __init__(self):
+            super().__init__(payload)
+            self.headers={'x-goog-generation':m.GENERATION,'Content-Length':str(size)}
+            self.fp=type('FP',(),{'raw':type('Raw',(),{'_sock':sock})()})()
+        def read1(self,n):
+            data=self.read(n)
+            if self.tell()==size:sock.close()
+            return data
+    metadata={'name':m.OBJECT,'size':str(size),'md5Hash':m.MD5,'crc32c':m.CRC32C,'generation':m.GENERATION}
+    calls=[]
+    def response(url,deadline):
+        calls.append(url)
+        return io.BytesIO(json.dumps(metadata).encode()) if url==m.META else Stream()
+    monkeypatch.setattr(m,'response',response)
+    try:
+        report={};m.get_fixed_archive(tmp_path,time.monotonic()+5,report)
+        assert calls==[m.META,m.MEDIA]
+        assert report['received']==size and report['md5_verified']
+        assert report['archive_sha256']==m.sha256(payload).hexdigest()
+        assert (tmp_path/'original.zip').read_bytes()==payload
+    finally:sock.close();peer.close()
