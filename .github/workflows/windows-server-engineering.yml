@@ -1,0 +1,63 @@
+name: ParkWeave Windows Server engineering (mock only)
+
+on:
+  push:
+    branches: [dev/f1-foundation]
+    paths:
+      - '.github/workflows/windows-server-engineering.yml'
+      - 'scripts/windows_ci/**'
+      - 'scripts/windows/**'
+      - 'scripts/run_acceptance.py'
+      - 'src/parkweave/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements-windows-candidate.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-server-engineering-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  server-engineering:
+    name: Server 2025 / Python 3.12 x64 / isolated Job measurement (not Win11)
+    runs-on: windows-2025
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Anchor existing 25 minute job budget
+        run: |
+          # Conservative 30s allowance for bootstrap before this first step.
+          $started=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-30
+          "PARKWEAVE_CI_JOB_STARTED=$started" | Add-Content -LiteralPath $env:GITHUB_ENV
+          $uptime=[Math]::Max(0,[Environment]::TickCount64-30000)
+          "PARKWEAVE_CI_JOB_UPTIME=$uptime" | Add-Content -LiteralPath $env:GITHUB_ENV
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Select Python 3.12 x64
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+      - name: Independent controlled Job measurement without owner helpers
+        timeout-minutes: 2
+        run: |
+          $ErrorActionPreference='Stop'
+          $os=Get-CimInstance Win32_OperatingSystem
+          if ($os.Caption -notmatch 'Windows Server 2025' -or $os.ProductType -eq 1) {
+            throw 'NATIVE_SERVER_PLATFORM_REQUIRED'
+          }
+          if (!(Test-Path -LiteralPath '.runtime')) {
+            New-Item -ItemType Directory -Path '.runtime' -ErrorAction Stop | Out-Null
+          }
+          # Ordinary exclusive fixture creation only; no SetOwner/Set-Acl.
+          # No Engineering.ps1, PostgreSQL, app, pip, model or artifact upload.
+          & python -m scripts.windows_ci.controlled_job_measurement --run-controlled
+          if ($LASTEXITCODE -ne 0) { throw 'CONTROLLED_JOB_MEASUREMENT_NOT_PASSED' }

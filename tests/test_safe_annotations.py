@@ -1,0 +1,291 @@
+from catalog_test_support import catalog_ids
+"""Real local publisher stdout and hostile metadata; no GitHub writes or CI."""
+from copy import deepcopy
+import json
+from pathlib import Path
+import subprocess
+import sys
+import os
+import io
+import pytest
+from parkweave.process_env import minimal_environment
+from test_windows_ci_preparation import module,ROOT
+from test_summary_publication import publication,KNOWN,POISON,console_json
+
+PREFIX='::notice title=ParkWeave safe diagnostics::'
+
+
+def payloads(commands):
+    assert all(c.startswith(PREFIX) and '\n' not in c and '\r' not in c for c in commands)
+    # GitHub workflow command message escapes, in the documented inverse order.
+    return [json.loads(c[len(PREFIX):].replace('%0D','\r').replace('%0A','\n').replace('%25','%')) for c in commands]
+
+
+def test_real_publisher_CLI_annotations_expose_safe_failure_without_paths(publication):
+    source,path,output=publication
+    row=json.loads(path.read_bytes());row['cases'][0].update(phase='regression_run',category='AssertionError',private_log=POISON)
+    path.write_text(json.dumps(row),encoding='utf-8')
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=minimal_environment(os.environ,**source),capture_output=True,text=True,timeout=15)
+    assert result.returncode==0 and result.stderr==''
+    public=console_json(result.stdout);assert public['cases'][0]['status']=='FAIL'
+    commands=[line for line in result.stdout.splitlines() if line.startswith(PREFIX)];header,case=payloads(commands)
+    assert header['report_state']=='COMPLETED' and header['case_counts']=={'PASS':0,'FAIL':1,'NOT_RUN':0}
+    assert case['case']=='full_engineering_regression' and case['phase']=='regression_run' and case['category']=='AssertionError'
+    assert case['failed_test_ids']==['test_lifecycle::test_config_write_is_exclusive_and_no_secret_fields']
+    assert case['counts']=={'PASS':0,'FAIL':1,'SKIP':0}
+    for private in (POISON,str(path),str(output),'GITHUB_TOKEN','PARKWEAVE_OWNER_DSN','123456','a'*40,'tests/'):
+        assert private not in '\n'.join(commands)
+
+
+def test_real_publisher_preserves_allowlisted_class_method_identity(publication):
+    source,path,output=publication;m=module('publish_summary')
+    test='tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+    assert test in m._allowed_tests([test])
+    record=json.loads(path.read_bytes());row=record['cases'][0]
+    row.update(regression_phase='pytest_call',active_test_id=test)
+    row['failure_diagnostics'].update(failed_test_ids=[test],failed_test_counts={test:1},mapped_failed_cases=1,mapped_cases_omitted=0)
+    path.write_text(json.dumps(record),encoding='utf-8')
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=minimal_environment(os.environ,**source),capture_output=True,text=True,timeout=15)
+    assert result.returncode==0 and result.stderr==''
+    public=console_json(result.stdout)
+    assert public['cases'][0]['active_test_id']==test
+    assert public['cases'][0]['failure_diagnostics']['failed_test_ids']==[test]
+    values=payloads([line for line in result.stdout.splitlines() if line.startswith(PREFIX)])
+    case=values[1];display='test_demo_preflight::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+    assert case['active_test_id']==display and case['failed_test_ids']==[display]
+    assert case['failed_test_case_counts']==[1] and case['mapped_failed_cases']==1
+    assert case['annotation_ids_omitted']==0 and not case['ids_truncated']
+    assert test in output.read_text(encoding='utf-8')
+
+
+@pytest.mark.parametrize('field',['active_test_id','failed_test_ids'])
+@pytest.mark.parametrize('identity',[
+    'tests/test_demo_preflight.py::OtherClass::test_wrong_python_not_accepted_as_ready',
+    'tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready[param]',
+    'tests/test_demo_preflight.py::DemoPreflightTests::Nested::test_wrong_python_not_accepted_as_ready',
+])
+def test_class_annotation_requires_exact_catalog_member_and_shared_grammar(publication,monkeypatch,field,identity):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    row=public['cases'][0];row['regression_phase']='pytest_call'
+    if field=='active_test_id':row[field]=identity
+    else:row['failure_diagnostics'][field]=[identity]
+    # Unknown valid spelling must fail membership; even a poisoned catalog
+    # cannot permit parameter or nested-class spellings outside the grammar.
+    if '[' in identity or '::Nested::' in identity:
+        monkeypatch.setattr(m,'_allowed_tests',lambda *a,**kw:{identity})
+    commands,ok=m.annotation_commands(public)
+    assert not ok and payloads(commands)==[{'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'}]
+
+
+@pytest.mark.parametrize('field', ['case','status','phase','category','reason','failed_test_id','active_phase','report_state'])
+def test_hostile_annotation_fields_fail_closed_before_any_case(publication,field):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    attack='SYNTHETIC\r\n::error file=/private, title=INJECTED::bad%0A::add-mask::value'
+    if field=='failed_test_id':public['cases'][0]['failure_diagnostics']['failed_test_ids']=[attack]
+    elif field in ('active_phase','report_state'):public[field]=attack
+    else:public['cases'][0][field]=attack
+    commands,ok=m.annotation_commands(public)
+    assert not ok and payloads(commands)==[{'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'}]
+    assert 'INJECTED' not in ''.join(commands) and '/private' not in ''.join(commands)
+
+
+def test_unknown_nested_fields_are_discarded_and_PASS_rows_not_emitted(publication):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    public['environment']=POISON;public['cases'][0]['raw_log']=POISON
+    public['cases'][0]['failure_diagnostics']['raw_error']=POISON
+    public['cases'].append({'case':'Setup_native','status':'PASS','private_path':POISON})
+    commands,ok=m.annotation_commands(public);assert ok and POISON not in ''.join(commands)
+    assert len(commands)==2 and payloads(commands)[0]['case_counts']['PASS']==1
+
+
+def test_batch_case_limit_and_global_ID_limit_have_exact_omission_counts(publication):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    ids=sorted(catalog_ids())[:25];row=public['cases'][0];row['failure_diagnostics']['failed_test_ids']=ids
+    public['cases']=[deepcopy(row) for _ in range(32)]
+    commands,ok=m.annotation_commands(public);assert ok and len(commands)==8
+    values=payloads(commands);assert values[0]['annotation_cases_omitted']==25
+    assert sum(len(x.get('failed_test_ids',[])) for x in values)==25
+    assert all(len(x['failed_test_ids'])+x['annotation_ids_omitted']==25 for x in values[1:])
+    assert sum(m.annotation_size(x) for x in commands)<=16*1024
+
+
+def test_long_whitelisted_IDs_pack_whole_identifiers_under_byte_limit(publication,monkeypatch):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    ids=['tests/test_synthetic.py::test_'+('a'*210)+str(n) for n in range(25)]
+    monkeypatch.setattr(m,'_allowed_tests',lambda *a,**kw:set(ids));public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
+    commands,ok=m.annotation_commands(public);assert ok
+    values=payloads(commands);case=values[1];assert not case['ids_truncated'] and case['annotation_ids_omitted']==0
+    converted={x.removeprefix('tests/').replace('.py::','::') for x in ids}
+    emitted=[test for value in values for test in value.get('failed_test_ids',[])]
+    assert set(emitted)==converted and len(emitted)==25 and len(commands)<=8
+    assert all(m.annotation_size(x)<=2048 for x in commands)
+    assert max(m.annotation_size(x) for x in commands)>1800
+
+
+@pytest.mark.parametrize('change',['too_many_rows','negative_counts','bool_exit','bad_scope','missing_state','list_phase','invalid_diagnostic_count'])
+def test_malformed_projected_data_never_partially_publishes(publication,change):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    if change=='too_many_rows':public['cases']*=33
+    elif change=='negative_counts':public['cases'][0]['counts']['FAIL']=-1
+    elif change=='bool_exit':public['cases'][0]['exit_code']=True
+    elif change=='bad_scope':public['scope']=POISON
+    elif change=='missing_state':public.pop('report_state')
+    elif change=='list_phase':public['active_phase']=[POISON]
+    else:public['cases'][0]['failure_diagnostics']['failed_cases']=POISON
+    commands,ok=m.annotation_commands(public);assert not ok and len(commands)==1
+    assert payloads(commands)[0]['state']=='ANNOTATIONS_UNAVAILABLE' and POISON not in ''.join(commands)
+
+
+def test_message_percent_CR_LF_escaping_does_not_create_workflow_commands():
+    m=module('publish_summary');value={'synthetic':'%0A\r\n::error::SYNTHETIC\u2028'}
+    command=m.annotation_command(value)
+    assert '\n' not in command and '\r' not in command and '\u2028' not in command and '%250A' in command
+    assert payloads([command])==[value]
+
+
+def test_unavailable_and_allowlist_failure_use_only_constant_notice(publication,monkeypatch):
+    source,path,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    def fail(*a,**kw):raise OSError(POISON)
+    monkeypatch.setattr(m,'_allowed_tests',fail)
+    commands,ok=m.annotation_commands(public);assert not ok and POISON not in ''.join(commands)
+    path.unlink();commands,ok=m.annotation_commands(m.read_summary(source))
+    assert not ok and payloads(commands)==[{'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'}]
+
+
+@pytest.mark.parametrize('error',[OSError,RuntimeError])
+def test_annotation_sink_failure_preserves_JSON_and_JobSummary(publication,monkeypatch,capsys,error):
+    source,_,output=publication;m=module('publish_summary')
+    def sink(value):raise error(POISON)
+    monkeypatch.setattr(m,'write_annotations',sink)
+    assert m.main(source)==1
+    assert console_json(capsys.readouterr().out)['publication_state']=='SUMMARY_AVAILABLE'
+    assert 'SUMMARY_AVAILABLE' in output.read_text(encoding='utf-8') and POISON not in output.read_text(encoding='utf-8')
+
+
+def test_early_checkpoint_without_cases_still_exposes_current_phase(publication):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    public.update(report_state='IN_PROGRESS',active_phase='regression_run',cases=[])
+    commands,ok=m.annotation_commands(public);assert ok and len(commands)==1
+    header=payloads(commands)[0];assert header['active_phase']=='regression_run' and header['report_state']=='IN_PROGRESS'
+
+
+def test_annotations_use_only_notices_and_leave_cleanup_order_unchanged():
+    m=module('publish_summary');assert m.annotation_command({'kind':'publication'}).startswith('::notice ')
+    text=(ROOT/'.github/workflows/windows-server-engineering.yml').read_text(encoding='utf-8')
+    # The old engineering ordering is preserved in the reversible patch, but
+    # neither its publication nor its owner-dependent cleanup runs in isolation.
+    preserved=(ROOT/'docs/F2/evidence/eng077-independent-job-workflow.patch').read_text()
+    assert preserved.index('Engineering.ps1 -Action Publish')<preserved.index('Engineering.ps1 -Action Stop')
+    executable='\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
+    assert 'Engineering.ps1' not in executable and 'publish_summary.py' not in executable
+    assert text.count('      - name:')==4
+    assert 'CONTROLLED_JOB_MEASUREMENT_NOT_PASSED' in executable
+
+    entry=(ROOT/'scripts/windows_ci/Engineering.ps1').read_text()
+    assert "@('scripts/windows_ci/publish_summary.py') 'summary_publish' 15 -Capture" in entry
+    assert 'contents: read' in text and 'checks: write' not in text and 'upload-artifact' not in text
+
+
+def test_binary_sink_bypasses_Windows_CRLF_translation_at_exact_byte_boundary(monkeypatch):
+    m=module('publish_summary');buffer=io.BytesIO();text=io.TextIOWrapper(buffer,encoding='cp1252',newline='\r\n')
+    # This synthetic known command reaches the declared limit including LF.
+    command=PREFIX+'x'*(2048-len(PREFIX.encode('utf-8'))-1)
+    monkeypatch.setattr(m.sys,'stdout',text)
+    m.write_annotations([command]*8)
+    data=buffer.getvalue()
+    assert len(data)==16384 and data.count(b'\n')==8 and b'\r' not in data
+    assert all(len(line)+1==2048 for line in data.splitlines())
+
+
+@pytest.mark.parametrize('mode',['short_write','write_error','flush_error'])
+def test_binary_sink_failures_are_not_reported_as_delivery_success(mode):
+    m=module('publish_summary')
+    class Sink:
+        def write(self,data):
+            if mode=='write_error':raise OSError(POISON)
+            return 0 if mode=='short_write' else len(data)
+        def flush(self):
+            if mode=='flush_error':raise OSError(POISON)
+    with pytest.raises(OSError):m.write_annotations([m.annotation_command({'kind':'publication'})],Sink())
+
+
+def test_real_CLI_annotation_bytes_have_exact_LF_without_console_normalization(publication):
+    source,_,_=publication
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=minimal_environment(os.environ,**source),capture_output=True,timeout=15)
+    assert result.returncode==0 and result.stderr==b''
+    start=result.stdout.index(PREFIX.encode('ascii'));batch=result.stdout[start:]
+    assert b'\r' not in batch and batch.endswith(b'\n') and len(batch)<=16384
+    assert all(len(line)+1<=2048 for line in batch.splitlines())
+
+
+def test_four_shards_survive_maximum_safe_diagnostics_with_existing_byte_limits():
+    from test_windows_ci_preparation import module
+    publisher=module('publish_summary');progress=module('regression_progress');diagnostics=module('diagnostics')
+    ids=sorted(catalog_ids(),key=len,reverse=True)[:25]
+    obs={k:900000 for k in progress.TIMINGS}
+    obs.update({k:10000 for k in progress.COUNTS|progress.DB_COUNTS},fixture_stage='CREATE_DB',sample_attempts=20,
+               sample_state='AVAILABLE',sample_elapsed_ms=900000,sample_cost_ms=900000,checkpoint_age_ms=900000)
+    rows=[{'id':'S'+str(i),'status':'FAIL','reason':'CLEANUP_UNCONFIRMED','counts':{'PASS':10000,'FAIL':10000,'SKIP':10000},
+           'ms':1500000,'cleanup':'OWNED_TREE_STOP_UNCONFIRMED','coverage':False,'exit':4294967295,'category':'ConnectionRefusedError'} for i in range(1,5)]
+    public=publisher.base('SUMMARY_AVAILABLE');public.update(report_state='COMPLETED',active_phase='regression_report',cases=[{
+        'case':'full_engineering_regression','status':'FAIL','exit_code':4294967295,'counts':{'PASS':10000,'FAIL':10000,'SKIP':10000},
+        'source_binding':{'state':'AVAILABLE','head_sha':'a'*40},'acceptance_failure':{'stage':'REGRESSION_EXECUTION','reason':'REGRESSION_EXECUTION_FAILED','category':'ConnectionRefusedError'},
+        'shards':rows,'regression_observation':obs,'regression_phase':'report_write','active_test_id':ids[0],
+        'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':ids,'failed_cases':10000,'test_cases_seen':10000,'unknown_failed_cases':10000,'ids_truncated':True}}])
+    commands,ok=publisher.annotation_commands(public)
+    assert ok and 2<len(commands)<=8 and all(publisher.annotation_size(c)<=2048 for c in commands)
+    assert sum(publisher.annotation_size(c) for c in commands)<=16*1024
+    value=json.loads(commands[1].split('::',2)[2])
+    assert value['shards']==rows and value['annotation_ids_omitted']==1 and value['regression_observation_omitted'] is True
+    values=payloads(commands)
+    assert sum(len(v.get('failed_test_ids',[]))+int('active_test_id' in v) for v in values)==25
+    assert values[0]['annotation_cases_omitted']==0
+
+
+
+def test_eng065_shape_preserves_twenty_safe_failure_ids_in_existing_eight_slots():
+    publisher=module('publish_summary');progress=module('regression_progress')
+    ids=sorted(x for x in catalog_ids() if x.startswith('tests/test_regression_shards.py::'))[:20]
+    assert len(ids)==20
+    obs={k:286921 for k in progress.TIMINGS};obs.update({k:287 for k in progress.COUNTS},fixture_stage='DONE',sample_attempts=0,sample_state='NOT_SAMPLED')
+    shards=[{'id':'S'+str(i),'status':'FAIL','reason':'COMPLETE','counts':{'PASS':281,'FAIL':35,'SKIP':25},'ms':288891,'cleanup':'OWNED_TREE_STOPPED','coverage':True,'exit':1,'category':'OTHER'} for i in range(1,5)]
+    public=publisher.base('SUMMARY_AVAILABLE');public.update(report_state='COMPLETED',active_phase='regression_report',cases=[
+        {'case':name,'status':'FAIL','category':'RuntimeError','phase':'UNKNOWN'} for name in ('Start_native','final_Stop_owned_services','lifecycle_exception','suite_exception')]+[
+        {'case':'API_browser_restart','status':'NOT_RUN','reason':'START_FAILED'},
+        {'case':'full_engineering_regression','status':'FAIL','exit_code':1,'counts':{'PASS':1160,'FAIL':42,'SKIP':51},'shards':shards,'regression_observation':obs,'source_binding':{'state':'AVAILABLE','head_sha':'a'*40},'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':ids,'failed_cases':42,'test_cases_seen':1253,'unknown_failed_cases':0,'ids_truncated':False,'failed_test_counts':{test:(4 if i==19 else 2) for i,test in enumerate(ids)},'mapped_failed_cases':42,'mapped_cases_omitted':0}}])
+    commands,ok=publisher.annotation_commands(public);assert ok and len(commands)==8
+    values=payloads(commands);emitted=[test for value in values for test in value.get('failed_test_ids',[])]
+    assert set(emitted)=={x.removeprefix('tests/').replace('.py::','::') for x in ids} and len(emitted)==20
+    row=next(v for v in values if v.get('kind')=='case' and v.get('case')=='full_engineering_regression')
+    assert row['annotation_ids_omitted']==0 and not row['ids_truncated'] and row['shards']==shards
+    assert values[0]['annotation_cases_omitted']==0
+    assert all(publisher.annotation_size(c)<=2048 for c in commands) and sum(publisher.annotation_size(c) for c in commands)<=16384
+
+    assert sum(sum(v.get('failed_test_case_counts',[])) for v in values)==42
+    assert row['annotation_mapped_cases_omitted']==0 and row['mapped_failed_cases']==42
+    native=module('native_command')
+    data=(json.dumps(public)+'\n'+'\n'.join(commands)+'\n').encode('utf-8')
+    assert native.publication_capture(data).endswith(commands[-1])
+    with pytest.raises(ValueError):native.publication_capture(data.replace(b'"kind":"case_ids"',b'"kind":"unknown"'))
+    with pytest.raises(ValueError):native.publication_capture(data[:data.rfind(b'\n',0,-1)+1])
+
+
+def test_continuation_final_false_flag_fits_every_byte_boundary(publication,monkeypatch):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    ids=sorted(catalog_ids(),key=len,reverse=True)[:2]
+    public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
+    row=m.annotation_case(public['cases'][0],set(ids))
+    empty={**row,'failed_test_ids':[],'annotation_ids_omitted':2,'ids_truncated':False}
+    singles=[{'kind':'case_ids','case':row['case'],'status':row['status'],'failed_test_ids':[test]} for test in row['failed_test_ids']]
+    minimum=max(m.annotation_size(m.annotation_command(value)) for value in [empty,*singles])
+    # This loop checks serialization at every byte boundary. Fresh global
+    # membership is covered by the real CLI and one-operation catalog tests.
+    monkeypatch.setattr(m,'_allowed_tests',lambda *args,**kwargs:set(ids))
+    for limit in range(minimum,minimum+300):
+        monkeypatch.setattr(m,'MAX_ANNOTATION_BYTES',limit)
+        commands,ok=m.annotation_commands(public)
+        assert ok,limit
+        values=payloads(commands)
+        assert sum(len(value.get('failed_test_ids',[])) for value in values)==2
+        assert not values[1]['ids_truncated'] and values[1]['annotation_ids_omitted']==0
+        assert all(m.annotation_size(command)<=limit for command in commands)

@@ -1,0 +1,47 @@
+name: ParkWeave preparation only once (approval required)
+
+on:
+  push:
+    branches: [dev/f2-prepare-only-security-once-20261013]
+    paths: ['scripts/host_case_once/prepare_approval.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-prepare-only-security-once-20261013
+  cancel-in-progress: false
+
+jobs:
+  prepare-only:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' && github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-prepare-only-security-once-20261013' &&
+      github.event.repository.private == false && github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact approved commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Only protected environment preparation and imports
+        timeout-minutes: 10
+        shell: bash
+        env:
+          HOST_CASE_SHA: ${{ github.sha }}
+          HOST_CASE_REPOSITORY: ${{ github.repository }}
+          HOST_CASE_REF: ${{ github.ref }}
+          HOST_CASE_EVENT: ${{ github.event_name }}
+          HOST_CASE_NUMBER: ${{ github.run_number }}
+          HOST_CASE_ATTEMPT: ${{ github.run_attempt }}
+          HOST_CASE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          sudo -n env -i LANG=C.UTF-8 \
+            HOST_CASE_REPOSITORY="$HOST_CASE_REPOSITORY" HOST_CASE_REF="$HOST_CASE_REF" \
+            HOST_CASE_EVENT="$HOST_CASE_EVENT" HOST_CASE_NUMBER="$HOST_CASE_NUMBER" \
+            HOST_CASE_ATTEMPT="$HOST_CASE_ATTEMPT" HOST_CASE_PUBLIC="$HOST_CASE_PUBLIC" \
+            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            /usr/bin/python3.12 -I -S -B scripts/host_case_once/prepare_once.py "$HOST_CASE_SHA"

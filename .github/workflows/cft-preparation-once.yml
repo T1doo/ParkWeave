@@ -1,0 +1,43 @@
+name: ParkWeave one official CfT preparation only
+on:
+  push:
+    branches: [dev/pgdata-inheritance-source-20261026]
+    paths:
+      - .github/workflows/cft-preparation-once.yml
+      - scripts/cft_preparation_once.py
+      - tests/test_cft_preparation_once.py
+permissions:
+  contents: read
+concurrency:
+  group: parkweave-cft-preparation-once
+  cancel-in-progress: false
+jobs:
+  prepare-not-execute:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' && github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/pgdata-inheritance-source-20261026' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Exact reviewed source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: One preparation180seconds including owned cleanup
+        timeout-minutes: 3
+        env:
+          PW_PUBLIC: ${{ github.event.repository.private == false }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: /usr/bin/python3.12 -B -m scripts.cft_preparation_once --source "$GITHUB_SHA"
+      - name: Preserve only bounded public preparation receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cft-preparation-only-3
+          path: ${{ runner.temp }}/cft-preparation-evidence/result.json
+          if-no-files-found: warn
+          retention-days: 1

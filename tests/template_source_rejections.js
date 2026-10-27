@@ -1,0 +1,44 @@
+// Full original page script: real apiCall, entry loaders, renderers and clearers.
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+let nextRequestKey=99;const mode=process.argv[2],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');let checks=0;
+const check=v=>{checks++;assert(v);};
+class Element{
+ constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};}
+ append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
+ prepend(...x){this.children.unshift(...x);}reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(name){delete this[name];}
+ closest(){return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
+ get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
+}
+const lines=require('readline').createInterface({input:process.stdin}),replies=[],calls=[];
+lines.on('line',line=>{replies.shift()?.(JSON.parse(line));});
+async function fetchAPI(path,options={}){calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};}
+function page(file,search=''){
+ const elements=new Map(),get=id=>{if(!elements.has(id)){const e=new Element();e.id=id;elements.set(id,e);}return elements.get(id);},store={},events=[];
+ const storage=new Proxy({getItem:n=>store[n]??null,setItem:(n,v)=>store[n]=v,removeItem:n=>delete store[n]},{ownKeys:()=>Object.keys(store),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+ const actions=[...fs.readFileSync(file,'utf8').matchAll(/data-template-action="([^"]+)"/g)].map(m=>{const b=new Element('button');b.dataset.templateAction=m[1];return b;});
+ const allGoals=()=>{const result=[];function visit(e){if(e.dataset?.templateGoal)result.push(e);for(const c of e.children||[])visit(c);}visit(get('template-goals'));return result;};
+ const ctx=vm.createContext({console,Date,JSON,Map,Set,WeakMap,Number,String,Error,encodeURIComponent,URLSearchParams,structuredClone,TextEncoder,
+  crypto:{randomUUID:()=>id(nextRequestKey++)},localStorage:storage,setTimeout:()=>1,clearTimeout:()=>{},location:{search},
+  document:{getElementById:get,createElement:t=>new Element(t),querySelectorAll:selector=>selector==='[data-template-action]'?actions:selector==='[data-template-goal]:checked'?allGoals().filter(e=>e.checked):selector==='[data-template-goal]'?allGoals():[],body:new Element('body'),addEventListener:(...a)=>events.push(a)},window:{addEventListener(){}},fetch:fetchAPI});
+ vm.runInContext(fs.readFileSync(file,'utf8').match(/<script[^>]*>([\s\S]*?)<\/script>/)[1],ctx);return {get,read:s=>vm.runInContext(s,ctx),events,actions,allGoals};
+}
+function nested(root,predicate){for(const child of root.children){if(predicate(child))return child;const found=nested(child,predicate);if(found)return found;}return null;}
+async function waitFor(predicate){const end=Date.now()+10000;while(!predicate()){if(Date.now()>end)throw Error('page response not ready');await new Promise(r=>setTimeout(r,10));}}
+(async()=>{
+ const t=page(process.argv[3]||'src/parkweave/template_candidate_web.html');await waitFor(()=>t.read('status!==null'));t.get('consumer-token').value='SYNTHETIC_fixture-a';await t.get('consumer-catalog').onclick();check(t.read('catalog.templates.length')===1);t.get('consumer-release').value=t.get('consumer-release').options[0].value;t.get('consumer-reviewer').value='prep-specialist-fixture-a';
+ for(const [k,v] of Object.entries({'consumer-goal':'SYNTHETIC_TEMPLATE_REJECTED_NEW_REQUEST','consumer-need-summary':'SYNTHETIC FRESH SUMMARY','consumer-need-source':'SYNTHETIC CURRENT SOURCE','consumer-material-outline':'SYNTHETIC FRESH OUTLINE','consumer-outline-source':'SYNTHETIC CURRENT SOURCE'}))t.get(k).value=v;
+ await t.get('consumer-create').onclick();check(t.read('instance.state')==='PENDING_RUN');const instance=t.read('instance');
+ const publisher=page(process.argv[3]||'src/parkweave/template_candidate_web.html');await waitFor(()=>publisher.read('status!==null'));
+ publisher.get('template-park').value='park-a';publisher.get('template-id').value=mode==='withdraw'?'new-enterprise-material-template':'independent-source-head-template';publisher.get('template-actor').value=mode==='withdraw'?'template-publisher':'template-author';await publisher.get('template-refresh').onclick();check(publisher.read('view!==null'));
+ publisher.get('template-reason').value='SYNTHETIC explicit '+mode;
+ if(mode==='source_head'){publisher.get('template-source-revision').value='2';const goal=publisher.allGoals().find(e=>e.dataset.templateGoal==='LOCAL_MATERIAL_PREPARATION');check(!!goal);goal.checked=true;}
+ const action=publisher.actions.find(e=>e.dataset.templateAction===(mode==='withdraw'?'WITHDRAW':'SAVE_DRAFT'));check(!!action);await action.onclick();check(publisher.get('template-error').textContent==='');
+ if(mode==='withdraw')check(publisher.read('view.state')==='WITHDRAWN');else check(publisher.read('view.draft.source.revision')==='2');
+ // The original stale catalog and original new-input form must be rejected server-side.
+ await t.get('consumer-create').onclick();check(t.get('consumer-error').textContent.includes('无权访问'));check(t.read('catalog===null && instance===null && cp===null'));check(t.get('consumer-goal').value==='');check(t.get('consumer-result').children.length===0);check(t.get('product-link').hidden);check(!t.get('product-link').href);
+ t.get('consumer-instance-id').value=instance.instance_id;await t.get('consumer-read').onclick();check(t.read('instance.release_available')===false);check(t.get('consumer-resume').disabled);
+ // Exercise original handler despite the stale/disabled control: backend must reject.
+ await t.get('consumer-resume').onclick();check(t.get('consumer-error').textContent.includes('无权访问'));check(t.read('instance===null && cp===null'));check(t.get('consumer-result').children.length===0);check(t.get('product-link').hidden);check(!t.get('product-link').href);
+ await t.get('consumer-catalog').onclick();check(t.read('catalog.templates.length')===0);
+ console.log(JSON.stringify({mode,checks,instance:{id:instance.instance_id,run:instance.run_id},scope:'ORIGINAL_TEMPLATE_PAGE_PUBLISHER_AND_CONSUMER_REAL_ASGI_WITHDRAW_OR_SOURCE_CHANGE_REJECT_NEW_AND_RESUME_NO_EXTRA_PRODUCT_WRITES'}));process.exit(0);
+})().catch(e=>{console.error(e.stack);process.exit(1);});

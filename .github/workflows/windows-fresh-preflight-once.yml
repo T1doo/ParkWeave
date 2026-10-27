@@ -1,0 +1,77 @@
+name: ParkWeave Windows fresh preflight once (not Win11)
+
+on:
+  push:
+    branches: [dev/windows-native-preflight-20261020]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-windows-fresh-preflight-20261020
+  cancel-in-progress: false
+
+jobs:
+  native-fresh-preflight:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/windows-native-preflight-20261020' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 2
+    runs-on: windows-2025
+    timeout-minutes: 6
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          # Run1 failed before any native call on unrelated historical evidence paths.
+          # Preserve exact original launcher/source bytes without checking out those paths.
+          sparse-checkout-cone-mode: true
+          sparse-checkout: |
+            scripts/windows
+            scripts/windows_ci
+            src/parkweave
+      - name: Isolate only existing approved psutil dependency outside application state
+        timeout-minutes: 2
+        run: |
+          $ErrorActionPreference='Stop'
+          . ./scripts/windows/PythonCommand.ps1
+          if (!$env:RUNNER_TOOL_CACHE) { throw 'EXPLICIT_RUNNER_TOOL_CACHE_REQUIRED' }
+          $pythonRoot=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
+          $candidates=@(Get-ChildItem -LiteralPath $pythonRoot -Directory -ErrorAction Stop |
+            Where-Object { $_.Name -match '^3\.12\.\d+$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'x64\python.exe') -PathType Leaf) } |
+            Sort-Object -Property { [Version]$_.Name } -Descending)
+          if ($candidates.Count -eq 0) { throw 'EXISTING_NATIVE_PYTHON_REQUIRED' }
+          $basePython=Resolve-ParkWeavePython -Python (Join-Path $candidates[0].FullName 'x64\python.exe')
+          & $basePython -c "import sys,struct;assert sys.platform=='win32' and sys.version_info[:2]==(3,12) and struct.calcsize('P')==8"
+          if ($LASTEXITCODE -ne 0) { throw 'EXISTING_NATIVE_PYTHON_REQUIRED' }
+          $root=Join-Path $env:RUNNER_TEMP ('parkweave-preflight-'+[Guid]::NewGuid().ToString())
+          New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
+          & $basePython -m venv (Join-Path $root 'venv')
+          if ($LASTEXITCODE -ne 0) { throw 'VENV_FAILED' }
+          $python=Join-Path $root 'venv\Scripts\python.exe'
+          & $python -m pip --isolated install --no-cache-dir --retries 0 --timeout 20 --only-binary=:all: --no-deps psutil==7.2.2
+          if ($LASTEXITCODE -ne 0) { throw 'APPROVED_DEPENDENCY_UNAVAILABLE' }
+          "NATIVE_EVIDENCE_ROOT=$root" | Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8
+      - name: Original native wrappers fresh prerequisite and refusal subset
+        timeout-minutes: 3
+        env:
+          NATIVE_SHA: ${{ github.sha }}
+          NATIVE_REPOSITORY: ${{ github.repository }}
+          NATIVE_REF: ${{ github.ref }}
+          NATIVE_EVENT: ${{ github.event_name }}
+          NATIVE_ATTEMPT: ${{ github.run_attempt }}
+          NATIVE_NUMBER: ${{ github.run_number }}
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          $ErrorActionPreference='Stop'
+          $python=Join-Path $env:NATIVE_EVIDENCE_ROOT 'venv\Scripts\python.exe'
+          & $python -B scripts/windows_ci/fresh_preflight_once.py
+          if ($LASTEXITCODE -ne 0) { throw 'FRESH_NATIVE_SUBSET_FAILED' }

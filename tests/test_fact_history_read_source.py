@@ -1,0 +1,295 @@
+"""Pure declared-source contract: persisted evidence, never execution proof."""
+from copy import deepcopy
+from datetime import datetime, timedelta, timezone
+from uuid import UUID, uuid4
+import re
+import pytest
+
+from parkweave import fact_history_read_source as read, case_fact_clarifications as facts, preparation as prep
+from parkweave.store import Denied
+
+
+def sample(*, uuid_factory=uuid4):
+    now = datetime(2026, 10, 11, tzinfo=timezone.utc)
+    principal = dict(id='SYNTHETIC-owner', park_id='park-a', org_id='org-a', role='enterprise_operator', active=True)
+    parent = dict(id=uuid_factory(), case_id=uuid_factory(), run_id=uuid_factory(), owner_id=principal['id'],
+        park_id=principal['park_id'], org_id=principal['org_id'], namespace='SYNTHETIC',
+        service_id=prep.SERVICE, service_version=1, revision=3, goal='SYNTHETIC Case', request_intent=None)
+    sources = [dict(id=str(uuid_factory()), evidence_id=str(uuid_factory()), field_name=field,
+        value=17 if field == 'employees' else 'PRIVATE_VALUE_' + field,
+        unit='people' if field == 'employees' else 'text',
+        source_ref=dict(id='PRIVATE_SOURCE_' + field, kind='SYNTHETIC', revision='1'),
+        source_kind='USER_ASSERTED_SYNTHETIC', source_excerpt='PRIVATE_EXCERPT_' + field,
+        valid_from=(now-timedelta(hours=1)).isoformat(), valid_until=(now+timedelta(hours=1)).isoformat(),
+        revision=1, fingerprint=facts._hash(field), confirmed_by=principal['id']) for field in facts.FIELDS]
+    applicable = {row['id']: True for row in sources}
+    snapshot = dict(binding=dict(facts._binding(parent), authority={'OLD_EXECUTE': True}), sources=deepcopy(sources))
+    ledger = dict(version=1, profile=facts.PROFILE, purpose=facts.PURPOSE, required_fields=list(facts.FIELDS), revision=2, events=[])
+    receipts = []
+    for i in (1, 2):
+        choices = [] if i == 1 else [dict(field=row['field_name'], assertion_id=row['id'],
+            expected_assertion_revision=row['revision'], expected_assertion_fingerprint=row['fingerprint']) for row in sources]
+        event = dict(id=str(uuid_factory()), revision=i, preparation_revision=i+1, actor_id=principal['id'],
+            action='DECLARE_FACT_PURPOSE' if i == 1 else 'CONFIRM_FACT_PURPOSE', reason='SYNTHETIC explicit owner selection',
+            decided_at=(now-timedelta(minutes=1)).isoformat(), source_snapshot=deepcopy(snapshot),
+            source_sha256=facts._hash(snapshot), applicable=deepcopy(applicable), choices=choices,
+            selection='UNKNOWN' if i == 1 else 'USER_SELECTED_FOR_CASE', authenticity='USER_ASSERTED_UNVERIFIED')
+        event['decision_sha256'] = facts._hash(event)
+        ledger['events'].append(event)
+        request = facts.Declare(expected_preparation_revision=i, profile=facts.PROFILE, purpose=facts.PURPOSE, reason=event['reason']) if i == 1 else facts.Confirm(expected_preparation_revision=i, expected_clarification_revision=1, expected_source_sha256=event['source_sha256'], choices=choices, reason=event['reason'])
+        receipts.append(dict(preparation_id=parent['id'], actor_id=principal['id'], revision=i+1, action=event['action'],
+            request_key='synthetic-' + str(i), fingerprint=facts._hash(dict(preparation_id=str(parent['id']), action=event['action'], **request.model_dump(mode='json'))),
+            payload=dict(preparation_id=str(parent['id']), case_id=str(parent['case_id']), run_id=str(parent['run_id']),
+                revision=i+1, actor_id=principal['id'], action=event['action'], decision_ref=event['id'], decision_sha256=event['decision_sha256'],
+                required_fields=list(facts.FIELDS), public_status=facts.public_status(facts._result(dict(ledger, revision=i),
+                    'UNKNOWN' if i == 1 else 'CURRENT', ('FACT_PURPOSE_SELECTION_REQUIRED',) if i == 1 else (), event['source_sha256'])))))
+    parent['fact_clarifications'] = ledger
+    return parent, principal, receipts, sources, applicable, now
+
+
+def expected_source_digest(args):
+    """Fixture's declared binding/decision/selected rows, independent of output."""
+    parent, _, _, sources, _, _ = args
+    latest = parent['fact_clarifications']['events'][-1]
+    return facts._hash(dict(binding=facts._binding(parent), decision=latest['decision_sha256'],
+                            sources=sorted(sources, key=lambda row: row['field_name'])))
+
+
+def public_projection(source_sha256):
+    assert type(source_sha256) is str and re.fullmatch('[0-9a-f]{64}', source_sha256)
+    return dict(contract=read.CONTRACT, purpose=facts.PURPOSE, fields=list(facts.FIELDS),
+        source_sha256=source_sha256, read_only=True, execution_available=False,
+        qualification='NOT_EVALUATED', authenticity='USER_ASSERTED_UNVERIFIED', proof_available=False)
+
+
+def assert_public_projection_only(result, expected_digest):
+    """Closed public shape: no raw facts/IDs/excerpts under any output key.
+
+    Match complete values and exact JSON types, never substring-search a digest.
+    Digest metadata must equal the separately supplied expected digest, so even
+    private content shaped like a 64-character hash cannot replace that field.
+    """
+    expected = public_projection(expected_digest)
+    assert type(result) is dict
+    assert all(type(key) is str for key in result), 'non-string output key'
+    assert result.keys() == expected.keys(), 'unexpected or missing output field'
+    for key, value in expected.items():
+        actual = result[key]
+        assert type(actual) is type(value), f'wrong public value type: {key}'
+        if key == 'fields':
+            assert all(type(field) is str for field in actual)
+        assert actual == value, f'non-public or changed value: {key}'
+
+
+def test_exact_projection_no_values_or_proof():
+    args = sample()
+    expected_digest = expected_source_digest(args)
+    result = read.project(*args)
+    assert result == public_projection(expected_digest)
+    assert_public_projection_only(result, expected_digest)
+
+
+def assert_input_unchanged(actual, original):
+    """Exact fixture types and values, including JSON object keys and lists."""
+    assert type(actual) is type(original), 'input value type changed'
+    if type(original) is dict:
+        assert all(type(key) is str for key in actual), 'input key type changed'
+        assert all(type(key) is str for key in original)
+        assert actual.keys() == original.keys(), 'input keys changed'
+        for key in original:
+            assert_input_unchanged(actual[key], original[key])
+    elif type(original) in (list, tuple):
+        assert len(actual) == len(original), 'input sequence length changed'
+        for value, previous in zip(actual, original):
+            assert_input_unchanged(value, previous)
+    else:
+        assert actual == original, 'input value changed'
+
+
+def test_projection_does_not_mutate_input_independently_of_output_assertions():
+    args = sample()
+    before = deepcopy(args)
+    try:
+        read.project(*args)
+    finally:
+        assert_input_unchanged(args, before)
+
+
+def test_leakage_oracle_accepts_actual_legal_digest_containing_numeric_fact_text():
+    identifiers = iter(UUID(int=1003+i) for i in range(11))
+    args = sample(uuid_factory=lambda: next(identifiers))
+    result = read.project(*args)
+    expected_digest = expected_source_digest(args)
+    assert expected_digest == '1ab214b54e972ae2231da520785615e66a899c101a448b4c8b963508627d5717'
+    assert '17' in result['source_sha256']
+    assert next(row['value'] for row in args[3] if row['field_name'] == 'employees') == 17
+    assert_public_projection_only(result, expected_digest)
+
+
+@pytest.mark.parametrize('field', facts.FIELDS)
+@pytest.mark.parametrize('secret_kind', ['value', 'id', 'evidence_id', 'source_excerpt', 'source_ref_id', 'excerpt_fragment'])
+@pytest.mark.parametrize('position', ['new_field', 'scalar', 'fields', 'digest'])
+def test_leakage_oracle_rejects_injected_fact_content(field, secret_kind, position):
+    args = sample()
+    row = next(row for row in args[3] if row['field_name'] == field)
+    if secret_kind == 'source_ref_id':
+        secret = row['source_ref']['id']
+    elif secret_kind == 'excerpt_fragment':
+        secret = row['source_excerpt'][8:16]
+    else:
+        secret = row[secret_kind]
+    digest = expected_source_digest(args)
+    result = public_projection(digest)
+    if position == 'new_field':
+        result[secret_kind] = secret
+    elif position == 'scalar':
+        result['qualification'] = secret
+    elif position == 'fields':
+        result['fields'].append({'field_name': field, secret_kind: secret})
+    else:
+        result['source_sha256'] = secret
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, digest)
+
+
+@pytest.mark.parametrize('value', [1, 0, 'true'])
+def test_leakage_oracle_rejects_type_coercion_of_public_flags(value):
+    result = public_projection('a'*64)
+    result['read_only'] = value
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, 'a'*64)
+
+
+def test_leakage_oracle_rejects_hash_shaped_private_content():
+    result = public_projection('a'*64)
+    result['source_sha256'] = 'b'*64
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, 'a'*64)
+
+
+def test_leakage_oracle_rejects_private_key_alias_with_custom_equality():
+    import json
+
+    class PrivateKey(str):
+        def __hash__(self):
+            return hash('qualification')
+
+        def __eq__(self, other):
+            return other == 'qualification'
+
+    private_excerpt = sample()[3][0]['source_excerpt']
+    result = public_projection('a'*64)
+    del result['qualification']
+    result[PrivateKey(private_excerpt)] = 'NOT_EVALUATED'
+    assert private_excerpt in json.dumps(result)
+    with pytest.raises(AssertionError, match='non-string output key'):
+        assert_public_projection_only(result, 'a'*64)
+
+
+@pytest.mark.parametrize('change', ['source_value_float', 'source_revision_bool', 'principal_active_int', 'applicable_int'])
+@pytest.mark.parametrize('raise_after', [False, True])
+def test_leakage_oracle_input_guard_rejects_equal_numeric_type_mutation(monkeypatch, change, raise_after):
+    def mutating_project(parent, principal, receipts, sources, applicable, now):
+        if change == 'source_value_float':
+            next(row for row in sources if row['field_name'] == 'employees')['value'] = 17.0
+        elif change == 'source_revision_bool':
+            sources[0]['revision'] = True
+        elif change == 'principal_active_int':
+            principal['active'] = 1
+        else:
+            applicable[next(iter(applicable))] = 1
+        if raise_after:
+            raise RuntimeError('synthetic projection failure after mutation')
+        return {}
+
+    monkeypatch.setattr(read, 'project', mutating_project)
+    with pytest.raises(AssertionError, match='input value type changed'):
+        test_projection_does_not_mutate_input_independently_of_output_assertions()
+
+
+def test_leakage_oracle_input_guard_preserves_original_error_without_mutation(monkeypatch):
+    def failing_project(*args):
+        raise RuntimeError('synthetic projection failure without mutation')
+
+    monkeypatch.setattr(read, 'project', failing_project)
+    with pytest.raises(RuntimeError, match='failure without mutation'):
+        test_projection_does_not_mutate_input_independently_of_output_assertions()
+
+
+@pytest.mark.parametrize('change', ['owner','park','org','case','run','inactive','role','purpose','fields','bool_version',
+    'missing_ledger','declared_only','receipt_missing','receipt_extra','receipt_case','receipt_actor','receipt_revision',
+    'receipt_decision','receipt_status','receipt_fingerprint','receipt_key','ledger_rehash','duplicate_event',
+    'duplicate_choice','choice_missing','unknown_field','wrong_source','source_missing','source_duplicate','value',
+    'excerpt','source_ref','fingerprint','revision','bool_revision','confirmed_by','assumption','unknown_kind',
+    'expired','future','naive','nonutc','revoked','snapshot_hash','source_binding','selection','event_time','request_changed'])
+def test_missing_conflicting_or_changed_contract_denies(change):
+    parent, p, receipts, sources, applicable, now = args = sample()
+    ledger = parent['fact_clarifications'];event = ledger['events'][-1]
+    if change in ('owner','park','org'):p[{'owner':'id','park':'park_id','org':'org_id'}[change]] = 'other'
+    elif change in ('case','run'):parent[change + '_id'] = uuid4()
+    elif change == 'inactive':p['active'] = False
+    elif change == 'role':p['role'] = 'park_specialist'
+    elif change == 'purpose':ledger['purpose'] = 'OTHER'
+    elif change == 'fields':ledger['required_fields'] = ['region']
+    elif change == 'bool_version':ledger['version'] = True
+    elif change == 'missing_ledger':parent['fact_clarifications'] = None
+    elif change == 'declared_only':ledger['events'].pop();ledger['revision'] = 1;receipts.pop()
+    elif change == 'receipt_missing':receipts.pop()
+    elif change == 'receipt_extra':receipts.append(deepcopy(receipts[-1]))
+    elif change.startswith('receipt_'):
+        key = change.removeprefix('receipt_')
+        if key == 'case':receipts[-1]['payload']['case_id'] = str(uuid4())
+        elif key == 'actor':receipts[-1]['actor_id'] = 'other'
+        elif key == 'revision':receipts[-1]['revision'] = 42
+        elif key == 'decision':receipts[-1]['payload']['decision_sha256'] = '0'*64
+        elif key == 'status':receipts[-1]['payload']['public_status']['state'] = 'UNKNOWN'
+        elif key == 'fingerprint':receipts[-1]['fingerprint'] = '0'*64
+        elif key == 'key':receipts[-1]['request_key'] = receipts[0]['request_key']
+    elif change == 'ledger_rehash':
+        event['reason'] = 'SYNTHETIC forged replacement';event['decision_sha256'] = facts._hash({k:v for k,v in event.items() if k != 'decision_sha256'})
+    elif change == 'duplicate_event':event['id'] = ledger['events'][0]['id']
+    elif change == 'duplicate_choice':event['choices'][1] = deepcopy(event['choices'][0])
+    elif change == 'choice_missing':event['choices'].pop()
+    elif change == 'unknown_field':event['choices'][0]['field'] = 'private_salary'
+    elif change == 'wrong_source':event['choices'][0]['assertion_id'] = str(uuid4())
+    elif change == 'source_missing':sources.pop()
+    elif change == 'source_duplicate':sources.append(deepcopy(sources[0]))
+    elif change in ('value','excerpt','source_ref','fingerprint','revision','bool_revision','confirmed_by','assumption','unknown_kind'):
+        key = {'excerpt':'source_excerpt','bool_revision':'revision','assumption':'source_kind','unknown_kind':'source_kind'}.get(change, change)
+        sources[0][key] = {'source_ref':dict(id='other',kind='SYNTHETIC',revision='2'), 'revision':2,
+            'bool_revision':True,'assumption':'ASSUMPTION_SYNTHETIC','unknown_kind':'REAL_FACT'}.get(change, 'changed')
+    elif change in ('expired','future','naive','nonutc'):
+        sources[0]['valid_until' if change == 'expired' else 'valid_from'] = {
+            'expired':now.isoformat(),'future':(now+timedelta(minutes=1)).isoformat(),
+            'naive':now.replace(tzinfo=None).isoformat(),'nonutc':'2026-10-10T00:00:00+01:00'}[change]
+    elif change == 'revoked':applicable[sources[0]['id']] = False
+    elif change == 'snapshot_hash':event['source_sha256'] = '0'*64
+    elif change == 'source_binding':event['source_snapshot']['binding']['owner_id'] = 'other'
+    elif change == 'selection':event['selection'] = 'AUTOMATIC'
+    elif change == 'event_time':event['decided_at'] = (now+timedelta(minutes=1)).isoformat()
+    elif change == 'request_changed':parent['goal'] = 'SYNTHETIC new request'
+    with pytest.raises(Denied):read.project(*args)
+
+
+def test_explicit_choice_resolves_competing_sources_only_for_this_case():
+    args = sample()
+    extra = deepcopy(args[3][0]);extra['id'] = str(uuid4());extra['value'] = 'SYNTHETIC competitor'
+    args[3].append(extra);args[4][extra['id']] = True
+    assert read.project(*args)['execution_available'] is False
+
+
+def test_absolute_expiry_with_intact_rows_and_unchanged_hash():
+    args = list(sample());args[-1] += timedelta(hours=1)
+    with pytest.raises(Denied):read.project(*args)
+
+
+@pytest.mark.parametrize('key,value', [('enabled',1),('satisfied',0),('revision',True)])
+def test_receipt_nested_types_are_exact(key, value):
+    args = sample();args[2][0]['payload']['public_status'][key] = value
+    with pytest.raises(Denied):read.project(*args)
+
+
+def test_selected_integer_value_cannot_be_replaced_by_equal_float():
+    args = sample()
+    next(row for row in args[3] if row['field_name'] == 'employees')['value'] = 17.0
+    with pytest.raises(Denied):read.project(*args)

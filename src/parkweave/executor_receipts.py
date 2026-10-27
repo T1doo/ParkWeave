@@ -1,0 +1,392 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request
+"""Assigned executor's local synthetic receipt, never physical fulfillment."""
+from functools import wraps
+from typing import Literal
+from uuid import UUID,uuid4
+from pydantic import BaseModel,ConfigDict,Field,model_validator,field_validator
+from psycopg.errors import LockNotAvailable
+from psycopg.types.json import Jsonb
+from .store import Conflict,Denied,digest
+from . import preparation as prep
+
+SCOPE='SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY'
+
+def bounded(fn):
+    @wraps(fn)
+    def call(*args,**kwargs):
+        from .controlled_plans import OBSERVATIONS,PlanBlocked,persist_rejected_observation
+        context=OBSERVATIONS.set([])
+        try:return fn(*args,**kwargs)
+        except (Conflict,Denied,LockNotAvailable) as exc:
+            observations=OBSERVATIONS.get()
+            if isinstance(exc,PlanBlocked):observations.append(exc)
+            seen=set()
+            for observation in observations:
+                stamp=(observation.plan_id,observation.revision,observation.index)
+                if stamp in seen:continue
+                seen.add(stamp)
+                try:persist_rejected_observation(args[0],observation)
+                except LockNotAvailable as busy:
+                    raise Conflict('controlled plan observation busy; retry same key and explicitly recheck prerequisites') from busy
+            if isinstance(exc,LockNotAvailable):raise Conflict('receipt authorization or record busy; retry same key') from exc
+            raise
+        finally:OBSERVATIONS.reset(context)
+    return call
+class Create(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
+    model_config=ConfigDict(extra='forbid',strict=True)
+    preparation_id: UUID=Field(strict=False)
+    expected_preparation_revision: int=Field(ge=1)
+    executor_id: str=Field(min_length=1,max_length=100)
+
+class Command(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
+    model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
+    action: Literal['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN']
+    expected_revision: int=Field(ge=1)
+    text: str|None=Field(default=None,min_length=1,max_length=4000)
+    source_kind: Literal['SYNTHETIC']|None=None
+    source_label: str|None=Field(default=None,min_length=1,max_length=200)
+    receipt_sha256: str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
+    reason: str|None=Field(default=None,min_length=1,max_length=1000)
+    @model_validator(mode='after')
+    def shape(self):
+        if self.action=='SUBMIT':
+            if any(x is None for x in (self.text,self.source_kind,self.source_label)) or self.reason is not None or self.receipt_sha256 is not None:raise ValueError('complete synthetic receipt only')
+        elif not self.reason or self.text is not None or self.source_kind is not None or self.source_label is not None or not self.receipt_sha256:
+            raise ValueError('current receipt hash and explicit decision reason required')
+        return self
+
+class SubmitRecoverySelection(BaseModel):
+    """Original manual submission coordinates, never authority or a replay body."""
+    model_config=ConfigDict(extra='forbid')
+    preparation_id: UUID
+    case_id: UUID
+    run_id: UUID
+    expected_revision: int=Field(ge=1,le=63)
+    preparation_revision: int=Field(ge=1,le=64)
+
+    @field_validator('expected_revision','preparation_revision',mode='before')
+    @classmethod
+    def exact_revision(cls,value):
+        if type(value) is int:return value
+        if type(value) is str and value.isascii() and value.isdecimal() and str(int(value))==value:return int(value)
+        raise ValueError('exact integer revision required')
+
+def _auth(store,c,token):
+    c.execute("SET LOCAL lock_timeout='3s'")
+    p=store.auth(c,token,lock=True)
+    if p['role'] not in ('enterprise_operator','service_executor'):raise Denied('receipt role required')
+    store.check_capability(c,p,'READ')
+    return p
+
+def _key(c,p,key):c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('executor-receipt-key:'+p['id']+':'+key,))
+
+def _executor(store,c,id,run):
+    store.lock_principal(c,id)
+    p=c.execute('SELECT * FROM principals WHERE id=%s AND active',(id,)).fetchone()
+    if not p or p['role']!='service_executor':raise Denied('current assigned executor required')
+    store.scoped_run(c,p,run)
+    return p
+
+def _base(store,c,p,id):
+    row=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s AND park_id=%s AND org_id=%s',(id,p['park_id'],p['org_id'])).fetchone()
+    if not row or p['id']!=row['owner_id' if p['role']=='enterprise_operator' else 'executor_id']:raise Denied('receipt step unavailable')
+    from .case_step_assignments import refuse_legacy
+    refuse_legacy(c,row['preparation_id'])
+    store.scoped_run(c,p,row['run_id'])
+    return row
+
+def _parent(c,row,write=False):
+    # Birth is immutable. Decide before taking any parent SHARE lock so new
+    # tracked writers never upgrade SHARE after acquiring a child UPDATE lock.
+    parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone() if write else None
+    tracked=bool(parent and parent.get('candidate_frontier_birth') is not None)
+    return c.execute('SELECT * FROM preparations WHERE id=%s '+('FOR UPDATE' if write and tracked else 'FOR SHARE'),(row['preparation_id'],)).fetchone()
+
+def current_step(c,parent):
+    """The current accepted offer selects its receipt generation; history never does."""
+    root=c.execute('SELECT current_offer_id FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone()
+    if root:
+        selected=c.execute("""SELECT s.* FROM service_dispatch_offers o JOIN service_receipt_steps s
+          ON s.id=o.receipt_step_id AND s.executor_id=o.executor_id
+          AND s.preparation_revision=o.preparation_revision AND s.preparation_sha256=o.preparation_sha256
+          WHERE o.id=%s AND o.state='ACCEPTED' AND s.preparation_id=%s""",(root['current_offer_id'],parent['id'])).fetchone()
+    else:
+        rows=c.execute('SELECT * FROM service_receipt_steps WHERE preparation_id=%s LIMIT 2',(parent['id'],)).fetchall()
+        selected=rows[0] if len(rows)==1 else None
+    fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+    return selected if selected and all(selected[k]==parent[k] for k in fields) else None
+
+def material_current(c,parent,store=None):
+    if not parent or parent['state']!='LOCAL_CONFIRMED':return False
+    items=prep.latest(c,parent['id'])
+    current=({i['slot'] for i in items}==set(prep.SLOTS) and
+            all(digest(i['text'])==i['source_sha256'] for i in items) and
+            prep.snapshot(parent,items)==parent['review_sha256'])
+    if not current or not prep.fact_enabled(c,parent):return current
+    if store is None:return False
+    return prep.fact_descriptor(store,c,parent).get('satisfied') is True
+
+def _fresh(row,parent,c=None,store=None,*,check_execution=True):
+    base=bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent,store)))
+    if not base or not check_execution or c is None:return base
+    receipt=_current(c,row)
+    if _requires_local(c,row,receipt):
+        from .isolated_local_execution import current
+        return bool(store and current(store,c,row,parent,receipt))
+    return base
+
+def _requires_local(c,row,receipt=None):
+    receipt=receipt if receipt is not None else _current(c,row)
+    # SELECT * reveals whether the isolated-only column exists; normal schemas
+    # and wholly manual generations retain their original contract.
+    return bool(receipt and 'adapter_execution' in receipt and c.execute(
+        'SELECT 1 FROM service_step_receipts WHERE step_id=%s AND adapter_execution IS NOT NULL LIMIT 1',
+        (row['id'],)).fetchone())
+
+def _locked(c,id,write=False):
+    return c.execute('SELECT * FROM service_receipt_steps WHERE id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(id,)).fetchone()
+
+def _current(c,row):
+    return c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s AND id=%s',(row['id'],row['current_receipt_id'])).fetchone() if row['current_receipt_id'] else None
+
+def _replay(c,p,key,fp):
+    e=c.execute('SELECT fingerprint,payload FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+    if e:
+        if e['fingerprint']!=fp:raise Conflict('receipt request key fingerprint mismatch')
+        return e['payload']
+
+def _event(c,p,row,key,fp,action,**extra):
+    payload={'step_id':str(row['id']),'revision':row['revision'],'state':row['state'],'action':action,'actor_id':p['id'],'scope':SCOPE,**extra}
+    from .business_frontier import event_fence
+    payload.update(event_fence(c))
+    c.execute('INSERT INTO service_receipt_events(id,step_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
+    return payload
+
+def _view(c,p,row,parent,event=None,store=None):
+    current=current_step(c,parent) if parent else None
+    is_current=bool(current and current['id']==row['id'])
+    receipt=_current(c,row)
+    from .isolated_local_execution import view as execution_view
+    cancelled=prep.case_cancelled(c,parent) if parent else False
+    execution=execution_view(store,c,p,row,parent,receipt,is_current)
+    blocked=prep.case_write_blocked(c,parent) if parent else False
+    if blocked:execution={**execution,'can_execute':False}
+    from .business_frontier import view as frontier_view
+    from .controlled_plans import _hash
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
+        local_execution=execution,
+        history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
+        receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
+        dependency='CURRENT' if is_current and _fresh(row,parent,c,store) else 'DEPENDENCY_CHANGED',event=event,
+        is_current_step=is_current,can_submit=not blocked and is_current and p['role']=='service_executor' and row['state'] in ('AWAITING_RECEIPT','CHANGES_REQUESTED') and _fresh(row,parent,c,store),record_mode='CURRENT_GENERATION' if is_current else 'HISTORICAL_GENERATION',
+        replay_mode=('CURRENT_COMMITTED_EVENT' if is_current else 'HISTORICAL_COMMITTED_EVENT') if event else None,
+        qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
+
+@bounded
+def catalog(store,token,id):
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
+        row=prep.scoped(store,c,p,id);store.check_capability(c,p,'EXECUTE')
+        rows = store.assigned_executors(c,row['run_id'],p['park_id'],p['org_id'])
+        cancelled=prep.case_cancelled(c,row)
+        from .business_frontier import view as frontier_view
+        return dict(**frontier_view(c,row),scope=SCOPE,preparation_revision=row['revision'],case_cancelled=cancelled,case_reconciling=prep.case_state(c,row)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,row),ready=row['state']=='LOCAL_CONFIRMED' and not prep.case_write_blocked(c,row),executors=rows)
+
+def _insert_step(c,parent,executor_id):
+    return c.execute("""INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,
+          preparation_revision,preparation_sha256,goal,state,revision,namespace)
+          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'AWAITING_RECEIPT',1,'SYNTHETIC') RETURNING *""",(uuid4(),parent['id'],parent['run_id'],parent['case_id'],parent['owner_id'],executor_id,parent['park_id'],parent['org_id'],parent['service_id'],parent['service_version'],parent['revision'],parent['review_sha256'],parent['goal'])).fetchone()
+
+@bounded
+def create(store,token,key,data):
+    fp=digest(prep.canonical({'action':'CREATE',**frontier_request(data)}))
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
+        store.check_capability(c,p,'EXECUTE');_key(c,p,key)
+        parent=prep.scoped(store,c,p,data.preparation_id,write=True,business_write=True)
+        from .case_step_assignments import refuse_legacy
+        refuse_legacy(c,parent['id'])
+        _executor(store,c,data.executor_id,parent['run_id'])
+        old=_replay(c,p,key,fp)
+        if old:
+            row=_base(store,c,p,UUID(old['step_id']));row=_locked(c,row['id'])
+            return _view(c,p,row,parent,old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
+        from .controlled_plans import gate
+        gate(store,c,parent,3)
+        if parent['revision']!=data.expected_preparation_revision or not material_current(c,parent,store):raise Conflict('current locally confirmed preparation required')
+        if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('preparation already has receipt step')
+        if c.execute('SELECT 1 FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('internal dispatch requires executor acceptance')
+        row=_insert_step(c,parent,data.executor_id)
+        return _view(c,p,row,parent,_event(c,p,row,key,fp,'CREATE'),store)
+
+@bounded
+def read(store,token,id):
+    with store.connect() as c:
+        p=_auth(store,c,token);row=_base(store,c,p,id)
+        from .isolated_local_execution import provider
+        adapter=provider(store)
+        if adapter:
+            adapter.bridge._lock(c,row['run_id'])
+            store.lock_principal(c,row['executor_id'])
+        parent=_parent(c,row);row=_locked(c,id)
+        return _view(c,p,row,parent,store=store)
+
+@bounded
+def recover_submit(store,token,id,key,selection):
+    """Read a manual SUBMIT and its atomic original receipt under current access.
+
+    NOT_OBSERVED is inconclusive; the original command may still arrive. No
+    writable view, receipt text, approval or request body is returned.
+    """
+    if type(selection) is not SubmitRecoverySelection:raise Denied('typed original submission selection required')
+    from .controlled_plans import _hash
+    from .business_frontier_types import historical_fields
+    from pydantic import ValidationError
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='service_executor':raise Denied('assigned executor receipt only')
+        _key(c,p,key);row=_base(store,c,p,id);parent=_parent(c,row);row=_locked(c,id)
+        fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+        if (not parent or row['namespace']!='SYNTHETIC' or row['preparation_id']!=selection.preparation_id
+                or row['case_id']!=selection.case_id or row['run_id']!=selection.run_id
+                or any(row[k]!=parent[k] for k in fields)):
+            raise Denied('receipt step unavailable')
+        if row['preparation_revision']!=selection.preparation_revision or selection.expected_revision>row['revision']:
+            raise Conflict('original submission selection mismatch')
+        old=c.execute('SELECT * FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        event=None
+        if old:
+            payload=old['payload']
+            expected=dict(step_id=str(id),revision=selection.expected_revision+1,state='RECEIPT_RECORDED',
+                          action='SUBMIT',actor_id=p['id'],scope=SCOPE,reason=None)
+            if (old['step_id']!=id or old['action']!='SUBMIT' or old['revision']!=selection.expected_revision+1
+                    or old['revision']>row['revision'] or type(payload) is not dict
+                    or any(type(payload.get(k)) is not type(v) or payload.get(k)!=v for k,v in expected.items())
+                    or 'adapter_execution' in payload or 'record_mode' in payload):
+                raise Conflict('original manual submission proof mismatch')
+            try:
+                receipt_id=UUID(payload['receipt_id'])
+                receipt=c.execute('SELECT * FROM service_step_receipts WHERE id=%s AND step_id=%s',(receipt_id,id)).fetchone()
+                if (not receipt or receipt.get('adapter_execution') is not None or receipt['actor_id']!=p['id']
+                        or receipt['source_kind']!='SYNTHETIC' or digest(receipt['text'])!=receipt['source_sha256']
+                        or payload.get('receipt_sha256')!=receipt['source_sha256']
+                        or payload['receipt_id']!=str(receipt_id)
+                        or receipt['version']!=c.execute("SELECT count(*) n FROM service_receipt_events WHERE step_id=%s AND action='SUBMIT' AND revision<=%s",(id,old['revision'])).fetchone()['n']):
+                    raise ValueError('manual receipt binding')
+                original=Command(action='SUBMIT',expected_revision=selection.expected_revision,
+                    text=receipt['text'],source_kind=receipt['source_kind'],source_label=receipt['source_label'],
+                    **historical_fields(payload))
+                fp=digest(prep.canonical(dict(step_id=str(id),**frontier_request(original))))
+                if fp!=old['fingerprint']:raise ValueError('original fingerprint')
+            except (KeyError,TypeError,ValueError,ValidationError) as exc:
+                raise Conflict('original manual receipt proof mismatch') from exc
+            event=dict(id=str(old['id']),action='SUBMIT',revision=old['revision'],receipt_id=str(receipt['id']),
+                       receipt_version=receipt['version'],receipt_sha256=receipt['source_sha256'])
+        _auth(store,c,token);store.scoped_run(c,p,row['run_id'])
+        return dict(scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),step_id=str(id),
+            **{k:str(getattr(selection,k)) for k in ('preparation_id','case_id','run_id')},
+            expected_revision=selection.expected_revision,preparation_revision=selection.preparation_revision,
+            request_key=key,status='COMMITTED' if old else 'NOT_OBSERVED',event=event,
+            historical_only=True,read_only=True,automatically_replayed=False,case_goal_completed=False)
+
+@bounded
+def command(store,token,id,key,data):
+    from .isolated_local_execution import ExecuteLocal,provider,current as execution_current
+    execute=type(data) is ExecuteLocal
+    if not execute and type(data) is not Command:raise Denied('typed receipt command required')
+    if execute and provider(store) is None:raise Denied('isolated local execution disabled')
+    action='SUBMIT' if execute else data.action
+    fp=digest(prep.canonical({'step_id':str(id),**frontier_request(data),**({'action':'EXECUTE_LOCAL'} if execute else {})}))
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if action=='SUBMIT':
+            if p['role']!='service_executor':raise Denied('assigned executor receipt only')
+        else:
+            if p['role']!='enterprise_operator':raise Denied('enterprise owner decision only')
+            store.check_capability(c,p,'EXECUTE')
+        _key(c,p,key);row=_base(store,c,p,id)
+        if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
+        parent=_parent(c,row,write=True);prep.case_write_guard(c,parent);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
+        if old:
+            if execute and (not _fresh(row,parent,c,store) or
+                            old.get('receipt_id')!=str(row['current_receipt_id']) or
+                            not execution_current(store,c,row,parent,_current(c,row))):
+                raise Conflict('historical local execution cannot restore current receipt; execute with a fresh key')
+            if not execute and _requires_local(c,row) and (not _fresh(row,parent,c,store) or
+                    old.get('receipt_id')!=str(row['current_receipt_id'])):
+                raise Conflict('local execution no longer current')
+            return _view(c,p,row,parent,old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
+        selected=current_step(c,parent)
+        if not selected or selected['id']!=row['id']:raise Conflict('historical receipt generation is read-only; current executor acceptance required')
+        if action=='SUBMIT' and not execute and _requires_local(c,row):
+            raise Conflict('local adapter generation required; manual text cannot replace execution output')
+        from .controlled_plans import gate
+        if action in ('SUBMIT','ACKNOWLEDGE'):
+            full_parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+            gate(store,c,full_parent,3)
+        if not _fresh(row,parent,c,store,check_execution=action!='SUBMIT'):raise Conflict('receipt preparation dependency changed; explicit replanning required')
+        if execute and row['revision']>=63:raise Conflict('local execution requires capacity for independent owner acknowledgement')
+        if row['revision']!=data.expected_revision:raise Conflict('stale receipt step revision; refresh required')
+        if row['revision']>=64:raise Conflict('receipt history limit reached')
+        current=_current(c,row);current_id=row['current_receipt_id']
+        execution=None
+        if action=='SUBMIT':
+            stale_local=bool(execute and current and current.get('adapter_execution') is not None and
+                             not _fresh(row,parent,c,store))
+            if row['state'] not in ('AWAITING_RECEIPT','CHANGES_REQUESTED') and not stale_local:raise Conflict('receipt step not awaiting executor')
+            if execute:
+                adapter=provider(store)
+                if not adapter:raise Denied('isolated local execution disabled')
+                text,execution=adapter.generate(store,c,row,parent)
+                from .isolated_local_execution import ADAPTER_ID
+                source_label=ADAPTER_ID+'/1'
+            else:text,source_label=data.text,data.source_label
+            version=(current['version'] if current else 0)+1;sha=digest(text)
+            values=(uuid4(),id,version,text,source_label,sha,p['id'])
+            if execute:
+                receipt=c.execute("INSERT INTO service_step_receipts(id,step_id,version,text,source_kind,source_label,source_sha256,actor_id,adapter_execution) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s,%s) RETURNING *",(*values,Jsonb(execution))).fetchone()
+            else:
+                receipt=c.execute("INSERT INTO service_step_receipts(id,step_id,version,text,source_kind,source_label,source_sha256,actor_id) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s) RETURNING *",values).fetchone()
+            current_id=receipt['id'];state='RECEIPT_RECORDED'
+        else:
+            if not current or data.receipt_sha256!=current['source_sha256']:raise Conflict('current receipt hash required')
+            if action=='ACKNOWLEDGE':
+                if row['state']!='RECEIPT_RECORDED':raise Conflict('recorded receipt required for local acknowledgement')
+                state='LOCAL_ACKNOWLEDGED'
+            elif action=='REQUEST_CHANGES':
+                if row['state']!='RECEIPT_RECORDED':raise Conflict('recorded receipt required for correction')
+                state='CHANGES_REQUESTED'
+            else:
+                if row['state'] not in ('RECEIPT_RECORDED','LOCAL_ACKNOWLEDGED'):raise Conflict('recorded receipt required for reopen')
+                state='AWAITING_RECEIPT'
+        row=c.execute('UPDATE service_receipt_steps SET state=%s,revision=revision+1,current_receipt_id=%s WHERE id=%s RETURNING *',(state,current_id,id)).fetchone()
+        from .controlled_plans import invalidate
+        invalidate(c,row['preparation_id'],4)
+        e=_event(c,p,row,key,fp,action,receipt_id=str(current_id),receipt_sha256=_current(c,row)['source_sha256'],reason=data.reason,**({'adapter_execution':execution,'record_mode':'SERVER_GENERATED_LOCAL_EXECUTION'} if execute else {}))
+        return _view(c,p,row,parent,e,store)
+
+@bounded
+def list_steps(store,token):
+    with store.connect() as c:
+        p=_auth(store,c,token);owner=p['role']=='enterprise_operator'
+        rows=c.execute("""SELECT s.id,s.goal,s.state,s.revision,s.run_id,(cs.state='CANCELLED') AS case_cancelled,(cs.state='RECONCILING') AS case_reconciling,(cs.state IN ('RECONCILING','CANCELLED')) AS case_write_blocked FROM service_receipt_steps s JOIN cases cs ON cs.id=s.case_id
+          WHERE s.park_id=%s AND s.org_id=%s AND s."""+('owner_id' if owner else 'executor_id')+"""=%s
+          AND (SELECT principal_id FROM runs WHERE id=s.run_id) = s.owner_id
+          """+('' if owner else "AND EXISTS(SELECT 1 FROM run_assignments a WHERE a.run_id=s.run_id AND a.principal_id=%s AND a.park_id=s.park_id AND a.org_id=s.org_id AND a.active)")+" ORDER BY s.created_at DESC,s.id DESC LIMIT 101",(p['park_id'],p['org_id'],p['id'],*(() if owner else (p['id'],)))).fetchall()
+        raw_more=len(rows)>100
+        scanned=len(rows)
+        if not owner:
+            rows=[r for r in rows if store.assignment_allowed(c,p,r['run_id'])]
+        from .case_step_assignments import legacy_rows
+        rows=legacy_rows(c,rows,'id',receipt=True)
+        for row in rows:
+            row.pop('run_id',None)
+        return dict(items=rows[:100],has_older_records=raw_more, access_filtered=scanned-len(rows),role=p['role'],scope=SCOPE)

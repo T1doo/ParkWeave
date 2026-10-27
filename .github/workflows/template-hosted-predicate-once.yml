@@ -1,0 +1,43 @@
+name: ParkWeave one read-only hosted predicate diagnostic
+on:
+  push:
+    branches: [dev/pgdata-inheritance-source-20261026]
+    paths:
+      - .github/workflows/template-hosted-predicate-once.yml
+      - scripts/template_hosted_predicate_once.py
+      - tests/test_template_hosted_predicate_once.py
+permissions:
+  contents: read
+concurrency:
+  group: parkweave-template-predicate-once
+  cancel-in-progress: false
+jobs:
+  readonly-predicates:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/pgdata-inheritance-source-20261026' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Exact branch checkout without credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Read predicates at most20seconds with1second termination reserve
+        env:
+          PW_PUBLIC: ${{ github.event.repository.private == false }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: timeout --signal=TERM --kill-after=1s 20s /usr/bin/python3.12 -B scripts/template_hosted_predicate_once.py
+      - name: Preserve only bounded public new-run diagnostic
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: template-hosted-predicate-1
+          path: ${{ runner.temp }}/template-hosted-predicate/diagnostic.json
+          if-no-files-found: warn
+          retention-days: 1

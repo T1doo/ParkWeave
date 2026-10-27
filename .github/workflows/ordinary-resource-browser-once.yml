@@ -1,0 +1,58 @@
+name: ParkWeave ordinary resource browser once
+
+on:
+  push:
+    branches: [dev/pr0-resource-browser-20261020]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-ordinary-resource-browser-20261020
+  cancel-in-progress: false
+
+jobs:
+  resource-browser:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/pr0-resource-browser-20261020' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout exact source without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Install existing pinned Python dependencies
+        timeout-minutes: 3
+        shell: bash
+        run: |
+          set -eu
+          /usr/bin/python3.12 -m venv .runtime/resource-browser-venv
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
+            PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 \
+            .runtime/resource-browser-venv/bin/python -m pip install \
+            --no-cache-dir --retries 0 --timeout 20 -r requirements-browser-smoke.txt
+      - name: Resource UI real HTTP PG and cold read with sandboxed Chrome
+        timeout-minutes: 2
+        shell: bash
+        env:
+          RESOURCE_SHA: ${{ github.sha }}
+          RESOURCE_REPOSITORY: ${{ github.repository }}
+          RESOURCE_REF: ${{ github.ref }}
+          RESOURCE_EVENT: ${{ github.event_name }}
+          RESOURCE_ATTEMPT: ${{ github.run_attempt }}
+          RESOURCE_NUMBER: ${{ github.run_number }}
+          RESOURCE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
+            RESOURCE_SHA="$RESOURCE_SHA" RESOURCE_REPOSITORY="$RESOURCE_REPOSITORY" RESOURCE_REF="$RESOURCE_REF" \
+            RESOURCE_EVENT="$RESOURCE_EVENT" RESOURCE_ATTEMPT="$RESOURCE_ATTEMPT" RESOURCE_NUMBER="$RESOURCE_NUMBER" \
+            RESOURCE_PUBLIC="$RESOURCE_PUBLIC" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
+            .runtime/resource-browser-venv/bin/python -B scripts/ordinary_resource_browser_once.py

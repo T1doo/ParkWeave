@@ -1,0 +1,364 @@
+from catalog_test_support import catalog_ids
+"""Safe identifiers only: poisoned private XML/metadata never become public output."""
+import ast
+from contextlib import contextmanager
+import json
+from pathlib import Path
+import sys
+from types import SimpleNamespace
+import xml.etree.ElementTree as ET
+import pytest
+from test_windows_ci_preparation import module
+
+ROOT=Path(__file__).resolve().parents[1]
+KNOWN='tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields'
+POISON='SYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL'
+
+
+def junit(tmp_path,entries):
+    runtime=tmp_path/'.runtime';runtime.mkdir(exist_ok=True)
+    file=runtime/('pytest-'+'a'*32+'.xml');root=ET.Element('testsuites');suite=ET.SubElement(root,'testsuite')
+    for classname,name,kind in entries:
+        case=ET.SubElement(suite,'testcase',classname=classname,name=name)
+        if kind:ET.SubElement(case,kind,message=POISON).text=POISON
+        ET.SubElement(case,'system-out').text=POISON
+    file.write_bytes(ET.tostring(root,encoding='utf-8'));return file,str(file.relative_to(tmp_path))
+
+
+def test_failure_ids_use_exact_allowlist_drop_parameters_and_private_xml(tmp_path):
+    m=module('diagnostics');path,reference=junit(tmp_path,[('tests.test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields[second]','error'),(POISON,POISON,'failure'),('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','')])
+    result=m.failure_tests(tmp_path,reference.replace('/','\\'))
+    assert result['failed_test_ids']==[KNOWN] and result['failed_cases']==3 and result['unknown_failed_cases']==1 and result['test_cases_seen']==4
+    assert POISON not in json.dumps(result) and len(json.dumps(result))<1000
+
+
+@pytest.mark.parametrize('reference',[None,'../../'+POISON,'.runtime/../outside.xml','C:\\'+POISON,'/tmp/'+POISON,'.runtime/'+POISON+'.xml',123,{'token':POISON},'.runtime/pytest-'+'a'*32+'.xml'+POISON])
+def test_junit_path_reference_refused_without_echo(tmp_path,reference):
+    m=module('diagnostics');result=m.failure_tests(tmp_path,reference);assert result['state']=='JUNIT_PATH_REFUSED' and not result['failed_test_ids'] and POISON not in json.dumps(result)
+
+
+@pytest.mark.parametrize('payload',[b'<unclosed>',b'<!DOCTYPE testsuite [<!ENTITY x "PRIVATE">]><testsuite/>',b'<private/>'])
+def test_malformed_xml_entities_or_unknown_root_are_refused(tmp_path,payload):
+    m=module('diagnostics');path,reference=junit(tmp_path,[]);path.write_bytes(payload);result=m.failure_tests(tmp_path,reference)
+    assert result['state'] in ('JUNIT_INVALID','JUNIT_FORMAT_REFUSED') and not result['failed_test_ids'] and POISON not in json.dumps(result)
+
+
+def test_missing_oversize_and_case_limits_are_visible(tmp_path,monkeypatch):
+    m=module('diagnostics');path,reference=junit(tmp_path,[]);path.unlink();assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_MISSING'
+    monkeypatch.setattr(m,'MAX_JUNIT_BYTES',128);path.write_bytes(b'x'*129);assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_UNREADABLE_OR_OVERSIZE'
+    monkeypatch.setattr(m,'MAX_JUNIT_BYTES',4096);monkeypatch.setattr(m,'MAX_TEST_CASES',2)
+    junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','failure')]*3)
+    result=m.failure_tests(tmp_path,reference);assert result['state']=='JUNIT_CASE_LIMIT' and result['test_cases_seen']==2 and result['ids_truncated'] and result['failed_cases']==2
+
+
+def test_truncated_allowlisted_ids_preserve_failure_counts(tmp_path):
+    m=module('diagnostics');ids=sorted(catalog_ids())[:m.MAX_FAILURE_IDS+3]
+    entries=[]
+    for id in ids:
+        file,*parts=id.split('::');entries.append((Path(file).stem+('.'+parts[0] if len(parts)==2 else ''),parts[-1]+'['+POISON+']','failure'))
+    path,ref=junit(tmp_path,entries);result=m.failure_tests(tmp_path,ref)
+    assert result['failed_cases']==len(ids) and len(result['failed_test_ids'])==m.MAX_FAILURE_IDS and result['ids_truncated'] and result['unknown_failed_cases']==0 and POISON not in json.dumps(result)
+
+
+def test_exception_categories_phases_and_cleanup_are_allowlisted_bounded():
+    m=module('diagnostics');error=type(POISON,(Exception,),{})(POISON);error.add_note(POISON);error.parkweave_diagnostic_phase=POISON;error.parkweave_owned_browser_cleanup=['TimeoutExpired',POISON]*50
+    row=m.exception_row(POISON,error,POISON)
+    assert row['case']=='suite_exception' and row['phase']=='UNKNOWN' and row['category']=='OTHER' and len(row['owned_browser_cleanup_failures'])==6 and row['cleanup_failures_count']==100 and row['cleanup_categories_truncated']
+    assert POISON not in json.dumps(row)
+    error.parkweave_owned_browser_cleanup={'token':POISON};assert m.exception_row([],error,[])['cleanup_diagnostics']=='INVALID_METADATA'
+    assert m.exception_row('lifecycle_exception',RuntimeError(POISON),'api_case_wait')['phase']=='api_case_wait'
+
+
+@pytest.mark.parametrize('counts',[{'PASS':POISON,'FAIL':0,'SKIP':0},{'PASS':True,'FAIL':0,'SKIP':0},{'PASS':10001,'FAIL':0,'SKIP':0},{'PASS':1,'FAIL':0,'SKIP':0,POISON:POISON}])
+def test_counts_refuse_unsafe_types_extra_keys_and_bounds(tmp_path,counts):
+    m=module('diagnostics');path=tmp_path/'report.json';path.write_text(json.dumps({'engineering_total_counts':counts,'whole_AT_EX':'NOT_RUN'}),encoding='utf-8')
+    with pytest.raises(ValueError):m.read_report(path)
+
+
+def test_browser_summary_drops_external_versions_text_and_unknown_fields():
+    m=module('diagnostics');result=m.browser_summary({'browser_version':POISON,'environment':POISON,'case':POISON,'grouped_questions':3,'injection_text_only':True,'clarification':'UNKNOWN','extra':POISON})
+    assert result=={'grouped_questions':3,'injection_text_only':True,'clarification':'UNKNOWN'} and POISON not in json.dumps(result)
+
+
+def test_committed_allowlist_exactly_matches_trusted_test_functions():
+    m=module('diagnostics');expected=set()
+    for path in (ROOT/'tests').glob('test_*.py'):
+        for node in ast.parse(path.read_text(encoding='utf-8')).body:
+            if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name.startswith('test_'):expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name)
+            elif isinstance(node,ast.ClassDef) and node.name[0].isalpha() and node.name.isascii():
+                for method in node.body:
+                    if isinstance(method,(ast.FunctionDef,ast.AsyncFunctionDef)) and method.name.startswith('test_'):
+                        expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name+'::'+method.name)
+    result=m._allowed_tests([KNOWN])
+    assert KNOWN in result and result.stats['ids']==len(expected)
+    assert result.stats['catalog_scans']==1
+    index=json.loads((ROOT/'scripts/windows_ci/diagnostic-test-ids.json').read_bytes())
+    actual=[]
+    for row in index['domains']:
+        path=ROOT/'scripts/windows_ci/diagnostic-catalog-v2'/index['generation']/(row['domain']+'.jsonl')
+        for line in path.read_bytes().splitlines():
+            item=json.loads(line)
+            if 'id' in item:actual.append(item['id'])
+    assert len(actual)==len(set(actual)) and set(actual)==expected
+
+
+def _catalog_fixture(tmp_path, monkeypatch, source='def test_alpha(): pass\n', ids=None):
+    root=tmp_path/'repo';(root/'tests').mkdir(parents=True)
+    (root/'tests/test_a.py').write_text(source,encoding='utf-8')
+    target=root/'scripts/windows_ci/diagnostic-test-ids.json';target.parent.mkdir(parents=True)
+    ids=['tests/test_a.py::test_alpha'] if ids is None else ids
+    target.write_text(json.dumps({'schema':1,'test_ids':ids}),encoding='utf-8')
+    monkeypatch.setattr(module('diagnostic_catalog').cv,'FILE_DOMAINS',{'tests/test_a.py':'FOUNDATION_HOST'})
+    return root,target
+
+
+def test_catalog_maintenance_exact_ast_and_atomic_update(tmp_path,monkeypatch):
+    m=module('diagnostic_catalog')
+    source='def test_alpha(): pass\nclass DemoChecks:\n async def test_beta(self): pass\nclass _Private:\n def test_hidden(self): pass\n'
+    root,target=_catalog_fixture(tmp_path,monkeypatch,source)
+    before=target.read_bytes();report=m.inspect(root)
+    assert report['status']=='MISMATCH' and report['expected']==2 and report['missing']==1 and report['extra']==0
+    assert target.read_bytes()==before
+    report=m.inspect(root,write=True)
+    assert report['status']=='UPDATED' and report['write_state']=='CONFIRMED'
+    assert json.loads(target.read_text())['schema']==2
+    assert all(i in m.cv.scan(root,catalog_ids(root)) for i in catalog_ids(root))
+    assert m.inspect(root)['status']=='VALID'
+    assert not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+@pytest.mark.parametrize('count',[4096,4097])
+def test_catalog_maintenance_global_capacity_precedes_any_write(tmp_path,monkeypatch,count):
+    m=module('diagnostic_catalog')
+    root,target=_catalog_fixture(tmp_path,monkeypatch,''.join(f'def test_case_{i}(): pass\n' for i in range(count)),['tests/test_a.py::test_case_0'])
+    before=target.read_bytes();entries=set(target.parent.iterdir())
+    if count>4096:
+        monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('capacity refusal must precede temporary creation'))
+    report=m.inspect(root,write=True)
+    assert report['expected']==count and report['limit_ids']==4096
+    if count>4096:
+        assert report['status']=='CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
+        assert target.read_bytes()==before and set(target.parent.iterdir())==entries
+    else:
+        assert report['status']=='UPDATED'
+        reader=module('diagnostics');monkeypatch.setattr(reader,'__file__',str(target.parent/'diagnostics.py'))
+        result=reader._allowed_tests(['tests/test_a.py::test_case_0'])
+        assert result.stats['ids']==4096 and 'tests/test_a.py::test_case_0' in result
+
+
+@pytest.mark.parametrize('kind',['duplicate_test','invalid_syntax','source_unicode','source_long_id','illegal_id','duplicate_json','invalid_json','extra_key','bool_schema','duplicate_id','oversize','symlink'])
+def test_catalog_maintenance_invalid_inputs_never_replace_or_echo(tmp_path,monkeypatch,kind):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch)
+    source=root/'tests/test_a.py'
+    if kind=='duplicate_test':source.write_text('def test_alpha(): pass\ndef test_alpha(): pass\n')
+    elif kind=='invalid_syntax':source.write_text('def '+POISON+'(:\n')
+    elif kind=='source_unicode':source.write_text('def test_alpha(): pass\ndef test_é(): pass\n',encoding='utf-8')
+    elif kind=='source_long_id':source.write_text('def test_alpha(): pass\ndef test_'+('x'*256)+'(): pass\n')
+    elif kind=='illegal_id':target.write_text(json.dumps({'schema':1,'test_ids':[POISON]}))
+    elif kind=='duplicate_json':target.write_text('{"schema":1,"schema":1,"test_ids":["tests/test_a.py::test_alpha"]}')
+    elif kind=='invalid_json':target.write_text(POISON)
+    elif kind=='extra_key':target.write_text(json.dumps({'schema':1,'test_ids':['tests/test_a.py::test_alpha'],POISON:POISON}))
+    elif kind=='bool_schema':target.write_text(json.dumps({'schema':True,'test_ids':['tests/test_a.py::test_alpha']}))
+    elif kind=='duplicate_id':target.write_text(json.dumps({'schema':1,'test_ids':['tests/test_a.py::test_alpha']*2}))
+    elif kind=='oversize':target.write_bytes(b' '*(512*1024+1))
+    else:
+        # A synthetic path guard avoids requiring Windows symlink privileges.
+        original_is_symlink=Path.is_symlink
+        monkeypatch.setattr(Path,'is_symlink',lambda path:path==source or original_is_symlink(path))
+    before=target.read_bytes();entries=set(target.parent.iterdir())
+    monkeypatch.setattr(m.uuid,'uuid4',lambda:pytest.fail('refusal must precede temporary creation'))
+    report=m.inspect(root,write=True)
+    assert report['status'] in ('SOURCE_REFUSED','CATALOG_REFUSED','INDEX_REFUSED','INPUT_REFUSED')
+    assert report['write_state']=='NOT_ATTEMPTED' and POISON not in json.dumps(report)
+    assert target.read_bytes()==before and set(target.parent.iterdir())==entries
+
+
+def test_catalog_maintenance_candidate_byte_capacity_refuses_before_write(tmp_path,monkeypatch):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    before=target.read_bytes();monkeypatch.setattr(m.cv,'MAX_BYTES',len(before)+1)
+    report=m.inspect(root,write=True)
+    assert report['status']=='BYTE_CAPACITY_EXCEEDED' and report['write_state']=='NOT_ATTEMPTED'
+    assert report['candidate_bytes']>report['limit_bytes'] and target.read_bytes()==before
+    assert not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+def test_catalog_maintenance_changed_source_refuses_before_write(tmp_path,monkeypatch):
+    m=module('diagnostic_catalog');root,target=_catalog_fixture(tmp_path,monkeypatch,'def test_alpha(): pass\ndef test_beta(): pass\n')
+    original=m.cv.generate;before=target.read_bytes()
+    def source(directory):
+        result=original(directory)
+        path=root/'tests/test_a.py';path.write_text(path.read_text()+'# changed\n')
+        return result
+    monkeypatch.setattr(m.cv,'generate',source)
+    report=m.inspect(root,write=True)
+    assert report['status']=='INPUT_CHANGED' and report['write_state']=='NOT_ATTEMPTED'
+    assert target.read_bytes()==before and not list(target.parent.glob('.diagnostic-catalog-*.tmp'))
+
+
+def test_catalog_maintenance_current_cli_reports_capacity_without_writing():
+    import subprocess
+    target=ROOT/'scripts/windows_ci/diagnostic-test-ids.json';before=target.read_bytes()
+    result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/diagnostic_catalog.py'),'--check'],capture_output=True,text=True,timeout=15)
+    report=json.loads(result.stdout)
+    assert result.returncode==0 and report['status']=='VALID' and report['write_state']=='NOT_ATTEMPTED'
+    assert report['expected']==report['current']==json.loads(before)['ids']
+    assert report['limit_ids']==4096
+    assert report['missing']==report['expected']-report['current'] and report['extra']==0
+    assert target.read_bytes()==before and not result.stderr
+
+
+def test_static_allowlist_actual_byte_boundary_and_private_refusal(tmp_path,monkeypatch):
+    from catalog_test_support import owned_catalog
+    root,cv=owned_catalog(tmp_path,monkeypatch)
+    m=module('diagnostics');monkeypatch.setattr(m,'__file__',str(root/'scripts/windows_ci/diagnostics.py'))
+    path=root/cv.CATALOG;raw=path.read_bytes();limit=8192
+    path.write_bytes(b' '*(limit-len(raw))+raw)
+    result=m._allowed_tests(['tests/test_a.py::test_alpha'])
+    assert path.stat().st_size==limit and 'tests/test_a.py::test_alpha' in result
+    with path.open('ab') as stream:stream.write(b' ')
+    with pytest.raises(ValueError):m._allowed_tests()
+    _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','failure')])
+    result=m.failure_tests(tmp_path,reference)
+    assert result=={'state':'ALLOWLIST_UNAVAILABLE','failed_test_ids':[],'test_cases_seen':0,'failed_cases':0,'unknown_failed_cases':0,'ids_truncated':False}
+    assert POISON not in json.dumps(result)
+
+
+def test_actual_unittest_class_junit_exact_identity_and_private_parameter_redaction(tmp_path):
+    m=module('diagnostics')
+    method='test_wrong_python_not_accepted_as_ready'
+    known='tests/test_demo_preflight.py::DemoPreflightTests::'+method
+    entries=[('test_demo_preflight.DemoPreflightTests',method,'failure'),
+             ('tests.test_demo_preflight.DemoPreflightTests',method+'['+POISON+']','error'),
+             ('test_demo_preflight.DemoCardTests',method,'failure'),
+             ('test_demo_preflight',method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests.'+POISON,method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests['+POISON+']',method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests',POISON+'['+method+']','failure')]
+    _,reference=junit(tmp_path,entries)
+    result=m.failure_tests(tmp_path,reference)
+    assert result['failed_test_ids']==[known]
+    assert result['failed_test_counts']=={known:2}
+    assert result['failed_cases']==7 and result['unknown_failed_cases']==5
+    assert POISON not in json.dumps(result)
+
+
+@pytest.mark.parametrize('suffix',['Private::Nested::test_method','_Private::test_method','Public[private]::test_method','Public::test_method[private]'])
+def test_allowlist_refuses_nested_private_or_parameterized_class_identifiers(tmp_path,monkeypatch,suffix):
+    from catalog_test_support import owned_catalog,mutate
+    root,cv=owned_catalog(tmp_path,monkeypatch)
+    m=module('diagnostics');monkeypatch.setattr(m,'__file__',str(root/'scripts/windows_ci/diagnostics.py'))
+    mutate(root,cv,'FOUNDATION_HOST',lambda raw:raw.replace(b'tests/test_a.py::test_alpha',('tests/test_demo_preflight.py::'+suffix).encode()))
+    with pytest.raises(ValueError):m._allowed_tests()
+
+
+def test_browser_binding_failure_has_explicit_phase_without_path(tmp_path,monkeypatch):
+    m=module('browser_smoke')
+    # Restore simulated OS before pytest/pathlib or formatter touches paths.
+    with monkeypatch.context() as patch:
+        patch.setattr(m.os,'name','nt');patch.delenv('CHROMEWEBDRIVER',raising=False)
+        with pytest.raises(RuntimeError) as error:m.run_browser(tmp_path,POISON)
+    row=module('diagnostics').exception_row('lifecycle_exception',error.value,'native_browser')
+    assert row['phase']=='browser_driver_binding' and row['category']=='RuntimeError' and POISON not in json.dumps(row)
+
+
+@pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+@pytest.mark.parametrize('platform',['posix','nt'])
+def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+    m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+    path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+    if diagnostic_state=='JUNIT_MISSING':path.unlink()
+    elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'<unclosed>')
+    elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+    if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+        def unavailable(*args,**kwargs):raise ValueError(POISON)
+        monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+    summary=tmp_path/'job-summary.md'
+    monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+    monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+    def run(command,**kwargs):
+        assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+        if 'scripts/run_acceptance.py' in command:
+            Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+            if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+            return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+        if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+        return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+    monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+    rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+    assert reg['status']=='FAIL' and reg['exit_code']==1
+    if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+    if diagnostic_state=='REPORT_INVALID':
+        assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+        assert 'failure_diagnostics' not in reg
+    else:assert reg['failure_diagnostics']['state']==diagnostic_state
+    if diagnostic_state=='AVAILABLE':assert reg['failure_diagnostics']['failed_test_ids']==[KNOWN] and reg['failure_diagnostics']['unknown_failed_cases']==1
+    elif diagnostic_state!='REPORT_INVALID':assert reg['failure_diagnostics']['failed_test_ids']==[]
+    assert POISON not in summary.read_text(encoding='utf-8') and POISON not in capsys.readouterr().out
+    assert len(summary.read_bytes())<12000
+
+
+def test_preflight_missing_configuration_emits_safe_phase_instead_of_raw_key(tmp_path,monkeypatch,capsys):
+    m=module('native_suite');m.require_server=lambda:None;monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')]);monkeypatch.setattr(m.os,'environ',{'GITHUB_TOKEN':POISON})
+    assert m.main()==1
+    row=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'][0]
+    assert row=={'case':'suite_initialization','status':'FAIL','phase':'configuration','category':'KeyError'}
+    assert POISON not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+@pytest.mark.parametrize('doctype',[False,True])
+def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+    m=module('diagnostics');path,reference=junit(tmp_path,[])
+    xml=('<!DOCTYPE testsuite [<!ENTITY x "PRIVATE">]>' if doctype else '')+'<testsuite/>'
+    path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+    assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+
+
+def test_non_utf8_declared_xml_is_refused(tmp_path):
+    m=module('diagnostics');path,reference=junit(tmp_path,[])
+    path.write_bytes(b'<?xml version="1.0" encoding="UTF-16"?><testsuite/>')
+    assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_FORMAT_REFUSED'
+
+
+@pytest.mark.parametrize('failure',[FileNotFoundError,ValueError,TypeError,KeyError])
+def test_unavailable_allowlist_is_constant_and_does_not_echo(tmp_path,monkeypatch,failure):
+    m=module('diagnostics');path,reference=junit(tmp_path,[])
+    def unavailable(*args,**kwargs):raise failure(POISON)
+    monkeypatch.setattr(m,'_allowed_tests',unavailable)
+    result=m.failure_tests(tmp_path,reference)
+    assert result['state']=='ALLOWLIST_UNAVAILABLE' and POISON not in json.dumps(result)
+
+
+@pytest.mark.parametrize('payload',[b'{invalid',b'[]',b'null',b'x'* (512*1024+1)],ids=['malformed','array','null','oversize'])
+def test_report_malformed_non_mapping_and_size_are_rejected(tmp_path,payload):
+    m=module('diagnostics');path=tmp_path/'report.json';path.write_bytes(payload)
+    with pytest.raises(ValueError):m.read_report(path)
+
+
+def test_overlong_junit_fields_are_unknown_without_echo(tmp_path):
+    m=module('diagnostics');path,reference=junit(tmp_path,[(POISON*20,'test_name','failure'),('test_lifecycle',POISON*50,'error')])
+    result=m.failure_tests(tmp_path,reference)
+    assert result['failed_cases']==2 and result['unknown_failed_cases']==2 and result['failed_test_ids']==[] and POISON not in json.dumps(result)
+
+
+def test_linked_private_junit_is_refused(tmp_path):
+    m=module('diagnostics');path,reference=junit(tmp_path,[]);outside=tmp_path/'outside.xml';outside.write_bytes(path.read_bytes());path.unlink()
+    try:path.symlink_to(outside)
+    except OSError:pytest.skip('platform cannot create test-owned symlink')
+    assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_PATH_REFUSED'
+
+
+
+def test_long_parameter_is_mapped_before_length_check_and_all_cases_aggregate(tmp_path):
+    m=module('diagnostics')
+    _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON*100+']','failure')]*42)
+    result=m.failure_tests(tmp_path,reference)
+    assert result['failed_test_counts']=={KNOWN:42}
+    assert result['mapped_failed_cases']==42 and result['unknown_failed_cases']==result['mapped_cases_omitted']==0
+    assert POISON not in json.dumps(result)
+    public=module('publish_summary').failure_diagnostics(result,{KNOWN})
+    assert public['failed_test_counts']=={KNOWN:42}
+    result['mapped_failed_cases']=41
+    assert module('publish_summary').failure_diagnostics(result,{KNOWN})['state']=='DIAGNOSTIC_FIELDS_INVALID'

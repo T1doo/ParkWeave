@@ -1,0 +1,49 @@
+name: ParkWeave Case PG vertical once (approval required)
+
+on:
+  push:
+    branches: [dev/f2-case-pg-vertical-once-20261013]
+    paths: ['scripts/case_pg_vertical/approval.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-case-pg-vertical-once-20261013
+  cancel-in-progress: false
+
+jobs:
+  case-pg-vertical:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-case-pg-vertical-once-20261013' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact approval commit without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Owned PG regressions and Case persistence with closed output
+        timeout-minutes: 23
+        shell: bash
+        env:
+          VERTICAL_SHA: ${{ github.sha }}
+          VERTICAL_REPOSITORY: ${{ github.repository }}
+          VERTICAL_REF: ${{ github.ref }}
+          VERTICAL_EVENT: ${{ github.event_name }}
+          VERTICAL_ATTEMPT: ${{ github.run_attempt }}
+          VERTICAL_NUMBER: ${{ github.run_number }}
+          VERTICAL_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i LANG=C.UTF-8 \
+            VERTICAL_REPOSITORY="$VERTICAL_REPOSITORY" VERTICAL_REF="$VERTICAL_REF" \
+            VERTICAL_EVENT="$VERTICAL_EVENT" VERTICAL_ATTEMPT="$VERTICAL_ATTEMPT" \
+            VERTICAL_NUMBER="$VERTICAL_NUMBER" VERTICAL_PUBLIC="$VERTICAL_PUBLIC" \
+            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            /usr/bin/python3.12 -I -S -B scripts/case_pg_vertical/bootstrap.py "$VERTICAL_SHA"

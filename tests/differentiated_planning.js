@@ -1,0 +1,36 @@
+// Full original page script: real apiCall, entry loaders, renderers and clearers.
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+let nextRequestKey=99;const mode=process.argv[2],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');let checks=0;
+const check=v=>{checks++;assert(v);};
+class Element{
+ constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};}
+ append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
+ prepend(...x){this.children.unshift(...x);}reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(name){delete this[name];}
+ closest(){return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
+ get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
+}
+const lines=require('readline').createInterface({input:process.stdin}),replies=[],calls=[];
+lines.on('line',line=>{replies.shift()?.(JSON.parse(line));});
+async function fetchAPI(path,options={}){calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};}
+function page(file,search=''){
+ const elements=new Map(),get=id=>{if(!elements.has(id)){const e=new Element();e.id=id;elements.set(id,e);}return elements.get(id);},store={},events=[];
+ const storage=new Proxy({getItem:n=>store[n]??null,setItem:(n,v)=>store[n]=v,removeItem:n=>delete store[n]},{ownKeys:()=>Object.keys(store),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+ get('run-access-valid-until').parentElement={firstChild:{textContent:''}};
+ const ctx=vm.createContext({console,Date,JSON,Map,Set,WeakMap,Number,String,Error,encodeURIComponent,URLSearchParams,structuredClone,TextEncoder,
+  Option:function(text,value){const o=new Element('option');o.textContent=text;o.value=value;return o;},
+  crypto:{randomUUID:()=>id(nextRequestKey++)},localStorage:storage,setTimeout:()=>1,clearTimeout:()=>{},location:{search},
+  document:{getElementById:get,createElement:t=>new Element(t),querySelectorAll:()=>[],body:new Element('body'),addEventListener:(...a)=>events.push(a)},window:{addEventListener(){}},fetch:fetchAPI});
+ vm.runInContext(fs.readFileSync(file,'utf8').match(/<script[^>]*>([\s\S]*?)<\/script>/)[1],ctx);return {get,read:s=>vm.runInContext(s,ctx),events,storageKeys:()=>Object.keys(store)};
+}
+function nested(root,predicate){for(const child of root.children){if(predicate(child))return child;const found=nested(child,predicate);if(found)return found;}return null;}
+async function waitFor(predicate){const end=Date.now()+10000;while(!predicate()){if(Date.now()>end)throw Error('page response not ready');await new Promise(r=>setTimeout(r,10));}}
+(async()=>{
+ const p=page(process.argv[4]||'src/parkweave/web.html');p.get('token').value='SYNTHETIC_fixture-a';
+ async function prepare(label,goals,excluded){await p.get('prep-catalog').onclick();p.get('prep-reviewer').value='prep-specialist-fixture-a';p.get('prep-goal').value=label;await p.get('prep-create').onsubmit({preventDefault(){}});check(p.read('preparationView!==null'));const id=p.read('preparationId');await p.get('plan-prepare').onclick();p.get('request-current').value=label;p.get('plan-required-goals').value=goals.join('\n');p.get('request-exclude-executor').checked=excluded;p.get('request-exclude-executor').oninput();await p.get('request-intent-form').onsubmit({preventDefault(){}});check(p.read('planView.request_intent.required_goals.length')===goals.length);await p.get('bounded-planning-read').onclick();return id;}
+ const first=await prepare('SYNTHETIC material contract no executor',['LOCAL_MATERIAL_PREPARATION'],true);check(p.read('boundedView.current.state')==='COVERED_PREVIEW_ONLY');check(p.read('boundedView.current.steps.length')===1);check(p.read('boundedView.current.constraint_evaluation.state')==='COMPATIBLE');check(p.read('boundedView.current.steps[0].responsibility').length>0);check(p.read('boundedView.current.steps[0].issues.length')>0);const sha=p.read('boundedView.current.source_sha256'),before=calls.filter(c=>c.options.method==='POST').length;await p.get('bounded-planning-confirm').onclick();check(calls.filter(c=>c.options.method==='POST').length===before);check(p.read('servicePlanView.current_preview.source_sha256')===sha);check(p.read('servicePlanView.plan_id')===null);check(!p.get('service-plan-adopt').hidden);p.get('service-plan-reason').value='SYNTHETIC explicitly adopt reviewed current bounded proposal';await p.get('service-plan-adopt').onclick();check(p.read('servicePlanView.steps.length')===1);check(p.read('servicePlanView.events[0].action')==='ADOPT');const adopted=p.read('servicePlanView.plan_id');
+ await p.get('plan-prepare').onclick();await p.get('bounded-planning-read').onclick();const oldSource=p.read('boundedView.current.source_sha256');
+ const peer=page(process.argv[4]||'src/parkweave/web.html');peer.get('token').value='SYNTHETIC_fixture-a';await peer.get('prep-list').onclick();const item=peer.get('prep-items').children.find(e=>e.textContent.startsWith('SYNTHETIC material contract no executor'));check(!!item);await item.onclick();peer.get('prep-slot').value='need_summary';peer.get('prep-text').value='SYNTHETIC current material changed after preview';peer.get('prep-source-kind').value='USER_STATEMENT';peer.get('prep-source-label').value='SYNTHETIC new current statement';await peer.get('prep-evidence').onsubmit({preventDefault(){}});check(peer.read('preparationView.current_materials.length')===1);
+ const beforeStale=calls.filter(c=>c.options.method==='POST').length;await p.get('bounded-planning-confirm').onclick();check(calls.filter(c=>c.options.method==='POST').length===beforeStale);check(p.read('servicePlanView')===null);check(p.get('service-plan-adopt').hidden);check(p.get('bounded-planning-error').textContent.includes('来源已变化'));
+ const second=await prepare('SYNTHETIC full recheck contract no executor',['LOCAL_CASE_RECORD_RECHECK'],true);check(p.read('boundedView.current.state')==='CONSTRAINT_BLOCKED');check(p.read('boundedView.current.required_goals[0]')==='LOCAL_CASE_RECORD_RECHECK');check(p.read('boundedView.current.steps.length')===5);check(p.read('boundedView.current.steps.filter(s=>s.constraint_impact.state==="CONFLICT").length')===3);check(p.get('bounded-planning-confirm').disabled);await p.get('service-plan-prepare').onclick();check(p.read('servicePlanView.can_adopt')===false);check(p.get('service-plan-adopt').hidden);check(p.read('servicePlanView.current_preview.steps.length')===5);
+ console.log(JSON.stringify({mode:'differentiated_planning',checks,first,second,adopted,scope:'ORIGINAL_HTML_REQUEST_CONSTRAINT_PREVIEW_CURRENT_SOURCE_CONFIRM_EXPLICIT_ADOPT_AND_CONFLICT_NO_MODEL_NO_EXECUTION'}));process.exit(0);
+})().catch(e=>{console.error(e.stack);process.exit(1);});

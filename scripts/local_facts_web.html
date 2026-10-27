@@ -1,0 +1,77 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>来源事实与一致性检查</title>
+<style>*{box-sizing:border-box}body{max-width:860px;margin:24px auto;padding:16px;font:17px/1.7 system-ui;color:#183b32}section{border:1px solid #ccc;border-radius:12px;padding:18px;margin:18px 0}label{display:block;margin:10px 0}input,textarea,select,button{font:inherit;max-width:100%}input:not([type=checkbox]),textarea{display:block;width:100%}button{padding:8px;margin:6px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}article{border-top:1px solid #ccc;padding:12px 0}#comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#comparison-history{order:1}#comparison-new{order:2}#comparison-current{order:3;grid-column:1/-1}@media(max-width:700px){#comparison{grid-template-columns:1fr}}.notice{background:#fff4d8;padding:12px}</style>
+<h1>来源事实与历史一致性检查</h1>
+<p class="notice">仅录入合成自述或合成摘录。取值一致不证明真实性、资格或目标完成；不会创建 Case、分派或批准。历史结果仅反映当时保存的来源和有效期。</p>
+<p><a href="/local-entry">返回本地事项入口</a></p>
+<label>已有本机合成会话<input id="session" type="password" autocomplete="off" required></label>
+<p>使用原字段 READ/WRITE 与 facts.assess 权限；切换会话清空本页内容。会话与事实正文不写入浏览器存储。</p>
+<section><h2>1 明确保存一条来源事实</h2><form id="source-form">
+<label>字段<select id="field"><option value="region">地区</option><option value="employees">员工人数</option><option value="service_need">服务诉求</option></select></label>
+<label>取值<input id="value" maxlength="2000" required></label>
+<label>来源编号<input id="source-id" maxlength="120" required></label>
+<label>来源版本<input id="source-version" maxlength="120" required></label>
+<label>来源摘录<textarea id="excerpt" maxlength="1000" required></textarea></label>
+<label>有效起点（本机时间，提交转UTC）<input id="valid-from" type="datetime-local" required></label>
+<label>有效终点（本机时间，提交转UTC）<input id="valid-until" type="datetime-local" required></label>
+<label><input id="source-confirm" type="checkbox" required>我确认保存这条未经核实的合成来源；新来源保留旧记录，不覆盖旧冲突</label>
+<button id="source-save">明确保存来源</button></form><p id="source-status" role="status"></p>
+<button id="sources-read" type="button">只读查看所选字段已保存来源</button><div id="sources"></div></section>
+<section><h2>2 明确提交本次一致性检查</h2><form id="assess-form">
+<label>本次核对目的<input id="goal" maxlength="2000" required></label>
+<p>检查当前身份下地区、员工人数、服务诉求三个字段；不自动择新来源，不把多个矛盾值合并为事实。</p>
+<label><input id="assess-confirm" type="checkbox" required>确认由原本地 worker 保存此次检查，不作真实性或资格认定</label>
+<button id="assess-save">明确提交检查</button></form></section>
+<section><h2>3 只读恢复保存结果</h2>
+<p>提交后请记录下方原运行编号或请求编号；重启只需读取，不必再次提交。历史评估不会因时间推移自动更新，若需核对新来源须另行明确提交。</p>
+<label>原运行编号<input id="run" maxlength="36"></label><button id="result-read">只读查看原检查</button>
+<label>原请求编号<input id="request-key" maxlength="100"></label>
+<label>原请求类型<select id="request-kind"><option value="ASSESSMENT">一致性检查</option><option value="FACT">来源事实（需选原字段）</option></select></label>
+<button id="recover">仅GET核对原请求</button><p id="pending" role="status"></p>
+<button id="release" hidden>结束已确认的原提交核对</button><div id="result"></div></section>
+<section><h2>4 历史检查与当前来源对照</h2>
+<p>选择已有检查编号，只读比较当前新增、过期或冲突来源。历史结果保留；对照不保存新检查，也不选权威来源。当前快照可能继续变化，不能用它自动推进任何事项。</p>
+<label>历史检查编号<input id="history-run" maxlength="36"></label>
+<button id="compare-read">只读对照当前来源</button>
+<p>需要新检查时，另在第2步填写目的、勾选并明确提交原检查。待原worker完成后，用第3步的新运行编号并列读取；旧检查不会被替换。</p>
+<button id="compare-pair">并列读取历史与明确提交的新检查</button>
+<p id="comparison-status" role="status"></p><div id="comparison"></div></section>
+<p id="error" role="alert"></p>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), labels={region:'地区',employees:'员工人数',service_need:'服务诉求'};
+const reasons={CONSISTENT_EVIDENCE:'来源取值一致；真实性仍未知',CONFLICTING_EVIDENCE:'来源取值冲突',MISSING_EVIDENCE:'缺少来源',EXPIRED_OR_NOT_YET_VALID:'来源已过期或尚未生效'};
+const conditions={PROVIDE_SOURCED_EVIDENCE:'下一步条件：补充带编号、版本、摘录和有效期的来源。',PROVIDE_CURRENT_SOURCED_EVIDENCE:'下一步条件：补充当前有效来源；旧记录仍保留。',RESOLVE_CONFLICT_WITH_SOURCED_EVIDENCE:'下一步条件：说明差异并提供可核查依据；新增来源不会自动解除旧冲突。',AUTHORITATIVE_VERIFICATION_REQUIRED:'下一步条件：另行取得可授权核查的依据；本次一致不能转为真实性或资格通过。'};
+let epoch=0,readEpoch=0,busy=false,restoring=true,foreignPending=false,pending=null;const slot='parkweave-local-facts-pending-v1';
+function text(tag,value){const n=document.createElement(tag);n.textContent=value;return n;}
+function context(){return {epoch,token:$('session').value};}
+function readContext(){$('error').textContent='';return {...context(),read:++readEpoch};}
+function current(c){return (c.read===undefined||c.read===readEpoch)&&c.epoch===epoch&&c.token===$('session').value;}
+async function actor(token){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token)))].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function controls(){ for(const id of ['compare-read','compare-pair'])$(id).disabled=busy||restoring||!$('session').value.trim(); $('recover').disabled=busy||restoring||!$('session').value.trim(); $('source-save').disabled=!$('session').value.trim()||busy||restoring||foreignPending||!!pending;$('assess-save').disabled=!$('session').value.trim()||busy||restoring||foreignPending||!!pending;$('release').hidden=!pending?.committed;$('pending').textContent=foreignPending?'另一个会话或无效句柄仍有原提交；请先恢复原会话核对，禁止新提交':pending?'原'+pending.kind+'请求：'+pending.key+'；'+(pending.committed?'已确认保存，可只读恢复':'结果待核对，禁止重发；仅GET原请求'):'';}
+function canonical(v){return v===null||typeof v!=='object'?JSON.stringify(v):Array.isArray(v)?'['+v.map(canonical).join(', ')+']':'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+': '+canonical(v[k])).join(', ')+'}';}
+function remember(p){sessionStorage.setItem(slot,JSON.stringify(p));pending=p;controls();}
+function clearComparison(){ $('comparison').replaceChildren();$('comparison-status').textContent='';}
+function error(e,c){if(!c||current(c)){$('error').textContent=e.message;$('result').replaceChildren();$('sources').replaceChildren();$('source-status').textContent='';clearComparison();}}
+async function request(c,path,method='GET',body=null,key=null){const r=await fetch(path,{method,headers:{Authorization:'Bearer '+c.token,...(body?{'Content-Type':'application/json'}:{}),...(key?{'Idempotency-Key':key}:{})},...(body?{body:JSON.stringify(body)}:{})});if(!current(c))throw Error('会话或当前页面已切换，旧响应不再展示');if(!r.ok)throw Error(r.status===403?'当前权限拒绝；内容已清空，未补权':r.status===409?'原请求参数或状态冲突，保留原编号，仅GET核对':'请求未完成，状态码 '+r.status);const x=await r.json();if(!current(c))throw Error('当前读取已变化，旧响应不再展示');return x;}
+async function restore(c){try{const raw=sessionStorage.getItem(slot);if(!raw)return;const p=JSON.parse(raw),same=p.actor===await actor(c.token);if(!current(c))return;if(!same){foreignPending=true;return;}if(!/^[a-f0-9-]{36}$/.test(p.key)||!['FACT','ASSESSMENT'].includes(p.kind)||!Object.hasOwn(labels,p.field)||typeof p.committed!=='boolean'||!/^[a-f0-9]{64}$/.test(p.expected_sha256))throw Error();pending=p;$('request-key').value=p.key;$('request-kind').value=p.kind;$('field').value=p.field;}catch{if(current(c)){foreignPending=true;$('error').textContent='本页原提交句柄无法读取；勿重新提交，请保留原请求编号核对。';}}finally{if(current(c)){restoring=false;controls();}}}
+$('session').oninput=()=>{epoch++;$('history-run').value='';clearComparison();pending=null;foreignPending=false;restoring=true;$('source-form').reset();$('assess-form').reset();$('sources').replaceChildren();$('result').replaceChildren();$('source-status').textContent='';$('error').textContent='';$('run').value='';$('request-key').value='';controls();restore(context());};
+async function send(kind,body,field){const c=context();if(!c.token.trim()||busy||restoring||foreignPending||pending)throw Error('请先GET核对已有原提交');busy=true;readEpoch++;clearComparison();$('error').textContent='';controls();try{const p={kind,field,key:crypto.randomUUID(),actor:await actor(c.token),expected_sha256:await actor(canonical(body)),committed:false};if(!current(c))return;remember(p);$('request-key').value=p.key;$('request-kind').value=kind;const x=await request(c,kind==='FACT'?'/api/facts':'/api/runs','POST',body,p.key);remember({...p,committed:true});if(kind==='FACT'){$('source-status').textContent='已保存原来源编号：'+x.fact_id;$('source-confirm').checked=false;}else{$('run').value=x.run_id;$('assess-confirm').checked=false;$('result').replaceChildren(text('p','原运行编号：'+x.run_id+'；已提交原worker，请只读查看结果。'));}}finally{busy=false;controls();}}
+$('source-form').onsubmit=async e=>{e.preventDefault();const c=context();try{const f=$('field').value,v=$('value').value;let value=v;if(f==='employees'){if(!/^\d+$/.test(v)||!Number.isSafeInteger(Number(v)))throw Error('员工人数须为非负安全整数');value=Number(v);}const start=new Date($('valid-from').value),end=new Date($('valid-until').value);if(!Number.isFinite(+start)||!(end>start))throw Error('有效起终点须明确且递增');await send('FACT',{schema_version:'parkweave-domain/1.0-draft',purpose:'SERVICE_PREPARATION',field:f,value,unit:f==='employees'?'people':'text',source_ref:{id:$('source-id').value,revision:$('source-version').value,kind:'SYNTHETIC'},source_excerpt:$('excerpt').value,validity:{valid_from:start.toISOString(),valid_until:end.toISOString(),timezone:'UTC'}},f);}catch(e){error(e,c);}};
+$('assess-form').onsubmit=async e=>{e.preventDefault();const c=context();try{await send('ASSESSMENT',{schema_version:'parkweave-domain/0.1',source:'SYNTHETIC',goal:$('goal').value,action:'facts.assess',fact_fields:Object.keys(labels)},'region');}catch(e){error(e,c);}};
+$('sources-read').onclick=async()=>{const c=readContext();$('sources').replaceChildren();try{const x=await request(c,'/api/facts?fields='+encodeURIComponent($('field').value));$('sources').replaceChildren(...x.facts.map(r=>text('pre',JSON.stringify(r,null,2))));}catch(e){error(e,c);}};
+function renderReceipt(target,x){const r=x.operation?.receipt;if(!r||r.source!=='LOCAL_FACT_ASSESSMENT'){target.append(text('p','当前状态：'+x.state+'；尚无本次来源检查回执。'));return;}target.append(text('p','历史检查时间：'+r.assessed_at+'；本次目的：'+(r.assessment_goal||'历史未记录')+'；原运行编号：'+x.run_id+'；资格未评估，真实性未核实。'));for(const item of r.results){const box=document.createElement('article');box.append(text('h3',labels[item.field]),text('p',reasons[item.reason]||'未知原因'),text('pre',JSON.stringify(item.evidence,null,2)));const next=r.next_step_conditions?.find(n=>n.field===item.field);box.append(text('p',conditions[next?.condition]||'此历史版本未记录下一步条件；须另行人工核对。'));target.append(box);}}
+async function readResult(c,id){$('result').replaceChildren();const x=await request(c,'/api/runs/'+encodeURIComponent(id));renderReceipt($('result'),x);if(!$('history-run').value)$('history-run').value=id;}
+$('result-read').onclick=async()=>{const c=readContext();try{await readResult(c,$('run').value);}catch(e){error(e,c);}};
+$('recover').onclick=async()=>{const c=readContext();try{const kind=pending?.kind||$('request-kind').value,key=pending?.key||$('request-key').value,field=pending?.field||$('field').value;const x=await request(c,'/api/local-facts/requests/'+encodeURIComponent(key)+'?kind='+kind+'&field='+field);if(x.status!=='COMMITTED')throw Error('原请求未找到；这不证明未执行，保持未知并禁止自动重试');if(pending){if(x.fingerprint!==pending.expected_sha256)throw Error('原请求参数指纹不一致，保持阻断；不重发');remember({...pending,committed:true});}if(kind==='ASSESSMENT'){$('run').value=x.record_id;await readResult(c,x.record_id);}else{const r=await request(c,'/api/facts/'+x.record_id);$('sources').replaceChildren(text('pre',JSON.stringify(r.facts,null,2)));$('source-status').textContent='只GET确认原来源：'+x.record_id;}}catch(e){error(e,c);}};
+$('run').oninput=()=>{readEpoch++;$('result').replaceChildren();clearComparison();};$('field').onchange=()=>{readEpoch++;$('sources').replaceChildren();};
+$('history-run').oninput=()=>{readEpoch++;clearComparison();};
+async function compare(pair){const c=readContext();clearComparison();try{const baseline=$('history-run').value||$('run').value;if(!baseline)throw Error('请先选择原历史检查编号');$('history-run').value=baseline;const x=await request(c,'/api/runs/'+encodeURIComponent(baseline)+'/fact-comparison');let newer=null;if(pair){const id=$('run').value;if(!id||id===baseline)throw Error('请选择另一次明确提交的新运行编号；此按钮不提交检查');newer=await request(c,'/api/runs/'+encodeURIComponent(id));if(newer.operation?.receipt?.source!=='LOCAL_FACT_ASSESSMENT'||newer.state!=='SUCCEEDED')throw Error('所选新检查尚未完成或不是原来源检查');const nr=newer.operation.receipt,hr=x.historical_receipt;if(!(Date.parse(nr.assessed_at)>Date.parse(hr.assessed_at))||JSON.stringify(nr.results.map(r=>r.field))!==JSON.stringify(hr.results.map(r=>r.field)))throw Error('请选择时间更晚且字段一致的独立检查；此读取不提交或替换检查');}
+if(!current(c))return;$('comparison-status').textContent=(newer?'已并列读取更晚的独立检查；当前快照仍仅供对照。':x.source_changes_observed?'来源有变化，当前需显式重验。':'未发现这些来源变化；历史不自动成为新检查。')+'历史回执保留；读取时点 '+x.current.observed_at+'；未新建检查。';
+const historical=document.createElement('article');historical.id='comparison-history';historical.append(text('h3','历史检查（保持原记录）'));renderReceipt(historical,{run_id:x.run_id,operation:{receipt:x.historical_receipt}});$('comparison').append(historical);
+const live=document.createElement('article');live.id='comparison-current';live.append(text('h3','当前来源快照（不是新检查）'));for(const item of x.changes){live.append(text('p',labels[item.field]+'：'+(reasons[item.current_reason]||'未知')+'；新增 '+item.added_source_ids.length+'；新过期 '+item.newly_expired_source_ids.length+'；缺失 '+item.unavailable_source_ids.length+'；来源变动 '+item.changed_source_ids.length+'；新适用 '+item.newly_applicable_source_ids.length));const next=x.current.next_step_conditions.find(n=>n.field===item.field);live.append(text('p',conditions[next?.condition]||'当前条件未知，须人工核对。'));}live.append(text('pre',JSON.stringify(x.current.results,null,2)));$('comparison').append(live);
+if(newer){const right=document.createElement('article');right.id='comparison-new';right.append(text('h3','另一次明确提交的新检查（不替换历史）'));renderReceipt(right,newer);$('comparison').append(right);}
+}catch(e){error(e,c);}}
+$('compare-read').onclick=()=>compare(false);$('compare-pair').onclick=()=>compare(true);
+$('release').onclick=()=>{if(!pending?.committed)return;sessionStorage.removeItem(slot);pending=null;controls();};controls();restore(context());
+</script></html>

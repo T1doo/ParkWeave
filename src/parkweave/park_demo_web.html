@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>青禾园 · ParkWeave 虚构办理演示</title>
+<style>
+/* Match the original workspace without changing the fictional demo's behavior. */
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#f3f6f3;color:#193d35;font:15px/1.75 system-ui,-apple-system,"Segoe UI","Noto Sans CJK SC","Microsoft YaHei",sans-serif;overflow-wrap:anywhere}header{padding:36px max(28px,calc((100vw - 1160px)/2));background:#174a39;color:white;border-bottom:4px solid #a7c2af}h1{margin:0;font-size:28px;line-height:1.5;letter-spacing:-.5px}header p{max-width:80ch;margin:8px 0 0;color:#dbe9df;font-size:13px}main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.85fr);align-items:start;max-width:1160px;margin:auto;gap:28px;padding:28px}aside,#workspace-panel{min-width:0;padding:28px;border:1px solid #dbe5df;border-radius:18px;background:white;box-shadow:0 8px 28px #173e3207}h2{margin:28px 0 12px;padding-top:24px;border-top:1px solid #e3eae4;font-size:19px;line-height:1.6}h3{margin:26px 0 8px;font-size:16px}#workspace-panel h2{margin-top:0;padding-top:0;border-top:0}p{margin-top:0}label{display:block;color:#344f44;font-size:14px;font-weight:600}button,input,select{width:100%;max-width:100%;min-width:0;min-height:44px;margin:8px 0;padding:12px 14px;border:1px solid #bdcdc3;border-radius:9px;font:inherit;line-height:1.6}input,select{background:#fdfefd;color:#193d35}input[type=file]{font-size:13px}input::file-selector-button{margin-right:10px;padding:6px 9px;border:1px solid #c4d5c9;border-radius:6px;background:white;color:#174a39;font:inherit}button{background:#f3f7f3;color:#174a39;font-size:14px;font-weight:600;text-align:left;cursor:pointer;transition:background .15s,border-color .15s}button:hover:not(:disabled){background:#e6efe8;border-color:#8aaa95}#workspace-open{background:#22624d;border-color:#22624d;color:white}#workspace-open:hover:not(:disabled){background:#174a39}button:disabled,#workspace-open:disabled{opacity:1;background:#e8eee9;border-color:#d6e0d9;color:#65756b;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #386dbe;outline-offset:3px}.notice{padding:14px 16px;border:1px solid #e5d7b7;border-left:3px solid #af843c;border-radius:9px;background:#fff8e8;color:#76501c;font-size:13px}ol{padding-left:24px}li{margin:0 0 12px;padding-left:4px}li::marker{color:#22624d;font-weight:700}small{display:block;margin:6px 0 14px;color:#576c65;font-size:12px}#workspace-panel{position:sticky;top:28px;border-top:3px solid #5f8872}#workspace-panel>p{color:#576c65;font-size:14px}#workspace-panel h3{padding-top:22px;border-top:1px solid #dbe5df}#status{margin:18px 0;padding:14px 16px;border:1px solid #dbe5df;border-radius:10px;background:#f2f6f2;color:#3c5d49;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}details{margin-top:12px;padding:14px 0;border-top:1px solid #dbe5df}summary{padding:6px 0;color:#174a39;font-size:14px;font-weight:650;cursor:pointer}details[open]>summary{margin-bottom:12px}@media(max-width:800px){header{padding:26px 24px}h1{font-size:24px}main{grid-template-columns:1fr;gap:18px;padding:20px}aside,#workspace-panel{padding:22px}#workspace-panel{position:static}}@media(max-width:420px){header{padding:24px 18px}h1{font-size:22px}main{padding:16px}aside,#workspace-panel{padding:20px 18px;border-radius:14px}input,select{font-size:16px}}@media(prefers-reduced-motion:reduce){button{transition:none}}@media(forced-colors:active){button,.notice{border:1px solid ButtonText}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:Highlight}}
+/* Same visual system as the original workspace; no role or file behavior changes. */
+:root{color-scheme:light;--ink:#173e35;--muted:#5a7066;--line:#dce6de;--green:#21634f;--focus:#386dbe}
+body{color:var(--ink);background:radial-gradient(ellipse at 0 0,#e7efe6 0,transparent 48%),#f5f7f2;line-height:1.7}
+header{position:relative;padding:36px max(32px,calc((100vw - 1220px)/2));border-bottom:0;background:linear-gradient(115deg,#123f32,#28654f)}header h1{font-size:30px;font-weight:700;line-height:1.5;letter-spacing:-.5px}header p{max-width:80ch;color:#dcebe1;line-height:1.8}
+main{max-width:1284px;grid-template-columns:minmax(0,1.25fr) minmax(0,.85fr);gap:24px;padding:28px 32px 48px}aside,#workspace-panel{padding:28px;border-color:var(--line);border-radius:20px;box-shadow:0 6px 24px #173e3206}aside>h2{margin:26px 0 14px;padding-top:22px;font-size:18px;line-height:1.6}aside>h2:first-of-type{margin-top:22px}#workspace-panel{top:24px;padding:26px;background:#f9fcf6;border-top:3px solid #739a82}#workspace-panel h2{font-size:21px;line-height:1.5}#workspace-panel h3{margin-top:22px;padding-top:20px;font-size:16px;line-height:1.65}#workspace-panel p{font-size:14px;line-height:1.9}
+button,input,select{border-radius:10px;min-height:44px;padding:11px 14px}button{font-size:13px;line-height:1.7;border-color:#c8d8ca;background:#f3f7f0;color:#123f32}button:hover:not(:disabled){background:#e8f0e4}#workspace-open{padding:13px 16px;border-color:var(--green);background:var(--green);font-weight:650}#workspace-open:hover:not(:disabled){background:#123f32}button:disabled,#workspace-open:disabled{background:#edf1ea;border-color:#dbe3db;color:#657369}input,select{background:#fff;color:var(--ink)}input:focus,select:focus{border-color:#38785c;box-shadow:0 0 0 3px #21634f16}small{color:var(--muted);font-size:12px;line-height:1.85}
+.notice{padding:13px 15px;font-size:12px;line-height:1.9;border-color:#e8dbbc;background:#fff9eb;color:#76521b}#status{margin:16px 0 0;padding:13px 15px;font-size:12px;line-height:1.85;border-color:#d9e6d6;background:#f1f6ed;color:#365b43}details{margin-top:12px;padding:0;border:1px solid var(--line);border-radius:12px;background:#fafcf8}summary{padding:14px 16px;font-size:13px;line-height:1.7}summary::marker{color:#648571}details[open]>summary{margin-bottom:0;border-bottom:1px solid var(--line)}details>ol,details>p{margin:16px 18px 18px}details>ol{padding-left:22px}li{padding-left:5px;margin-bottom:15px;font-size:13px;line-height:1.85}li:last-child{margin-bottom:0}details>p{font-size:13px;line-height:1.85}input[type=file]{border-style:dashed;background:#f8fbf5}input::file-selector-button{border-radius:7px;padding:7px 10px}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+@media(min-width:1100px){aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px}aside>*{grid-column:1/-1}aside>[data-role]{grid-column:auto;margin:6px 0;min-height:68px;padding:12px;font-size:12px}aside>[data-role]::first-line{font-weight:650}}
+@media(max-width:800px){header{padding:28px 24px}header h1{font-size:25px}main{grid-template-columns:1fr;padding:22px;gap:18px}aside,#workspace-panel{padding:24px}#workspace-panel{position:static}}
+@media(max-width:420px){header{padding:24px 20px}header h1{font-size:23px}main{padding:16px 14px 32px}aside,#workspace-panel{padding:20px 18px;border-radius:16px}aside>h2{font-size:17px}input,select{font-size:16px}summary{padding:13px 14px}#workspace-panel h2{font-size:20px}details>ol,details>p{margin-left:15px;margin-right:15px}}
+@media(prefers-reduced-motion:reduce){button,input,select{transition:none}}
+@media(forced-colors:active){header{background:Canvas;color:CanvasText;border-bottom:1px solid CanvasText}header p{color:CanvasText}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}}
+/* Status tone describes only the local guide result, never business completion. */
+#status{border-color:#dce2df;background:#f5f7f6;color:#52635d}
+#status[data-tone="success"]{border-color:#c8decc;background:#edf6ec;color:#285b3d}
+#status[data-tone="error"]{border-color:#e5c3b9;border-left:3px solid #a13e36;background:#fff3ef;color:#8d372e}
+@media(forced-colors:active){#status[data-tone]{border-color:CanvasText;background:Canvas;color:CanvasText}}
+/* Shared calm surfaces and explicit feedback; original guide actions unchanged. */
+body{background:#f4f6f3;color:#233d36;line-height:1.75}header{background:linear-gradient(110deg,#183f33,#275f4b);padding-top:32px;padding-bottom:32px}header h1{font-size:28px;line-height:1.5}header p{font-size:13px;line-height:1.8}
+main{gap:24px;padding-top:26px}aside,#workspace-panel{border-color:#dce5df;border-radius:16px;box-shadow:0 2px 4px #173e3203,0 12px 32px #173e3205}aside{padding:28px}#workspace-panel{background:#f9fbf7;border-top:3px solid #739a82;padding:26px}aside>h2{font-size:18px;line-height:1.65;letter-spacing:-.2px;margin-top:26px;padding-top:24px}label{font-size:13px;color:#364c43;line-height:1.8}small{line-height:1.8;color:#596d65}
+input,select{border:1px solid #bdccc2;border-radius:9px;background:#fff;min-height:46px}input[type=file]{border:1px dashed #91ac9b;background:#f7faf5;padding:14px}input::file-selector-button{min-height:36px;background:#fff;border-color:#c2d4c7;border-radius:7px}
+button{min-height:46px;border-radius:9px;padding:12px 14px;font-size:13px;transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease}button:hover:not(:disabled){background:#eaf3e6;border-color:#91b39f;box-shadow:0 3px 9px #173e3209}button:active:not(:disabled){box-shadow:inset 0 1px 3px #173e3220}button:disabled,#workspace-open:disabled{background:#edf0ec;border-color:#d6ded8;color:#617068;box-shadow:none}
+#workspace-open:not(:disabled){background:#23664f;border-color:#23664f;color:#fff}#workspace-open:hover:not(:disabled){background:#174b3a}
+.notice{background:#fff9ec;border-color:#e7d9b8;color:#75531d;line-height:1.85;border-radius:9px}#status{font-size:13px;line-height:1.8;background:#f2f6f5;color:#37544a;border-color:#d7e0df}#status[data-tone=error]{border-color:#e3c5bd;border-left-color:#a13e36;background:#fff3ef;color:#8d372e}#status[data-tone=success]{border-color:#bdd8c7;background:#edf6ef;color:#285c3e}
+details{border-radius:10px;background:#fafcf8}summary{padding:15px 16px;font-size:14px;line-height:1.7;min-height:48px}summary:hover{background:#edf3eb;border-radius:9px}details[open]>summary{border-bottom-color:#dce5df}li{font-size:13px;line-height:1.85;margin-bottom:16px}li::marker{color:#23664f}
+@media(max-width:800px){header{padding:26px 22px}header h1{font-size:24px}main{padding:20px;gap:18px}aside,#workspace-panel{padding:22px}}
+@media(max-width:420px){header{padding:23px 18px}header h1{font-size:22px}main{padding:16px 14px 30px}aside,#workspace-panel{padding:20px 17px;border-radius:13px}aside>h2{font-size:17px}input,select{font-size:16px}summary{font-size:14px;padding:13px 14px}li{line-height:1.8}#workspace-panel h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media(forced-colors:active){header{background:Canvas;color:CanvasText}#status[data-tone],.notice{background:Canvas;color:CanvasText;border-color:CanvasText}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}}
+
+/* Warm guide surfaces: original file, window, roles and explicit-only actions stay unchanged. */
+:root{--ink:#3d3029;--muted:#6a5b50;--line:#ddcfc0;--green:#a54519;--focus:#315eae}
+body{background:#f3ede5;color:var(--ink)}
+body>header{background:#7b3d21;border-bottom:4px solid #d5a472;padding:28px max(24px,calc((100vw - 1220px)/2))}
+body>header h1{color:#fff}body>header p{color:#fae7d4}
+main{align-items:start;gap:24px}
+main>aside{display:block;min-width:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+main>aside>.notice{margin:0 0 18px}
+.guide-session,.guide-inputs,.guide-process{min-width:0;margin:0;padding:24px;border:1px solid #d5c7b6;border-radius:14px;background:#fffaf3}
+.guide-session{background:#fff3e3;border-color:#dfbc95}
+.guide-inputs{background:#e9edf0;border-color:#c7cfd5}
+.guide-process{margin-top:18px;background:#eee6db}
+:is(.guide-session,.guide-inputs,.guide-process)>h2{margin:0 0 14px;padding:0;border:0;font-size:18px;line-height:1.65;letter-spacing:-.2px}
+.guide-roles{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:18px;padding-top:18px;border-top:1px solid #dfc8aa}
+.guide-roles>h3,.guide-roles>small{grid-column:1/-1;margin:0}
+.guide-roles>h3{padding:0;font-size:14px;line-height:1.7;color:#7b3215}
+.guide-roles>small{margin-bottom:4px}
+.guide-roles>[data-role]{min-width:0;margin:0;text-align:left}
+.guide-fill-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:10px 0}
+.guide-fill-actions>button{min-width:0;margin:0;white-space:normal}
+label{color:#554437}small{color:#6a5b50}
+input,select{border-color:#cbb9a4;background:#fff;color:#3d3029}
+input[type=file]{border-color:#bda07d;background:#fffaf3}
+input::file-selector-button{background:#fffdf9;color:#7b3215;border-color:#cbb292}
+input:focus,select:focus{border-color:#aa5427;box-shadow:0 0 0 3px #a5451912}
+button{background:#fffdf9;color:#7b3215;border-color:#cbb292}
+button:hover:not(:disabled){background:#f4e8d6;border-color:#a54519;box-shadow:0 3px 9px #4b2d1d0c}
+button:active:not(:disabled){box-shadow:inset 0 1px 3px #4b2d1d20}
+#workspace-open:not(:disabled){background:#a54519;border-color:#a54519;color:#fff}
+#workspace-open:hover:not(:disabled){background:#7b3215;border-color:#7b3215;color:#fff}
+button:disabled,#workspace-open:disabled{background:#eee7dd;border-color:#d9cbbb;color:#6f6255;box-shadow:none}
+#status{margin:16px 0 18px}
+#status:not([data-tone]),#status[data-tone=neutral]{background:#e5eef3;color:#375d74;border-color:#c9d9e3}
+.guide-process>details{border-color:#d5c7b6;background:#fffdf9}
+.guide-process>details>summary{color:#7b3215}
+.guide-process>details>summary:hover{background:#f4e8d6}
+.guide-process>details[open]>summary{border-bottom-color:#d5c7b6}
+.guide-process summary::marker,.guide-process li::marker{color:#9b4622}
+#workspace-panel{background:#e9edf0;border-color:#c7cfd5;border-top:3px solid #b18b62;box-shadow:none}
+#workspace-panel>h2{color:#3d3029}#workspace-panel>h3{color:#7b3215;border-top-color:#c7cfd5}
+#workspace-panel>p{color:#52606a}#workspace-panel>.notice{color:#75531d}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:var(--focus)}
+@media(min-width:900px){.guide-fill-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1100px){.guide-roles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){body>header{padding:23px 18px}.guide-session,.guide-inputs,.guide-process{padding:20px 18px}.guide-roles{grid-template-columns:minmax(0,1fr)}.guide-fill-actions{grid-template-columns:minmax(0,1fr)}#workspace-panel{padding:20px 18px}}
+@media(forced-colors:active){body,body>header,.guide-session,.guide-inputs,.guide-process,.guide-process>details,#workspace-panel,#status[data-tone],#status:not([data-tone]){background:Canvas;color:CanvasText;border-color:CanvasText}body>header h1,body>header p,.guide-roles>h3,.guide-roles>small,label,small,#workspace-panel>h2,#workspace-panel>h3,#workspace-panel>p,#workspace-panel>.notice{color:CanvasText;border-color:CanvasText}.guide-roles,.guide-process>details[open]>summary{border-color:CanvasText}.guide-process>details>summary,.guide-process summary::marker,.guide-process li::marker{color:LinkText}input,select,input[type=file],input::file-selector-button{background:Canvas;color:CanvasText;border-color:CanvasText}button,button:hover:not(:disabled),#workspace-open:not(:disabled),#workspace-open:hover:not(:disabled){background:ButtonFace;color:ButtonText;border-color:ButtonText;box-shadow:none}button:disabled,#workspace-open:disabled{color:GrayText;border-color:GrayText}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline-color:Highlight}}
+</style>
+<header><h1>青禾科创园 · 云杉智造办理体验</h1><p>园区、企业、人物、资源与办理记录全部虚构 · 本机模拟目录 · 不调用模型</p></header>
+<main><aside>
+<p class="notice">所有确认、接单与回执只是模拟业务记录，不是正式来源、资格批准或真实履约。</p>
+<div class="guide-session"><h2>1 · 载入本次演示身份</h2>
+<label>选择新建演示库生成的 sessions.json<input id="sessions" type="file" accept=".json,application/json"></label>
+<small>文件只在此页内存读取，不上传、不放入网址或浏览器存储。刷新后需重新选择。</small>
+<button id="workspace-open" disabled>打开原办理页面（独立窗口）</button>
+<div class="guide-roles"><h3>选择办理人物</h3><small>请先打开办理窗口，再选择下方人物。可将两个窗口并排；切换人物不会替你提交业务。</small>
+<button data-role="enterprise" disabled>林岚 · 虚构企业经办人</button>
+<button data-role="specialist" disabled>周禾 · 虚构园区专员</button>
+<button data-role="executor" disabled>许辰 · 虚构执行者</button></div></div>
+<p id="status" role="status" data-tone="neutral">等待选择本次模拟会话文件。</p>
+<div class="guide-inputs"><h2>2 · 选择不同输入</h2>
+<label for="scenario">演示事项</label><select id="scenario"><option value="first">首办：6台设备的巡检资料</option><option value="again">再次使用：新增2台设备的保养资料</option></select>
+<div class="guide-fill-actions"><button id="fill-goal" disabled>填入新事项目标</button>
+<button id="fill-request" disabled>填入本事项诉求与五个办理目标</button>
+<button id="fill-need" disabled>填入独立诉求摘要</button>
+<button id="fill-outline" disabled>填入同用途通用材料目录</button></div>
+<small>这些按钮只填表，不提交、不采纳、不生成回执。请在办理窗口核对后明确点击原业务按钮。</small>
+</div><div class="guide-process"><h2>3 · 按原办理流程操作</h2>
+<details open><summary>首办：从新输入到回执</summary><ol>
+<li>选林岚。在办理窗口“服务”查看服务与专员，填入目标后点“开始资料准备”。这是新的Run、Case和资料。</li>
+<li>先点“查看此事项四步计划”，填入诉求与五目标并点“保存诉求与必需目标”；再从计划返回资料。等“已就绪”后，分别填两槽材料并点“追加材料版本”。</li>
+<li>选周禾，从“协同→我的资料准备事项”打开此事项并审核；再选林岚打开同一事项并确认。</li>
+<li>查看当前方案，读取本机模拟目录、生成唯一 NO_MODEL 候选，核对后明确采纳；在持久步骤计划核对P1。</li>
+<li>在“资源”分别占位两项资源，建立组合；回资料关联当前组合并核对P2。占位会过期，过期请读当前状态，不能强行沿用。</li>
+<li>选周禾分派给许辰；许辰在协同接单；林岚核对P3。</li>
+<li>许辰提交标明SYNTHETIC的本地回执；林岚核对回执与P4。再重核本地记录、核对P5。</li>
+<li>查看目标结果、来源轨迹与Case核对包。下载包中原编号和ADOPT/回执来自实际操作，不是预造记录。</li>
+</ol></details>
+<details><summary>再次使用与取消</summary><ol>
+<li>保留首办编号，选“再次使用”的不同输入，再新建事项；不要修改首办冒充新输入。</li>
+<li>在空白新事项先读取“可复用材料目录”，查看首办来源，明确确认复制。仅复制同用途目录，不继承审核/权限/回执。</li>
+<li>追加本次独立诉求，再由周禾审核、林岚确认。两个事项有独立编号和历史。</li>
+<li>本演示在新事项确认后、尚未采纳方案或分派时走原“取消此Case”，填写原因并确认。首办回执仍保留；已有回执须走原核对流程。</li>
+<li>取消不释放预约；在资源区按原权限单独取消或释放占用。已取消事项不支持假恢复。</li>
+</ol></details>
+<details><summary>错误处理与重启</summary><p>错角色、未审核、过期资源或旧版本请求应准确拒绝。刷新当前事项再按真实状态继续，不跳过审核或复用旧请求。</p><p>重新打开页面后选择同一个会话文件，在协同列表重读。服务停止后可用原state-dir和local-demo-config重启，数据保留；不要重复setup覆盖旧库。模拟目录包自新建起有效7天，期满拒绝，serve不会续期；旧记录和文件保留。</p></details>
+</div></aside><section id="workspace-panel"><h2>两个窗口，同一件虚构事项</h2><p>本页用于选择人物和填写示例；独立办理窗口用于查看记录并明确提交。</p><h3>首办 · 6台设备季度巡检资料</h3><p>林岚提出诉求，周禾审核，许辰接单并记录回执，再由林岚核对。</p><h3>再次使用 · 新增2台设备保养资料</h3><p>另建独立事项，明确复用通用目录，重新审核和确认；演示取消发生在方案采纳与分派之前，首办历史保留。</p><p class="notice">园区、企业、人员、资料和回执全部虚构；原办理窗口同样标记合成工程验证。</p></section></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id),roles=['enterprise','specialist','executor'];
+let sessions=null,epoch=0,workspaceWindow=null;
+const examples={
+ first:{goal:'SYNTHETIC 青禾科创园 / 云杉智造：6台设备季度巡检资料整理（全部虚构）',need:'SYNTHETIC 虚构企业云杉智造申请整理6台设备季度巡检资料，联系人林岚；仅演示本地办理，不预约真实设备、不申请正式资质。'},
+ again:{goal:'SYNTHETIC 青禾科创园 / 云杉智造：新增2台设备保养资料整理（再次使用，全部虚构）',need:'SYNTHETIC 云杉智造本次新增2台设备保养资料，联系人林岚。与上一事项不同，需独立审核和结果；仅复用同用途通用目录。'}
+};
+const outline='SYNTHETIC 云杉智造同用途通用资料目录（虚构）：\n1. 企业联系人说明：林岚（虚构）\n2. 设备清单与保养记录目录\n3. 周禾核对、许辰办理的本地回执目录\n不包含真实企业资料，不证明资格或线下履约。';
+const goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK'];
+function workspace(){const w=workspaceWindow;if(!w||w.closed||w.location.origin!==location.origin)throw Error('请先打开原办理窗口');return w;}
+function field(id,value){const w=workspace(),el=w.document.getElementById(id);if(!el)throw Error('请先打开原办理表单');el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));return el;}
+function controls(){document.querySelectorAll('button').forEach(b=>b.disabled=!sessions||(b.id!=='workspace-open'&&(!workspaceWindow||workspaceWindow.closed)));}
+function clear(){sessions=null;epoch++;controls();try{field('token','');}catch{} }
+function showStatus(text,tone='neutral'){$('status').textContent=text;$('status').dataset.tone=tone;}
+function act(fn){try{fn();}catch{showStatus('原页面尚未就绪，请等待页面加载后重试；没有提交业务。','error');}}
+$('workspace-open').onclick=()=>act(()=>{if(!sessions)return;if(!workspaceWindow||workspaceWindow.closed)workspaceWindow=window.open('/','_blank');else workspaceWindow.focus();controls();showStatus(workspaceWindow?'原办理窗口已打开，请等待加载后明确选择人物。':'未打开办理窗口，请再次点击打开；没有提交业务。',workspaceWindow?'neutral':'error');});
+$('sessions').onchange=async()=>{clear();const version=epoch,file=$('sessions').files?.[0];showStatus(file?'正在本页核对模拟会话文件…':'等待选择本次模拟会话文件。');if(!file)return;try{
+ if(file.size>4096||file.size<1)throw Error();const parsed=JSON.parse(await file.text());
+ if(version!==epoch)return;const keys=[...roles,...roles.map(x=>'second_'+x)].sort();
+ if(!parsed||Array.isArray(parsed)||Object.keys(parsed).sort().join('|')!==keys.join('|')||keys.some(k=>typeof parsed[k]!=='string'||! /^[A-Za-z0-9_-]{43}$/.test(parsed[k])))throw Error();
+ if(new Set(keys.map(k=>parsed[k])).size!==keys.length)throw Error();
+ sessions=parsed;controls();showStatus('模拟身份已在本页内存就绪。请明确选择人物；不会自动办理。','success');
+ }catch{if(version===epoch){clear();showStatus('不是本次演示的六身份会话文件；未上传或使用其内容。','error');}}};
+document.querySelectorAll('[data-role]').forEach(button=>button.onclick=()=>act(()=>{
+ if(!sessions)return;const role=button.dataset.role;field('token',sessions[role]);
+ const w=workspace(),el=w.document.getElementById('token');el.dispatchEvent(new w.Event('change',{bubbles:true}));
+ showStatus(button.textContent+'：已切换。请在协同列表重新打开当前事项。');
+}));
+$('fill-goal').onclick=()=>act(()=>{const value=examples[$('scenario').value].goal;field('goal',value);field('prep-goal',value);showStatus('已填新目标；请在原页面核对并明确创建。');});
+$('fill-request').onclick=()=>act(()=>{field('request-current',examples[$('scenario').value].need);field('plan-required-goals',goals.join('\n'));workspace().document.getElementById('request-local-goal').checked=false;showStatus('已填本次诉求与五个目标；请明确保存。');});
+function material(slot,text){field('prep-slot',slot);field('prep-text',text);field('prep-source-kind','USER_STATEMENT');field('prep-source-label','SYNTHETIC 青禾园虚构演示');showStatus('已填候选材料；请核对后明确追加，未继承审核。');}
+$('fill-need').onclick=()=>act(()=>material('need_summary',examples[$('scenario').value].need));
+$('fill-outline').onclick=()=>act(()=>material('material_outline',outline));
+window.addEventListener('pagehide',()=>{clear();showStatus('等待选择本次模拟会话文件。');});controls();
+</script></html>

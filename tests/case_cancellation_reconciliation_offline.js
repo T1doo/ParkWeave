@@ -1,0 +1,101 @@
+// Actual owner cancellation UI in an offline NodeVM; browser never started.
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const html=fs.readFileSync('src/parkweave/web.html','utf8'),code=html.slice(html.indexOf('// Case cancellation: opaque'),html.indexOf('// Internal offers share'));
+const mode=process.argv[2],id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',cid='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',key='cccccccc-cccc-4ccc-8ccc-cccccccccccc',rid='dddddddd-dddd-4ddd-8ddd-dddddddddddd',scope='SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION';
+let checks=0;const check=v=>{checks++;assert(v);};
+class Element{constructor(){const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};this.hidden=false;this.disabled=false;this.checked=false;this.value='';this.textContent='';this.children=[];}closest(){return null;}replaceChildren(){this.children=[];}append(...c){this.children.push(...c);}reset(){}}
+const captureCallbacks={};const elements=new Map(),$=n=>{if(!elements.has(n))elements.set(n,new Element());return elements.get(n);};
+const storage={},calls=[];const context=vm.createContext({$,console,Date,Map,Set,JSON,Number,String,Error,encodeURIComponent,crypto:{randomUUID:()=>key},generation:1,
+ localStorage:{getItem:n=>storage[n]??null,setItem:(n,v)=>storage[n]=v,removeItem:n=>delete storage[n]},document:{querySelectorAll:()=>[],addEventListener:(kind,fn)=>captureCallbacks[kind]=fn},
+ textElement:(tag,text)=>Object.assign(new Element(),{textContent:text}),prepContext:()=>({id,token:'PRIVATE_TOKEN',generation:context.generation}),prepCurrent:c=>c.id===id&&c.generation===context.generation,
+ prepCall:(path,method,body,key,c)=>new Promise((resolve,reject)=>calls.push({path,method,body,key,c,resolve,reject})),
+ clearPreparation:()=>{context.preparationView=null;vm.runInContext('clearCaseCancellation()',context);},preparationView:{preparation:{id,case_id:cid},case_cancelled:false},
+ prepCommandPending:null,prepRecoveryHandle:null,prepRecoveryChecking:false,caseFactPending:null,materialReusePending:null,receiptLocalPending:null,
+ objectionLock:()=>false,localCaseLocked:()=>false,dispatchPending:null,servicePlanPending:null,servicePlanRecoveryHandle:null});
+context.localStorage=new Proxy(context.localStorage,{ownKeys:()=>Object.keys(storage),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+vm.runInContext(code,context);
+// Actual new renderer dependencies, no replacement or permission bypass.
+vm.runInContext(html.slice(html.indexOf('// Manual SUBMIT recovery retains'),html.indexOf('function receiptSubmitBound(')),context);const run=s=>vm.runInContext(s,context),tick=()=>new Promise(r=>setImmediate(r));
+const x={scope,actor_id:'fixture-a',preparation_id:id,case_id:cid,preparation_revision:5,lifecycle_revision:0,source_sha256:'a'.repeat(64),blockers:[],receipts:[{step_id:id,receipt_id:rid,version:1,receipt_sha256:'b'.repeat(64)}],history:[],can_request:true,can_reconcile:false,can_confirm:false,case_state:'NEEDS_INPUT',resource_release_automatic:false,restore_supported:false,request_event_id:rid,reconciliation_event_id:rid};
+const action=mode.startsWith('record_')?'RECONCILE':mode.startsWith('finish_')?'CONFIRM_CANCEL':'REQUEST_CANCEL';
+if(action!=='REQUEST_CANCEL')Object.assign(x,{case_state:'RECONCILING',lifecycle_revision:action==='RECONCILE'?1:2,can_request:false,can_reconcile:true,can_confirm:action==='CONFIRM_CANCEL'});
+const h={v:1,action,actor:'fixture-a',id,case:cid,key,revision:x.lifecycle_revision,expires:Date.now()+86400000},name='parkweave.case-reconcile.v1.'+id+'.fixture-a';
+const result=()=>{const event={scope,actor_id:h.actor,preparation_id:id,case_id:cid,request_key:key,revision:h.revision+1,action,case_state:action==='CONFIRM_CANCEL'?'CANCELLED':'RECONCILING',resource_release_automatic:false};return {scope,status:'COMMITTED',historical_only:true,automatically_replayed:false,event_id:key,event,current:{...x,can_request:false,can_reconcile:action!=='CONFIRM_CANCEL',can_confirm:false,case_state:event.case_state,lifecycle_revision:event.revision,history:[{event_id:key,event}]}};};
+async function read(){const p=run('readCaseReconciliation()');calls.at(-1).resolve(x);await p;}
+function confirm(){ $('case-reconcile-reason').value='PRIVATE_REASON';$('case-reconcile-confirm').checked=true;run("caseReconChoices.forEach(s=>s.value='KNOWN_LOCAL_RESULT')");}
+(async()=>{
+ if(['lost_response','record_lost_response','finish_lost_response'].includes(mode)){
+  await read();confirm();const p=run('submitCaseReconciliation('+JSON.stringify(action)+')');check(calls.at(-1).method==='POST'&&calls.at(-1).body.action===action);
+  check(storage[name]&&!storage[name].includes('PRIVATE_REASON')&&!storage[name].includes('PRIVATE_TOKEN')&&!storage[name].includes('KNOWN_LOCAL_RESULT'));
+  calls.at(-1).reject(Error('dropped committed response'));await tick();check(calls.at(-1).method==='GET'&&calls.at(-1).path.endsWith('/recovery/'+key));calls.at(-1).resolve(result());await p;
+  check(!storage[name]&&calls.filter(c=>c.method==='POST').length===1&&!$('case-reconcile-confirm').checked&&$('case-reconcile-reason').value==='');
+  check(context.preparationView.case_write_blocked===true);
+ }else if(['cold_recovery','unknown_not_observed','corrupt_proof','wrong_scope','wrong_action','missing_causal_event','revoked','expired_handle'].includes(mode)){
+  if(mode==='expired_handle')h.expires=Date.now()-1;storage[name]=JSON.stringify(h);await read();check($('case-reconcile-recover').hidden===false&&$('case-reconcile-request').disabled);
+  const p=run('recoverCaseReconciliation()');check(calls.at(-1).method==='GET');
+  if(mode==='revoked')calls.at(-1).reject(Object.assign(Error('403'),{status:403}));
+  else if(mode==='unknown_not_observed')calls.at(-1).resolve({scope,status:'NOT_OBSERVED',historical_only:true,automatically_replayed:false,current:x});
+  else {const r=result();if(mode==='corrupt_proof')r.event.actor_id='fixture-b';if(mode==='wrong_scope')r.scope='WRONG';if(mode==='wrong_action')r.event.action='CONFIRM_CANCEL';if(mode==='missing_causal_event')r.current.history=[];calls.at(-1).resolve(r);}
+  await p;check(!calls.some(c=>c.method==='POST'));
+  if(['cold_recovery','expired_handle'].includes(mode))check(!storage[name]&&context.preparationView.case_reconciling);
+  else check(!!storage[name]&&$('case-reconcile-form').hidden);
+ }else if(mode==='cold_hydrate'){
+  storage[name]=JSON.stringify(h);run('caseReconHydrate('+JSON.stringify({id,case_id:cid,owner_id:'fixture-a'})+');caseReconControls();caseCancelControls()');
+  check(run('caseReconHandle.key')===key&&$('case-reconcile-request').disabled&&$('case-cancel-submit').disabled&&calls.length===0);
+ }else if(mode==='storage_bounds'||mode==='future_handle'){
+  if(mode==='future_handle'){h.expires=Date.now()+86400000+60000;storage[name]=JSON.stringify(h);}else for(let i=0;i<9;i++)storage[name+'.'+i]=JSON.stringify(h);
+  await read();check(run('caseReconView')===null&&$('case-reconcile-request').disabled&&!calls.some(c=>c.method==='POST'));
+ }else if(mode==='unknown_handle_all_forms'||mode==='unknown_handle_other_case'||mode==='resource_release_and_history'){
+  storage[name]=JSON.stringify(h);run('caseReconHydrate('+JSON.stringify({id,case_id:cid,owner_id:'fixture-a'})+')');
+  const forms=['prep-evidence','material-reuse-form','request-intent-form','fb-form','opp-import','receipt-submit','receipt-local-execution-form','resource-binding-confirm-form','prep-decision','case-resource-form','dispatch-offer','dispatch-decision','local-case-decision','plan-preview-form'];
+  function submit(formId){let prevented=false,stopped=false;const form={id:formId,closest:selector=>selector.split(',').includes('#'+formId)?form:null};captureCallbacks.submit({target:form,preventDefault:()=>prevented=true,stopImmediatePropagation:()=>stopped=true});return prevented&&stopped;}
+  if(mode==='unknown_handle_all_forms')for(const formId of forms)check(submit(formId));
+  else if(mode==='unknown_handle_other_case'){context.receiptView={step:{case_id:rid}};context.dispatchView={case_id:rid};context.resourceBindingView={case_id:rid};context.localCaseView={case_id:rid};check(!submit('receipt-submit')&&!submit('dispatch-decision')&&!submit('resource-binding-confirm-form')&&!submit('local-case-decision'));}
+  else for(const formId of ['resource-form','receipt-list','combination-release','combination-cancel'])check(!submit(formId));
+  check(calls.length===0);
+ }else if(mode==='cross_case_plan_delivery_approval'||mode==='receipt_create_uses_preparation'||mode==='dynamic_writes'){
+  storage[name]=JSON.stringify(h);run('caseReconHydrate('+JSON.stringify({id,case_id:cid,owner_id:'fixture-a'})+')');
+  function click(button){let prevented=false;captureCallbacks.click({target:{closest:()=>button},preventDefault:()=>prevented=true,stopImmediatePropagation:()=>{}});return prevented;}
+  const button=id=>({id,closest:()=>null});
+  if(mode==='cross_case_plan_delivery_approval'){
+   context.planView={preparation_id:rid,source_snapshots:{P1:{case_id:rid}}};context.deliveryQuote={context:{id:rid},view:{context:{case_id:rid}}};context.planApprovalView=null;
+   for(const name of ['plan-P1','delivery-confirm','plan-approval-propose'])check(!click(button(name)));
+  }else if(mode==='receipt_create_uses_preparation'){
+   context.receiptView={step:{case_id:rid}};const form={id:'receipt-create',closest:selector=>selector.split(',').includes('#receipt-create')?form:null};let prevented=false;
+   captureCallbacks.submit({target:form,preventDefault:()=>prevented=true,stopImmediatePropagation:()=>{}});check(prevented);
+  }else for(const attribute of ['data-fb-action','data-objection-action','data-opp-action','data-correction-respond'])check(click({id:'',closest:()=>null,matches:selector=>selector.includes('['+attribute+']')}));
+  check(calls.length===0);
+ }else if(mode==='late_read'){
+  const p=run('readCaseReconciliation()');run('clearCaseCancellation()');context.generation++;calls.at(-1).resolve(x);await p;check(run('caseReconView')===null&&$('case-reconcile-form').hidden);
+ }else if(mode==='late_post'){
+  await read();confirm();const p=run("submitCaseReconciliation('REQUEST_CANCEL')");run('clearCaseCancellation()');context.generation++;calls.at(-1).resolve(result());await p;check(!!storage[name]&&run('caseReconView')===null&&calls.length===2);
+ }else if(mode==='late_recovery'){
+  storage[name]=JSON.stringify(h);await read();const p=run('recoverCaseReconciliation()');run('clearCaseCancellation()');context.generation++;calls.at(-1).resolve(result());await p;check(!!storage[name]&&run('caseReconView')===null&&!calls.some(c=>c.method==='POST'));
+ }else if(mode==='explicit_outcomes'){
+  Object.assign(x,{case_state:'RECONCILING',can_request:false,can_reconcile:true});await read();confirm();run("caseReconChoices.forEach(s=>s.value='')");let error=false;
+  try{await run("submitCaseReconciliation('RECONCILE')");}catch(e){error=true;}check(error&&calls.length===1&&!storage[name]);
+ }else if(mode==='unresolved_does_not_finalize'){
+  Object.assign(x,{case_state:'RECONCILING',can_request:false,can_reconcile:true});await read();check(run('caseReconChoices.every(s=>s.value===\'\')'));
+  confirm();run("caseReconChoices.forEach(s=>s.value='UNRESOLVED')");const p=run("submitCaseReconciliation('RECONCILE')");check(calls.at(-1).body.receipts[0].outcome==='UNRESOLVED');calls.at(-1).resolve({});await tick();
+  const r=result();r.event.action='RECONCILE';r.current.history[0].event=r.event;calls.at(-1).resolve(r);await p;check(calls.filter(c=>c.method==='POST').length===1&&$('case-reconcile-finish').disabled);
+ }else if(mode==='pending_other_operation'){
+  await read();confirm();context.prepRecoveryHandle={key:'unknown'};let error=false;try{await run("submitCaseReconciliation('REQUEST_CANCEL')");}catch(e){error=true;}check(error&&calls.length===1&&!storage[name]);
+ }else if(mode==='late_phase_read'){
+  await read();run('caseReconRemember('+JSON.stringify(cid)+',\'RECONCILING\')');const p=run('readCaseReconciliation()');calls.at(-1).resolve(x);await p;check(run('caseReconView')===null&&$('case-reconcile-request').disabled);
+ }else if(mode==='late_receipt'||mode==='late_dispatch'){
+  run('caseReconRemember('+JSON.stringify(cid)+',\'RECONCILING\')');
+  if(mode==='late_receipt'){
+   Object.assign(context,{receiptCtx:()=>({}),receiptLabels:{AWAITING_RECEIPT:'等待回执'},runAccessStatusView:null,renderLocalExecution:le=>{$('receipt-local-execution-button').disabled=le.can_execute!==true;}});
+   vm.runInContext(html.split('\n').find(l=>l.startsWith('function renderReceipt(')),context);
+   context.rx={step:{id,case_id:cid,preparation_id:id,state:'AWAITING_RECEIPT',revision:1,goal:'SYNTHETIC'},case_cancelled:false,role:'service_executor',dependency:'CURRENT',is_current_step:true,current_receipt:null,local_execution:{enabled:true,can_execute:true},receipt_history:[],history:[]};
+   run('renderReceipt(rx)');check($('receipt-submit').hidden&&$('receipt-submit-button').disabled&&$('receipt-local-execution-button').disabled);
+  }else{
+   Object.assign(context,{dispatchCtx:()=>({}),dispatchLabels:{OFFERED:'等待'},handoffHandles:()=>[],handoffControls:()=>{},dispatchControls:()=>{},dispatchPendingUI:()=>{},dispatchRetries:new Map()});
+  vm.runInContext(html.slice(html.indexOf('let dispatchAcceptHandle='),html.indexOf('function dispatchAcceptControls(')),context);
+   const block=html.slice(html.indexOf('function renderDispatch(x,catalog)'),html.indexOf('async function loadDispatch',html.indexOf('function renderDispatch(x,catalog)')));vm.runInContext(block,context);
+   context.dx={actor_ref:'a'.repeat(64),dispatch_id:id,preparation_id:id,case_id:cid,revision:1,preparation_revision:5,goal:'SYNTHETIC',role:'service_executor',dependency:'CURRENT',is_current_offer:true,current_offer:{id,state:'OFFERED',executor_id:'executor-a',reason:'SYNTHETIC'},history:[]};
+   run('renderDispatch(dx,{ready:true,executors:[]})');check($('dispatch-decision').hidden&&$('dispatch-accept').disabled);
+  }
+ }else throw Error('unknown mode');
+ process.stdout.write(JSON.stringify({mode,checks,browser_attempts:0})+'\n');
+})().catch(e=>{console.error(e);process.exit(1);});
