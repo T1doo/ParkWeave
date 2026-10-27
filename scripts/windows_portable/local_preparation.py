@@ -122,12 +122,14 @@ class PreparationClient:
         if self.actor.actor[3] != expected:
             raise CandidateRefused('explicit preparation action role required')
 
-    def _request(self, method, path, body=None, key=None, *, binding=None):
+    def _request(self, method, path, body=None, key=None, *, binding=None, on_dispatch=None):
         self.workspace.check()
-        application, actor = self.workspace.application, self.actor
-        if binding is not None and (application is not binding[0] or actor is not binding[1]):
+        application, actor = binding if binding is not None else (self.workspace.application, self.actor)
+        if binding is not None and (self.workspace.application is not application or self.actor is not actor):
             raise CandidateRefused('original recovery dispatch binding changed')
         deadline = time.monotonic() + 30
+        if on_dispatch is not None:
+            on_dispatch()
         result = self.workspace.transport.request(application, actor,
                                                   method, path, body, key, deadline)
         self.workspace.check()
@@ -144,12 +146,31 @@ class PreparationClient:
             raise CandidateRefused('preparation JSON object required')
         return result
 
-    def _write(self, action, key, method, path, body, consume, *, recovery_intent=None):
+    def _write(self, action, key, method, path, body, consume, *, recovery_intent=None, binding=None):
         self.workspace.check()  # Known expired/pre-dispatch refusal is not a write outcome.
         _key(key)
+        if recovery_intent is not None and (
+                type(recovery_intent) is not EvidenceRecoveryIntent or binding is None
+                or recovery_intent.action != action or recovery_intent.request_key != key
+                or recovery_intent.application is not binding[0]
+                or recovery_intent.actor != binding[1].actor
+                or recovery_intent.bearer_sha256 != sha256(binding[1].bearer.encode('ascii')).hexdigest()):
+            raise CandidateRefused('original evidence intent and dispatch must match')
+        dispatched = False
+
+        def mark_dispatched():
+            nonlocal dispatched
+            dispatched = True
+
         try:
-            return consume(self._request(method, path, body, key))
+            value = consume(self._request(method, path, body, key, binding=binding,
+                on_dispatch=mark_dispatched if binding is not None else None))
+            if binding is not None and (self.workspace.application is not binding[0] or self.actor is not binding[1]):
+                raise CandidateRefused('original evidence result binding changed')
+            return value
         except Exception as error:
+            if binding is not None and not dispatched:
+                raise  # Rejected before transport; do not issue an UNKNOWN recovery intent.
             # A lost response may follow a committed SQL transaction. Retain the
             # SAME caller key/previous reference for explicit recovery; no retry,
             # compensating delete, fabricated rollback or local state advance.
@@ -196,19 +217,23 @@ class PreparationClient:
         if type(ref) is not PreparationReference:
             raise CandidateRefused('explicit preparation reference required')
         ref.validate()
-        recovery = None
+        recovery, binding = None, None
         if data.action == 'ADD_EVIDENCE':
             # Exact existing server fingerprint: normalized defaults included,
             # correction_slots omitted when None; no raw material body retained.
             normalized = data.model_dump(mode='json', exclude={'correction_slots'}
                                          if data.correction_slots is None else set())
+            binding = (self.workspace.application, self.actor)
+            application, actor = binding
+            actor.expected()
+            if actor.actor[3] != 'enterprise_operator':
+                raise CandidateRefused('explicit evidence owner required')
             recovery = EvidenceRecoveryIntent(data.action, key,
                 digest(canonical({'preparation_id': ref.preparation_id, **normalized})),
-                self.actor.actor, sha256(self.actor.bearer.encode('ascii')).hexdigest(),
-                ref, self.workspace.application)
+                actor.actor, sha256(actor.bearer.encode('ascii')).hexdigest(), ref, application)
         return self._write(data.action, key, 'POST', '/api/preparations/' + ref.preparation_id + '/commands',
                            data.model_dump(mode='json', exclude_unset=True),
-                           lambda value: self._event(value, data.action, ref), recovery_intent=recovery)
+                           lambda value: self._event(value, data.action, ref), recovery_intent=recovery, binding=binding)
 
     def add_evidence(self, ref, key, *, slot, text, source_label):
         self._role('enterprise_operator')

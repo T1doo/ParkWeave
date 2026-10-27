@@ -8,6 +8,7 @@ import pytest
 from parkweave import preparation
 from parkweave.store import Store
 from .application_readiness import ExistingActorProbe
+from .controller import CandidateRefused
 from .local_preparation import PreparationCommandUnknown, PreparationWorkspace
 from .local_preparation_transport import OwnedPreparationRequest
 from .test_local_preparation import (
@@ -253,3 +254,58 @@ def test_binding_change_after_recovery_response_cannot_return_committed(changed,
     assert pending.recovery_intent.previous == reference()
     assert [row[1] for row in transport.calls] == (['POST', 'GET'] if after == 'metadata'
                                                   else ['POST', 'GET', 'GET'])
+
+
+@pytest.mark.parametrize('changed', ['application', 'credential'])
+@pytest.mark.parametrize('during_check', [1, 2])
+def test_evidence_capture_to_dispatch_change_refuses_before_transport(changed, during_check):
+    transport = ScriptedRequests([])
+    checks, held = [0], []
+
+    def check():
+        checks[0] += 1
+        if checks[0] == during_check:
+            current = held[0]
+            if changed == 'application':
+                current.application = object()
+            else:
+                current.enterprise.actor = ExistingActorProbe('PUBLIC_CHANGED_BEFORE_SEND',
+                                                              current.enterprise.actor.actor)
+
+    current = workspace(transport, check=check)
+    held.append(current)
+    with pytest.raises(CandidateRefused, match='dispatch binding changed'):
+        current.enterprise.add_evidence(reference(), KEY, slot='need_summary',
+            text='SYNTHETIC immutable original source', source_label='SYNTHETIC v1')
+    assert not transport.calls  # Neither another identity's POST nor recovery is dispatched.
+
+
+@pytest.mark.parametrize('changed', ['application', 'credential'])
+@pytest.mark.parametrize('failed_reply', [False, True])
+def test_post_uses_captured_binding_and_changed_context_cannot_recover(changed, failed_reply):
+    current = workspace(ScriptedRequests([]))
+    application, actor = current.application, current.enterprise.actor
+    sent = []
+
+    def request(actual_application, actual_actor, method, path, body, key, deadline):
+        sent.append((actual_application, actual_actor, method))
+        assert actual_application is application and actual_actor is actor
+        assert method == 'POST' and path == PATH + '/commands' and key == KEY
+        if changed == 'application':
+            current.application = object()
+        else:
+            current.enterprise.actor = ExistingActorProbe('PUBLIC_CHANGED_AFTER_SEND', actor.actor)
+        if failed_reply:
+            raise OSError('CONTROLLED post response lost')
+        return event('ADD_EVIDENCE', 2)
+
+    current.transport.request = request
+    pending = unknown_write(current)
+    assert len(sent) == 1
+    assert pending.recovery_intent.application is sent[0][0]
+    assert pending.recovery_intent.actor == sent[0][1].actor
+    from hashlib import sha256
+    assert pending.recovery_intent.bearer_sha256 == sha256(actor.bearer.encode('ascii')).hexdigest()
+    assert current.enterprise.recover_unknown(pending).status == 'UNKNOWN'
+    assert len(sent) == 1  # No GET/POST under the changed context.
+    assert pending.recovery_intent.previous == reference()
