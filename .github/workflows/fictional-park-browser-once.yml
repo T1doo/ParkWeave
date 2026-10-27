@@ -2,31 +2,8 @@ name: ParkWeave fictional guide real browser bounded
 
 on:
   push:
-    branches: [dev/fictional-park-browser-once-20261020]
-    paths:
-      - .github/workflows/fictional-park-browser-once.yml
-      - scripts/fictional_park_browser_once.py
-      - scripts/fictional_park_restart_browser_once.py
-      - scripts/fictional_park_font_once.py
-      - scripts/fictional_park_narrow_browser_once.py
-      - scripts/record_list_browser_once.py
-      - scripts/installed_wheel_support.py
-      - scripts/installed_wheel_entry.py
-      - scripts/local_approval_installed_browser_once.py
-      - scripts/local_source_restart_installed_browser_once.py
-      - scripts/local_goal_txt_installed_browser_once.py
-      - scripts/local_tail_installed_browser_once.py
-      - scripts/local_again_roles_installed_browser_once.py
-      - scripts/receipt_status_css_browser_once.py
-      - scripts/workspace_visual_browser_once.py
-      - scripts/resource_catalog_feedback_browser_once.py
-      - scripts/guide_installed_browser_once.py
-      - scripts/full_guide_installed_browser_once.py
-      - tests/test_record_list_actual_browser.py
-      - scripts/ordinary_resource_browser_once.py
-      - scripts/local_demo_inputs.py
-      - scripts/ordinary_synthetic_demo.py
-      - src/**
+    branches: [dev/pgdata-inheritance-source-20261026]
+    paths: [scripts/template_browser_approval.json]
 
 permissions:
   contents: read
@@ -36,69 +13,49 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  fictional-browser:
+  template-real-http-browser:
     if: >-
       github.repository == 'T1doo/ParkWeave' &&
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/dev/fictional-park-browser-once-20261020' &&
+      github.ref == 'refs/heads/dev/pgdata-inheritance-source-20261026' &&
       github.event.repository.private == false &&
-      github.run_attempt == 1 && github.run_number == 48
+      github.run_attempt == 1 && github.run_number == 49
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      PW_PUBLIC: ${{ github.event.repository.private == false }}
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONPATH: src:tests:.
     steps:
-      - name: Checkout exact source without retained credentials
+      - name: Checkout exact activation source without retained credentials
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
-          fetch-depth: 7
-      - name: Install existing pinned dependencies
+          fetch-depth: 2
+          ref: ${{ github.ref_name }}
+      - name: Bootstrap existing locked tools and approved private font
         timeout-minutes: 3
-        env:
-          PW_BROWSER_SHA: ${{ github.sha }}
-          PW_BROWSER_REPOSITORY: ${{ github.repository }}
-          PW_BROWSER_REF: ${{ github.ref }}
-          PW_BROWSER_EVENT: ${{ github.event_name }}
-          PW_BROWSER_ATTEMPT: ${{ github.run_attempt }}
-          PW_BROWSER_NUMBER: ${{ github.run_number }}
-          PW_BROWSER_PUBLIC: ${{ github.event.repository.private == false }}
         run: |
           set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           /usr/bin/python3.12 -m venv .runtime/fictional-browser-venv
           env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 \
             PIP_CONFIG_FILE=/dev/null PIP_DISABLE_PIP_VERSION_CHECK=1 \
             .runtime/fictional-browser-venv/bin/python -m pip install \
             --no-cache-dir --retries 0 --timeout 20 -r requirements-browser-smoke.txt
-          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
-            PW_BROWSER_SHA="$PW_BROWSER_SHA" PW_BROWSER_REPOSITORY="$PW_BROWSER_REPOSITORY" PW_BROWSER_REF="$PW_BROWSER_REF" \
-            PW_BROWSER_EVENT="$PW_BROWSER_EVENT" PW_BROWSER_ATTEMPT="$PW_BROWSER_ATTEMPT" \
-            PW_BROWSER_NUMBER="$PW_BROWSER_NUMBER" PW_BROWSER_PUBLIC="$PW_BROWSER_PUBLIC" \
-            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
-            GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
-            .runtime/fictional-browser-venv/bin/python -B -m scripts.fictional_park_font_once
-      - name: Paired resource catalog presentation verification
+          .runtime/fictional-browser-venv/bin/python -B -m scripts.template_browser_hosted prepare
+      - name: One real local HTTP and sandboxed Chrome integration
         timeout-minutes: 6
-        env:
-          PW_BROWSER_SHA: ${{ github.sha }}
-          PW_BROWSER_REPOSITORY: ${{ github.repository }}
-          PW_BROWSER_REF: ${{ github.ref }}
-          PW_BROWSER_EVENT: ${{ github.event_name }}
-          PW_BROWSER_ATTEMPT: ${{ github.run_attempt }}
-          PW_BROWSER_NUMBER: ${{ github.run_number }}
-          PW_BROWSER_PUBLIC: ${{ github.event.repository.private == false }}
         run: |
           set -eu
-          env -i PATH=/usr/local/bin:/usr/bin:/bin LANG=C.UTF-8 PYTHONPATH=src:tests:. PYTHONDONTWRITEBYTECODE=1 \
-            PW_BROWSER_SHA="$PW_BROWSER_SHA" PW_BROWSER_REPOSITORY="$PW_BROWSER_REPOSITORY" PW_BROWSER_REF="$PW_BROWSER_REF" \
-            PW_BROWSER_EVENT="$PW_BROWSER_EVENT" PW_BROWSER_ATTEMPT="$PW_BROWSER_ATTEMPT" \
-            PW_BROWSER_NUMBER="$PW_BROWSER_NUMBER" PW_BROWSER_PUBLIC="$PW_BROWSER_PUBLIC" \
-            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" RUNNER_TEMP="$RUNNER_TEMP" \
-            ImageOS="$ImageOS" ImageVersion="$ImageVersion" GITHUB_STEP_SUMMARY="$GITHUB_STEP_SUMMARY" \
-            .runtime/fictional-browser-venv/bin/python -B -m scripts.resource_catalog_feedback_browser_once
-      - name: Preserve bounded masked CSS browser evidence
+          .runtime/fictional-browser-venv/bin/python -B -m scripts.template_browser_hosted execute
+      - name: Preserve only bounded public result and four masked images
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: fictional-park-browser-${{ github.run_number }}
-          path: ${{ runner.temp }}/parkweave-fictional-browser-evidence/
+          name: template-real-http-browser-${{ github.run_number }}
+          path: |
+            ${{ github.workspace }}/../scratch/parkweave-http-evidence-*/result.json
+            ${{ github.workspace }}/../scratch/parkweave-http-evidence-*/*.png
           if-no-files-found: warn
           retention-days: 1
