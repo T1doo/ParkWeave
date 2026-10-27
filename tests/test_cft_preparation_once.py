@@ -235,3 +235,53 @@ def test_exact_content_length_can_close_socket_before_next_read(tmp_path,monkeyp
         assert report['archive_sha256']==m.sha256(payload).hexdigest()
         assert (tmp_path/'original.zip').read_bytes()==payload
     finally:sock.close();peer.close()
+
+
+@pytest.mark.parametrize('failure,phase,primary_errno',[
+    ('write','DOWNLOAD_WRITE',28),
+    ('readback','READBACK_READ',5),
+    ('close','DOWNLOAD_FILE_CLOSE',9),
+])
+def test_download_primary_and_close_errors_are_separate(tmp_path,monkeypatch,failure,phase,primary_errno):
+    import io
+    payload=b'SYNTHETIC_NO_SECRET';size=len(payload);original_open=Path.open
+    monkeypatch.setattr(m,'SIZE',size)
+    monkeypatch.setattr(m,'MD5',m.base64.b64encode(m.md5(payload,usedforsecurity=False).digest()).decode())
+    class Network(io.BytesIO):
+        def __init__(self):
+            super().__init__(payload)
+            self.headers={'x-goog-generation':m.GENERATION,'Content-Length':str(size)}
+            self.fp=type('FP',(),{'raw':type('Raw',(),{'_sock':type('Sock',(),{'settimeout':lambda *a:None})()})()})()
+        def read1(self,n):return self.read(n)
+        def close(self):
+            super().close()
+            if failure in ('write','close'):raise OSError(32,'SYNTHETIC_SECRET_RESPONSE')
+    metadata={'name':m.OBJECT,'size':str(size),'md5Hash':m.MD5,'crc32c':m.CRC32C,'generation':m.GENERATION}
+    monkeypatch.setattr(m,'response',lambda url,deadline:io.BytesIO(json.dumps(metadata).encode()) if url==m.META else Network())
+    class File:
+        def __init__(self,raw):self.raw=raw
+        def __enter__(self):return self
+        def __exit__(self,*exc):self.close()
+        def fileno(self):return self.raw.fileno()
+        def write(self,block):
+            if failure=='write':raise OSError(28,'SYNTHETIC_SECRET_WRITE')
+            return self.raw.write(block)
+        def read(self,n):raise OSError(5,'SYNTHETIC_SECRET_READBACK')
+        def close(self):
+            self.raw.close();raise OSError(9,'SYNTHETIC_SECRET_CLOSE')
+    def opened(path,mode='r',*a,**kw):
+        raw=original_open(path,mode,*a,**kw)
+        if (path.name=='original.zip.partial' and mode=='xb' and failure in ('write','close')) or (path.name=='original.zip' and mode=='rb' and failure=='readback'):return File(raw)
+        return raw
+    monkeypatch.setattr(Path,'open',opened);report={}
+    with pytest.raises(OSError) as caught:m.get_fixed_archive(tmp_path,time.monotonic()+5,report)
+    assert caught.value.errno==primary_errno and report['subphase']==phase
+    assert report['received']==size # Bytes read; this does not promise a completed file write.
+    assert 'archive_sha256' not in report and 'md5_verified' not in report
+    close=report['stream_close_errors']
+    if failure=='readback':assert close['READBACK_CLOSE']['errno']==9
+    else:
+        assert close['DOWNLOAD_FILE_CLOSE']['errno']==9
+        assert close['DOWNLOAD_RESPONSE_CLOSE']['errno']==32
+    value={'stage':'WORKER_FINALIZATION','subphase':report['subphase'],'primary':m.fault(caught.value),'stream_close_errors':close}
+    assert m.safe_failure(value) and 'SYNTHETIC_SECRET' not in json.dumps(value)

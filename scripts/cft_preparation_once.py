@@ -41,7 +41,7 @@ class Closed(RuntimeError):
 
 
 def fault(error):
-    return {'error_type':type(error).__name__,'reason_code':error.code if isinstance(error,Closed) else 'UNCLASSIFIED_FAILURE','http_status':getattr(error,'code',None) if isinstance(getattr(error,'code',None),int) else None}
+    return {'error_type':type(error).__name__,'reason_code':error.code if isinstance(error,Closed) else 'UNCLASSIFIED_FAILURE','http_status':getattr(error,'code',None) if isinstance(getattr(error,'code',None),int) else None,'errno':error.errno if isinstance(error,OSError) and type(error.errno) is int else None}
 
 
 def left(deadline,maximum=10):
@@ -136,38 +136,71 @@ def response(url,deadline):
     return value
 
 
+def close_archive_streams(report,primary,streams):
+    # Only the fixed metadata/download/readback streams owned by this operation.
+    for stage,stream in streams:
+        if stream is None:continue
+        try:stream.close()
+        except BaseException as error:
+            report.setdefault('stream_close_errors',{})[stage]=fault(error)
+            if primary is None:
+                primary=error;report['subphase']=stage
+    if primary is not None:raise primary
+
+
 def get_fixed_archive(path,deadline,report):
-    report['phase']='OFFICIAL_OBJECT_METADATA'
-    with response(META,deadline) as stream:
+    report['phase']='OFFICIAL_OBJECT_METADATA';report['subphase']='METADATA_OPEN'
+    stream=None;primary=None
+    try:
+        stream=response(META,deadline);report['subphase']='METADATA_READ'
         raw=stream.read(REPORT+1)
-    left(deadline)
+    except BaseException as error:primary=error
+    finally:close_archive_streams(report,primary,(('METADATA_CLOSE',stream),))
+    report['subphase']='METADATA_VALIDATE';left(deadline)
     if len(raw)>REPORT:raise Closed('metadata bound')
     expected={'name':OBJECT,'size':str(SIZE),'md5Hash':MD5,'crc32c':CRC32C,'generation':GENERATION}
     if json.loads(raw)!=expected:raise Closed('official object metadata changed')
     report['object']=expected;report['phase']='FIXED_OFFICIAL_DOWNLOAD';report['received']=0
     digest=sha256();transport=md5(usedforsecurity=False)
-    with response(MEDIA,deadline) as stream,(path/'original.zip.partial').open('xb') as output:
+    stream=output=None;primary=None
+    try:
+        report['subphase']='DOWNLOAD_OPEN';stream=response(MEDIA,deadline)
+        report['subphase']='DOWNLOAD_FILE_OPEN';output=(path/'original.zip.partial').open('xb')
+        report['subphase']='DOWNLOAD_HEADERS'
         if stream.headers.get('x-goog-generation')!=GENERATION or stream.headers.get('Content-Length')!=str(SIZE):raise Closed('fixed object headers')
         connection=stream.fp.raw._sock
         # HTTPResponse may close its socket immediately at Content-Length.
         # Headers are pinned above; never touch that socket after exact receipt.
         while report['received']<SIZE:
-            connection.settimeout(left(deadline))
-            block=stream.read1(min(MiB,SIZE-report['received']+1));left(deadline)
+            report['subphase']='DOWNLOAD_SOCKET_TIMEOUT';connection.settimeout(left(deadline))
+            report['subphase']='DOWNLOAD_READ';block=stream.read1(min(MiB,SIZE-report['received']+1));left(deadline)
             if not block:break
             report['received']+=len(block)
             if report['received']>SIZE:raise Closed('download size exceeded')
-            output.write(block);digest.update(block);transport.update(block);disk(path,deadline,report)
+            report['subphase']='DOWNLOAD_WRITE';output.write(block)
+            digest.update(block);transport.update(block)
+            report['subphase']='DOWNLOAD_DISK_CHECK';disk(path,deadline,report)
+    except BaseException as error:primary=error
+    finally:close_archive_streams(report,primary,(('DOWNLOAD_FILE_CLOSE',output),('DOWNLOAD_RESPONSE_CLOSE',stream)))
+    report['subphase']='DOWNLOAD_INTEGRITY'
     if report['received']!=SIZE or base64.b64encode(transport.digest()).decode()!=MD5:raise Closed('download integrity')
-    (path/'original.zip.partial').rename(path/'original.zip')
-    archive=path/'original.zip';before=archive.lstat();actual=sha256();count=0
-    with archive.open('rb') as stream:
+    report['subphase']='ARCHIVE_RENAME';(path/'original.zip.partial').rename(path/'original.zip')
+    report['subphase']='READBACK_STAT';archive=path/'original.zip';before=archive.lstat();actual=sha256();count=0
+    stream=None;primary=None
+    try:
+        report['subphase']='READBACK_OPEN';stream=archive.open('rb')
+        report['subphase']='READBACK_IDENTITY'
         if not stat.S_ISREG(before.st_mode) or before.st_uid!=os.geteuid() or stat.S_IMODE(before.st_mode)!=0o600 or not os.path.samestat(before,os.fstat(stream.fileno())):raise Closed('archive readback identity')
+        report['subphase']='READBACK_READ'
         for block in iter(lambda:stream.read(MiB),b''):
             left(deadline);actual.update(block);count+=len(block)
             if count>SIZE:raise Closed('archive readback growth')
+    except BaseException as error:primary=error
+    finally:close_archive_streams(report,primary,(('READBACK_CLOSE',stream),))
+    report['subphase']='READBACK_VERIFY'
     if count!=SIZE or actual.digest()!=digest.digest() or not os.path.samestat(before,archive.lstat()):raise Closed('archive readback mismatch')
     report.update(archive_sha256=digest.hexdigest(),md5_verified=True,crc32c_recomputed=False,publisher_sha256_available=False)
+    report['subphase']='ARCHIVE_VALIDATED'
 
 
 def reject_zip64(extra):
@@ -327,7 +360,8 @@ def worker(args):
         except BaseException as publication:
             report['status']='FAIL'
             print(json.dumps({'stage':'WORKER_FINALIZATION','phase':report['phase'],
-                'primary':{k:report[k] for k in ('error_type','reason_code','http_status') if k in report},
+                'subphase':report.get('subphase'),'stream_close_errors':report.get('stream_close_errors'),
+                'primary':{k:report[k] for k in ('error_type','reason_code','http_status','errno') if k in report},
                 'root_close_error':report.get('root_close_error'),'archive_close_error':report.get('archive_close_error'),
                 'publication_error':fault(publication)}),flush=True)
     return 0 if report['status']=='BYTES_LAYOUT_VERIFIED_REVIEW_REQUIRED' else 1
@@ -338,7 +372,7 @@ def safe_failure(value):
     def check(item):
         if item is None or type(item) in (int,bool):return True
         if type(item) is str:return bool(re.fullmatch('[A-Za-z0-9_]{1,96}',item))
-        if type(item) is dict:return all(k in {'stage','phase','error_type','reason_code','http_status','primary','root_close_error','archive_close_error','publication_error'} and check(v) for k,v in item.items())
+        if type(item) is dict:return all(k in {'stage','phase','subphase','error_type','reason_code','http_status','errno','primary','root_close_error','archive_close_error','publication_error','stream_close_errors','METADATA_CLOSE','DOWNLOAD_FILE_CLOSE','DOWNLOAD_RESPONSE_CLOSE','READBACK_CLOSE'} and check(v) for k,v in item.items())
         return False
     return check(value)
 
@@ -348,11 +382,11 @@ def finish(out,report):
         if out is not None:save(out/'result.json',report)
     except BaseException as error:
         print(json.dumps({'status':'FAIL','stage':'PARENT_FINAL_REPORT','phase':report.get('phase'),
-            'primary':{k:report[k] for k in ('error_type','reason_code','http_status','root_close_error') if k in report},
+            'primary':{k:report[k] for k in ('error_type','reason_code','http_status','errno','root_close_error') if k in report},
             'publication_error':fault(error)}),flush=True)
         return 1
     try:print(json.dumps({'status':report['status'],'scope':report['scope'],
-        'phase':report.get('phase'),'reason_code':report.get('reason_code'),'error_type':report.get('error_type')}),flush=True)
+        'phase':report.get('phase'),'subphase':report.get('subphase'),'reason_code':report.get('reason_code'),'error_type':report.get('error_type'),'errno':report.get('errno')}),flush=True)
     except BaseException:return 1
     return 0 if report['status']=='PREPARED_FOR_REVIEW_REQUIRES_EXIT_0' else 1
 
