@@ -79,7 +79,8 @@ def require_fixed_native_acceptance():
     # No environment/boolean/mock result can issue acceptance. A future source
     # change requires independent actual Windows validation and review. This is
     # separate from legacy rename durability and from OWNER permission.
-    raise LeaseRefused('WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED')
+    from .native_acceptance_contract import Area,requirement
+    raise LeaseRefused(requirement(Area.FIXED_JOURNAL).reason)
 
 
 class NativeFixedLeaseAPI(NativeLeaseAPI):

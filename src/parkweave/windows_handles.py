@@ -33,6 +33,7 @@ OPEN_REPARSE=0x200000
 # Pending output storage must outlive the native operation. There is no
 # automatic completion/recovery path and no handle ownership inferred here.
 _NT_CREATE_PENDING={}
+_UNKNOWN_QUERY_TOKENS=[]
 
 def nt_status(value):
     if type(value) is not int or not -(2**31)<=value<2**32:raise Denied('invalid NTSTATUS')
@@ -80,6 +81,7 @@ class WinAPI:
         self.process=bind(self.k,'GetCurrentProcess',PTR,[])
         self.opentoken=bind(self.a,'OpenProcessToken',I32,[PTR,U32,C.POINTER(PTR)])
         self.tokeninfo=bind(self.a,'GetTokenInformation',I32,[PTR,U32,PTR,U32,C.POINTER(U32)])
+        self._query_tokens=[]
         self._sid=self._user_sid()
     def need(self,result):
         if not result:raise Denied('Windows handle operation refused; error='+str(C.get_last_error()))
@@ -139,13 +141,24 @@ class WinAPI:
                     if primary is not None:raise BaseExceptionGroup('WINDOWS_SID_AND_FREE_UNKNOWN',[primary,cleanup])
                     raise
     def _user_sid(self):
-        token=PTR();self.need(self.opentoken(self.process(),8,C.byref(token)))
+        token=PTR();entry=dict(output=token,owned=False,close_attempted=False,closed=False)
+        if not hasattr(self,'_query_tokens'):self._query_tokens=[]
+        self._query_tokens.append(entry)
+        ok=self.opentoken(self.process(),8,C.byref(token))
+        if not ok and token.value or ok and token.value in (None,PTR(-1).value):
+            if self not in _UNKNOWN_QUERY_TOKENS:_UNKNOWN_QUERY_TOKENS.append(self)
+        self.need(ok);self.need(token.value not in (None,PTR(-1).value));entry['owned']=True
         try:
             needed=U32();self.tokeninfo(token,1,None,0,C.byref(needed))
             if not 0<needed.value<=4096:raise Denied('Windows user token unavailable')
             buf=C.create_string_buffer(needed.value);self.need(self.tokeninfo(token,1,buf,len(buf),C.byref(needed)))
             return self.sid(C.cast(buf,C.POINTER(PTR))[0])
-        finally:self.close(token)
+        finally:
+            entry['close_attempted']=True
+            try:self.close(token);entry['closed']=True
+            except BaseException:
+                if self not in _UNKNOWN_QUERY_TOKENS:_UNKNOWN_QUERY_TOKENS.append(self)
+                raise
     def user_sid(self):return self._sid
     def security(self,handle):
         owner=PTR();dacl=PTR();sd=PTR()
