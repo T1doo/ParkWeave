@@ -166,3 +166,25 @@ def test_nested_native_refusals_show_exact_safe_code_without_private_exception_t
     launcher.invocation.failure=RuntimeError('PRIVATE_TEST_VALUE_MUST_NOT_APPEAR')
     assert entry.main(['--instance',str(directory)],read=answers())==2
     assert 'PRIVATE_TEST_VALUE_MUST_NOT_APPEAR' not in capsys.readouterr().err
+
+
+def test_integrity_failure_never_imports_application_or_prompts(launcher,monkeypatch,capsys):
+    import builtins
+    original=builtins.__import__
+    def no_application(name,*args,**kwargs):
+        if name.startswith(('scripts.windows_portable.controller','scripts.windows.lifecycle')):
+            pytest.fail('application imported after failed payload integrity')
+        return original(name,*args,**kwargs)
+    monkeypatch.setattr(builtins,'__import__',no_application)
+    def fail():raise entry.PayloadRefused('PAYLOAD_HASH')
+    monkeypatch.setattr(entry,'verified_payload',fail)
+    assert entry.main([],read=Mock(side_effect=AssertionError('must not prompt')))==2
+    assert 'PAYLOAD_HASH' in capsys.readouterr().err
+    assert not launcher.factory.called and not launcher.enrollment.called
+
+
+def test_lifecycle_reason_attribute_is_fixed_code_and_unverified_errors_are_type_only():
+    from scripts.windows.lifecycle import BoundaryError
+    error=BoundaryError('PRIVATE_TEST_EXPLANATION','OWNER_MUTATION_PAUSED')
+    assert entry.public_failure_reason(error,verified=True)=='OWNER_MUTATION_PAUSED'
+    assert entry.public_failure_reason(error)=='BoundaryError'

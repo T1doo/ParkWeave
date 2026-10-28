@@ -85,15 +85,28 @@ def choose_action(args, read):
     return {'0':'cancel','1':'reopen','2':'new','3':'status'}[choice]
 
 
-def public_failure_reason(error):
-    from scripts.windows_portable.controller import ControlFailure,exception_chain
+def public_failure_reason(error, *, verified=False):
+    # Error reporting must never load app code, especially when integrity fails.
+    fallback = str(error) if type(error) is PayloadRefused else type(error).__name__
+    if not verified:return fallback
     known = {'OWNER_MUTATION_PAUSED','WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED',
              'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED'}
-    # Exact fixed codes only; never disclose nested exception text or secrets.
-    causes = error.causes if type(error) is ControlFailure else ()
-    for cause in causes + exception_chain(error):
+    pending = [error]; seen = set()
+    module = sys.modules.get('scripts.windows_portable.controller')
+    failure_type = getattr(module,'ControlFailure',None) if module is not None else None
+    if failure_type is not None and type(error) is failure_type:
+        pending.extend(error.causes[:16])
+    for _ in range(64):
+        if not pending:break
+        cause = pending.pop()
+        if cause is None or id(cause) in seen:continue
+        seen.add(id(cause))
+        reason = getattr(cause,'parkweave_lifecycle_reason',None)
+        if type(reason) is str and reason in known:return reason
         if str(cause) in known:return str(cause)
-    return str(error) if type(error) is PayloadRefused else type(error).__name__
+        pending.extend((cause.__cause__,cause.__context__))
+        if isinstance(cause,BaseExceptionGroup):pending.extend(cause.exceptions[:16])
+    return fallback
 
 
 def main(argv=None, *, read=None):
@@ -104,8 +117,10 @@ def main(argv=None, *, read=None):
     parser.add_argument('--api-port',type=int)
     args=parser.parse_args(argv)
     read = input if read is None else read
+    verified = False
     try:
         root,manifest,manifest_raw = verified_payload()
+        verified = True
         interactive = args.action == 'launch'
         action = choose_action(args,read)
         if action == 'cancel':return 0
@@ -145,7 +160,7 @@ def main(argv=None, *, read=None):
     except (KeyboardInterrupt,EOFError):
         return 2  # Prompt interrupted; never choose a mode or restart on behalf of the user.
     except Exception as error:
-        reason = public_failure_reason(error)
+        reason = public_failure_reason(error,verified=verified)
         print('ParkWeave 未启动或未正常结束：'+reason+'；保留现有状态，没有自动初始化或重试。',file=sys.stderr)
         return 2
 
