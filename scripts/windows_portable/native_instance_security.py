@@ -43,6 +43,7 @@ class NativeFixedStoreSecurity:
         self.lease=self.store=self.layout=self.target=self.plan=self.inputs=self.endpoint=None
         self.state=self._state_digest=self._credential=self._secrets=self._sessions=None
         self.database=self.processes=None;self.failed=self.closed=False;self.resources=[]
+        self.system_crt=None
         self.payload_source=payload_source;self.runtime_installation=None
 
     def require_runtime_support(self,database,processes):
@@ -104,6 +105,9 @@ class NativeFixedStoreSecurity:
         need(self.lease is None)
         self.lease=lease
         self._runtime_files(lease,create=True)
+        # Refuse missing/unverifiable prerequisites before credentials, DPAPI
+        # identity enrollment, initdb, or database writes.
+        self.processes.cluster.prerequisites.require_system_crt(lease,time.monotonic()+30)
         def bind(deadline):
             need(lease.record['phase']=='NEW')
             self.layout=self._hold(object.__new__(_NativeLayout))
@@ -181,7 +185,9 @@ class NativeFixedStoreSecurity:
 
     def verify_existing_files(self,lease):
         if self.mode is ep.PlanMode.REOPEN and self.lease is None:self.lease=lease
-        if self.mode is ep.PlanMode.REOPEN:self._runtime_files(lease,create=False)
+        if self.mode is ep.PlanMode.REOPEN:
+            self._runtime_files(lease,create=False)
+            self.processes.cluster.prerequisites.require_system_crt(lease,time.monotonic()+30)
         def verify(deadline):
             if self.mode is ep.PlanMode.REOPEN:
                 need(self.store is None and self.state is None and lease.record['phase']=='READY_STOPPED')
@@ -300,7 +306,20 @@ class NativeClusterPrerequisites:
         from .native_protected_bootstrap import initialize
         return initialize(self.security,lease,inputs,specification,register,deadline)
 
+    def require_system_crt(self,lease,deadline):
+        from .native_system_crt import NativeSystemCRT
+        need(self.security.lease is lease)
+        if self.security.system_crt is None:
+            value=self.security._hold(object.__new__(NativeSystemCRT))
+            NativeSystemCRT.__init__(value,lease,self.security.runtime_installation,self.security.runtime,deadline)
+            self.security.system_crt=value
+        else:
+            self.security.system_crt.deadline=deadline
+            self.security.system_crt._binding();self.security.system_crt._verify_files()
+        return self.security.system_crt
+
     def before_server(self,lease,inputs,mode,deadline):
+        self.require_system_crt(lease,deadline)
         def verify(_):
             need(inputs is self.security.inputs and mode==self.security.mode.value)
             self.security.target._verify()
@@ -317,7 +336,9 @@ class NativeClusterPrerequisites:
 
     def server_ready(self,lease,inputs,adapter,token,deadline):
         need(inputs is self.security.inputs and self.security.endpoint is None)
-        endpoint=NativeOwnedDatabaseEndpoint(adapter,token)
+        need(self.security.system_crt is not None)
+        self.security.system_crt.observe_group(adapter,token,deadline)
+        endpoint=NativeOwnedDatabaseEndpoint(adapter,token,crt_witness=self.security.system_crt)
         endpoint.wait_for_listener(deadline)
         from parkweave.installed_fixture_receipt import _dsn,_identity
         with endpoint.connect(_dsn(inputs.maintenance_dsn,'postgres'),deadline=deadline,autocommit=True) as connection:

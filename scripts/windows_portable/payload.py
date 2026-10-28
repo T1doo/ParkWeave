@@ -12,8 +12,9 @@ MAX_BYTES = 1024 * 1024 * 1024
 MANIFEST = 'payload-manifest.json'
 SCHEMA = 'parkweave-windows-portable-candidate/1'
 DEVICE = re.compile(r'(?i)^(con|prn|aux|nul|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)')
-# Windows 10/11 API-set contracts and named OS DLLs only. CRT/PG/Python DLLs
-# are deliberately absent: these must be resolved inside the payload domain.
+# Named OS DLL declarations only. CRT is NOT an OS_DLLS shortcut: the explicit
+# existing-system CRT contract requires an issued native read-only witness.
+# Other PG/Python libraries remain confined to their own payload domain.
 OS_DLLS = frozenset(('kernel32.dll kernelbase.dll ntdll.dll advapi32.dll user32.dll '
     'gdi32.dll gdi32full.dll shell32.dll shlwapi.dll ole32.dll oleaut32.dll '
     'ws2_32.dll crypt32.dll bcrypt.dll bcryptprimitives.dll secur32.dll '
@@ -23,6 +24,7 @@ OS_DLLS = frozenset(('kernel32.dll kernelbase.dll ntdll.dll advapi32.dll user32.
     'msvcrt.dll shfolder.dll dbghelp.dll winspool.drv').split())
 # Classification only: these remain unresolved until observed on the target.
 SYSTEM_DLL_CANDIDATES = frozenset(('cabinet.dll','msi.dll','propsys.dll','pdh.dll','powrprof.dll'))
+SYSTEM_CRT_PREREQUISITES=frozenset(('vcruntime140.dll','msvcp140.dll'))
 # Reviewed, whole-file byte profile from the existing locked psycopg-binary
 # 3.3.6 wheel. No execution/AST guessing and no arbitrary .libs directory scan.
 WHEEL_DLL_PROFILES = (('vendor/psycopg_binary/__init__.py',
@@ -232,6 +234,9 @@ def dll_closure(files):
                 valid=bool(re.fullmatch(r'(?:api|ext)-ms-[a-z0-9-]+-l[0-9]+-[0-9]+-[0-9]+\.dll',dll))
                 contracts.append(dict(file=name, contract=dll,syntax_valid=valid,observed=False))
                 reason='API_SET_REQUIRES_TARGET_SCHEMA' if valid else 'UNRECOGNIZED_API_SET_NAME'
+                platform.append(dict(file=name,dependency=dll,kind=reason,observed=False))
+            elif dll in SYSTEM_CRT_PREREQUISITES:
+                reason='EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED'
                 platform.append(dict(file=name,dependency=dll,kind=reason,observed=False))
             elif dll in SYSTEM_DLL_CANDIDATES:
                 reason='SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION'

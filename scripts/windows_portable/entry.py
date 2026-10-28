@@ -90,7 +90,7 @@ def public_failure_reason(error, *, verified=False):
     fallback = str(error) if type(error) is PayloadRefused else type(error).__name__
     if not verified:return fallback
     known = {'OWNER_MUTATION_PAUSED','WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED',
-             'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED'}
+             'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED','SYSTEM_CRT_PREREQUISITE_UNVERIFIED'}
     pending = [error]; seen = set()
     module = sys.modules.get('scripts.windows_portable.controller')
     failure_type = getattr(module,'ControlFailure',None) if module is not None else None
@@ -161,6 +161,9 @@ def main(argv=None, *, read=None):
         return 2  # Prompt interrupted; never choose a mode or restart on behalf of the user.
     except Exception as error:
         reason = public_failure_reason(error,verified=verified)
+        if reason=='SYSTEM_CRT_PREREQUISITE_UNVERIFIED':
+            print('已有官方 x64 系统运行库缺失或未能核验。请由安装者核对微软说明；不会自动安装或修改系统：\n'
+                  'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170',file=sys.stderr)
         print('ParkWeave 未启动或未正常结束：'+reason+'；保留现有状态，没有自动初始化或重试。',file=sys.stderr)
         return 2
 

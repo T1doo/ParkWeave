@@ -149,6 +149,7 @@ def initialize(security,lease,inputs,specification,register,deadline):
     require_setup_readiness()  # Before token setters, pipes or process creation.
     need(type(security) is NativeFixedStoreSecurity and security.lease is lease
          and security.inputs is inputs and callable(register))
+    security.processes.cluster.prerequisites.require_system_crt(lease,deadline)
     payload=RuntimePayloadPrerequisite(lease,**security.runtime,native_installation=security.runtime_installation)
     payload.require_for_cluster(lease,deadline)  # Original closed native loading gate.
     owner=security._hold(object.__new__(_RestrictedPrimaryCandidate))
@@ -162,6 +163,7 @@ def initialize(security,lease,inputs,specification,register,deadline):
     token=adapter.launch('initdb',lambda token:register(adapter,token))
     group=adapter._group(token)
     _resume(lease,backend,group,deadline)
+    security.system_crt.observe_group(adapter,token,deadline)
     exchange_deadline=min(deadline-3,time.monotonic()+4)
     observation=verify_running_client(lease,backend,group,exchange_deadline)
     _transmit(lease,observation,security._secrets['postgres'],exchange_deadline)

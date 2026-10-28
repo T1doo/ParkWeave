@@ -8,15 +8,16 @@ from scripts.windows_portable import payload
 from scripts.windows_portable.test_payload import pe
 
 
-def test_platform_contracts_stay_unresolved_and_crt_stays_private():
+def test_platform_contracts_stay_unresolved_and_crt_requires_original_system_witness():
     files={'runtime/postgresql/bin/postgres.exe':pe(('kernel32.dll','vcruntime140.dll','msvcp140.dll',
            'api-ms-win-crt-runtime-l1-1-0.dll','pdh.dll')),
            'runtime/python/vcruntime140.dll':pe()}
     value=payload.dll_closure(files)
     assert value['status']=='UNRESOLVED' and value['activation_allowed'] is False
-    assert {row['dependency'] for row in value['missing_private_dependencies']}=={'vcruntime140.dll','msvcp140.dll'}
+    assert value['missing_private_dependencies']==[]
     assert {row['kind'] for row in value['platform_requirements']}=={
-        'DECLARED_SYSTEM_DLL','API_SET_REQUIRES_TARGET_SCHEMA','SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION'}
+        'DECLARED_SYSTEM_DLL','API_SET_REQUIRES_TARGET_SCHEMA','SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION',
+        'EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED'}
     assert all(row['observed'] is False for row in value['platform_requirements'])
     assert 'pdh.dll' not in payload.OS_DLLS and 'vcruntime140.dll' not in payload.OS_DLLS
 

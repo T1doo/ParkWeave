@@ -188,3 +188,12 @@ def test_lifecycle_reason_attribute_is_fixed_code_and_unverified_errors_are_type
     error=BoundaryError('PRIVATE_TEST_EXPLANATION','OWNER_MUTATION_PAUSED')
     assert entry.public_failure_reason(error,verified=True)=='OWNER_MUTATION_PAUSED'
     assert entry.public_failure_reason(error)=='BoundaryError'
+
+
+def test_system_crt_missing_or_unverified_has_official_help_without_install(launcher,capsys):
+    directory=launcher.root/'existing';directory.mkdir()
+    launcher.invocation.failure=RuntimeError('SYSTEM_CRT_PREREQUISITE_UNVERIFIED')
+    assert entry.main(['--instance',str(directory)],read=answers())==2
+    error=capsys.readouterr().err
+    assert 'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist' in error
+    assert not launcher.enrollment.called and launcher.events==[('reopen',str(directory))]

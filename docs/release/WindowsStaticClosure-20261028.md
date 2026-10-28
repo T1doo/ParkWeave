@@ -1,5 +1,7 @@
 # Windows 静态闭包与 CRT 来源 · 2026-10-28
 
+CRT 部分记录此前 app-local 方案的来源核对。用户现已确认采用已有官方系统 CRT 先决条件；当前合同以 [系统 CRT 只读 witness](ExistingSystemCRT-20261028.md) 为准，不要求把 CRT 复制到 PG 域。
+
 当前可以在云端完成真实依赖归档读取、固定字节核验、PE import/delay import 检查及完整源码封装；这不执行 DLL，不观察目标 Windows 的实际加载，也不解除 native loader 门。
 
 ## CRT 的具体条件

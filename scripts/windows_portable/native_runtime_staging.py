@@ -155,6 +155,12 @@ class NativeRuntimeInstallation:
                  tuple(sorted(self.rows.items())), tuple(sorted(self.dest.items())), tuple(self.handles)))
 
     def inspect_pg_static(self, lease, runtime, deadline):
+        return self._inspect_pg_snapshot(lease,runtime,deadline)
+
+    def system_crt_requirements(self,lease,runtime,deadline):
+        return self._inspect_pg_snapshot(lease,runtime,deadline,requirements_only=True)
+
+    def _inspect_pg_snapshot(self, lease, runtime, deadline, *, requirements_only=False):
         """Read the original installed pins, never reopen paths or mutable data."""
         from .fixed_secret_store import _under_lease
         from .runtime_payload import PG, REQUIRED, static_report
@@ -165,7 +171,8 @@ class NativeRuntimeInstallation:
         def inspect():
             try:
                 self._issued_binding(lease, runtime)
-                need(lease.record['phase'] == 'CLUSTER')
+                phases=('NEW','READY_STOPPED','CLUSTER') if requirements_only else ('CLUSTER',)
+                need(lease.record['phase'] in phases)
                 self.deadline = deadline; self.probe.deadline = deadline
                 self.verify()
                 def read(path, size, digest):
@@ -188,7 +195,11 @@ class NativeRuntimeInstallation:
                      and manifest.get('native_initialization') == 'OWNER_MUTATION_PAUSED')
                 rows = tuple(row for row in self.files if row[0].startswith(PG))
                 need(REQUIRED <= {row[0] for row in rows})
-                report = static_report({name:read(name,size,digest) for name,size,digest in rows}, runtime)
+                data={name:read(name,size,digest) for name,size,digest in rows}
+                if requirements_only:
+                    from .crt_pe import requirements
+                    report=requirements(data)
+                else:report=static_report(data,runtime)
                 # Keep all original pins held through PE and BKI parsing and a
                 # second complete immutable namespace check. No native loading.
                 self.verify(); self._issued_binding(lease,runtime)

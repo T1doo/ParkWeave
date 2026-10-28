@@ -24,6 +24,7 @@ from .windows_endpoint import connection_owner
 
 _witnesses=weakref.WeakKeyDictionary()
 _unknown_witnesses=[]
+_endpoint_crt=weakref.WeakKeyDictionary()
 
 
 def need(value):
@@ -45,10 +46,10 @@ def _wait(raw,events,deadline):
 
 class _BackendWitness:
     """Retain this socket's actual backend HANDLE, birth, image and Job."""
-    def __init__(self,endpoint,connection):
+    def __init__(self,endpoint,connection,deadline):
         need(type(endpoint) is NativeOwnedDatabaseEndpoint)
         endpoint.verify()
-        self.endpoint,self.socket=endpoint,connection.fileno()
+        self.endpoint,self.socket,self.deadline=endpoint,connection.fileno(),deadline
         self.handle=None;self.close_attempted=False
         self.client,self.server=connection.getsockname(),connection.getpeername()
         self.pid=connection_owner(connection)
@@ -61,7 +62,9 @@ class _BackendWitness:
             ('IsProcessInJob',[C.c_void_p,C.c_void_p,C.POINTER(C.c_int32)],C.c_int32),
         ):
             fn=getattr(k,name);fn.argtypes,fn.restype=args,result
-        handle=k.OpenProcess(0x101000,False,self.pid)  # query + synchronize only
+        # Read-only module observation needs QUERY_INFORMATION + VM_READ too;
+        # no token/ACL/privilege changes. Authority still comes from Job/birth.
+        handle=k.OpenProcess(0x101410,False,self.pid)
         need(handle not in (None,0,C.c_void_p(-1).value))
         self.handle=handle  # retain before every fallible observation
         try:
@@ -74,6 +77,11 @@ class _BackendWitness:
             raise
 
     def verify(self):
+        self._verify_identity()
+        if self.endpoint.crt_witness is not None:
+            self.endpoint.crt_witness.observe_peer(self,self.deadline)
+
+    def _verify_identity(self):
         need(not self.close_attempted and _witnesses.get(self)==(
             self.endpoint,self.handle,self.birth,self.client,self.server))
         endpoint=self.endpoint;endpoint.verify()
@@ -134,7 +142,11 @@ class NativeOwnedDatabaseEndpoint:
     """One exact PostgreSQL Job capability; no caller-supplied PID/port proof."""
     native_acceptance=False
 
-    def __init__(self,adapter,token):
+    def __init__(self,adapter,token,*,crt_witness=None):
+        from .native_system_crt import NativeSystemCRT
+        need(crt_witness is None or type(crt_witness) is NativeSystemCRT)
+        if crt_witness is not None:crt_witness.require_group_binding(adapter,token)
+        self.crt_witness=crt_witness
         need(os.name=='nt' and C.sizeof(C.c_void_p)==8 and type(adapter) is PrivateProcessAdapter
              and type(adapter.backend) is WindowsJobProcess)
         group=adapter._group(token)
@@ -149,10 +161,12 @@ class NativeOwnedDatabaseEndpoint:
         self.adapter,self.token,self.backend=adapter,token,adapter.backend
         self.group=group;self.birth=adapter.live_identity(token)
         self.job=group.resources['job'];self.image=group.executable.native_path
+        _endpoint_crt[self]=crt_witness
         self.verify()
 
     def verify(self):
-        need(self.adapter._group(self.token) is self.group and self.adapter.backend is self.backend
+        need(self in _endpoint_crt and self.crt_witness is _endpoint_crt[self]
+             and self.adapter._group(self.token) is self.group and self.adapter.backend is self.backend
              and type(self.backend) is WindowsJobProcess and self.group.resources['job']==self.job
              and self.adapter.live_identity(self.token)==self.birth)
         self.group.executable.verify()
@@ -172,7 +186,7 @@ class NativeOwnedDatabaseEndpoint:
                 with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
                     connection.settimeout(min(.2,budget))
                     connection.connect(('127.0.0.1',int(self.port)))
-                    witness=_BackendWitness(self,connection)
+                    witness=_BackendWitness(self,connection,deadline)
                     try:witness.verify()
                     finally:witness.close()
                 return
@@ -210,7 +224,7 @@ class NativeOwnedDatabaseEndpoint:
             original_socket=raw.socket
             _wait(raw,selectors.EVENT_WRITE,deadline)
             borrowed=socket.socket(fileno=original_socket)
-            witness=_BackendWitness(self,borrowed)  # before the first connect_poll
+            witness=_BackendWitness(self,borrowed,deadline)  # before the first connect_poll
             while True:
                 remaining(deadline);witness.verify()
                 need(raw.socket==original_socket)
