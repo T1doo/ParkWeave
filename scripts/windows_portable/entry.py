@@ -109,7 +109,7 @@ def public_failure_reason(error, *, verified=False):
     return fallback
 
 
-def main(argv=None, *, read=None):
+def main(argv=None, *, read=None, use_workspace=None, enroll=None):
     parser=argparse.ArgumentParser(description='ParkWeave 本地安装与资料工作台')
     parser.add_argument('--action',choices=('launch','status','new','reopen'),default='launch')
     parser.add_argument('--instance',type=Path)
@@ -147,14 +147,15 @@ def main(argv=None, *, read=None):
         from scripts.windows_portable.endpoint_plan import PlanMode
         from scripts.windows_portable.native_web_login import prompt_enrollment
         mode=PlanMode.NEW if action=='new' else PlanMode.REOPEN
-        enrollment=prompt_enrollment() if action=='new' else None
+        enrollment=(enroll or prompt_enrollment)() if action=='new' else None
         invocation=native_invocation(root,manifest,args.instance,mode,manifest_raw=manifest_raw,
             database_port=args.database_port,api_port=args.api_port,enrollment=enrollment)
         def use(workspace):
             print('工作台已由本次运行校验。请在浏览器打开 http://127.0.0.1:'+str(workspace.application.port),flush=True)
             try:read('按回车正常停止本次私有运行时：')
             except (KeyboardInterrupt,EOFError):pass
-        result=(invocation.create if action=='new' else invocation.reopen)(str(args.instance),use)
+        callback = use if use_workspace is None else lambda workspace:use_workspace(workspace,invocation)
+        result=(invocation.create if action=='new' else invocation.reopen)(str(args.instance),callback)
         print(json.dumps(result,ensure_ascii=False))
         return 0
     except (KeyboardInterrupt,EOFError):

@@ -33,6 +33,7 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
     'native_runtime_staging.py', 'native_web_login.py', 'native_system_crt.py', 'crt_pe.py',
     'native_acceptance_contract.py',
+    'desktop_bridge.py', 'desktop_profile.py',
     'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
     'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',
     'pgdata_candidate.py', 'restricted_token_candidate.py',
@@ -41,7 +42,7 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'local_preparation_identity.py', 'local_preparation_transport.py',
 )) + ('scripts/windows_ci/owned_job.py', 'scripts/windows_ci/job_stop_observation.py')
 LAUNCHER_SOURCES = ('scripts/windows_portable/entry.py', 'scripts/windows_portable/payload.py',
-                    'scripts/windows_portable/ParkWeave.cmd')
+                    'scripts/windows_portable/ParkWeave.cmd', 'scripts/windows_portable/desktop_bridge.py')
 REQUIRED = ('runtime/python/python.exe', 'runtime/python/pythonw.exe',
             'runtime/python/python312.dll', 'runtime/python/python312.zip',
             'runtime/postgresql/bin/postgres.exe', 'runtime/postgresql/bin/initdb.exe',
@@ -179,7 +180,7 @@ def verify_wheel(asset, members, version):
         require(any(compatible(tag) and tag[1] != 'none' for tag in tags), 'WHEEL_NATIVE_ABI')
 
 
-def assemble(repo, source, assets, lock_path):
+def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
     require(len(source) == 40 and all(c in '0123456789abcdef' for c in source), 'FULL_SOURCE_SHA')
     def git(*args):
         return subprocess.check_output(['git', *args], cwd=repo)
@@ -276,6 +277,29 @@ def assemble(repo, source, assets, lock_path):
     for name in REQUIRED:
         name = name.replace('python312', stem)
         require(name in files, 'REQUIRED_COMPONENT:' + name)
+    if desktop_assets is not None:
+        names={'ParkWeave.exe','WebView2Loader.dll','WebView2-SDK-LICENSE.txt','Desktop-Runtime-NOTICES.txt','desktop-build.json'}
+        require({p.name for p in desktop_assets.iterdir()}==names,'DESKTOP_ASSET_SET')
+        record=json.loads((desktop_assets/'desktop-build.json').read_bytes())
+        require(record['schema']=='parkweave-desktop-build/1'
+            and record['host_source_sha256']==sha256(git('show',source+':scripts/windows_desktop/host.cpp')).hexdigest()
+            and record['build_script_sha256']==sha256(git('show',source+':scripts/windows_desktop/build.py')).hexdigest()
+            and record['pythonw_sha256']==sha256(files['runtime/python/pythonw.exe']).hexdigest()
+            and record['sdk_sha256']=='5ea526bbd728adda0da4d31219267e96460494a427e4894c4e09d9f320f4b9aa'
+            and record['native_windows_execution'] is False
+            and record['compiler_archive_and_binary_verified'] is True
+            and record['compatibility_header_sha256']==sha256(git('show',source+':scripts/windows_desktop/EventToken.h')).hexdigest()
+            and record['namespace_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/namespace_guard.h')).hexdigest()
+            and record['bootstrap_files']==file_manifest(files),'DESKTOP_SOURCE_OR_SCOPE')
+        for name in sorted(names):
+            path=desktop_assets/name
+            require(path.resolve()==path.absolute() and not path.is_symlink(),'DESKTOP_ASSET_LINK')
+            raw=path.read_bytes()
+            if name!='desktop-build.json':
+                row=record['files'][name]
+                require(len(raw)==row['bytes'] and sha256(raw).hexdigest()==row['sha256'],'DESKTOP_ASSET_HASH')
+            if name=='WebView2Loader.dll':require(sha256(raw).hexdigest()=='2f965e10aed3b356a408978a0e6d74eb86e3e722dd008fa9ad39f68884479e85','DESKTOP_LOADER_PIN')
+            put(name if name=='ParkWeave.exe' else 'launcher/'+name,raw)
     closure = dll_closure(files)
     # A static candidate can expose unresolved imports, but it cannot be
     # labelled closed or executed. Native startup retains the original gates.
@@ -283,6 +307,7 @@ def assemble(repo, source, assets, lock_path):
     manifest = dict(schema=SCHEMA, status='INITIALIZATION_NOT_ENABLED', source_commit=source,
         usable_product=False, native_initialization='OWNER_MUTATION_PAUSED',
         static_loading=closure['status'], windows_execution='NOT_RUN',
+        desktop_host='WIN32_WEBVIEW2_NOT_NATIVE_ACCEPTED' if desktop_assets is not None else 'NOT_INCLUDED',
         publisher_authenticity='EXTERNAL_ZIP_SHA_REQUIRED_NOT_PROVEN_BY_INTERNAL_MANIFEST',
         runtime_assets=asset_report, files=file_manifest(files))
     return files, manifest
@@ -303,8 +328,10 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source', required=True); p.add_argument('--assets', required=True, type=Path)
     p.add_argument('--lock', required=True, type=Path); p.add_argument('--output', required=True, type=Path)
+    p.add_argument('--desktop-assets',type=Path)
     a = p.parse_args(); repo = Path(__file__).resolve().parents[2]
-    files, manifest = assemble(repo, a.source, a.assets.absolute(), a.lock)
+    files, manifest = assemble(repo, a.source, a.assets.absolute(), a.lock,
+        desktop_assets=a.desktop_assets.absolute() if a.desktop_assets is not None else None)
     print(json.dumps(dict(status='ASSEMBLED_BLOCKED_CANDIDATE', usable_product=False,
         static_loading=manifest['static_loading'], **write_zip(a.output, files, manifest))))
 

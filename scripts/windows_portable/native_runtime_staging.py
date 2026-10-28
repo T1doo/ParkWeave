@@ -26,7 +26,7 @@ from .pgdata_candidate import directory_batch
 DYNAMIC = frozenset(('data', 'secrets', 'files', 'logs', 'tmp'))
 CONTROL = frozenset(('.parkweave-entry.lock', FIXED_JOURNAL))
 TOP_DIRECTORIES = frozenset(('runtime', 'vendor', 'app', 'launcher'))
-TOP_FILES = frozenset(('ParkWeave.cmd', 'runtime-assets.json', 'static-dll-audit.json', payload.MANIFEST))
+TOP_FILES = frozenset(('ParkWeave.exe', 'ParkWeave.cmd', 'runtime-assets.json', 'static-dll-audit.json', payload.MANIFEST))
 CHUNK = 1024 * 1024
 _issued = weakref.WeakKeyDictionary()
 

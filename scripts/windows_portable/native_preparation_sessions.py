@@ -21,6 +21,7 @@ class PreparationFile(Enum):
     IDENTITIES = 'preparation-identities.dpapi'
     BINDING = 'preparation-binding.dpapi'
     WEB_LOGIN = 'preparation-web-login.dpapi'
+    DESKTOP_PROFILE = 'desktop-profile-binding.dpapi'
 
 
 def need(value):
