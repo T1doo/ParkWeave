@@ -30,4 +30,10 @@ python3.12 -m venv .venv
 
 **持久范围：** 新安装使用独立 `LocalDatabaseCreationEvidence`，绑定新建私有目录、真实 initdb、自有 postmaster、Unix socket 内核对端与实际 CREATE DATABASE。原 `/tmp` fixture 凭据合同保持原样。已经在 `/workspace` 下实际创建并验证 API、worker、PostgreSQL 正常停止/独立进程重开后的原记录精确回读；无需搬迁临时库。重开只读校验实际运行源码字节、库物理身份、schema32 和原权限快照，不再 initdb、迁移、seed 或自动复权。此证据不代表主机重启、平台卷保留、灾难恢复或备份已验证。UNKNOWN 安装不自动重试。
 
-**未验与缺口：** 云端 Chromium 在打开业务页面前因原生 SUID 沙箱拒绝，未生成主应用截图；1366×768/1440×900 的布局尚无真实像素验收。没有关闭沙箱、修权限或改用用户电脑。Windows 已补具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口源码；原 OWNER、fixed journal、native runtime loading 门保持关闭。新实例内 immutable payload 的受保护安装仍缺实现；`entry.main/use`只接普通 API，网页与 DPAPI 六身份之间的用户登录/角色进入流程也尚未接通。Windows 不具备可交付启动与办理链；源码/协议检查不是 Windows 实跑验收。完整 AT35、正式来源和真实试点分别待验。
+**Windows 源码进度：** 具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口已接线。`NativeRuntimeInstallation` 在原 fresh lease 下持有源文件与父链，按冻结清单排除别名/保留目录，以显式私有描述符和 FILE_CREATE 写入完整运行时；同句柄回读 SHA256 后关闭 writer，再保留同 ID 的只读 pin。重开核验已有完整树，缺失不复制、不修 ACL。源 payload 全树也必须已有合规私有 ACL，普通 ZIP 解压不提供这一保证。
+
+`NativePreparationSessionProvider` 将原六身份分别用独立安装密码派生的 scrypt/DPAPI entropy 密封，再写入原受保护目录的 WEB_LOGIN 文件。新建才询问密码，重开只读；本轮没有实际生成 Windows 凭据或执行安全设置。API 子进程只接收有界密文配置，worker 不接收。网页登录解封后仍通过原数据库核对当前主体、组织、园区、角色和撤销状态；原 token 不因角色选择自动发放。身份只保留在页面内存，UNKNOWN 句柄保留原隔离约束。未知 DPAPI 清理会锁住本次登录 provider，保留原 native 状态，不继续尝试。
+
+**未验与缺口：** 云端 Chromium 在打开业务页面前因原生 SUID 沙箱拒绝，未生成主应用截图；1366×768/1440×900 的布局尚无真实像素验收。没有关闭沙箱、修权限或改用用户电脑。原 `OWNER_MUTATION_PAUSED`、`WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED`、`NATIVE_PAYLOAD_ENUMERATION_NOT_ACCEPTED` / `NATIVE_RUNTIME_LOADING_NOT_ACCEPTED` 仍关闭；完整 installer 已有独立 native 枚举实现，原 PG 静态检查调用合同尚未取得 native acceptance。Windows 仍不能宣称可交付启动与办理链，源码/协议检查不是 Windows 实跑验收。完整 AT35、正式来源和真实试点分别待验。
+
+新增云端补证使用真实持久 HTTP/worker/PostgreSQL：有界代理在原 ADD_EVIDENCE 已提交后截断响应，两个 Node 页面上下文执行实际页面 api/logout/recover，合计一次 POST；A 退出后 B 的恢复 GET 为零；A 重建页面后使用原 key 和当前版本两次只读 GET，且服务重启后内容一致。Node 页面上下文不是浏览器双标签验收。分页以 105 条精确 ID 集合核对无漏重，同时间戳按 UUID 稳定分页，并拒绝跨组织及同组织未获派/非 owner 的游标。

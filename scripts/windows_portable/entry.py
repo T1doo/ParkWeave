@@ -23,15 +23,15 @@ def readiness(root):
     return result
 
 
-def native_invocation(payload_root,manifest,instance,mode,*,database_port=None,api_port=None):
+def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,database_port=None,api_port=None,enrollment=None):
     """Wire verified payload pins into the concrete runtime, without OS actions.
 
-    Immutable runtime staging into a fresh instance remains a separate native
-    installation prerequisite. Missing bytes fail the existing held-file pins;
-    this entry never copies files by unverified paths or adopts an old cluster.
+    The held-handle installer rechecks the same raw manifest and every byte.
+    Native acceptance gates still precede all instance operations.
     """
     from scripts.windows_portable.native_composition import compose_native_local_preparation
     from scripts.windows_portable.endpoint_plan import PlanMode,EndpointRequest
+    from scripts.windows_portable.native_runtime_staging import RuntimeSource
     import secrets
     require(type(mode) is PlanMode,'EXPLICIT_NATIVE_MODE')
     request=EndpointRequest(database_port,api_port) if mode is PlanMode.NEW else None
@@ -43,7 +43,9 @@ def native_invocation(payload_root,manifest,instance,mode,*,database_port=None,a
         pins[name+'_sha256']=row['sha256'];pins[name+'_size']=row['bytes']
     return compose_native_local_preparation(base=str(instance.parent),mode=mode,request=request,
         runtime=dict(source_commit=manifest['source_commit'],
-            manifest_sha256=sha256((payload_root/MANIFEST).read_bytes()).hexdigest()),
+            manifest_sha256=sha256(manifest_raw).hexdigest()),
+        payload_source=RuntimeSource(str(payload_root),manifest_raw),
+        enrollment=enrollment,
         challenge=secrets.token_hex(32),**pins)
 
 
@@ -57,7 +59,9 @@ def main():
     root = Path(__file__).resolve().parents[1]
     try:
         require(sys.platform == 'win32' and sys.maxsize > 2**32 and sys.flags.isolated, 'NATIVE_EMBEDDED_PYTHON_REQUIRED')
-        manifest = verify_directory(root)
+        with (root / MANIFEST).open('rb') as manifest_file:
+            manifest_raw = manifest_file.read(4*1024*1024+1)
+        manifest = verify_directory(root,manifest_raw=manifest_raw)
         require(Path(sys.executable).resolve() == root / 'runtime/python/python.exe', 'PRIVATE_INTERPRETER_REQUIRED')
         gate = readiness(root)
         if args.action=='status' or gate['status']!='READY':
@@ -68,8 +72,10 @@ def main():
         require(args.instance is not None and args.instance.is_absolute(),'EXPLICIT_PRIVATE_INSTANCE_REQUIRED')
         from scripts.windows_portable.endpoint_plan import PlanMode
         mode=PlanMode.NEW if args.action=='new' else PlanMode.REOPEN
-        invocation=native_invocation(root,manifest,args.instance,mode,
-            database_port=args.database_port,api_port=args.api_port)
+        from scripts.windows_portable.native_web_login import prompt_enrollment
+        enrollment=prompt_enrollment() if mode is PlanMode.NEW else None
+        invocation=native_invocation(root,manifest,args.instance,mode,manifest_raw=manifest_raw,
+            database_port=args.database_port,api_port=args.api_port,enrollment=enrollment)
         def use(workspace):
             print('LOCAL_SYNTHETIC_RUNTIME: http://127.0.0.1:'+str(workspace.application.port),flush=True)
             try:input('按回车停止本次私有运行时。')

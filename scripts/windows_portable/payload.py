@@ -103,12 +103,12 @@ def parse_manifest(raw):
     return manifest
 
 
-def verify_directory(root):
+def verify_directory(root, *, manifest_raw=None):
     root = Path(root).absolute()
     require(root.resolve() == root and not root.is_symlink(), 'ROOT_LINK')
     path = root / MANIFEST
     require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024, 'MANIFEST_FILE')
-    manifest = parse_manifest(path.read_bytes())
+    manifest = parse_manifest(path.read_bytes() if manifest_raw is None else manifest_raw)
     expected = manifest['files']
     actual = {}; total = 0; seen = set()
     for child in root.rglob('*'):

@@ -9,6 +9,8 @@ import socket
 import subprocess
 import sys
 import time
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from uuid import uuid4
 
 import httpx
@@ -66,13 +68,14 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
         response=httpx.post(base+'/api/local/session',headers={'Origin':base},
             json=dict(role='enterprise',password=passwords['enterprise']))
         assert response.status_code==200
-        return {'Authorization':'Bearer '+response.json()['bearer']},response.json()['installation_id']
+        value=response.json()
+        return {'Authorization':'Bearer '+value['bearer']},value['installation_id'],value
     def post(route,headers,body,expected):
         response=httpx.post(base+route,headers={**headers,'Idempotency-Key':str(uuid4())},json=body)
         assert response.status_code==expected,'original persistent HTTP command refused'
         return response.json()
     try:
-        start();headers,installation_id=login()
+        start();headers,installation_id,identity=login()
         run=post('/api/runs',headers,dict(goal='SYNTHETIC persistent installation',source='SYNTHETIC'),202)['run_id']
         for _ in range(50):
             if httpx.get(base+'/api/runs/'+run,headers=headers).json()['state']=='SUCCEEDED':break
@@ -85,17 +88,42 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
         key=str(uuid4())
         command=dict(action='ADD_EVIDENCE',expected_revision=1,slot='need_summary',text='SYNTHETIC persistent source',
             source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC v1')
-        original=httpx.post(base+route+'/commands',headers={**headers,'Idempotency-Key':key},json=command)
-        assert original.status_code==200
+        # Forward exactly one real command, then truncate its committed HTTP
+        # acknowledgement. No mock API/store and no write replay during recovery.
+        committed=[]
+        class TruncateAcknowledgement(BaseHTTPRequestHandler):
+            def log_message(self,*args):pass
+            def do_POST(self):
+                assert self.path==route+'/commands' and self.headers['Idempotency-Key']==key
+                count=int(self.headers['Content-Length']);assert 0<count<16384
+                response=httpx.post(base+self.path,headers={**headers,'Idempotency-Key':key,'Content-Type':'application/json'},
+                    content=self.rfile.read(count),timeout=5)
+                assert response.status_code==200
+                committed.append(response.json())
+                self.send_response(200);self.send_header('Content-Type','application/json')
+                self.send_header('Content-Length',str(len(response.content)));self.end_headers()
+                self.wfile.write(b'{');self.wfile.flush();self.close_connection=True
+        with ThreadingHTTPServer(('127.0.0.1',0),TruncateAcknowledgement) as proxy:
+            thread=threading.Thread(target=proxy.serve_forever,daemon=True);thread.start()
+            try:
+                result=subprocess.run(['node','tests/local_workspace_interruption.js'],cwd=material.ROOT,
+                    input=json.dumps(dict(proxy=f'http://127.0.0.1:{proxy.server_port}',base=base,route=route,
+                        command=command,key=key,installation=installation_id,identity=identity)),
+                    capture_output=True,text=True,timeout=25)
+                assert result.returncode==0,result.stderr
+                print(result.stdout.strip())
+                assert len(committed)==1
+            finally:proxy.shutdown();thread.join(timeout=2)
+        original=committed[0]
         before=httpx.get(base+route,headers=headers).json()
         stop()
         assert json.loads((path/STATE).read_text())['phase']=='RELEASE_PENDING'
-        start();headers,reopened_id=login()
+        start();headers,reopened_id,_=login()
         assert reopened_id==installation_id
         after=httpx.get(base+route,headers=headers).json()
         assert after==before
         recovery=httpx.get(base+route+'/command-recovery',headers={**headers,'Idempotency-Key':key}).json()
-        assert recovery['status']=='COMMITTED' and recovery['event']==original.json()
+        assert recovery['status']=='COMMITTED' and recovery['event']==original
         assert len(after['history'])==2  # no recovery replay or startup seed
         stop()
         with PersistentInstallation.open_existing(path) as reopened:
@@ -104,6 +132,9 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
             runtime_source_sha256=marker['runtime_source_sha256'],persistent_root_outside_tmp=True,
             issuer='LocalDatabaseCreationEvidence',fixture_contract_unchanged=True,
             independent_http_process_reopen_exact=True,original_evidence_recovery_read_only=True,
+            committed_response_truncated=True,actual_page_api_two_contexts_one_post=True,
+            actual_logout_and_recovery_handlers=True,other_identity_recovery_reads=0,
+            reloaded_original_identity_recovery_gets=2,write_replay_count=0,
             data_retained=True,system_reboot='NOT_RUN',browser='NOT_RUN_NATIVE_SANDBOX_REFUSAL')
         (tmp_path/'persistent-local-product-result.json').write_text(json.dumps(summary,indent=2))
     finally:

@@ -23,6 +23,7 @@ RUNTIME_MODULES = (
     'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
     'windows_process_handles.py', 'windows_user_protection.py',
     'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
+    'native_runtime_staging.py', 'native_web_login.py',
     'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
     'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',
     'pgdata_candidate.py', 'restricted_token_candidate.py', 'restricted_initdb_candidate.py',

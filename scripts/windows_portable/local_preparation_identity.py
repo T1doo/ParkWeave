@@ -3,8 +3,8 @@
 The existing SESSION envelope has three enterprise identities. The required
 reviewer provider must protect and bind separate reviewer material without
 relabelling that old envelope. The native implementation is in
-native_preparation_sessions; it does not supply the missing native Security or
-cluster runtime activation.
+native_preparation_sessions; native_composition supplies the concrete Security
+and cluster ports while preserving their original activation gates.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass, field

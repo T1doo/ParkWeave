@@ -34,7 +34,7 @@ _unknown_security_resources=[]
 class NativeFixedStoreSecurity:
     native_acceptance=False
 
-    def __init__(self,mode,*,request,runtime):
+    def __init__(self,mode,*,request,runtime,payload_source=None):
         need(type(mode) is ep.PlanMode and ((mode is ep.PlanMode.NEW and type(request) is ep.EndpointRequest)
              or (mode is ep.PlanMode.REOPEN and request is None)))
         e.exact(runtime,('source_commit','manifest_sha256'))
@@ -43,13 +43,17 @@ class NativeFixedStoreSecurity:
         self.lease=self.store=self.layout=self.target=self.plan=self.inputs=self.endpoint=None
         self.state=self._state_digest=self._credential=self._secrets=self._sessions=None
         self.database=self.processes=None;self.failed=self.closed=False;self.resources=[]
+        self.payload_source=payload_source;self.runtime_installation=None
 
     def require_runtime_support(self,database,processes):
         from .instance_processes import InstanceProcesses
+        from .native_runtime_staging import RuntimeSource
         need(os.name=='nt' and C.sizeof(C.c_void_p)==8 and isinstance(database,NativeDatabaseOperations)
              and type(processes) is InstanceProcesses and not self.failed and not self.closed
              and self.database is None and type(processes.cluster.prerequisites) is NativeClusterPrerequisites
              and processes.cluster.prerequisites.security is self)
+        need(type(self.payload_source) is RuntimeSource)
+        self.payload_source.plan(self.runtime)  # Reject invalid source plan before acquiring/creating a root.
         self.database,self.processes=database,processes
 
     def require_creation_support(self):
@@ -99,6 +103,7 @@ class NativeFixedStoreSecurity:
         self.require_creation_support()
         need(self.lease is None)
         self.lease=lease
+        self._runtime_files(lease,create=True)
         def bind(deadline):
             need(lease.record['phase']=='NEW')
             self.layout=self._hold(object.__new__(_NativeLayout))
@@ -107,6 +112,21 @@ class NativeFixedStoreSecurity:
             self.plan=ep._register_held(lease,self.request,ep.PlanMode.NEW)
             self.store=self._new_store(lease,deadline,layout=self.layout)
         return self._run(lease,bind)
+
+    def _runtime_files(self,lease,*,create):
+        from .native_runtime_staging import NativeRuntimeInstallation,RuntimeSource
+        need(type(self.payload_source) is RuntimeSource and self.runtime_installation is None)
+        def stage():
+            try:
+                self._context(lease)
+                self.runtime_installation=self._hold(object.__new__(NativeRuntimeInstallation))
+                NativeRuntimeInstallation.__init__(self.runtime_installation,lease,self.payload_source,
+                    self.runtime,create=create,deadline=time.monotonic()+120)
+                self._context(lease)
+            except BaseException:
+                self.failed=True
+                raise
+        return _under_lease(lease,stage)
 
     def create_credentials(self,lease):
         self.require_creation_support()
@@ -161,6 +181,7 @@ class NativeFixedStoreSecurity:
 
     def verify_existing_files(self,lease):
         if self.mode is ep.PlanMode.REOPEN and self.lease is None:self.lease=lease
+        if self.mode is ep.PlanMode.REOPEN:self._runtime_files(lease,create=False)
         def verify(deadline):
             if self.mode is ep.PlanMode.REOPEN:
                 need(self.store is None and self.state is None and lease.record['phase']=='READY_STOPPED')
@@ -242,7 +263,12 @@ class NativeFixedStoreSecurity:
             # integer handles from the active set. Preserve them; never retry.
             api=getattr(value,'api',None)
             caps=getattr(api,'caps',{})
+            probe=getattr(value,'probe',None)
+            native=getattr(getattr(value,'protection',None),'native',None)
             if (getattr(value,'cleanup_errors',None) or getattr(api,'unknown',None)
+                    or getattr(native,'unknown',None)
+                    or getattr(probe,'unknown',None)
+                    or any(row.get('attempted') and not row.get('closed') for row in getattr(probe,'temporary',()))
                     or any(row.close_attempted and not row.closed for row in caps.values())):
                 errors.append(CandidateRefused('PREVIOUS_NATIVE_RESOURCE_CLOSE_UNKNOWN'))
         self.closed=True;self._secrets=self._sessions=self._credential=self.state=None
@@ -308,6 +334,6 @@ class NativeClusterPrerequisites:
         self.security.database.bind_owned_endpoint(endpoint)
 
 
-def native_security_ports(*,mode,request,runtime):
-    security=NativeFixedStoreSecurity(mode,request=request,runtime=runtime)
+def native_security_ports(*,mode,request,runtime,payload_source=None):
+    security=NativeFixedStoreSecurity(mode,request=request,runtime=runtime,payload_source=payload_source)
     return security,NativeClusterPrerequisites(security)

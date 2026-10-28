@@ -179,7 +179,9 @@ class WindowsFilesystem:
             self._object(handle, directory=True)
         self._object(handle, directory=True, private=True)
         if fresh: self.api.create_directory(self.base, name)
-        self.root = self.hold(self.api.open_relative(handle, name, False))
+        # FILE_READ_DATA on a directory is FILE_LIST_DIRECTORY. The immutable
+        # runtime verifier enumerates this exact original root, read-only.
+        self.root = self.hold(self.api.open_relative(handle, name, True))
         self._object(self.root, directory=True, private=True)
         self.lock = self.hold(self.api.relative_file(self.root, LOCK, fresh=fresh, write=True, exclusive=True))
         self._object(self.lock, directory=False, private=True)

@@ -20,6 +20,7 @@ from .native_secret_store_candidate import _NativeFixedSecretStore
 class PreparationFile(Enum):
     IDENTITIES = 'preparation-identities.dpapi'
     BINDING = 'preparation-binding.dpapi'
+    WEB_LOGIN = 'preparation-web-login.dpapi'
 
 
 def need(value):
@@ -31,7 +32,10 @@ class NativePreparationSessionProvider:
     """Separate protected reviewer storage; original enterprise SESSION unchanged."""
     native_acceptance = False
 
-    def __init__(self):
+    def __init__(self, enrollment=None):
+        from .native_web_login import NativeLoginEnrollment
+        need(enrollment is None or type(enrollment) is NativeLoginEnrollment)
+        self.enrollment = enrollment
         self.security = self.lease = self._identities = None
         self._created = self._published = False
         self.failed = False
@@ -39,8 +43,13 @@ class NativePreparationSessionProvider:
     def require_support(self, security, database, processes):
         from .local_preparation_identity import PreparationDatabaseOperations
         from .instance_processes import InstanceProcesses
+        from .native_instance_security import NativeFixedStoreSecurity
+        from .endpoint_plan import PlanMode
         need(not self.failed and self.security is None
-             and type(database) is PreparationDatabaseOperations and type(processes) is InstanceProcesses)
+             and type(database) is PreparationDatabaseOperations and type(processes) is InstanceProcesses
+             and type(security) is NativeFixedStoreSecurity and processes.endpoint_source is security
+             and processes.session_provider is self
+             and (self.enrollment is not None if security.mode is PlanMode.NEW else self.enrollment is None))
         self.security = security
 
     def _store(self, lease):
@@ -155,8 +164,35 @@ class NativePreparationSessionProvider:
         require_setup_readiness()
         need(not self._published and self._created)
         self._published = True
-        return self._operation(lease, lambda store: self._file(store, PreparationFile.BINDING,
-            self._binding(store, inputs, identities)))
+        def publish(store):
+            need(self.enrollment is not None)
+            binding = self._binding(store, inputs, identities)
+            self._file(store, PreparationFile.BINDING, binding)
+            installation = self._web_installation(store, binding)
+            config = self.enrollment.seal(store, identities, installation, binding['endpoints']['api_port'])
+            self._file(store, PreparationFile.WEB_LOGIN, config)
+            self.enrollment = None
+        return self._operation(lease, publish)
+
+    def _web_installation(self, store, binding):
+        return hashlib.sha256(e.canonical(dict(storage=self._aad(store,PreparationFile.WEB_LOGIN),
+                                              binding=binding))).hexdigest()
+
+    def _web_configuration(self, store, inputs, identities):
+        from .native_web_login import parse_config
+        expected = self._binding(store, inputs, identities)
+        observed = parse_config(e.canonical(self._file(store,PreparationFile.WEB_LOGIN)).decode('ascii'))
+        need(observed['installation'] == self._web_installation(store,expected) and
+             observed['port'] == expected['endpoints']['api_port'] and
+             {name:row['token_sha256'] for name,row in observed['accounts'].items()} == expected['identities'])
+        return e.canonical(observed).decode('ascii')
+
+    def web_configuration(self, lease, inputs):
+        # Read-only export of ciphertext from the original protected file. No
+        # plaintext token, password or mutable provider dictionary crosses into
+        # process configuration, and no absent file is repaired on REOPEN.
+        need(self._identities is not None)
+        return self._operation(lease,lambda store:self._web_configuration(store,inputs,self._identities))
 
     def verify_binding(self, lease, inputs, identities):
         def verify(store):
@@ -164,4 +200,5 @@ class NativePreparationSessionProvider:
             observed = self._file(store, PreparationFile.BINDING)
             need(e.canonical(expected) == e.canonical(observed))
             need(self._file(store, PreparationFile.IDENTITIES) == identities.mapping())
+            self._web_configuration(store, inputs, identities)
         return self._operation(lease, verify)
