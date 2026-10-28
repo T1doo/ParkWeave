@@ -143,7 +143,8 @@ class _NativeSecretFiles:
         if directory:
             need(leaf=='secrets' and parent==self.lease.fs.root and self._parent_cap is None and not create)
         else:
-            need(leaf in s.NAMES.values() and self._parent_cap in self.caps and
+            from .native_preparation_sessions import PreparationFile
+            need(leaf in (*s.NAMES.values(), *(kind.value for kind in PreparationFile)) and self._parent_cap in self.caps and
                  self._row(self._parent_cap).handle==parent and self._row(self._parent_cap).directory)
         text=leaf.encode('utf-16-le');buffer=C.create_string_buffer(text+b'\0\0')
         name=UnicodeString(len(text),len(text)+2,C.cast(buffer,PTR))
@@ -185,6 +186,13 @@ class _NativeSecretFiles:
         parent=self._row(directory);need(parent.directory and parent.parent is None)
         self._parent_cap=directory
         return self._open(parent.handle,s.NAMES[purpose],directory=False,create=create)
+
+    def open_preparation_file(self,directory,kind,*,create):
+        from .native_preparation_sessions import PreparationFile
+        need(type(kind) is PreparationFile and type(create) is bool)
+        parent=self._row(directory);need(parent.directory and parent.parent is None)
+        self._parent_cap=directory
+        return self._open(parent.handle,kind.value,directory=False,create=create)
 
     def inspect(self,cap):
         self._gate();row=self._row(cap);info=self.api.info(row.handle)

@@ -162,7 +162,7 @@ def authority(c):
     return dict(sha256=sha256(raw).hexdigest(), counts={k: len(v) for k, v in values.items()})
 
 
-def setup():
+def setup(*, session_provider=None):
     global _last_owned_state
     if sys.platform != 'linux' or os.geteuid() == 0:
         raise Denied('existing unprivileged Linux environment required')
@@ -191,7 +191,8 @@ def setup():
         # Preserve observed creation data, never reconstruct an issued receipt from it.
         dump(p / 'creation-observation.json', asdict(receipt))
         owner.migrate()
-        tokens = dict(enterprise=secrets.token_urlsafe(32), specialist=secrets.token_urlsafe(32))
+        tokens = (session_provider.generate() if session_provider is not None else
+                  dict(enterprise=secrets.token_urlsafe(32), specialist=secrets.token_urlsafe(32)))
         park, org = 'synthetic-material-park', 'synthetic-material-org'
         ids = dict(enterprise='material-demo-enterprise', specialist='material-demo-specialist')
         with owner.connect() as c:
@@ -218,10 +219,15 @@ def setup():
             assert snapshot['counts'] == dict(principals=2, capability_grants=3, action_grants=1,
                 preparation_grants=2, preparation_catalog=1, run_assignments=0, field_grants=0,
                 synthetic_resources=0, synthetic_resource_grants=0)
-        dump(p / 'sessions.json', tokens)
-        dump(p / 'state.json', dict(schema='parkweave-material-only-demo/1', **source_binding(),
+        marker = dict(schema='parkweave-material-only-demo/1', **source_binding(),
              system_identifier=identity['system_identifier'], database_oid=oid, schema_version=32,
-             authority=snapshot, ids=ids, sql_rights=SQL_RIGHTS, session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
+             authority=snapshot, ids=ids, sql_rights=SQL_RIGHTS, session_expiry='NONE_MANUAL_REVOCATION_REQUIRED')
+        if session_provider is None:
+            dump(p / 'sessions.json', tokens)
+        else:
+            session_provider.publish(p, marker)
+            marker['session_storage'] = 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
+        dump(p / 'state.json', marker)
     return p
 
 
