@@ -4,8 +4,8 @@
 
 ## 文件与源码一致性
 
-- `source-candidate-<commit>.bundle`：完整 Git 历史与本次开发分支，无外部 prerequisite。Linux 本地产品依赖 Git checkout，请从此 bundle 克隆并核对完整 HEAD。
-- `source-candidate-<commit>.zip`：该提交全部 tracked 文件的源码快照，不含 `.git`、本地安装、数据库、凭据或虚拟环境。它用于源码审阅；不要把直接解压当成已满足 Git checkout 的 Linux 安装。
+- `source-candidate-<commit>.bundle`：本次开发分支及其完整可达 Git 历史，无外部 prerequisite。Linux 本地产品依赖 Git checkout，请从此 bundle 克隆并核对完整 HEAD；不承诺携带无关分支或未引用悬空对象。
+- `source-candidate-<commit>.zip`：该提交全部 tracked 文件的源码快照，不含 `.git`、本地安装、数据库、凭据或虚拟环境。它用于源码审阅；不要把直接解压或补做 git init 当成已满足原源码绑定的 Linux 安装。
 - `delivery-manifest.json`、`source-files.json`、`SHA256SUMS.txt`：交付元数据、逐文件哈希与外部校验值；构建和验证日志同目录保存。
 
 便携 builder 使用显式 40 位 `--source` 从 Git archive 读取应用、Windows 脚本及 launcher，并校验 builder、payload parser、资产锁与该提交一致，不打包未提交工作区文件。`RUNTIME_SOURCES` 包括当前 protected staging、登录、静态检查和启动接线；完整 `src/parkweave` 包括当前工作台 HTML/JS 与 SQL。
