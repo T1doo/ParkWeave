@@ -288,13 +288,29 @@ def read(store,token,id):
         if facts is not None:result['fact_clarification']=facts
         return result
 
-def list_items(store,token):
+def list_items(store,token,*,limit=100,before=None,run_id=None):
+    if type(limit) is not int or not 1<=limit<=100:raise ValueError('bounded preparation page required')
+    if before is not None and type(before) is not UUID:raise ValueError('preparation cursor UUID required')
+    if run_id is not None and type(run_id) is not UUID:raise ValueError('preparation Run UUID required')
     with store.connect() as c:
         p=store.auth(c,token,lock=True)
         capability='PREPARE' if p['role']=='enterprise_operator' else 'REVIEW_ASSIGNED';grant(store,c,p,capability)
         column='owner_id' if capability=='PREPARE' else 'reviewer_id'
-        rows=c.execute(f'SELECT id,case_id,goal,state,revision FROM preparations WHERE {column}=%s AND park_id=%s AND org_id=%s ORDER BY created_at DESC LIMIT 100',(p['id'],p['park_id'],p['org_id'])).fetchall()
-        return {'items':rows,'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
+        anchor=None
+        if before is not None:
+            anchor=c.execute(f'SELECT created_at,id FROM preparations WHERE id=%s AND {column}=%s AND park_id=%s AND org_id=%s',
+                (before,p['id'],p['park_id'],p['org_id'])).fetchone()
+            if not anchor:raise Denied('current assigned preparation cursor required')
+        rows=c.execute(f'''SELECT id,run_id,case_id,goal,state,revision FROM preparations
+            WHERE {column}=%s AND park_id=%s AND org_id=%s
+            AND (%s::uuid IS NULL OR run_id=%s)
+            AND (%s::uuid IS NULL OR (created_at,id)<(%s,%s::uuid))
+            ORDER BY created_at DESC,id DESC LIMIT %s''',
+            (p['id'],p['park_id'],p['org_id'],run_id,run_id,before,
+             anchor['created_at'] if anchor else None,before,limit+1)).fetchall()
+        return {'items':rows[:limit],'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY',
+                'next_before':str(rows[limit-1]['id']) if len(rows)>limit else None,
+                'has_older_records':len(rows)>limit,'read_only':True}
 
 def entry_context(store,c,p,id):
     row=scoped(store,c,p,id,read_only=True)

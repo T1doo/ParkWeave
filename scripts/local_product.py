@@ -5,7 +5,7 @@ real park data, system services, native Windows setters or public listener.
 """
 import argparse
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 import getpass
 from hashlib import sha256
 import json
@@ -22,7 +22,7 @@ from psycopg.rows import dict_row
 import uvicorn
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
@@ -31,6 +31,7 @@ from parkweave.api import create_app
 from parkweave.local_identity import LocalSessionVault
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store, Denied
+from parkweave.local_installation import PersistentInstallation, create_database, private_parent, STATE
 from scripts import material_only_demo as material
 
 
@@ -71,6 +72,11 @@ def application(path, marker, port):
     def original_workspace():
         return Path(__file__).parents[1].joinpath('src/parkweave/web.html').read_text()
 
+    @app.get('/local-command-pending.js')
+    def pending_client():
+        return Response(Path(__file__).parents[1].joinpath('src/parkweave/local_command_pending.js').read_text(),
+                        media_type='text/javascript')
+
     @app.post('/api/local/session')
     def login(data: Login, request: Request):
         # No cookie/session ambient authority; only an explicit same-origin POST.
@@ -88,7 +94,9 @@ def application(path, marker, port):
                 expected = 'enterprise_operator' if data.role == 'enterprise' else 'park_specialist'
                 if actor['id'] != marker['ids'][data.role] or actor['role'] != expected:
                     raise Denied('current local identity required')
-            return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'],
+            from parkweave.local_identity import canonical
+            installation_id = sha256(canonical(LocalSessionVault.binding(path, marker))).hexdigest()
+            return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], installation_id=installation_id,
                 actor={name:actor[name] for name in ('id','park_id','org_id','role')},
                 scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
         except Denied:
@@ -102,7 +110,7 @@ def runtime_source_binding():
     """Bind actual runtime bytes, including uncommitted edits, not just HEAD."""
     root = material.ROOT
     files = [p for p in (root / 'src' / 'parkweave').rglob('*')
-             if p.suffix in ('.py', '.sql', '.html', '.json')]
+             if p.suffix in ('.py', '.sql', '.html', '.json', '.js')]
     files.extend([Path(__file__), Path(material.__file__)])
     digest = sha256()
     for path in sorted(files):
@@ -113,15 +121,51 @@ def runtime_source_binding():
     return digest.hexdigest()
 
 
+def install(provider, parent=None):
+    if type(provider) is not LocalSessionVault:
+        raise Denied('exact sealed local identity provider required before installation')
+    if parent is None:
+        parent = material.ROOT
+        for leaf in ('.runtime', 'local-product'):
+            parent = parent / leaf
+            try:
+                parent.mkdir(mode=0o700)
+            except FileExistsError:
+                pass
+            private_parent(parent)
+    with PersistentInstallation.create_new(parent) as lease:
+        path = lease.path
+        print(json.dumps(dict(setup_state_dir=str(path), persistent_directory=True)), flush=True)
+        lease.initialize()
+        with lease.postgres():
+            owner = create_database(lease)
+            material.populate(path, owner, session_provider=provider, persistent=True)
+        lease.finish_new()
+        return path
+
+
+@contextmanager
+def installation_entry(value):
+    path = Path(value).absolute()
+    if (path / STATE).exists():
+        with PersistentInstallation.open_existing(path) as lease:
+            yield path, lease
+    else:
+        # Compatibility reads of the previous temporary candidate. No adoption
+        # of a long-lived directory without the new original journal/lock.
+        with material.locked(value) as path:
+            yield path, None
+
+
 def serve(value, port):
     if not 1024 <= port <= 65535:
         raise Denied('unprivileged loopback port required')
-    with material.locked(value) as path:
+    with installation_entry(value) as (path, installation):
         if (path / 'stop-unconfirmed').exists() or (path / 'sessions.json').exists():
             raise Denied('sealed, previously stopped local installation required')
         marker = json.loads((path / 'state.json').read_text())
         if (marker.get('session_storage') != 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
-                or marker['schema'] != 'parkweave-material-only-demo/1'
+                or marker['schema'] != ('parkweave-local-material-installation/1' if installation else 'parkweave-material-only-demo/1')
                 or marker.get('runtime_source_sha256') != runtime_source_binding()
                 or marker['src_tree'] != material.source_binding()['src_tree']
                 or marker['bootstrap_sha256'] != material.source_binding()['bootstrap_sha256']):
@@ -130,7 +174,7 @@ def serve(value, port):
         import socket
         with socket.socket() as listener:
             listener.bind(('127.0.0.1', port))
-            with material.postgres(path):
+            with (installation.postgres() if installation else material.postgres(path)):
                 with psycopg.connect(material.dsn(path), row_factory=dict_row) as connection:
                     connection.execute('SET TRANSACTION READ ONLY')
                     identity = connection.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
@@ -165,7 +209,12 @@ def serve(value, port):
                         server.config.app.router.lifespan_context = monitored_lifespan
                         print(json.dumps(dict(url=f'http://127.0.0.1:{port}', scope='SYNTHETIC_LOCAL_PREPARATION_ONLY',
                             sessions='PASSWORD_SEALED_SEPARATE_ROLES_V1', data_retained=True)), flush=True)
-                        server.run(sockets=[listener])
+                        try:
+                            server.run(sockets=[listener])
+                        except KeyboardInterrupt:
+                            # Uvicorn re-raises a handled SIGINT/SIGTERM after
+                            # draining HTTP. Owned worker/PG cleanup still runs.
+                            pass
                         if worker.poll() is not None:
                             raise Denied('owned worker exited; no partial running service')
                     finally:
@@ -183,12 +232,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('install', 'start'))
     parser.add_argument('--state-dir')
+    parser.add_argument('--parent', help='existing private installation parent; install only')
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     if sys.platform != 'linux' or os.geteuid() == 0:
         parser.error('an unprivileged Linux process is required; Windows is not activated')
     if (args.command == 'start') != bool(args.state_dir):
         parser.error('start requires existing --state-dir; install always creates a new private directory')
+    if args.parent and args.command != 'install':
+        parser.error('--parent is only valid for install')
     try:
         if args.command == 'install':
             passwords = {}
@@ -198,7 +250,7 @@ def main():
                     raise Denied('password confirmation differs')
             provider = LocalSessionVault(passwords)
             passwords.clear()
-            path = material.setup(session_provider=provider)
+            path = install(provider, args.parent)
             print(json.dumps(dict(state_dir=str(path), installed='LOCAL_SYNTHETIC_MATERIAL_ONLY',
                 next_command='start --state-dir ' + str(path), passwords_stored=False)), flush=True)
         else:

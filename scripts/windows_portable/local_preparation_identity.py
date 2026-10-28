@@ -136,6 +136,17 @@ class PreparationSecurity:
             raise CandidateRefused('original enterprise readiness identity required')
         return probe
 
+    def close_owned_files(self,lease):
+        close=getattr(self.security,'close_owned_files',None)
+        try:
+            if callable(close):return close(lease)
+        finally:
+            self._identities=None
+
+    def retain_owned_files(self,lease):
+        retain=getattr(self.security,'retain_owned_files',None)
+        if callable(retain):retain(lease)
+
 
 class _SeedTransaction(Store):
     """Borrow one already-authorized owner connection without committing it."""

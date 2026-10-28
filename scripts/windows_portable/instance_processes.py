@@ -35,7 +35,8 @@ class InstanceProcesses:
                 raise CandidateRefused('fixed local API port required')
         else:
             from .fixed_store_security import IsolatedFixedStoreSecurity
-            if type(endpoint_source) is not IsolatedFixedStoreSecurity or api_port is not None:
+            from .native_instance_security import NativeFixedStoreSecurity
+            if type(endpoint_source) not in (IsolatedFixedStoreSecurity,NativeFixedStoreSecurity) or api_port is not None:
                 raise CandidateRefused('explicit endpoint source OR API port required')
         # Validate frozen payload identity without opening or executing anything.
         self.python = Command('runtime/python/python.exe', python_sha256, python_size, model='WINDOWS_JOB')
@@ -114,7 +115,8 @@ class InstanceProcesses:
             record = self._register(adapter, register)
             api = adapter.launch('api', record)
             worker = adapter.launch('worker', record)
-            self.application = RegisteredApplication(adapter, api, worker, self.api_port, self.challenge)
+            self.application = RegisteredApplication(adapter, api, worker, self.api_port, self.challenge,
+                database_endpoint=getattr(self.cluster,'endpoint',None))
             return self.application  # NOT ready; no probe, checkpoint or GO here.
         except BaseException:
             self.failed = True

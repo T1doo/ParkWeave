@@ -10,7 +10,7 @@ python3.12 -m venv .venv
 .venv/bin/python -m scripts.local_product install
 ```
 
-安装时分别输入企业、专员密码并确认，至少 12 字符且两者不同。输入不回显，不通过参数、环境变量或文件提供密码。安装创建一份新的私有合成库，输出 `state_dir`；不会采用旧库、覆盖会话或修复授权。
+安装时分别输入企业、专员密码并确认，至少 12 字符且两者不同。输入不回显，不通过参数、环境变量或文件提供密码。默认在 checkout 的 `.runtime/local-product` 新建独立私有目录和合成库，输出 `state_dir`；可用 `install --parent '<已存在的私有目录>'` 指定长期保存位置。父目录须由当前用户拥有且其他用户无权访问。不会采用旧库、覆盖会话或修复授权。
 
 ```bash
 .venv/bin/python -m scripts.local_product start --state-dir '<本次输出的state_dir>'
@@ -22,8 +22,12 @@ python3.12 -m venv .venv
 
 每个角色用独立 scrypt 密钥与 AES-GCM 密文保存随机 bearer；密码和 bearer 不以明文写文件。密文认证本次物理目录与数据库身份，登录仍核对当前数据库身份状态。角色切换清空当前页面私有内容；不是同一操作系统用户之间的隔离沙箱。下载是当前有权读取的资料快照，后续撤权不能追回副本。
 
-提交结果不明时停止写操作，不自动重试；只有 ADD_EVIDENCE 提供原请求键的只读恢复，且要求原正文指纹、完整身份、当前版本、快照和精确回执都一致。其余 UNKNOWN 不自动消除。
+事项按每页 20 条显示，列表底部“上一页／下一页”可访问旧记录；接续诉求直接按原 Run 查询对应事项，不再只搜索最近 100 条。
 
-**持久范围：** 当前只证明 API、worker、PostgreSQL 正常停止/重启后的原记录回读。创建凭据的原合同要求新自有集群位于 `/tmp`，平台清理或系统重启可能丢失数据，不能当成长期业务档案。启动校验实际运行源码字节、库物理身份、schema32 和原权限快照；变化时拒绝，不迁移或自动复权。没有长期目录的生产创建凭据，不通过搬迁目录绕过。
+发送变更前，浏览器先持久保存无秘密的原请求句柄；刷新、退出重登后仍显示待核对状态。它包含安装标识、完整角色身份、请求键、操作及正文指纹，不包含密码、bearer 或材料正文。使用 Web Locks 保证同一安装和角色的多标签页互斥；存储或互斥能力不可用时暂停写入。待核对句柄属于同一浏览器与同一地址端口，不能作为跨设备恢复或备份。
 
-**未验与缺口：** 云端 Chromium 在打开业务页面前因原生 SUID 沙箱拒绝，未生成主应用截图；1366×768/1440×900 的布局尚无真实像素验收。没有关闭沙箱、修权限或改用用户电脑。Windows 原生 Security/ClusterPrerequisites 工厂、数据库连接发送凭据前的原生 endpoint witness、无明文 initdb 完整运行和 portable entry 仍未接通；新增 DPAPI reviewer provider 源码不代表这些缺口已完成。Windows 实跑、完整 AT35、真实来源和真实试点分别待验。
+提交结果不明时停止写操作，不自动重试；只有 ADD_EVIDENCE 提供原请求键的只读恢复，且要求原正文指纹、完整身份、当前凭据摘要、当前版本、快照和精确回执都一致。其余 UNKNOWN 不自动消除。不要清理站点存储来绕过待核对状态。
+
+**持久范围：** 新安装使用独立 `LocalDatabaseCreationEvidence`，绑定新建私有目录、真实 initdb、自有 postmaster、Unix socket 内核对端与实际 CREATE DATABASE。原 `/tmp` fixture 凭据合同保持原样。已经在 `/workspace` 下实际创建并验证 API、worker、PostgreSQL 正常停止/独立进程重开后的原记录精确回读；无需搬迁临时库。重开只读校验实际运行源码字节、库物理身份、schema32 和原权限快照，不再 initdb、迁移、seed 或自动复权。此证据不代表主机重启、平台卷保留、灾难恢复或备份已验证。UNKNOWN 安装不自动重试。
+
+**未验与缺口：** 云端 Chromium 在打开业务页面前因原生 SUID 沙箱拒绝，未生成主应用截图；1366×768/1440×900 的布局尚无真实像素验收。没有关闭沙箱、修权限或改用用户电脑。Windows 已补具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口源码；原 OWNER、fixed journal、native runtime loading 门保持关闭。新实例内 immutable payload 的受保护安装仍缺实现；`entry.main/use`只接普通 API，网页与 DPAPI 六身份之间的用户登录/角色进入流程也尚未接通。Windows 不具备可交付启动与办理链；源码/协议检查不是 Windows 实跑验收。完整 AT35、正式来源和真实试点分别待验。
