@@ -306,7 +306,14 @@ class NativeClusterPrerequisites:
             self.security.target._verify()
             first=self.security.target._walk()
             need(self.security.target._walk()==first)
-        return self.security._run(lease,verify,deadline=deadline)
+        self.security._run(lease,verify,deadline=deadline)
+        # Outside the held PGDATA operation: the payload contract calls the
+        # public lease status gate. REOPEN must retain the same loading refusal
+        # as NEW, even after a future independent fixed-journal acceptance.
+        from .runtime_payload import RuntimePayloadPrerequisite
+        payload=RuntimePayloadPrerequisite(lease,**self.security.runtime,
+            native_installation=self.security.runtime_installation)
+        return payload.require_for_cluster(lease,deadline)
 
     def server_ready(self,lease,inputs,adapter,token,deadline):
         need(inputs is self.security.inputs and self.security.endpoint is None)

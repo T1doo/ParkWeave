@@ -9,6 +9,7 @@ from hashlib import sha256
 import os
 import re
 import time
+import weakref
 
 from parkweave.windows_files import component, root_parts, private_acl, DIRECTORY, REPARSE, UNSAFE_ATTRIBUTES
 from parkweave.windows_handles import (PTR, UnicodeString, ObjectAttributes, IOStatus,
@@ -27,6 +28,7 @@ CONTROL = frozenset(('.parkweave-entry.lock', FIXED_JOURNAL))
 TOP_DIRECTORIES = frozenset(('runtime', 'vendor', 'app', 'launcher'))
 TOP_FILES = frozenset(('ParkWeave.cmd', 'runtime-assets.json', 'static-dll-audit.json', payload.MANIFEST))
 CHUNK = 1024 * 1024
+_issued = weakref.WeakKeyDictionary()
 
 
 def need(ok):
@@ -139,6 +141,62 @@ class NativeRuntimeInstallation:
                 self._record(path, handle, False)
                 need(self._hash(handle, size) == digest)
         self.verify()
+        _issued[self] = (lease, self.api, self.probe, self.key, self.root_sd, self.root_path,
+                        tuple(sorted(runtime.items())), self.files, self.directories,
+                        tuple(sorted(self.rows.items())), tuple(sorted(self.dest.items())), tuple(self.handles))
+
+    def _issued_binding(self, lease, runtime):
+        # Exact constructor issuance, not a caller-supplied dictionary or clone.
+        binding = _issued.get(self)
+        need(binding is not None and type(self) is NativeRuntimeInstallation and lease is self.lease
+             and not self.closed and not self.failed and not self.cleanup_errors and not self.probe.unknown
+             and binding == (lease, self.api, self.probe, self.key, self.root_sd, self.root_path,
+                 tuple(sorted(runtime.items())), self.files, self.directories,
+                 tuple(sorted(self.rows.items())), tuple(sorted(self.dest.items())), tuple(self.handles)))
+
+    def inspect_pg_static(self, lease, runtime, deadline):
+        """Read the original installed pins, never reopen paths or mutable data."""
+        from .fixed_secret_store import _under_lease
+        from .runtime_payload import PG, REQUIRED, static_report
+        import math
+        self._issued_binding(lease, runtime)
+        need(type(deadline) in (int,float) and math.isfinite(deadline)
+             and 0 < deadline-time.monotonic() <= 30)
+        def inspect():
+            try:
+                self._issued_binding(lease, runtime)
+                need(lease.record['phase'] == 'CLUSTER')
+                self.deadline = deadline; self.probe.deadline = deadline
+                self.verify()
+                def read(path, size, digest):
+                    handle, directory, original = self.rows[path]
+                    need(not directory and self._inspect(handle, False) == original and original[0].size == size)
+                    self.api.need(self.seek(handle, 0, None, 0))
+                    chunks = []; remaining = size; observed = sha256()
+                    while remaining:
+                        self._gate(); raw = self.api.read(handle, min(CHUNK, remaining))
+                        need(0 < len(raw) <= remaining)
+                        chunks.append(raw); observed.update(raw); remaining -= len(raw)
+                    need(self.api.read(handle, 1) == b'' and observed.hexdigest() == digest
+                         and self._inspect(handle, False) == original)
+                    return b''.join(chunks)
+                manifest_row = next(row for row in self.files if row[0] == payload.MANIFEST)
+                manifest = payload.parse_manifest(read(*manifest_row))
+                need(manifest.get('source_commit') == runtime['source_commit']
+                     and manifest_row[2] == runtime['manifest_sha256']
+                     and manifest.get('usable_product') is False
+                     and manifest.get('native_initialization') == 'OWNER_MUTATION_PAUSED')
+                rows = tuple(row for row in self.files if row[0].startswith(PG))
+                need(REQUIRED <= {row[0] for row in rows})
+                report = static_report({name:read(name,size,digest) for name,size,digest in rows}, runtime)
+                # Keep all original pins held through PE and BKI parsing and a
+                # second complete immutable namespace check. No native loading.
+                self.verify(); self._issued_binding(lease,runtime)
+                return report
+            except BaseException:
+                self.failed = True
+                raise
+        return _under_lease(lease, inspect)
 
     def __reduce__(self): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
     def __copy__(self): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')

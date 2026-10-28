@@ -149,7 +149,7 @@ def initialize(security,lease,inputs,specification,register,deadline):
     require_setup_readiness()  # Before token setters, pipes or process creation.
     need(type(security) is NativeFixedStoreSecurity and security.lease is lease
          and security.inputs is inputs and callable(register))
-    payload=RuntimePayloadPrerequisite(lease,**security.runtime)
+    payload=RuntimePayloadPrerequisite(lease,**security.runtime,native_installation=security.runtime_installation)
     payload.require_for_cluster(lease,deadline)  # Original closed native loading gate.
     owner=security._hold(object.__new__(_RestrictedPrimaryCandidate))
     _RestrictedPrimaryCandidate.__init__(owner,TokenProfile.CREATE_CANDIDATE)

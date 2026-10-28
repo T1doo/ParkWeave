@@ -121,6 +121,20 @@ class RuntimePayloadFileChecks(unittest.TestCase):
         manifest['source_commit'] = SOURCE; manifest['usable_product'] = True; self.write_manifest(manifest)
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'SOURCE_OR_SCOPE'): self.inspect()
 
+    def test_native_capability_cannot_be_forged_or_replace_posix_pin_policy(self):
+        from .native_runtime_staging import NativeRuntimeInstallation
+        from .controller import CandidateRefused
+        forged = object.__new__(NativeRuntimeInstallation)
+        # Refuse before native queries, reads, or any purported capability data.
+        with self.assertRaises(CandidateRefused):
+            r.RuntimePayloadPrerequisite(self.lease,manifest_sha256=self.digest,
+                source_commit=SOURCE,native_installation=forged)
+        with self.assertRaises(CandidateRefused):
+            forged.inspect_pg_static(self.lease,dict(source_commit=SOURCE,manifest_sha256=self.digest),time.monotonic()+5)
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'ORIGINAL_NATIVE_INSTALLATION_REQUIRED'):
+            r.RuntimePayloadPrerequisite(self.lease,manifest_sha256=self.digest,
+                source_commit=SOURCE,native_installation={'files':self.files})
+
     def test_static_delayed_import_and_bootstrap_dynamic_missing_are_not_closed_by_manifest_claim(self):
         self.files[r.PG + 'bin/postgres.exe'] = pe(delay=('missing.dll',)); self.write_payload()
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'STATIC_IMPORT_UNRESOLVED'): self.inspect()
