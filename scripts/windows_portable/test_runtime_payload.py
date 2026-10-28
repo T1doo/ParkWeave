@@ -142,6 +142,23 @@ class RuntimePayloadFileChecks(unittest.TestCase):
         self.files[r.PG + 'share/postgres.bki'] += b' $libdir/unshipped_conversion'; self.write_payload()
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'DYNAMIC_BOOTSTRAP_MISSING'): self.inspect()
 
+    def test_platform_requirements_remain_visible_without_becoming_private_missing_or_loading_permission(self):
+        self.files[r.PG + 'bin/postgres.exe'] = pe(('vcruntime140.dll','msvcp140.dll',
+            'api-ms-win-crt-runtime-l1-1-0.dll','pdh.dll'))
+        self.write_payload()
+        report = self.inspect()
+        self.assertEqual(report['static_loading'],'STATIC_PLATFORM_REQUIREMENTS_UNVERIFIED')
+        self.assertEqual(len(report['unresolved']),4)
+        self.assertTrue(all(row['observed'] is False for row in report['platform_requirements']))
+        self.assertEqual(report['missing_private_dependencies'],[])
+        self.assertFalse(report['activation_allowed'])
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED'):
+            self.guard().require_for_cluster(self.lease,time.monotonic()+10)
+        self.assertNotIn('vcruntime140.dll',payload.OS_DLLS)
+        self.files[r.PG + 'bin/postgres.exe'] = pe(('api-ms-win-madeup.dll',))
+        self.write_payload()
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'PG_STATIC_IMPORT_UNRESOLVED'):self.inspect()
+
     def test_same_lease_state_and_ancestor_names_must_still_match_before_return(self):
         other = self.claim(self.base / 'other')
         guard = self.guard()

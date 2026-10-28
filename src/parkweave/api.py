@@ -553,6 +553,16 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):raise HTTPException(422,'invalid recovery handle')
         return preparation.recover_evidence_command(store,token(authorization),preparation_id,idempotency_key)
 
+    @app.get('/api/local-request-recovery')
+    def local_request_recovery(operation: Literal['CREATE_RUN','CREATE_PREPARATION','REQUEST_CHANGES','REVIEW','CONFIRM','REOPEN'],
+            preparation_id: UUID | None=None,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):
+            raise HTTPException(422,'invalid recovery handle')
+        from .local_request_recovery import read
+        try:return read(store,token(authorization),operation,idempotency_key,preparation_id)
+        except Denied:raise HTTPException(403,'original local request unavailable or authorization denied') from None
+        # A read-only recovery refusal must not enter the denial-audit writer.
+
     @app.post('/api/preparations/{preparation_id}/commands')
     def preparation_command(preparation_id: UUID,data: preparation.PreparationCommand,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')

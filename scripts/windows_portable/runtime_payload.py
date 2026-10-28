@@ -166,7 +166,18 @@ def static_report(data, runtime):
             dynamic.update(PG + 'lib/' + m.decode('ascii') + '.dll' for m in re.findall(rb'\$libdir/([a-zA-Z0-9_-]+)', raw))
     require(PG + 'lib/plpgsql.dll' in dynamic and dynamic <= set(data), 'PG_DYNAMIC_BOOTSTRAP_MISSING')
     closure = payload.dll_closure(data)
-    require(closure['status'] == 'PRIVATE_IMPORTS_PRESENT_OS_LOADING_UNVERIFIED', 'PG_STATIC_IMPORT_UNRESOLVED')
+    # Platform prerequisites remain unresolved observations, not missing private
+    # payload bytes. The caller still refuses native loading unconditionally.
+    # In particular, do not add CRT/API-set names to OS_DLLS to make this pass.
+    platform_reasons = frozenset(('API_SET_REQUIRES_TARGET_SCHEMA',
+        'EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED', 'SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION'))
+    require(not closure['missing_private_dependencies'] and
+            all(row['reason'] in platform_reasons for row in closure['unresolved']),
+            'PG_STATIC_IMPORT_UNRESOLVED')
+    loading = ('STATIC_PLATFORM_REQUIREMENTS_UNVERIFIED' if closure['unresolved'] else closure['status'])
     return dict(scope='LEASE_BOUND_PG_STATIC_SNAPSHOT', **runtime, runtime_files=len(data),
                 runtime_bytes=sum(map(len,data.values())),bootstrap_modules=sorted(dynamic),
-                static_loading=closure['status'],native_loading='NOT_ACCEPTED',activation_allowed=False)
+                static_loading=loading,unresolved=closure['unresolved'],
+                platform_requirements=closure['platform_requirements'],
+                missing_private_dependencies=closure['missing_private_dependencies'],
+                native_loading='NOT_ACCEPTED',activation_allowed=False)
