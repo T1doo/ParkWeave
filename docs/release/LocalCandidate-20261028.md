@@ -10,7 +10,7 @@
 
 便携 builder 使用显式 40 位 `--source` 从 Git archive 读取应用、Windows 脚本及 launcher，并校验 builder、payload parser、资产锁与该提交一致，不打包未提交工作区文件。`RUNTIME_SOURCES` 包括当前 protected staging、登录、静态检查和启动接线；完整 `src/parkweave` 包括当前工作台 HTML/JS 与 SQL。
 
-本轮环境没有为 Windows bundle 配齐锁定的 24 份运行时资产。实际便携构建在读取缺失资产时拒绝，没有生成 Windows runtime ZIP 或新 EXE。旧 BLOCKED 二进制没有被改名、复用或描述为本次字节。源码包中的 `.cmd`、`.py` 是入口源码，不是已经完成原生验收的可执行安装包。
+首次准备时，实际便携构建因缺少 24 份锁定资产拒绝。后续已从公开软件源取得全部 400668318 字节且哈希一致，并由原 builder 实际生成新的 Windows runtime 候选 ZIP。两个阶段日志各自保留时间范围；旧 BLOCKED 二进制没有被改名、复用或描述为本次字节。新包仍不代表 Windows 可运行，当前 CRT 许可条件与静态模型见 [静态闭包说明](WindowsStaticClosure-20261028.md)。源码包中的 `.cmd`、`.py` 是入口源码，不是已经完成原生验收的可执行安装包。
 
 ## Linux 安装、启动与退出
 

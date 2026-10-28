@@ -12,7 +12,7 @@
 - Windows 私有实例入口仍拒绝初始化，`usable_product=false`。候选 ZIP 内有锁定运行时与依赖，用户无需为检查包而安装 Python，但该 ZIP **目前不能办理业务**。
 - 真实浏览器连接当前模板 HTTP 链路尚未完成；Chrome 官方包准备仍 FAIL。Windows 原生安全/初始化/持久恢复、外部正式来源合同、LIVE 模型与正式 AT35 仍有独立缺口。
 
-本次云端本地交付以 [2026-10-28 源码候选说明](docs/release/LocalCandidate-20261028.md) 和包外完整 SHA/哈希清单为准。下面旧文件名与 [旧预发布验收边界](docs/release/CANDIDATE.md) 保留历史含义；本轮没有生成新的 Windows runtime ZIP 或 EXE。不要把 Windows ZIP 的完整性检查或拒绝启动信息当成安装成功，也不要通过关闭安全门强行运行。
+本次云端本地交付以 [2026-10-28 源码候选说明](docs/release/LocalCandidate-20261028.md) 和包外完整 SHA/哈希清单为准。下面旧文件名与 [旧预发布验收边界](docs/release/CANDIDATE.md) 保留历史含义；现已按锁取得公开依赖并生成真实 Windows runtime 候选 ZIP；未生成自制 EXE，仍未通过原生验收。不要把 Windows ZIP 的完整性检查或拒绝启动信息当成安装成功，也不要通过关闭安全门强行运行。
 
 ## 文件如何使用
 
@@ -22,6 +22,7 @@
 | `source-candidate-<commit>.zip` | 本次完整 HEAD 的 tracked 源码、测试、文档与已跟踪证据；不含 .git、未跟踪安装数据或虚拟环境 |
 | `ParkWeave-source-*.zip` | 旧预发布源码范围，见其配套历史清单；不能替代本次完整 SHA |
 | `parkweave-0.1.0rc1-py3-none-any.whl` | 开发/集成安装包，声明 Python 3.12；需要已配置的依赖与隔离数据库，不是自包含桌面程序 |
+| `Windows-runtime-candidate-<commit>.zip` | 当前完整源码及锁定软件依赖的真实静态封装；保留拒绝门，不能称已可办理业务 |
 | `ParkWeave-Windows-BLOCKED-*.zip` | Windows x64 静态封装候选；入口明确拒绝初始化，留待集中原生验收 |
 | `SHA256SUMS.txt` | 下载完整性核对；不是代码签名或发布者身份证明 |
 
