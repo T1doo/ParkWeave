@@ -1,0 +1,87 @@
+{
+  "schema": "parkweave-portable-launch-entry-evidence/1",
+  "source_commit": "0a7c91636347cf8630fa165c8e486db92f8a21ac",
+  "base_commit": "0510adcff22edcf85794015e5ea82d7ceff402ea",
+  "changes": [
+    "ParkWeave.cmd forwards explicit args with %*; private interpreter and DisableDelayedExpansion retained",
+    "default launch prompts explicit existing/new/status/cancel; --instance alone is existing-only",
+    "only new/status query original new-setup pause; reopen uses original fixed journal and native loader checks",
+    "read-only target hints refuse missing existing path, existing fresh path, relative path and reparse leaf; native held lease remains authority",
+    "new needs two distinct explicit ports; reopen cannot override original protected ports",
+    "no automatic initialization, reset, retry, loop, fallback, ambient credential discovery or browser launch",
+    "safe nested refusal codes are shown without arbitrary exception text"
+  ],
+  "supporting_packaging_run": {
+    "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py scripts/windows_portable/test_payload.py --basetemp=/tmp/pw-launch-entry",
+    "exit_code": 0,
+    "result": "39 passed, 66 subtests passed in 1.26s",
+    "source": "precommit entry worktree before last error-display helper; not an additional nonoverlapping test total"
+  },
+  "stop_test": {
+    "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py::test_stop_prompt_after_owned_start_returns_through_normal_lifecycle --basetemp=/tmp/pw-launch-entry-stop",
+    "exit_code": 0,
+    "result": "2 passed in 0.09s"
+  },
+  "corrected_helper_test": {
+    "initial_command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py::test_nested_native_refusals_show_exact_safe_code_without_private_exception_text --basetemp=/tmp/pw-launch-entry-error",
+    "initial_exit_code": 1,
+    "reason": "ControlFailure constructor retains surfaced errors in .causes before Python raise-from; helper initially inspected only __cause__/__context__ chain",
+    "correction": "include exact ControlFailure.causes; keep fixed-code allowlist and otherwise type-only output",
+    "corrected_command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py::test_nested_native_refusals_show_exact_safe_code_without_private_exception_text --basetemp=/tmp/pw-launch-entry-error-corrected",
+    "corrected_exit_code": 0
+  },
+  "checks": {
+    "normal_entry": "controlled factory protocol, never native admission",
+    "repeated_start": "real owned Linux fixed-directory lease contention; original held lease remains active",
+    "missing_existing": "no factory, no enrollment, no new fallback",
+    "existing_new": "refused before enrollment and factory",
+    "failed_new_or_reopen": "one original invocation each; no automatic retry",
+    "arguments": "Python argv exact path including spaces/ports + CMD source %* check",
+    "stop": "before startup EOF/Ctrl+C cancels; after owned start EOF/Ctrl+C returns through normal lifecycle"
+  },
+  "native_execution": false,
+  "security_setters_executed": false,
+  "new_credentials_created": false,
+  "user_pc_used": false,
+  "remaining": [
+    "Windows cmd.exe actual argument quoting/execution NOT_RUN",
+    "native interpreter/install/new/reopen integration NOT_RUN",
+    "OWNER pause retained for NEW, fixed-journal and loader acceptance retained for REOPEN and NEW",
+    "source payload must already meet private ACL contract",
+    "real browser pixel acceptance NOT_RUN; earlier sandbox refusal not retried"
+  ],
+  "publication": "local only; no public push or PR5 metadata retry",
+  "initial_committed_test": {
+    "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py --basetemp=/tmp/pw-launch-entry-committed",
+    "exit_code": 0,
+    "result": "14 passed, 1 warning in 0.11s",
+    "source_commit": "17deefd96914569b2680c7f7e8c1c93a9c5d5871",
+    "status": "superseded: later independent review found failed-integrity application import risk"
+  },
+  "final_test": {
+    "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_portable_launch_entry.py --basetemp=/tmp/pw-launch-entry-integrity-corrected",
+    "exit_code": 0,
+    "result": "16 passed, 1 warning in 0.12s",
+    "source_bytes_match_commit": "0a7c91636347cf8630fa165c8e486db92f8a21ac",
+    "run_before_metadata_only_git_commit": true
+  },
+  "source_sha256": {
+    "scripts/windows_portable/entry.py": "3af3d6e50c0eda8d373eaa34e43bcd348e0f536e8b5f64d913fa31238fe0800c",
+    "scripts/windows_portable/ParkWeave.cmd": "168855a6535d4b230b0398734bc8b0e8efc9fdd4f59d91c9443293a80a1e7b32",
+    "tests/test_portable_launch_entry.py": "460abefeefe070ae95ab95470cbb71890b1adb9425e5920385c6d83cd452a846"
+  },
+  "native_platform_guard": {
+    "command": "/workspace/parkweave-venv/bin/python -m scripts.windows_portable.entry --action status",
+    "source_commit": "0a7c91636347cf8630fa165c8e486db92f8a21ac",
+    "exit_code": 2,
+    "result": "ParkWeave 未启动或未正常结束：NATIVE_EMBEDDED_PYTHON_REQUIRED；保留现有状态，没有自动初始化或重试。",
+    "expected": "Linux must refuse before opening payload or native calls"
+  },
+  "independent_review": {
+    "agent": "/root/review_local_product",
+    "result": "final source diff reviewed; no remaining P1/P2",
+    "p1_found_and_fixed": "failed payload integrity diagnostics previously imported controller; now no imports, no module lookup before verified success, bounded safe exception traversal afterward",
+    "windows_execution": false,
+    "reviewer_reran_tests": false
+  }
+}
