@@ -32,6 +32,8 @@ python3.12 -m venv .venv
 
 **Windows 源码进度：** 具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口已接线。`NativeRuntimeInstallation` 在原 fresh lease 下持有源文件与父链，按冻结清单排除别名/保留目录，以显式私有描述符和 FILE_CREATE 写入完整运行时；同句柄回读 SHA256 后关闭 writer，再保留同 ID 的只读 pin。重开核验已有完整树，缺失不复制、不修 ACL。源 payload 全树也必须已有合规私有 ACL，普通 ZIP 解压不提供这一保证。
 
+Windows 启动入口已区分模式：双击 `ParkWeave.cmd` 提供“重开已有安装／首次新建／只读状态／退出”；显式参数原样转发给私有解释器。`--instance "已有目录"` 默认只尝试重开，不存在或失败不会改为新建；`--action reopen` 使用受保护的原端口，不接收端口覆盖。`--action new` 必须提供尚不存在的独立目录及两个不同端口，新建仍先经过原 OWNER 暂停，之后才会询问独立登录密码。启动中的独占锁与原持久状态仍是权威；入口 lstat 只是只读提示。启动前取消不操作，已启动后回车或 EOF/Ctrl+C 经原生命周期正常停止；失败不自动重试或重新初始化。这些为源码/云端协议结果，CMD 在实际 Windows 的参数解析和新入口原生执行仍未验。
+
 `NativePreparationSessionProvider` 将原六身份分别用独立安装密码派生的 scrypt/DPAPI entropy 密封，再写入原受保护目录的 WEB_LOGIN 文件。新建才询问密码，重开只读；本轮没有实际生成 Windows 凭据或执行安全设置。API 子进程只接收有界密文配置，worker 不接收。网页登录解封后仍通过原数据库核对当前主体、组织、园区、角色和撤销状态；原 token 不因角色选择自动发放。身份只保留在页面内存，UNKNOWN 句柄保留原隔离约束。未知 DPAPI 清理会锁住本次登录 provider，保留原 native 状态，不继续尝试。
 
 **未验与缺口：** 云端 Chromium 在打开业务页面前因原生 SUID 沙箱拒绝，未生成主应用截图；1366×768/1440×900 的布局尚无真实像素验收。没有关闭沙箱、修权限或改用用户电脑。原 `OWNER_MUTATION_PAUSED`、`WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED`、`NATIVE_RUNTIME_LOADING_NOT_ACCEPTED` 仍关闭。Windows PG 静态检查现已接入 constructor 发行的原 runtime capability：借用目标文件句柄校验 SHA256、大小、EOF 与元数据，检查 BKI 动态模块和 PE 静态依赖，并前后复核完整 immutable namespace；不读 mutable data/secrets/files。缺失原发行能力仍拒绝，不能用字典或复制对象代替。新建与重开在启动数据库前均经过同一最终 loader 拒绝门。OWNER 是保留的新建暂停；fixed journal 已有底层 slots I/O，缺 Windows 验收；Windows 静态读取分支已有源码，但实际 native API 与 loader 行为仍须平台执行证据。Windows 仍不能宣称可交付启动与办理链，源码/协议检查不是 Windows 实跑验收。完整 AT35、正式来源和真实试点分别待验。
