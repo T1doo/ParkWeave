@@ -3,11 +3,13 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import argparse
+from hashlib import sha256
 
 if __package__:
-    from .payload import PayloadRefused, require, verify_directory
+    from .payload import MANIFEST, PayloadRefused, require, verify_directory
 else:
-    from payload import PayloadRefused, require, verify_directory
+    from payload import MANIFEST, PayloadRefused, require, verify_directory
 
 
 def readiness(root):
@@ -21,19 +23,60 @@ def readiness(root):
     return result
 
 
+def native_invocation(payload_root,manifest,instance,mode,*,database_port=None,api_port=None):
+    """Wire verified payload pins into the concrete runtime, without OS actions.
+
+    Immutable runtime staging into a fresh instance remains a separate native
+    installation prerequisite. Missing bytes fail the existing held-file pins;
+    this entry never copies files by unverified paths or adopts an old cluster.
+    """
+    from scripts.windows_portable.native_composition import compose_native_local_preparation
+    from scripts.windows_portable.endpoint_plan import PlanMode,EndpointRequest
+    import secrets
+    require(type(mode) is PlanMode,'EXPLICIT_NATIVE_MODE')
+    request=EndpointRequest(database_port,api_port) if mode is PlanMode.NEW else None
+    pins={}
+    for name,relative in (('initdb','runtime/postgresql/bin/initdb.exe'),
+                          ('postgres','runtime/postgresql/bin/postgres.exe'),
+                          ('python','runtime/python/python.exe')):
+        row=manifest['files'][relative]
+        pins[name+'_sha256']=row['sha256'];pins[name+'_size']=row['bytes']
+    return compose_native_local_preparation(base=str(instance.parent),mode=mode,request=request,
+        runtime=dict(source_commit=manifest['source_commit'],
+            manifest_sha256=sha256((payload_root/MANIFEST).read_bytes()).hexdigest()),
+        challenge=secrets.token_hex(32),**pins)
+
+
 def main():
+    parser=argparse.ArgumentParser(description='ParkWeave 私有运行时校验与本地入口')
+    parser.add_argument('--action',choices=('status','new','reopen'),default='status')
+    parser.add_argument('--instance',type=Path)
+    parser.add_argument('--database-port',type=int)
+    parser.add_argument('--api-port',type=int)
+    args=parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     try:
         require(sys.platform == 'win32' and sys.maxsize > 2**32 and sys.flags.isolated, 'NATIVE_EMBEDDED_PYTHON_REQUIRED')
         manifest = verify_directory(root)
         require(Path(sys.executable).resolve() == root / 'runtime/python/python.exe', 'PRIVATE_INTERPRETER_REQUIRED')
         gate = readiness(root)
-        print(json.dumps(dict(payload='INTEGRITY_VERIFIED', source_commit=manifest['source_commit'],
-            initialization='BLOCKED', readiness=gate, usable_product=False), ensure_ascii=False))
-        print('当前是封装校验候选，尚不能初始化或办理；不会安装系统依赖、修改权限或连接已有数据库。')
-        if gate['status'] == 'READY':
-            print('PRIVATE_INSTANCE_BOOTSTRAP_NOT_IMPLEMENTED')
-        return 2
+        if args.action=='status' or gate['status']!='READY':
+            print(json.dumps(dict(payload='INTEGRITY_VERIFIED', source_commit=manifest['source_commit'],
+                initialization='NOT_STARTED' if gate['status']=='READY' else 'BLOCKED',readiness=gate,
+                usable_product=False,native_factory='IMPLEMENTED_NOT_NATIVE_ACCEPTED'),ensure_ascii=False))
+            return 0 if args.action=='status' and gate['status']=='READY' else 2
+        require(args.instance is not None and args.instance.is_absolute(),'EXPLICIT_PRIVATE_INSTANCE_REQUIRED')
+        from scripts.windows_portable.endpoint_plan import PlanMode
+        mode=PlanMode.NEW if args.action=='new' else PlanMode.REOPEN
+        invocation=native_invocation(root,manifest,args.instance,mode,
+            database_port=args.database_port,api_port=args.api_port)
+        def use(workspace):
+            print('LOCAL_SYNTHETIC_RUNTIME: http://127.0.0.1:'+str(workspace.application.port),flush=True)
+            try:input('按回车停止本次私有运行时。')
+            except (KeyboardInterrupt,EOFError):pass
+        result=(invocation.create if mode is PlanMode.NEW else invocation.reopen)(str(args.instance),use)
+        print(json.dumps(result,ensure_ascii=False))
+        return 0
     except Exception as error:
         reason = str(error) if type(error) is PayloadRefused else type(error).__name__
         print('ParkWeave 未启动：' + reason, file=sys.stderr)

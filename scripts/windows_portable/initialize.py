@@ -22,7 +22,7 @@ LOCK_QUERY = "SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',
 
 
 def create_fresh_native_schema32(
-        maintenance_dsn, owner_dsn, application_dsn, expected_data_directory):
+        maintenance_dsn, owner_dsn, application_dsn, expected_data_directory, *, endpoint=None):
     """One fresh CREATE with the original live proof; no existing-DB adoption.
 
     Currently always refused by OWNER_MUTATION_PAUSED. If that original gate
@@ -59,7 +59,8 @@ def create_fresh_native_schema32(
         frozen_sql.append((version, raw.decode('utf-8')))
 
     owner = create_installed_synthetic_store(
-        maintenance_dsn, owner_dsn, application_dsn, expected_data_directory)
+        maintenance_dsn, owner_dsn, application_dsn, expected_data_directory,
+        **({'endpoint':endpoint} if endpoint is not None else {}))
     receipt = getattr(owner, '_case_fact_fixture_receipt', None)
     if (type(owner) is not _InstalledSyntheticSetupStore or
             type(receipt) is not NativeDatabaseCreationEvidence):

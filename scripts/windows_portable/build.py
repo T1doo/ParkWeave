@@ -30,6 +30,13 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
     'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
     'windows_process_handles.py', 'windows_user_protection.py',
+    'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
+    'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
+    'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',
+    'pgdata_candidate.py', 'restricted_token_candidate.py',
+    'restricted_initdb_candidate.py', 'restricted_startup_candidate.py', 'default_dacl_candidate.py',
+    'initdb_pipe_candidate.py', 'initdb_client_candidate.py', 'local_preparation.py',
+    'local_preparation_identity.py', 'local_preparation_transport.py',
 )) + ('scripts/windows_ci/owned_job.py', 'scripts/windows_ci/job_stop_observation.py')
 LAUNCHER_SOURCES = ('scripts/windows_portable/entry.py', 'scripts/windows_portable/payload.py',
                     'scripts/windows_portable/ParkWeave.cmd')
@@ -269,7 +276,7 @@ def assemble(repo, source, assets, lock_path):
         require(name in files, 'REQUIRED_COMPONENT:' + name)
     closure = dll_closure(files)
     # A static candidate can expose unresolved imports, but it cannot be
-    # labelled closed or executed. The end-user entry always refuses startup.
+    # labelled closed or executed. Native startup retains the original gates.
     put('static-dll-audit.json', (json.dumps(closure, indent=2) + '\n').encode())
     manifest = dict(schema=SCHEMA, status='INITIALIZATION_NOT_ENABLED', source_commit=source,
         usable_product=False, native_initialization='OWNER_MUTATION_PAUSED',

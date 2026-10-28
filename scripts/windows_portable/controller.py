@@ -253,6 +253,20 @@ class Controller:
                 except BaseException as error:
                     cleanup.append(('STOP_OWNED', error))
             if lease is not None:
+                closer=getattr(self.security,'close_owned_files',None)
+                if callable(closer) and not cleanup:
+                    try:closer(lease)
+                    except BaseException as error:
+                        cleanup.append(('CLOSE_SECURITY_FILES',error))
+                        retain=getattr(self.security,'retain_owned_files',None)
+                        if callable(retain):
+                            try:retain(lease)
+                            except BaseException as nested:cleanup.append(('RETAIN_SECURITY_FILES',nested))
+                elif cleanup:
+                    retain=getattr(self.security,'retain_owned_files',None)
+                    if callable(retain):
+                        try:retain(lease)
+                        except BaseException as error:cleanup.append(('RETAIN_SECURITY_FILES',error))
                 try:
                     if surfaced is not None or cleanup:
                         lease.mark_unknown(phase)
@@ -281,6 +295,13 @@ class NativeDatabaseOperations:
     """Real original consumers; ports and production activation remain absent."""
     ROLES_SHA256 = '604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3'
 
+    def bind_owned_endpoint(self,endpoint):
+        from .native_database_endpoint import NativeOwnedDatabaseEndpoint
+        if type(endpoint) is not NativeOwnedDatabaseEndpoint or getattr(self,'_owned_endpoint',None) is not None:
+            raise CandidateRefused('one exact native database endpoint required')
+        endpoint.verify()
+        self._owned_endpoint=endpoint
+
     def prepare_new(self):
         from hashlib import sha256
         from pathlib import Path
@@ -293,13 +314,17 @@ class NativeDatabaseOperations:
     def create_schema32(self, inputs):
         from .initialize import create_fresh_native_schema32
         return create_fresh_native_schema32(inputs.maintenance_dsn, inputs.owner_dsn,
-                                          inputs.application_dsn, inputs.data_directory)
+                                          inputs.application_dsn, inputs.data_directory,
+            **({'endpoint':self._owned_endpoint} if getattr(self,'_owned_endpoint',None) is not None else {}))
 
     def _owner(self, owner):
         from parkweave.installed_fixture_receipt import _InstalledSyntheticSetupStore, NativeDatabaseCreationEvidence
         if (type(owner) is not _InstalledSyntheticSetupStore or
                 type(getattr(owner, '_case_fact_fixture_receipt', None)) is not NativeDatabaseCreationEvidence):
             raise CandidateRefused('exact live native owner required')
+        endpoint=getattr(self,'_owned_endpoint',None)
+        if endpoint is not None and owner._owned_database_endpoint is not endpoint:
+            raise CandidateRefused('same original native owner endpoint required')
 
     def grant_roles(self, owner, prepared):
         from hashlib import sha256
@@ -321,13 +346,13 @@ class NativeDatabaseOperations:
         Store.seed(owner, identities)
 
     def verify_existing(self, inputs):
-        from parkweave.installed_fixture_receipt import _dsn, _connect
+        from parkweave.installed_fixture_receipt import _dsn, _connect_bound
         from scripts.windows.lifecycle import check_dsn_scope
         parsed = _dsn(inputs.application_dsn, 'parkweave')
         if parsed['host'] != '127.0.0.1':
             raise CandidateRefused('original Setup host required')
         def read_only():
-            connection = _connect(parsed, autocommit=False)
+            connection = _connect_bound(parsed, autocommit=False,endpoint=getattr(self,'_owned_endpoint',None))
             try:
                 connection.execute('SET TRANSACTION READ ONLY')
             except BaseException:

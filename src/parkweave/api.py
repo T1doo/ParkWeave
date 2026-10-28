@@ -452,8 +452,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return preparation.personal_tasks(store,token(authorization),limit=limit,before=before)
 
     @app.get('/api/preparations')
-    def preparations(authorization: str | None=Header(default=None)):
-        return preparation.list_items(store,token(authorization))
+    def preparations(authorization: str | None=Header(default=None),
+                     limit:int=Query(default=100,ge=1,le=100),before:UUID|None=Query(default=None),
+                     run_id:UUID|None=Query(default=None)):
+        return preparation.list_items(store,token(authorization),limit=limit,before=before,run_id=run_id)
 
     @app.post('/api/preparations',status_code=201)
     def create_preparation(data: preparation.CreatePreparation,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
