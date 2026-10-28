@@ -4,7 +4,10 @@ Explicit installation only, two independently chosen role passwords, no model,
 real park data, system services, native Windows setters or public listener.
 """
 import argparse
+import asyncio
+from contextlib import asynccontextmanager
 import getpass
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -12,12 +15,15 @@ import signal
 import subprocess
 import sys
 import time
+import warnings
 
 import psycopg
 from psycopg.rows import dict_row
 import uvicorn
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -34,6 +40,14 @@ class Login(BaseModel):
     password: SecretStr
 
 
+def private_password(prompt):
+    # getpass normally falls back to echoing stdin if terminal protection is
+    # unavailable. That fallback is not acceptable for installation secrets.
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', getpass.GetPassWarning)
+        return getpass.getpass(prompt)
+
+
 def application(path, marker, port):
     store = Store(material.dsn(path, application=True))
     app = create_app(store)
@@ -41,6 +55,13 @@ def application(path, marker, port):
     # The focused local page uses the very same original API and permissions.
     app.router.routes[:] = [route for route in app.router.routes if getattr(route, 'path', None) != '/']
     failures = []
+    original_validation = app.exception_handlers[RequestValidationError]
+
+    @app.exception_handler(RequestValidationError)
+    async def private_login_validation(request, error):
+        if request.url.path == '/api/local/session':
+            return JSONResponse({'detail':'invalid local login'}, status_code=422)
+        return await original_validation(request, error)
 
     @app.get('/', response_class=HTMLResponse)
     def index():
@@ -67,12 +88,29 @@ def application(path, marker, port):
                 expected = 'enterprise_operator' if data.role == 'enterprise' else 'park_specialist'
                 if actor['id'] != marker['ids'][data.role] or actor['role'] != expected:
                     raise Denied('current local identity required')
-            return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
+            return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'],
+                actor={name:actor[name] for name in ('id','park_id','org_id','role')},
+                scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
         except Denied:
             failures.append(now)
             raise HTTPException(403, '账号不可用或密码不正确') from None
 
     return app
+
+
+def runtime_source_binding():
+    """Bind actual runtime bytes, including uncommitted edits, not just HEAD."""
+    root = material.ROOT
+    files = [p for p in (root / 'src' / 'parkweave').rglob('*')
+             if p.suffix in ('.py', '.sql', '.html', '.json')]
+    files.extend([Path(__file__), Path(material.__file__)])
+    digest = sha256()
+    for path in sorted(files):
+        if path.is_symlink() or path.resolve() != path.absolute() or not path.is_file():
+            raise Denied('unaliased original runtime source files required')
+        digest.update(str(path.relative_to(root)).encode() + b'\0')
+        digest.update(sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
 
 
 def serve(value, port):
@@ -84,6 +122,7 @@ def serve(value, port):
         marker = json.loads((path / 'state.json').read_text())
         if (marker.get('session_storage') != 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
                 or marker['schema'] != 'parkweave-material-only-demo/1'
+                or marker.get('runtime_source_sha256') != runtime_source_binding()
                 or marker['src_tree'] != material.source_binding()['src_tree']
                 or marker['bootstrap_sha256'] != material.source_binding()['bootstrap_sha256']):
             raise Denied('frozen installation source changed; no repair or migration')
@@ -108,9 +147,27 @@ def serve(value, port):
                     try:
                         server = uvicorn.Server(uvicorn.Config(application(path, marker, port),
                             host='127.0.0.1', port=port, access_log=False, log_level='warning'))
+                        original_lifespan = server.config.app.router.lifespan_context
+
+                        @asynccontextmanager
+                        async def monitored_lifespan(app):
+                            async def watch_worker():
+                                while worker.poll() is None:
+                                    await asyncio.sleep(.25)
+                                server.should_exit = True
+                            async with original_lifespan(app):
+                                monitor = asyncio.create_task(watch_worker())
+                                try:
+                                    yield
+                                finally:
+                                    monitor.cancel()
+                                    await asyncio.gather(monitor, return_exceptions=True)
+                        server.config.app.router.lifespan_context = monitored_lifespan
                         print(json.dumps(dict(url=f'http://127.0.0.1:{port}', scope='SYNTHETIC_LOCAL_PREPARATION_ONLY',
                             sessions='PASSWORD_SEALED_SEPARATE_ROLES_V1', data_retained=True)), flush=True)
                         server.run(sockets=[listener])
+                        if worker.poll() is not None:
+                            raise Denied('owned worker exited; no partial running service')
                     finally:
                         try:
                             from scripts.linux_fixture_server import stop_children
@@ -122,6 +179,7 @@ def serve(value, port):
 
 def main():
     os.umask(0o077)
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=('install', 'start'))
     parser.add_argument('--state-dir')
@@ -135,8 +193,8 @@ def main():
         if args.command == 'install':
             passwords = {}
             for role, label in [('enterprise', '企业'), ('specialist', '专员')]:
-                passwords[role] = getpass.getpass(f'{label}独立密码（至少12字符）: ')
-                if passwords[role] != getpass.getpass(f'再次输入{label}密码: '):
+                passwords[role] = private_password(f'{label}独立密码（至少12字符）: ')
+                if passwords[role] != private_password(f'再次输入{label}密码: '):
                     raise Denied('password confirmation differs')
             provider = LocalSessionVault(passwords)
             passwords.clear()

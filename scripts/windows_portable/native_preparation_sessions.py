@@ -141,7 +141,8 @@ class NativePreparationSessionProvider:
 
     def _binding(self, store, inputs, identities):
         need(type(inputs) is DatabaseInputs and type(identities) is PreparationIdentities
-             and identities is self._identities and inputs is self.security.inputs)
+             and self._identities is not None and identities.mapping() == self._identities.mapping()
+             and inputs is self.security.inputs)
         state = self.security.state
         need(state is not None and identities.enterprises() == state.sessions)
         return dict(database=state.config['database'], endpoints=state.config['endpoints'],

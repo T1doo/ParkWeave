@@ -1,8 +1,10 @@
-"""Private synthetic identity/seed adapters; no native provider or credential generator.
+"""Private synthetic identity/seed adapters and the protected provider contract.
 
 The existing SESSION envelope has three enterprise identities. The required
-reviewer provider below is intentionally unimplemented: it must durably protect
-and bind separate reviewer material without relabelling that old envelope.
+reviewer provider must protect and bind separate reviewer material without
+relabelling that old envelope. The native implementation is in
+native_preparation_sessions; it does not supply the missing native Security or
+cluster runtime activation.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -48,13 +50,14 @@ class PreparationIdentities:
 
 
 class PreparationSessionProvider(Protocol):
-    """Missing protected storage dependency, never an acceptance flag.
+    """Protected storage dependency, never an acceptance flag.
 
     All methods use the exact existing lease. NEW is exclusive and uncertainty
     must not be retried. REOPEN only reads; no minting, file repair or grants.
     verify_binding must bind ALL six hashes, protected storage and enterprise
     SESSION to the same physical installation and inputs. A dict is not proof.
-    No implementation or factory is supplied in this source candidate.
+    NativePreparationSessionProvider implements these storage methods using
+    actual native handles and DPAPI, separately from runtime acceptance.
     """
     def require_support(self, security, database, processes): ...
     def create_exclusive(self, lease, enterprises: dict) -> PreparationIdentities: ...

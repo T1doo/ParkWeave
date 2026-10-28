@@ -42,7 +42,7 @@ AUTHORITY = ('principals', 'capability_grants', 'action_grants', 'preparation_gr
 SQL_RIGHTS = {
     'SELECT': ('schema_version', 'principals', 'capability_grants', 'action_grants',
                'preparation_grants', 'preparation_catalog', 'field_grants', 'run_assignments',
-               'model_steps', 'dispatch_notice_outbox', 'controlled_plans'),
+               'model_steps', 'dispatch_notice_outbox', 'service_dispatch_events', 'controlled_plans'),
     'SELECT,INSERT,UPDATE': ('runs', 'operations', 'outbox', 'run_projection',
                              'deliveries', 'preparations'),
     'SELECT,INSERT': ('cases', 'preparation_evidence', 'preparation_events'),
@@ -227,6 +227,8 @@ def setup(*, session_provider=None):
         else:
             session_provider.publish(p, marker)
             marker['session_storage'] = 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
+            from scripts.local_product import runtime_source_binding
+            marker['runtime_source_sha256'] = runtime_source_binding()
         dump(p / 'state.json', marker)
     return p
 
