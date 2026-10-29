@@ -64,9 +64,9 @@ async function reloadRecover(c,who,mutate){
    source_kind:'DOCUMENT_EXCERPT',source_label:'SYNTHETIC v1'});revision=result.revision;
  }
  let r=await ready('prep-specialist-fixture-a');
- await send(r,route,{action:'REQUEST_CHANGES',expected_revision:revision,reason:'  Inspect current material  '},true);
+ await send(r,route,{action:'REQUEST_CHANGES',expected_revision:revision,reason:'\u0085  Inspect current material  \u0085'},true);
  r=await reloadRecover(r,'prep-specialist-fixture-a');revision=vm.runInContext('current.preparation.revision',r);
- await send(r,route,{action:'REVIEW',expected_revision:revision,reason:'Independent review'},true);revision++;
+ await send(r,route,{action:'REVIEW',expected_revision:revision,reason:'\ufeffIndependent review\ufeff'},true);revision++;
  // Another actor can advance the state while the original reviewer has lost
  // the acknowledgement. The exact historical receipt plus current scope/read
  // must recover without undoing or resending either operation.
@@ -74,7 +74,7 @@ async function reloadRecover(c,who,mutate){
  revision=confirmed.revision;
  r=await reloadRecover(r,'prep-specialist-fixture-a');
  assert.equal(vm.runInContext('current.preparation.revision',r),revision);historical=true;
- await send(e,route,{action:'REOPEN',expected_revision:revision,reason:'Explicit reopen'},true);
+ await send(e,route,{action:'REOPEN',expected_revision:revision,reason:'\u0085\ufeffExplicit reopen\ufeff\u0085'},true);
  e=await reloadRecover(e,'fixture-a');revision=vm.runInContext('current.preparation.revision',e);
  const reviewed=await send(r,route,{action:'REVIEW',expected_revision:revision,reason:'Review again'});revision=reviewed.revision;
  await send(e,route,{action:'CONFIRM',expected_revision:revision,reason:'Final confirmation'},true);

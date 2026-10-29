@@ -86,8 +86,8 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
             service_version=1,reviewer_id=reviewer),201)
         route='/api/preparations/'+reference['preparation_id']
         key=str(uuid4())
-        command=dict(action='ADD_EVIDENCE',expected_revision=1,slot='need_summary',text='SYNTHETIC persistent source',
-            source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC v1')
+        command=dict(action='ADD_EVIDENCE',expected_revision=1,slot='need_summary',text='\u0085SYNTHETIC persistent source\u0085',
+            source_kind='DOCUMENT_EXCERPT',source_label='\ufeffSYNTHETIC v1\ufeff')
         # Forward exactly one real command, then truncate its committed HTTP
         # acknowledgement. No mock API/store and no write replay during recovery.
         committed=[]
