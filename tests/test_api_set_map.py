@@ -1,6 +1,7 @@
 """v6 byte boundaries/selection only; no target OS or native trust invented."""
 from hashlib import sha256
 import copy
+import os
 import struct
 
 import pytest
@@ -104,3 +105,48 @@ def test_mapping_builds_exact_host_export_request_without_expanding_system_polic
     assert result['target_hosts']==[dict(name='custom.dll',symbols=['#7','ReadFile'],
         policy='UNDECLARED_HOST_REQUIRES_POLICY_REVIEW')]
     assert result['hash_index_validation']=='VALIDATED_FROM_BYTES' and not result['activation_allowed']
+
+
+def test_input_read_bounds_growth_and_refuses_path_replacement(tmp_path,monkeypatch):
+    # A small test budget exercises the same bounded read independently of the
+    # namespace format. The input can grow after both pre-read size checks.
+    monkeypatch.setattr(a,'MAX_METADATA_BYTES',32)
+    path=tmp_path/'metadata';path.write_bytes(b'{}')
+    assert a.read_bounded(path)==b'{}'
+    path.write_bytes(b'x'*33)
+    with pytest.raises(PayloadRefused):a.read_bounded(path)
+    path.write_bytes(b'x'*32)
+    original_read=os.read;requests=[]
+    def grow(fd,count):
+        requests.append(count)
+        with path.open('ab') as stream:stream.write(b'y'*32)
+        return original_read(fd,count)
+    with monkeypatch.context() as patch:
+        patch.setattr(a.os,'read',grow)
+        with pytest.raises(PayloadRefused):a.read_bounded(path)
+    assert requests==[33]
+    path.write_bytes(b'{}');replacement=tmp_path/'replacement';replacement.write_bytes(b'[]')
+    original_open=os.open
+    def replace_then_open(name,flags):
+        replacement.replace(path)
+        return original_open(name,flags)
+    with monkeypatch.context() as patch:
+        patch.setattr(a.os,'open',replace_then_open)
+        with pytest.raises(PayloadRefused):a.read_bounded(path)
+    alias=tmp_path/'alias';alias.symlink_to(path)
+    with pytest.raises(PayloadRefused):a.read_bounded(alias)
+    if hasattr(os,'mkfifo'):
+        pipe=tmp_path/'pipe';os.mkfifo(pipe)
+        with pytest.raises(PayloadRefused):a.read_bounded(pipe)
+
+
+def test_unimplemented_flag_semantics_cannot_select_a_host():
+    raw=namespace([('api-ms-test-l1-1-0',[('','default.dll')])])
+    value_offset=struct.unpack_from('<I',raw,28+16)[0]
+    for offset,scope in ((8,'NAMESPACE'),(28,'ENTRY'),(value_offset,'VALUE')):
+        for flag in (1,0x80000000):
+            changed=bytearray(raw);struct.pack_into('<I',changed,offset,flag)
+            mapping=a.parse_v6(bytes(changed))
+            result=a.resolve_metadata(mapping,'api-ms-test-l1-1-0.dll','client.exe')
+            assert result['status']=='UNSUPPORTED_FLAGS' and result['flag_scope']==scope
+            assert result['host'] is None and not result['activation_allowed']

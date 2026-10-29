@@ -274,6 +274,10 @@ class PersistentInstallation:
         self.verify()
         need(self.process is None and not (self.path / 'data/postmaster.pid').exists())
         need(self.record['phase'] == ('INSTALLING' if self.fresh else 'READY_STOPPED'))
+        # A known inherited configuration refusal must precede RUNNING and
+        # child creation; it is not an uncertain mutation of a stopped cluster.
+        from .installed_fixture_receipt import refuse_inherited_configuration
+        refuse_inherited_configuration()
         if not self.fresh:
             self._publish('RUNNING')
         primary = None

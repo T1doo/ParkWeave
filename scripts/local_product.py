@@ -14,6 +14,7 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
+import threading
 import time
 import warnings
 
@@ -55,7 +56,7 @@ def application(path, marker, port):
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1'])
     # The focused local page uses the very same original API and permissions.
     app.router.routes[:] = [route for route in app.router.routes if getattr(route, 'path', None) != '/']
-    failures = []
+    failures = []; login_lock = threading.Lock()
     original_validation = app.exception_handlers[RequestValidationError]
 
     @app.exception_handler(RequestValidationError)
@@ -83,25 +84,32 @@ def application(path, marker, port):
         if (not request.client or request.client.host != '127.0.0.1'
                 or request.headers.get('origin') != f'http://127.0.0.1:{port}'):
             raise HTTPException(403, 'local same-origin login required')
-        now = time.monotonic()
-        failures[:] = [t for t in failures if now - t < 60]
-        if len(failures) >= 6:
+        # Match the original workspace's bounded password work across tabs.
+        # Reserve the single password attempt before scrypt, not after failure.
+        if not login_lock.acquire(blocking=False):
             raise HTTPException(429, '请稍后再试')
         try:
-            bearer = LocalSessionVault.unlock(path, marker, data.role, data.password.get_secret_value())
-            with store.connect() as connection:
-                actor = store.auth(connection, bearer, lock=True)
-                expected = 'enterprise_operator' if data.role == 'enterprise' else 'park_specialist'
-                if actor['id'] != marker['ids'][data.role] or actor['role'] != expected:
-                    raise Denied('current local identity required')
-            from parkweave.local_identity import canonical
-            installation_id = sha256(canonical(LocalSessionVault.binding(path, marker))).hexdigest()
-            return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], installation_id=installation_id,
-                actor={name:actor[name] for name in ('id','park_id','org_id','role')},
-                scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
-        except Denied:
-            failures.append(now)
-            raise HTTPException(403, '账号不可用或密码不正确') from None
+            now = time.monotonic()
+            failures[:] = [t for t in failures if now - t < 60]
+            if len(failures) >= 6:
+                raise HTTPException(429, '请稍后再试')
+            try:
+                bearer = LocalSessionVault.unlock(path, marker, data.role, data.password.get_secret_value())
+                with store.connect() as connection:
+                    actor = store.auth(connection, bearer, lock=True)
+                    expected = 'enterprise_operator' if data.role == 'enterprise' else 'park_specialist'
+                    if actor['id'] != marker['ids'][data.role] or actor['role'] != expected:
+                        raise Denied('current local identity required')
+                from parkweave.local_identity import canonical
+                installation_id = sha256(canonical(LocalSessionVault.binding(path, marker))).hexdigest()
+                return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], installation_id=installation_id,
+                    actor={name:actor[name] for name in ('id','park_id','org_id','role')},
+                    scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
+            except Denied:
+                failures.append(now)
+                raise HTTPException(403, '账号不可用或密码不正确') from None
+        finally:
+            login_lock.release()
 
     return app
 

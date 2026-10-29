@@ -57,6 +57,8 @@ python -m scripts.windows_portable.loader_inputs --payload '/绝对路径/已解
 
 ## 可独立交付的本地样例
 
-`scripts/local_product.py` 是非 root Linux 的真实本地样例安装/启动入口，采用原私有目录、加密双角色、PG/API/worker 与持久回读；没有导入 Windows native 门。源码齐备时可按原 `install`/`start --state-dir` 办理提交、补正、审核、确认、重开，不能因 Windows loader 等待而宣称 Linux 功能 BLOCKED。此前实际业务/持久回读证据仍按原提交保留，本轮 Windows-only 变化不重复跑同组业务。
+`scripts/local_product.py` 是非 root Linux 的真实本地样例安装/启动入口，采用原私有目录、加密双角色、PG/API/worker 与持久回读；没有导入 Windows native 门。源码齐备时可按原 `install`/`start --state-dir` 办理提交、补正、审核、确认、重开，不能因 Windows loader 等待而宣称 Linux 功能 BLOCKED。此前实际业务/持久回读证据仍按原提交保留，不重复跑同组完整业务。
+
+后续独审修复了两处 Linux 边界：网页登录在 scrypt 前串行保留一个密码计算名额，阻止并发越过失败限流；继承 `PG*` 配置继续拒绝，但在发布 RUNNING/启动 PG 前检查，避免确定性的配置拒绝把既有停止安装持久标成 UNKNOWN。针对这些变化分别验证并发负向 HTTP、真实加密双角色/SQL 认证、配置拒绝前数据库与 journal 不变、去除该配置后原库可重开。它们不构成 Windows native 或完整浏览器验收。原冻结源码校验保留，旧安装不因源码变化自动升级/修复。
 
 该 Linux 安全合同依赖 POSIX 私有权限、Unix socket peer 和原 Linux PG 过程，不能在 Windows 强行改平台判断、改用明文身份或系统 PG 来复用。当前 Windows 独立 EXE 即使只用合成资料，仍要创建/读取 Windows 私有运行时与身份，故必须经过 OWNER/fixed journal/loader；这是运行平台安全前提，不是要求真实园区来源。Linux 样例可用、Windows native 未签收、正式来源/真实试点未接入是三个不同状态。

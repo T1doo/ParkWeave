@@ -157,3 +157,54 @@ def test_forged_persistent_receipt_and_repeat_create_are_denied(tmp_path):
                     with pytest.raises(Denied):replace(receipt).authorize_migration(connection)
                     receipt.authorize_migration(connection)
     finally:os.umask(previous)
+
+
+def test_inherited_pg_configuration_refuses_before_mutation_and_allows_clean_reopen(tmp_path,monkeypatch):
+    from hashlib import sha256
+    from parkweave import local_installation as local
+    parent=Path(__file__).resolve().parents[1]/'.runtime'/'pv'
+    if parent.is_relative_to('/tmp'):pytest.skip('checkout outside temporary storage required')
+    parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+    passwords={role:secrets.token_urlsafe(24) for role in ('enterprise','specialist')}
+    previous=os.umask(0o077)
+    try:path=install(LocalSessionVault(passwords),parent)
+    finally:os.umask(previous)
+    before=(path/STATE).read_bytes()
+    control=sha256((path/'data/global/pg_control').read_bytes()).hexdigest()
+    def no_child(*args,**kwargs):raise AssertionError('inherited PG config must refuse before any child')
+    with PersistentInstallation.open_existing(path) as lease:
+        stopped=(path/STATE).read_bytes()
+        with monkeypatch.context() as patch:
+            patch.setenv('PGHOST','')
+            patch.setattr(local.subprocess,'Popen',no_child)
+            with pytest.raises(Denied):
+                with lease.postgres():pytest.fail('known configuration refusal entered cluster')
+        assert lease.process is None and lease.record['phase']=='READY_STOPPED'
+        assert (path/STATE).read_bytes()==stopped
+        assert sha256((path/'data/global/pg_control').read_bytes()).hexdigest()==control
+        assert not (path/'data/postmaster.pid').exists()
+    assert (path/STATE).read_bytes()==before
+    # The same genuine database can still be reopened after removing the
+    # refused configuration, with no repair, initialization or identity reseed.
+    with PersistentInstallation.open_existing(path) as lease:
+        with lease.postgres():
+            with lease.connect() as connection:
+                assert connection.execute('SELECT current_database() name').fetchone()['name']=='parkweave'
+            from fastapi.testclient import TestClient
+            from scripts.local_product import application
+            marker=json.loads((path/'state.json').read_text());base='http://127.0.0.1:58763'
+            with TestClient(application(path,marker,58763),base_url=base,client=('127.0.0.1',12345)) as client:
+                for role,expected in (('enterprise','enterprise_operator'),('specialist','park_specialist')):
+                    result=client.post('/api/local/session',headers={'Origin':base},
+                        json=dict(role=role,password=passwords[role]))
+                    assert result.status_code==200
+                    assert result.json()['actor_id']==marker['ids'][role] and result.json()['role']==expected
+                denied=client.post('/api/local/session',headers={'Origin':base},
+                    json=dict(role='enterprise',password=passwords['specialist']))
+                assert denied.status_code==403
+    assert json.loads((path/STATE).read_text())['phase']=='RELEASE_PENDING'
+    (tmp_path/'configuration-refusal-result.json').write_text(json.dumps(dict(
+        state_dir=str(path),known_refusal_started_child=False,stopped_journal_unchanged=True,
+        pg_control_unchanged_before_clean_reopen=True,clean_real_database_reopen=True,
+        real_sealed_roles_sql_auth=True,wrong_role_password_refused=True,
+        transport='ASGI TestClient and real PG; not browser or worker acceptance'),indent=2))

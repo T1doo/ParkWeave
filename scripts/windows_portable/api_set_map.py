@@ -9,13 +9,17 @@ held native file identity is inferred from these ordinary bytes/dictionaries.
 import argparse
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import struct
 
 from .crt_pe import Image
 from . import payload
 from .payload import PayloadRefused
+
+MAX_METADATA_BYTES=4*1024*1024
 
 
 def need(ok):
@@ -144,7 +148,15 @@ def resolve_metadata(mapping,contract,importer_basename):
         status='ABSENT' if entry is None else 'UNMAPPED',response_is_native_witness=False,activation_allowed=False)
     if 'collected_contracts' in mapping and name not in mapping['collected_contracts']:
         return dict(result,status='NOT_COLLECTED')
+    # Preserve raw flags in the parser; no extension/sealing flag semantics
+    # have been implemented by this file-only resolver. Do not guess a host.
+    if mapping['namespace_flags']:
+        return dict(result,status='UNSUPPORTED_FLAGS',flag_scope='NAMESPACE')
     if entry is None:return result
+    if entry['flags']:
+        return dict(result,status='UNSUPPORTED_FLAGS',flag_scope='ENTRY')
+    if any(row['flags'] for row in entry['values']):
+        return dict(result,status='UNSUPPORTED_FLAGS',flag_scope='VALUE')
     # This parser does not silently normalize undocumented alias styles. Exact
     # basenames are supported; a matching extensionless alias needs native
     # verification instead of incorrectly falling back to the default host.
@@ -189,8 +201,29 @@ def apply_requirements(mapping,requirements):
 
 
 def read_bounded(path):
-    path=Path(path);need(path.is_file() and not path.is_symlink() and path.stat().st_size<=4*1024*1024)
-    raw=path.read_bytes();need(0<len(raw)<=4*1024*1024);return raw
+    # Bound allocation during the read, not after Path.read_bytes(). An input
+    # may grow or be replaced after lstat; metadata is never native authority.
+    path=Path(path);fd=None
+    def snapshot(info):
+        need(stat.S_ISREG(info.st_mode) and 0<info.st_size<=MAX_METADATA_BYTES)
+        return info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns,info.st_ctime_ns
+    try:
+        before=snapshot(path.lstat())
+        flags=os.O_RDONLY
+        for name in ('O_BINARY','O_CLOEXEC','O_NONBLOCK','O_NOFOLLOW'):flags|=getattr(os,name,0)
+        fd=os.open(path,flags);need(snapshot(os.fstat(fd))==before)
+        parts=[];total=0
+        while total<=MAX_METADATA_BYTES:
+            chunk=os.read(fd,min(65536,MAX_METADATA_BYTES+1-total))
+            if not chunk:break
+            parts.append(chunk);total+=len(chunk)
+        need(0<total<=MAX_METADATA_BYTES and total==before[2]
+             and snapshot(os.fstat(fd))==before and snapshot(path.lstat())==before)
+        return b''.join(parts)
+    except OSError:
+        raise PayloadRefused('API_SET_V6_METADATA_REFUSED') from None
+    finally:
+        if fd is not None:os.close(fd)
 
 
 def read_json(path):

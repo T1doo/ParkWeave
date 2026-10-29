@@ -10,6 +10,8 @@
 
 metadata resolver 优先 exact importer basename alias，再选择唯一空 alias 的默认宿主。遇到可能匹配但未验的 extensionless alias，不误用默认宿主；缺合同、无宿主、未采集、未知 alias 风格分别保留。Python/wheel 多点 pyd basename 可表达；不把 schema 中未知 host 自动加入系统白名单。
 
+namespace、entry 或 value 的非零 flags 仍原样解析，但当前文件解析器没有实现这些标志的扩展/封装语义，因此 resolver 返回 `UNSUPPORTED_FLAGS` 并不给 host，不把已命名的 bit 当成已支持。普通文件输入也在同一打开句柄上最多读 4 MiB + 1 字节，前后复核普通文件元数据及路径身份；并发增长、替换、符号链接或特殊文件均拒绝。这仍只是受限数据快照，不是 native 文件权能。
+
 collector 回传的普通 JSON 经 `selected_metadata` 校验 requested/entries/missing 的精确覆盖、文件 hash、类型和路径形状，来源仍标 `COLLECTOR_REPORTED`。原始 bytes parser 才标 `VALIDATED_FROM_BYTES`。两种结果都不是 native witness；不会设 READY、启动产品或消费安全操作许可。
 
 ## 下一批最小 Windows 数据
