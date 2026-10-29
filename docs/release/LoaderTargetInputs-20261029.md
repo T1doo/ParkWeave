@@ -47,6 +47,8 @@ python -m scripts.windows_portable.loader_inputs --payload '/绝对路径/已解
 
 第一批先确认实际平台。随后只针对请求 JSON 中的 28 个 `direct_system_dll_names` 和 17 个 `api_set_contract_names` 补：
 
+第一批实际平台元数据已在本次私有交接记录收到；下一批 version 6 文件映射解析及只读选取工具已实现，具体命令和未采边界见[API-set 目标映射](ApiSetTargetMapping-20261029.md)。原始条目尚未回传，不将字段定义或受控 fixture 当成实际映射。
+
 1. 对每个系统目标：绑定同一文件的名称、SHA256、Machine、版本、原签名事实，以及 exact named/ordinal export → direct RVA 或原始 forwarder 字符串。缺文件、缺导出与签名未知分别记录。不是从 PATH 选同名文件。
 2. API-set：绑定实际 ApiSetSchema 文件 hash/格式版本，提供每个合同在该系统、该 importer 下的 `present`、`mapped`、`host` 及 alias/default 规则。普通格式可为 `api_set_mapping:[{contract, importer_basename, present, mapped, host}]`；不能以有同名文件、name 前缀或单个 schema hash 冒充已解析。宿主补齐第1项，原始 forwarder 再逐层解析，循环/缺件/未知保持拒绝。
 3. 原进程实际加载来源属于后续原生阶段：固定原 HANDLE/birth/image/Job、所加载模块原路径和文件身份、系统/各私有域及动态加载/Job 后代。静态 JSON、一次成功 LoadLibrary 或已存在 WebView2 不能替代。

@@ -24,7 +24,7 @@ RUNTIME_MODULES = (
     'windows_process_handles.py', 'windows_user_protection.py',
     'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
     'native_runtime_staging.py', 'native_web_login.py', 'native_system_crt.py', 'crt_pe.py',
-    'native_acceptance_contract.py', 'loader_inputs.py',
+    'native_acceptance_contract.py', 'loader_inputs.py', 'api_set_map.py',
     'desktop_bridge.py', 'desktop_profile.py',
     'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
     'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',
