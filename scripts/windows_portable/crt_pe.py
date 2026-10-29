@@ -55,6 +55,13 @@ class Image:
         p=self.opt+112+8*index;return self.u(p,'I'),self.u(p+4,'I')
 
     def crt_imports(self):
+        return self._imports(CRT_DLLS)
+
+    def symbol_imports(self):
+        """Exact ordinary/delay named and ordinal imports, not DLL presence."""
+        return self._imports(None)
+
+    def _imports(self,wanted):
         result={}
         for index,stride in ((1,20),(13,32)):
             rva,size=self.directory(index)
@@ -68,7 +75,7 @@ class Image:
                     name=self.u(p+4,'I');thunk=self.u(p+16,'I')
                 else:name=self.u(p+12,'I');thunk=self.u(p,'I')
                 dll=self.text(name).lower()
-                if dll not in CRT_DLLS:continue
+                if wanted is not None and dll not in wanted:continue
                 need(thunk>0);symbols=result.setdefault(dll,set());terminated=False
                 for n in range(8192):
                     value=self.u(self.offset(thunk+n*8,8),'Q')
@@ -81,6 +88,9 @@ class Image:
         return result
 
     def exports(self):
+        return {name:forwarder is not None for name,(target,forwarder) in self.export_targets().items()}
+
+    def export_targets(self):
         rva,size=self.directory(0);need(rva>0 and 40<=size<=16*1024*1024)
         p=self.offset(rva,40);base=self.u(p+16,'I');count=self.u(p+20,'I');names=self.u(p+24,'I')
         need(0<count<=65536 and names<=count)
@@ -90,9 +100,11 @@ class Image:
             target=self.u(self.offset(functions+i*4,4),'I')
             if target:
                 forwarded=rva<=target<rva+size
-                if forwarded:self.text(target)
-                else:self.memory_target(target)
-                result['#'+str(base+i)]=forwarded
+                if forwarded:
+                    forwarder=self.text(target)
+                    need(target+len(forwarder)+1<=rva+size)
+                else:self.memory_target(target);forwarder=None
+                result['#'+str(base+i)]=(target,forwarder)
         for i in range(names):
             name=self.text(self.u(self.offset(strings+i*4,4),'I'))
             ordinal=self.u(self.offset(ordinals+i*2,2),'H');need(ordinal<count and name not in result)

@@ -23,7 +23,7 @@
 | fixed journal：`fixed_windows_journal.py:require_fixed_native_acceptance()` | 原句柄、8192 字节双槽、固定偏移写/flush/回读、相同文件重开、排他、破损拒绝；Linux 和受控协议证据已有 | 函数仍无条件拒绝；缺目标 NTFS 下的进程中断恢复及持久性范围证据，缺可据此采用的生产准入策略。一次正常 file flush 不能充当断电结论 | 在本次新建的受保护临时对象上核 ID/SD 不变、排他、破损拒绝；单独限定本次子进程中断及冷重开。不得为此关闭用户电脑或声称断电已验。若要求断电保证，需支持该保证的平台测试环境及明确范围 |
 | loader：`runtime_payload.py:RuntimePayloadPrerequisite.require_for_cluster()` | 冻结原字节与目录枚举、私有 DLL 名称闭包、已有 System32 CRT 的源/签名/版本/导出检查，原 Job 进程与 SQL backend 的 CRT 模块采样接线 | 函数 inspect 后仍无条件拒绝；完整 loader 实现未闭合：全部模块/Job 后代与动态加载来源、目标 API-set/forwarder 解析、最低工具链兼容策略尚未实现或取得可采信目标输入。CRT 两次采样不是整个加载器证明 | 先取得目标 Windows 版本/架构、API-set/系统 DLL 的正规只读证据及各冻结二进制的可信构建工具链版本，再据此实现精确来源/兼容策略；仍需在原句柄/Job 下核实际 initdb/postgres/SQL peer/API/worker，完成真实业务和重开。不借 PATH、系统 Python 或第三方同名 DLL |
 
-当前 PG `postgres.exe` 原字节含 `compiled by msvc-19.44.35229`，但单个字符串不覆盖 ICU、OpenSSL、Python、wheel 等全部原生生产者，因此不据此发行整个包的最低工具链证明。不会把 API-set 前缀、名称存在、14.x 或全部测试观察名当成 READY。
+当前 PG `postgres.exe` 原字节含 `compiled by msvc-19.44.35229`，但单个字符串不覆盖 ICU、OpenSSL、Python、wheel 等全部原生生产者，因此不据此发行整个包的最低工具链证明。后续源码已补完整私有符号/转发静态闭合与精确目标输入工具，具体字段、现包可取得项和 Linux 样例边界见[Loader 目标输入](LoaderTargetInputs-20261029.md)。先用真实包信息和可采目标导出/版本推进实现与有界测试，不将未知生产者元数据泛化为全部工程暂停。不会把 API-set 前缀、名称存在、14.x 或全部测试观察名当成 READY。
 
 本轮进一步修复真实 PE 导出解析：数据可位于合法零填充节尾，不能一律要求其目标 RVA 有文件字节。修复不放宽表/字符串的文件边界，也不打开上述任一门。当前锁定 42 个 PG PE 的独立静态诊断核对 2214 处私有符号引用、484 个零填充导出，未发现缺失导出或解析错误；它不是系统 DLL、API-set、实际加载或 Windows 执行验收。
 

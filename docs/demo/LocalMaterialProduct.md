@@ -26,13 +26,13 @@ python3.12 -m venv .venv
 
 发送变更前，浏览器先持久保存无秘密的原请求句柄；刷新、退出重登后仍显示待核对状态。它包含安装标识、完整角色身份、请求键、操作及正文指纹，不包含密码、bearer 或材料正文。使用 Web Locks 保证同一安装和角色的多标签页互斥；存储或互斥能力不可用时暂停写入。待核对句柄属于同一浏览器与同一地址端口，不能作为跨设备恢复或备份。
 
-提交结果不明时停止写操作，不自动重试；只有 ADD_EVIDENCE 提供原请求键的只读恢复，且要求原正文指纹、完整身份、当前凭据摘要、当前版本、快照和精确回执都一致。其余 UNKNOWN 不自动消除。不要清理站点存储来绕过待核对状态。
+提交结果不明时停止写操作，不自动重试。ADD_EVIDENCE 的原请求键只读恢复要求原正文指纹、完整身份、当前凭据摘要、当前版本、快照和精确回执均一致；其他已接线的写操作使用各自 operation 的只读历史回执，并重新核当前可见性。任何绑定或结果仍不明确都保留 UNKNOWN，不重发或清理站点存储绕过待核对状态。
 
 **持久范围：** 新安装使用独立 `LocalDatabaseCreationEvidence`，绑定新建私有目录、真实 initdb、自有 postmaster、Unix socket 内核对端与实际 CREATE DATABASE。原 `/tmp` fixture 凭据合同保持原样。已经在 `/workspace` 下实际创建并验证 API、worker、PostgreSQL 正常停止/独立进程重开后的原记录精确回读；无需搬迁临时库。重开只读校验实际运行源码字节、库物理身份、schema32 和原权限快照，不再 initdb、迁移、seed 或自动复权。此证据不代表主机重启、平台卷保留、灾难恢复或备份已验证。UNKNOWN 安装不自动重试。
 
 **Windows 源码进度：** 具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口已接线。`NativeRuntimeInstallation` 在原 fresh lease 下持有源文件与父链，按冻结清单排除别名/保留目录，以显式私有描述符和 FILE_CREATE 写入完整运行时；同句柄回读 SHA256 后关闭 writer，再保留同 ID 的只读 pin。重开核验已有完整树，缺失不复制、不修 ACL。源 payload 全树也必须已有合规私有 ACL，普通 ZIP 解压不提供这一保证。
 
-Windows 启动入口已区分模式：双击 `ParkWeave.cmd` 提供“重开已有安装／首次新建／只读状态／退出”；显式参数原样转发给私有解释器。`--instance "已有目录"` 默认只尝试重开，不存在或失败不会改为新建；`--action reopen` 使用受保护的原端口，不接收端口覆盖。`--action new` 必须提供尚不存在的独立目录及两个不同端口，新建仍先经过原 OWNER 暂停，之后才会询问独立登录密码。启动中的独占锁与原持久状态仍是权威；入口 lstat 只是只读提示。启动前取消不操作，已启动后回车或 EOF/Ctrl+C 经原生命周期正常停止；失败不自动重试或重新初始化。这些为源码/云端协议结果，CMD 在实际 Windows 的参数解析和新入口原生执行仍未验。
+Windows 当前正常入口为 `ParkWeave.exe` 独立窗口；无参数 `ParkWeave.cmd` 转交同包 EXE，显式参数仍原样转发到 CLI 私有解释器。窗口与 CLI 都区分新建和重开：已有安装不存在或重开失败不会转新建，重开不接收端口覆盖。新建要求尚不存在目录、两个不同端口及独立密码，并保留 OWNER 暂停；桌面填写的密码只通过本次私有管道，不绕门授予身份。CLI 的回车停止与桌面的已确认浏览器退出/私有停止协议分别保留，桌面 EOF/未知不得冒认正常结束。详见[当前桌面生命周期](../release/DesktopCandidate-20261028.md)。启动中的独占锁与原持久状态仍是权威，实际 Windows 参数、窗口、WebView2 和原生业务尚未验。
 
 `NativePreparationSessionProvider` 将原六身份分别用独立安装密码派生的 scrypt/DPAPI entropy 密封，再写入原受保护目录的 WEB_LOGIN 文件。新建才询问密码，重开只读；本轮没有实际生成 Windows 凭据或执行安全设置。API 子进程只接收有界密文配置，worker 不接收。网页登录解封后仍通过原数据库核对当前主体、组织、园区、角色和撤销状态；原 token 不因角色选择自动发放。身份只保留在页面内存，UNKNOWN 句柄保留原隔离约束。未知 DPAPI 清理会锁住本次登录 provider，保留原 native 状态，不继续尝试。
 

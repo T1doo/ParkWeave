@@ -174,10 +174,15 @@ def static_report(data, runtime):
     require(not closure['missing_private_dependencies'] and
             all(row['reason'] in platform_reasons for row in closure['unresolved']),
             'PG_STATIC_IMPORT_UNRESOLVED')
+    from .loader_inputs import symbol_requirements
+    symbols = symbol_requirements(data)
+    require(not symbols['missing_private_symbols'] and not symbols['private_forwarders'],
+            'PG_PRIVATE_SYMBOL_OR_FORWARDER_UNRESOLVED')
     loading = ('STATIC_PLATFORM_REQUIREMENTS_UNVERIFIED' if closure['unresolved'] else closure['status'])
     return dict(scope='LEASE_BOUND_PG_STATIC_SNAPSHOT', **runtime, runtime_files=len(data),
                 runtime_bytes=sum(map(len,data.values())),bootstrap_modules=sorted(dynamic),
                 static_loading=loading,unresolved=closure['unresolved'],
                 platform_requirements=closure['platform_requirements'],
                 missing_private_dependencies=closure['missing_private_dependencies'],
+                symbol_requirements=symbols,
                 native_loading='NOT_ACCEPTED',activation_allowed=False)

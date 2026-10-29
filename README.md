@@ -13,7 +13,7 @@
 - Windows 私有实例入口仍拒绝初始化，`usable_product=false`。候选 ZIP 内有锁定运行时与依赖，用户无需为检查包而安装 Python，但该 ZIP **目前不能办理业务**。
 - 真实浏览器连接当前模板 HTTP 链路尚未完成；Chrome 官方包准备仍 FAIL。Windows 原生安全/初始化/持久恢复、外部正式来源合同、LIVE 模型与正式 AT35 仍有独立缺口。
 
-本次云端本地交付以 [2026-10-28 源码候选说明](docs/release/LocalCandidate-20261028.md) 和包外完整 SHA/哈希清单为准。下面旧文件名与 [旧预发布验收边界](docs/release/CANDIDATE.md) 保留历史含义；现已按锁取得公开依赖并生成真实 Windows runtime 候选 ZIP；未生成自制 EXE，仍未通过原生验收。不要把 Windows ZIP 的完整性检查或拒绝启动信息当成安装成功，也不要通过关闭安全门强行运行。
+本次云端本地交付以 [源码候选说明](docs/release/LocalCandidate-20261028.md)、[独立桌面入口](docs/release/DesktopCandidate-20261028.md)和包外完整 SHA/哈希清单为准。下面旧文件名与 [旧预发布验收边界](docs/release/CANDIDATE.md) 保留历史含义；现已按锁取得公开依赖并生成真实 Windows runtime ZIP 与 AMD64 GUI EXE 候选，仍未通过原生验收。不要把 Windows ZIP 的完整性检查或拒绝启动信息当成安装成功，也不要通过关闭安全门强行运行。
 
 ## 文件如何使用
 

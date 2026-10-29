@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import struct
 import tempfile
 import time
 import unittest
@@ -11,7 +12,21 @@ from unittest.mock import patch
 
 from . import payload, runtime_payload as r, processes as p
 from .fixed_directories import FixedPrivateDirectories
-from .test_payload import pe
+from .test_payload import pe as name_only_pe
+
+
+def pe(names=(),delay=()):
+    # Complete bounded lookup tables for this static-symbol consumer. These
+    # remain nonexecuted synthetic PE bytes, not Windows loading evidence.
+    raw=bytearray(name_only_pe(names,delay))
+    for is_delay,items,start,stride in ((False,names,512,20),(True,delay,768,32)):
+        for i,_ in enumerate(items):
+            offset=1792+(i+(8 if is_delay else 0))*16
+            if offset+16>len(raw):raw.extend(b'\0'*(offset+16-len(raw)))
+            struct.pack_into('<I',raw,start+i*stride+(16 if is_delay else 0),0x1000+offset-512)
+            struct.pack_into('<QQ',raw,offset,(1<<63)|1,0)
+    if len(raw)>2048:struct.pack_into('<I',raw,0x98+240+16,len(raw)-512)
+    return bytes(raw)
 
 SOURCE = 'a' * 40
 
