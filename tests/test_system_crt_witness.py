@@ -17,6 +17,8 @@ from parkweave.windows_files import Security,Ace
 
 def dll():
     raw=bytearray(pe());opt=0x98
+    struct.pack_into('<I',raw,opt+56,0x2000)
+    struct.pack_into('<I',raw,opt+240+8,1536)
     struct.pack_into('<II',raw,opt+112,0x1100,0x100)
     struct.pack_into('<IIIIIII',raw,768+16,1,1,1,0x1180,0x1190,0x11a0,0)
     struct.pack_into('<I',raw,896,0x1300);struct.pack_into('<I',raw,912,0x11b0)
@@ -28,6 +30,28 @@ def dll():
     struct.pack_into('<HHH',raw,1664,92,52,0);raw[1670:1702]='VS_VERSION_INFO\0'.encode('utf-16-le')
     struct.pack_into('<13I',raw,1704,0xfeef04bd,0x10000,(14<<16)|42,34438<<16,0,0,0,0,0,2,0,0,0)
     return raw
+
+
+def test_exported_zero_filled_data_is_memory_not_file_metadata():
+    raw=dll();section=0x98+240
+    struct.pack_into('<I',raw,section+8,0x800)  # Virtual tail after 1536 raw bytes.
+    struct.pack_into('<I',raw,896,0x1700)
+    image=Image(bytes(raw))
+    assert image.exports()['function'] is False
+    assert compatible(bytes(raw),('function','#1'))==(14,42,34438,0)
+    with pytest.raises(PayloadRefused):image.offset(0x1700)
+    # Metadata/string reads cannot borrow loader zero-fill bytes.
+    with pytest.raises(PayloadRefused):image.text(0x1700)
+    for target in (0x1800,0x2000,0xffffffff):
+        damaged=bytearray(raw);struct.pack_into('<I',damaged,896,target)
+        with pytest.raises(PayloadRefused):Image(bytes(damaged)).exports()
+    # A section claiming memory beyond SizeOfImage remains invalid.
+    damaged=bytearray(raw);struct.pack_into('<I',damaged,section+8,0x1100)
+    with pytest.raises(PayloadRefused):Image(bytes(damaged)).exports()
+    # Ambiguous overlapping mapped sections cannot establish an export target.
+    damaged=bytearray(raw);struct.pack_into('<H',damaged,0x86,2)
+    struct.pack_into('<IIII',damaged,section+40+8,0x100,0x1700,0,0)
+    with pytest.raises(PayloadRefused):Image(bytes(damaged)).exports()
 
 
 def test_pe_machine_resource_exports_ordinals_and_forwarder_refusal():

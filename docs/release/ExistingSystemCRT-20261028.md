@@ -12,6 +12,8 @@
 
 PE 读取不加载 DLL：要求 AMD64、14.x DLL 版本、满足原 PG 精确名称/ordinal 导出，未解析的 forwarder 拒绝。14.x/符号齐备只是受限兼容前置，不证明构建工具链最低版本已满足；报告保留 `minimum_toolset_compatibility=NOT_ESTABLISHED`，不能签收 loader。
 
+直接导出可指向代码或数据；零初始化数据允许位于节的 VirtualSize 超过 SizeOfRawData 的尾部。解析器单独核对映像内唯一节范围，不把此类 RVA 伪装成文件偏移。导出表、名称、forwarder 和资源元数据仍必须有真实文件字节；映像外、节间空洞、落入重叠节范围或越过 SizeOfImage 的目标均拒绝。依据为[微软 PE 节和导出地址表格式](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format)。
+
 新建在 runtime staging 后、凭据/身份/数据库创建前检查；重开在读取受保护凭据前检查。初始化及服务器启动入口复用同一 witness，不因重开而省略。原 loader 最终拒绝仍存在，所以本轮没有运行初始化或 Windows 进程。
 
 ## 实际加载来源要求

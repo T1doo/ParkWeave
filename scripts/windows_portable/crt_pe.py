@@ -17,12 +17,17 @@ class Image:
         pe=self.u(0x3c,'I');need(raw[pe:pe+4]==b'PE\0\0' and self.u(pe+4,'H')==0x8664)
         count=self.u(pe+6,'H');size=self.u(pe+20,'H');opt=pe+24
         need(0<count<=96 and size>=240 and self.u(opt,'H')==0x20b and self.u(opt+108,'I')>=14)
-        self.opt=opt;self.sections=[]
+        self.opt=opt;self.sections=[];self.memory_sections=[]
+        self.image_size=self.u(opt+56,'I')
         for i in range(count):
             s=opt+size+40*i
             length,offset=self.u(s+16,'I'),self.u(s+20,'I')
             need(offset+length<=len(raw))
-            self.sections.append((self.u(s+12,'I'),length,offset))
+            address=self.u(s+12,'I')
+            self.sections.append((address,length,offset))
+            # File metadata must remain backed by bytes. An exported data
+            # address may instead name the loader's zero-filled section tail.
+            self.memory_sections.append((address,max(self.u(s+8,'I'),length)))
 
     def u(self,p,fmt):
         n=struct.calcsize('<'+fmt);need(0<=p<=len(self.raw)-n)
@@ -38,6 +43,13 @@ class Image:
         need(end>p and all(32<=c<127 for c in self.raw[p:end]))
         self.offset(rva,end-p+1)
         return self.raw[p:end].decode('ascii')
+
+    def memory_target(self,rva):
+        """Validate a direct export RVA; never invent a file offset for BSS."""
+        need(type(rva) is int and 0<rva<self.image_size)
+        need(all(address+length<=self.image_size for address,length in self.memory_sections))
+        matches=[address for address,length in self.memory_sections if address<=rva<address+length]
+        need(len(matches)==1)
 
     def directory(self,index):
         p=self.opt+112+8*index;return self.u(p,'I'),self.u(p+4,'I')
@@ -79,7 +91,7 @@ class Image:
             if target:
                 forwarded=rva<=target<rva+size
                 if forwarded:self.text(target)
-                else:self.offset(target)
+                else:self.memory_target(target)
                 result['#'+str(base+i)]=forwarded
         for i in range(names):
             name=self.text(self.u(self.offset(strings+i*4,4),'I'))
