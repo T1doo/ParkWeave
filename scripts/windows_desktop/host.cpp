@@ -250,8 +250,11 @@ static void launch(const std::wstring& action){
   SIZE_T size=0;InitializeProcThreadAttributeList(nullptr,1,0,&size);need(size>0&&size<65536);attrs.resize(size);si.lpAttributeList=(LPPROC_THREAD_ATTRIBUTE_LIST)attrs.data();
   need(InitializeProcThreadAttributeList(si.lpAttributeList,1,0,&size));attributesReady=true;HANDLE inherited[]={in,out};
   need(UpdateProcThreadAttribute(si.lpAttributeList,0,PROC_THREAD_ATTRIBUTE_HANDLE_LIST,inherited,sizeof(inherited),nullptr,nullptr));
-  std::wstring exe=base+L"\\runtime\\python\\pythonw.exe",cmd=L"\""+exe+L"\" -I -B \""+base+L"\\launcher\\desktop_bridge.py\"";
-  pythonPin=pin(exe,PYTHONW_SHA256);PROCESS_INFORMATION pi{};
+  // Keep the original entry's exact console-interpreter contract and real
+  // inherited stdin/stdout pipes. CREATE_NO_WINDOW supplies the desktop
+  // lifecycle without a console; pythonw may expose None standard streams.
+  std::wstring exe=base+L"\\runtime\\python\\python.exe",cmd=L"\""+exe+L"\" -I -B \""+base+L"\\launcher\\desktop_bridge.py\"";
+  pythonPin=pin(exe,PYTHON_SHA256);PROCESS_INFORMATION pi{};
   BOOL created=CreateProcessW(exe.c_str(),cmd.data(),nullptr,nullptr,TRUE,CREATE_SUSPENDED|CREATE_NO_WINDOW|EXTENDED_STARTUPINFO_PRESENT,nullptr,base.c_str(),&si.StartupInfo,&pi);
   if(created){child=pi.hProcess;thread=pi.hThread;remember(child);remember(thread);}need(created);
   DeleteProcThreadAttributeList(si.lpAttributeList);attributesReady=false;closeOwned(in);closeOwned(out);

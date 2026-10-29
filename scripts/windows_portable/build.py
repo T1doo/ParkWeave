@@ -284,7 +284,7 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
         require(record['schema']=='parkweave-desktop-build/1'
             and record['host_source_sha256']==sha256(git('show',source+':scripts/windows_desktop/host.cpp')).hexdigest()
             and record['build_script_sha256']==sha256(git('show',source+':scripts/windows_desktop/build.py')).hexdigest()
-            and record['pythonw_sha256']==sha256(files['runtime/python/pythonw.exe']).hexdigest()
+            and record['python_sha256']==sha256(files['runtime/python/python.exe']).hexdigest()
             and record['sdk_sha256']=='5ea526bbd728adda0da4d31219267e96460494a427e4894c4e09d9f320f4b9aa'
             and record['native_windows_execution'] is False
             and record['compiler_archive_and_binary_verified'] is True

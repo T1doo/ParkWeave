@@ -95,6 +95,44 @@ def test_desktop_current_source_never_uses_cli_passwords_or_browser_fallback():
     assert 'if "%~1"=="" goto desktop' in batch and '"%~dp0ParkWeave.exe"' in batch
 
 
+def test_actual_host_interpreter_reaches_original_payload_gate_with_pipe_stream_contract(tmp_path,monkeypatch):
+    """Real file/manifest verification; Win32 interpreter facts are emulated.
+
+    The former pythonw host command fails this boundary before OWNER or any
+    workspace is reached. No native interpreter, identity or DB is created.
+    """
+    import re
+    from scripts.windows_portable.payload import MANIFEST,file_manifest
+    root=tmp_path/'payload';(root/'launcher').mkdir(parents=True)
+    (root/'runtime/python').mkdir(parents=True)
+    files={'launcher/entry.py':b'# test boundary only\n',
+           'runtime/python/python.exe':b'SYNTHETIC_CONSOLE_INTERPRETER_BYTES',
+           'runtime/python/pythonw.exe':b'SYNTHETIC_WINDOWED_INTERPRETER_BYTES'}
+    for name,raw in files.items():(root/name).write_bytes(raw)
+    (root/MANIFEST).write_text(json.dumps(dict(schema='parkweave-windows-portable-candidate/1',
+        status='INITIALIZATION_NOT_ENABLED',files=file_manifest(files))))
+    monkeypatch.setattr(entry,'__file__',str(root/'launcher/entry.py'))
+    facts=SimpleNamespace(platform='win32',maxsize=2**63-1,
+        flags=SimpleNamespace(isolated=True),executable='')
+    monkeypatch.setattr(entry,'sys',facts)
+    cpp=Path('scripts/windows_desktop/host.cpp').read_text()
+    selected=re.search(r'std::wstring exe=base\+L"([^"]+)"',cpp).group(1)
+    selected=selected.replace('\\\\','/').lstrip('/')
+    assert 'CREATE_SUSPENDED|CREATE_NO_WINDOW|EXTENDED_STARTUPINFO_PRESENT' in cpp
+    facts.executable=str(root/selected)
+    assert entry.verified_payload()[0]==root
+    # Retain the original strict interpreter rule; accepting pythonw or a
+    # same-name external interpreter is not the fix.
+    for wrong in (root/'runtime/python/pythonw.exe',tmp_path/'python.exe'):
+        facts.executable=str(wrong)
+        with pytest.raises(entry.PayloadRefused,match='PRIVATE_INTERPRETER_REQUIRED'):
+            entry.verified_payload()
+    facts.executable=str(root/selected)
+    (root/'runtime/python/python.exe').write_bytes(b'TAMPERED')
+    with pytest.raises(entry.PayloadRefused,match='MANIFEST_ROW'):
+        entry.verified_payload()
+
+
 def test_same_native_namespace_policy_rejects_real_unlisted_bootstrap_modules_and_directories(tmp_path):
     import shutil
     import subprocess

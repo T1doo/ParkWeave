@@ -75,11 +75,11 @@ def main():
             iids+='template<>inline const GUID& interfaceID<'+name+'>(){static const GUID id={0x'+a+',0x'+b+',0x'+c+',{'+','.join('0x'+tail[i:i+2] for i in range(0,16,2))+'}};return id;}\n'
         (work/'sdk_iids.h').write_text(iids)
         if sha256(loader).hexdigest()!=LOADER_SHA:raise ValueError('OFFICIAL_LOADER_HASH_REQUIRED')
-        with zipfile.ZipFile(args.python_asset) as z:pythonw=sha256(z.read('pythonw.exe')).hexdigest()
+        with zipfile.ZipFile(args.python_asset) as z:python_exe=sha256(z.read('python.exe')).hexdigest()
         from scripts.windows_portable.payload import verify_directory
         manifest=verify_directory(args.bootstrap_root)
         pins={n:r for n,r in manifest['files'].items() if n!='static-dll-audit.json'}
-        header='#define WEBVIEW_LOADER_SHA256 "'+LOADER_SHA+'"\n#define PYTHONW_SHA256 "'+pythonw+'"\n'
+        header='#define WEBVIEW_LOADER_SHA256 "'+LOADER_SHA+'"\n#define PYTHON_SHA256 "'+python_exe+'"\n'
         header+='struct BootstrapPin {const wchar_t* name;const char* digest;};\nstatic const BootstrapPin BOOTSTRAP_PINS[]={\n'
         header+=''.join('{L'+json.dumps(n.replace('/','\\'))+','+json.dumps(row['sha256'])+'},\n' for n,row in sorted(pins.items()))+'};\n'
         (work/'desktop_pins.h').write_text(header)
@@ -107,7 +107,7 @@ def main():
         bootstrap_files=pins,bootstrap_header_sha256=sha256(header.encode()).hexdigest(),
         compatibility_header_sha256=sha256(compatibility_header).hexdigest(),
         namespace_policy_sha256=sha256(namespace_header).hexdigest(),
-        sdk='Microsoft.Web.WebView2/1.0.3537.50',sdk_sha256=SDK_SHA,pythonw_sha256=pythonw,
+        sdk='Microsoft.Web.WebView2/1.0.3537.50',sdk_sha256=SDK_SHA,python_sha256=python_exe,
         native_windows_execution=False,desktop_product_acceptance=False,
         files={n:dict(bytes=(args.output/n).stat().st_size,sha256=sha256((args.output/n).read_bytes()).hexdigest())
                for n in ('ParkWeave.exe','WebView2Loader.dll','WebView2-SDK-LICENSE.txt','Desktop-Runtime-NOTICES.txt')})
