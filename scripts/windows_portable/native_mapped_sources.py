@@ -266,9 +266,15 @@ class NativeMappedSources:
             need(path.rpartition('\\')[0]==self.system_path)
             os_security(self.api.security(handle))
             name=PureWindowsPath(path).name
-            # Same strict embedded Microsoft chain as the existing witness.
-            # Catalog-only or other roots are NOT silently admitted here.
-            chain=self.crt._signature(handle,self.crt.path+'\\'+name)
+            from .native_system_crt import SignatureRejected
+            member_path=self.crt.path+'\\'+name
+            try:chain=('EMBEDDED',self.crt._signature(handle,member_path))
+            except SignatureRejected as error:
+                # Only a KNOWN absent embedded signature with known WVT close
+                # selects a catalog candidate. Bad digest/root/unknown does not.
+                if error.status!=0x800b0100 or self.crt.unknown:raise
+                from .native_catalog_signature import verify_member
+                chain=verify_member(self,handle,member_path)
             trust=('ORIGINAL_SYSTEM32_MICROSOFT_SIGNATURE',chain)
         need(self.api.info(handle)==info and self.api.descriptor(handle)==descriptor and self.identifier(handle)==identifier)
         row.update(info=info,descriptor=descriptor,identifier=identifier,path=path,digest=digest,
@@ -393,7 +399,9 @@ class NativeMappedSources:
         except BaseException:
             self.incomplete.add('IMAGE_EVENT_EVIDENCE_INCOMPLETE')
             if event.code==1:code=0x80010001
-            if self.crt.unknown:self.failed=True;a.fail_resource(self.lease)
+            if (self.crt.unknown or getattr(self.api.readonly,'_query_unknown',False)
+                or getattr(self.api.readonly,'_nt_create_pending',False)):
+                self.failed=True;a.fail_resource(self.lease)
         record['attempted']=True
         need(self.continue_event(event.pid,event.tid,code));record['continued']=True;self.pending=None
         if image_event:

@@ -30,7 +30,17 @@ class NamespaceLayout:
 
 
 _REVIEWED_LAYOUT=None
+# Source-reviewed TRIAL parser selection, NOT an observed runner/Windows11
+# fact or a Microsoft stable-ABI guarantee. phnt 53fbbdc5... ntpebteb.h,
+# SHA256 9869d45323706a6bf7cb3ed168b4ca6560aef194f1c6a4d37aaad74a356ad248.
+# AMD64 offsetof is also locked by native_mapped_abi.c. No UBR is pinned:
+# exact live version/architecture/schema/IAT are still read every observation.
+_TRIAL_SERVER_2025_LAYOUT=NamespaceLayout((10,0,26100,3),0x68,6)
 _peers=weakref.WeakKeyDictionary()
+
+
+class UnsupportedNamespaceObservation(RuntimeError):
+    """Known unmodelled loader form; no observation, no invented policy."""
 
 
 class BasicInformation(C.Structure):
@@ -50,9 +60,15 @@ def _bind(lib,name,result,args):
     fn=getattr(lib,name);fn.restype=result;fn.argtypes=args;return fn
 
 
-def layout():
+def layout(lease=None):
     value=_REVIEWED_LAYOUT
-    if value is None:return None
+    trial=value is None
+    if trial:
+        if a.bound_state(lease) is None:return None
+        value=_TRIAL_SERVER_2025_LAYOUT
+        if os.name!='nt' or C.sizeof(P)!=8:return None
+        actual=sys.getwindowsversion()
+        if value.nt_version!=(actual.major,actual.minor,actual.build,actual.product_type):return None
     a.need(type(value) is NamespaceLayout and type(value.peb_api_set_offset) is int
         and 0<value.peb_api_set_offset<=512 and value.peb_api_set_offset%8==0
         and value.namespace_version==6 and os.name=='nt' and C.sizeof(P)==8)
@@ -167,7 +183,7 @@ class RemoteImage:
 
 
 def _observe(witness,process,check,deadline,images):
-    policy=layout();a.need(policy is not None)
+    policy=layout(witness.lease);a.need(policy is not None)
     from .native_loader_images import inspect
     images=inspect(images,witness.lease,witness,deadline)
     memory=OriginalMemory(witness,process,check,deadline,policy)
@@ -182,7 +198,8 @@ def _observe(witness,process,check,deadline,images):
         seen=(*seen,(dll,symbol,importer))
         if dll.startswith(('api-','ext-')):
             selected=resolve_metadata(mapping,dll,importer)
-            a.need(selected['status']=='STATIC_MAPPED_NOT_NATIVE_VERIFIED' and selected['host'])
+            if selected['status']!='STATIC_MAPPED_NOT_NATIVE_VERIFIED' or not selected['host']:
+                raise UnsupportedNamespaceObservation('API_SET_FORM_NOT_COLLECTED')
             dll=selected['host']
         a.need(dll in by_name);base,size,path=by_name[dll]
         if base not in remote:remote[base]=RemoteImage(memory,base,size)
@@ -203,26 +220,30 @@ def _observe(witness,process,check,deadline,images):
                 unresolved.append((name,dll,symbol,slot));continue
             actual,terminal=resolve(dll,symbol,basename)
             a.need(value==actual);results.append((name,dll,symbol,slot,terminal))
-    a.need(results and not unresolved)
+    a.need(results)
+    if unresolved:raise UnsupportedNamespaceObservation('UNRESOLVED_DELAY_IMPORT_NOT_COLLECTED')
     a.need(memory.modules()==first and memory.read(pointer,8)==struct.pack('<Q',address)
         and memory.read(address,len(raw))==raw)
     memory.recheck();witness._binding()
-    return (tuple(first),sha256(raw).hexdigest(),tuple(results))
+    actual=sys.getwindowsversion()
+    return ((actual.major,actual.minor,actual.build,actual.product_type),tuple(first),sha256(raw).hexdigest(),tuple(results))
 
 
 def capture_peer(lease,witness,peer,deadline,images):
-    if layout() is None:return
+    if layout(lease) is None:return
     from .native_database_endpoint import _BackendWitness
     a.need(a.bound_state(lease) is not None and type(peer) is _BackendWitness
         and peer.endpoint.crt_witness is witness and witness.lease is lease)
     witness.require_group_binding(peer.endpoint.adapter,peer.endpoint.token)
     peer._verify_identity()
-    evidence=_observe(witness,peer.handle,peer._verify_identity,deadline,images)
+    _peers.pop(lease,None)
+    try:evidence=_observe(witness,peer.handle,peer._verify_identity,deadline,images)
+    except UnsupportedNamespaceObservation:return
     _peers[lease]=(peer,peer.endpoint,peer.birth,evidence)
 
 
 def capture_groups(lease,witness,groups,deadline,images):
-    if layout() is None:return
+    if layout(lease) is None or lease not in _peers:return
     from .windows_process_handles import WindowsJobProcess
     a.need(lease in _peers and len(groups)==3 and a.bound_state(lease) is not None)
     a.need(len({id(token) for _,token,_ in groups})==3 and sorted(
@@ -242,12 +263,13 @@ def capture_groups(lease,witness,groups,deadline,images):
                 inside=B();a.need(witness.inside(group.resources['process'],group.resources['job'],C.byref(inside)) and inside.value)
                 group.executable.verify()
             check()
-            evidence=_observe(witness,group.resources['process'],check,deadline,images)
+            try:evidence=_observe(witness,group.resources['process'],check,deadline,images)
+            except UnsupportedNamespaceObservation:return
             observations.append((adapter,token,identity,evidence))
         finally:group.operation_lock.release()
     from .native_trial_facts import _seal
-    return _seal(lease,('api_set_resolution',),witness,(policy_signature(),peer,endpoint,birth,peer_evidence,tuple(observations)))
+    return _seal(lease,('api_set_resolution',),witness,(policy_signature(lease),peer,endpoint,birth,peer_evidence,tuple(observations)))
 
 
-def policy_signature():
-    value=layout();a.need(value is not None);return (value.nt_version,value.peb_api_set_offset,value.namespace_version)
+def policy_signature(lease):
+    value=layout(lease);a.need(value is not None);return (value.nt_version,value.peb_api_set_offset,value.namespace_version)

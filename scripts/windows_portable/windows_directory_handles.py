@@ -59,9 +59,14 @@ class NativeLeaseAPI:
         self.require_directory_durability()
 
     def descriptor(self, handle):
-        from parkweave.windows_handles import U16, U32, PTR
+        from parkweave.windows_handles import U16, U32, PTR,require_query_ready,retain_query_unknown
+        require_query_ready(self.readonly)
         owner, dacl, sd = PTR(), PTR(), PTR()
-        if self.readonly.getsecurity(handle, 1, 1 | 4, C.byref(owner), None, C.byref(dacl), None, C.byref(sd)):
+        try:status=self.readonly.getsecurity(handle, 1, 1 | 4, C.byref(owner), None, C.byref(dacl), None, C.byref(sd))
+        except BaseException:
+            retain_query_unknown(self.readonly,'DESCRIPTOR_CALL',handle,owner,dacl,sd);raise
+        if status:
+            if sd.value or owner.value or dacl.value:retain_query_unknown(self.readonly,'DESCRIPTOR_FAILED_OUTPUT',handle,owner,dacl,sd)
             raise LeaseRefused('DESCRIPTOR_READ_REFUSED')
         primary = None
         try:
@@ -77,9 +82,13 @@ class NativeLeaseAPI:
             raise
         finally:
             if sd.value:
+                if getattr(self.readonly,'_query_unknown',False):
+                    retain_query_unknown(self.readonly,'DESCRIPTOR_BORROWED_INPUT',handle,owner,dacl,sd)
+                    raise LeaseRefused('DESCRIPTOR_QUERY_UNKNOWN')
                 try:
                     if self.localfree(sd): raise LeaseRefused('DESCRIPTOR_ALLOCATION_CLOSE_UNKNOWN')
                 except BaseException as cleanup:
+                    retain_query_unknown(self.readonly,'DESCRIPTOR_FREE',handle,owner,dacl,sd)
                     if primary is not None:
                         raise BaseExceptionGroup('DESCRIPTOR_AND_FREE_UNKNOWN', [primary, cleanup])
                     raise
@@ -241,6 +250,9 @@ class WindowsFilesystem:
     def close(self):
         errors = []
         if getattr(self,'_close_failed',False):raise LeaseRefused('PREVIOUS_NATIVE_LEASE_CLOSE_UNKNOWN')
+        from parkweave.windows_handles import require_nt_create_ready,require_query_ready
+        readonly=getattr(self.api,'readonly',self.api)
+        require_nt_create_ready(readonly);require_query_ready(readonly)
         if not hasattr(self,'_close_records'):self._close_records=[]
         lock = getattr(self, 'lock', None)
         order = [h for h in reversed(self.handles) if h != lock] + ([lock] if lock in self.handles else [])

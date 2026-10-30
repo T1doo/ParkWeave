@@ -30,8 +30,8 @@ class _PlatformPolicy:
     toolset_image_scope: tuple = ()
 
 
-# A later source review must supply an exact policy and the missing concrete
-# producers. No input file, constructor argument or environment can set it.
+# A later source review must supply an exact formal policy backed by actual
+# observations. No input file, constructor argument or environment can set it.
 _REVIEWED_POLICY = None
 
 
@@ -142,10 +142,11 @@ def issuer_status():
     return dict(native_acceptance='NOT_ACCEPTED', activation_allowed=False, usable_product=False,
         reviewed_platform_policy=False,
         implemented_producers=list(implemented),
-        policy_inputs_missing=['reviewed minimum CRT versions and exact native-image scope; policy is unset',
-            'reviewed exact OS tuple and namespace layout/flag/alias semantics; namespace policy is unset'],
+        policy_inputs_missing=['reviewed exact OS tuple, system CRT hashes, minimum CRT versions and native-image scope; formal policy is unset',
+            'formal namespace policy is unset; source-reviewed Server2025 AMD64 trial parser still requires actual namespace/IAT observations'],
         mapped_source_limits=['checkpoint activity only; not every process/load in Job history',
-            'NULL original event file HANDLE, catalog-only/other signing roots or non-System32 OS images refuse proof',
+            'catalog support is first SHA256 catalog candidate only with held CTL bytes and existing Microsoft root/publisher rule',
+            'NULL original event file HANDLE, other signing roots or non-System32 OS images refuse proof',
             'unrecognized original break-in thread/export stub preserves the exception and refuses proof'],
         missing_producers=[name for name in required if name not in implemented])
 
@@ -153,9 +154,9 @@ def issuer_status():
 def issue_accepted(invocation, observations, deadline):
     """Issue only a complete, same-live-installation, source-policy-bound cap.
 
-    It is deliberately impossible to issue with this revision's incomplete
-    producer set. The algorithm refuses the actual missing requirements rather
-    than treating an execution window or a supplied complete name list as PASS.
+    This revision has concrete producers but no accepted formal platform policy.
+    Missing actual observations still refuse; an execution window or supplied
+    complete name list cannot substitute for the original evidence.
     """
     _deadline(deadline)
     _need(type(observations) is tuple and len(observations) <= 32)

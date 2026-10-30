@@ -16,6 +16,7 @@ def plan():
         trial_domain='persistent TRIAL_ONLY root marker; formal acquisition and production issuer refuse it',
         source='must pin reviewed full commit and rebuilt candidate manifest/archive SHA256 before enabling',
         operations=[
+            'Remove only inherited PGBIN/PGDATA/PGROOT from own Process environment; refuse any other PG* key',
             'Read original primary token user/owner/default DACL; derive owned restricted primary token',
             'Set TokenOwner (TokenInformationClass 4) and TokenDefaultDacl (6) ONLY on that derived token',
             'Exclusively create one private RUNNER_TEMP trial subtree with creation-time protected descriptors',
@@ -50,8 +51,8 @@ def plan():
             'is reverified before attach. No unrelated processes or user PC.',
         publication='source-only normal dev push already authorized; candidate bytes/CI enablement need exact source+hash scope',
         execution_ready=False,
-        remaining_source_work=['reviewed minimum-runtime/platform/namespace policy inputs; actual Windows proof',
-            'target signing/domain support may require separately reviewed implementation if catalog-only/other roots appear',
+        remaining_source_work=['reviewed minimum-runtime/formal-platform policy inputs; actual Windows proof',
+            'source-reviewed Server2025 trial namespace and first-catalog support require actual Windows observations; other roots/forms refuse',
             'independently verify exact deterministic runner build before approving any CI execution'],
         source_admission='IMPLEMENTED_DISABLED_WORKFLOW_AND_NULL_RECORD',
         filesystem_scope='process interruption only; no power-loss/directory-durability acceptance',

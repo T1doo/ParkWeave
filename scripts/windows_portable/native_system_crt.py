@@ -33,6 +33,13 @@ class CRTRefused(CandidateRefused):
     def __init__(self):super().__init__('SYSTEM_CRT_PREREQUISITE_UNVERIFIED')
 
 
+class SignatureRejected(CRTRefused):
+    """Known WinTrust return code AFTER known successful state close."""
+    def __init__(self,status):
+        self.status=status&0xffffffff
+        super().__init__()
+
+
 def need(ok):
     if not ok:raise CRTRefused()
 
@@ -51,9 +58,14 @@ class FileTrust(C.Structure):
     _fields_=[('size',D),('path',C.c_wchar_p),('file',P),('subject',P)]
 
 
+class TrustChoice(C.Union):
+    _fields_=[('file',C.POINTER(FileTrust)),('catalog',P)]
+
+
 class TrustData(C.Structure):
+    _anonymous_=('subject',)
     _fields_=[('size',D),('policy',P),('sip',P),('ui',D),('revocation',D),('choice',D),
-              ('file',C.POINTER(FileTrust)),('action',D),('state',P),('url',P),('flags',D),('context',D),('settings',P)]
+              ('subject',TrustChoice),('action',D),('state',P),('url',P),('flags',D),('context',D),('settings',P)]
 
 
 class Signer(C.Structure):
@@ -160,13 +172,24 @@ class NativeSystemCRT:
         need(self.api.read(h,1)==b'');return b''.join(chunks)
 
     def _signature(self,h,path):
-        action=C.create_string_buffer(uuid.UUID('00aac56b-cd44-11d0-8cc2-00c04fc295ee').bytes_le)
         file=FileTrust(C.sizeof(FileTrust),path,h,None)
         data=TrustData();data.size=C.sizeof(data);data.ui=2;data.revocation=1;data.choice=1
         data.file=C.pointer(file);data.action=1;data.flags=0x80|0x1000|0x2000
-        retained=(action,file,data);primary=None;close_error=None
+        return self._verify_trust(data,(file,))
+
+    def _verify_trust(self,data,owners):
+        """Same strict publisher/root rule for embedded or catalog members.
+
+        Callers retain all union-specific owners until WVT CLOSE completes.
+        A clean NO_SIGNATURE may select catalog verification; wrong signer,
+        bad digest, chain failure or unknown cleanup never selects fallback.
+        """
+        action=C.create_string_buffer(uuid.UUID('00aac56b-cd44-11d0-8cc2-00c04fc295ee').bytes_le)
+        retained=(action,data,owners);primary=None;close_error=None;roots=None
         try:
-            need(self.wvt(P(-1),action,C.byref(data))==0 and data.state)
+            status=self.wvt(P(-1),action,C.byref(data))
+            if status!=0:raise SignatureRejected(status)
+            need(data.state)
             provider=self.provider(data.state);need(provider)
             signer=self.signer(provider,0,False,0);need(signer)
             need(signer.contents.size==C.sizeof(Signer) and signer.contents.error==0
@@ -190,7 +213,10 @@ class NativeSystemCRT:
             except BaseException as error:
                 close_error=error;self.unknown.append(retained);self.failed=True
                 if self not in _unknown:_unknown.append(self)
-        if primary or close_error:raise CRTRefused() from None
+        if close_error:raise CRTRefused() from None
+        if primary is not None:
+            if type(primary) is SignatureRejected:raise primary from None
+            raise CRTRefused() from None
         return tuple(roots)
 
     def _verify_files(self):
@@ -291,9 +317,10 @@ class NativeSystemCRT:
             self.requirements['processes']['runtime/postgresql/bin/postgres.exe'],deadline)
 
     def close(self):
-        if self.unknown:
+        readonly=getattr(getattr(self,'api',None),'readonly',None)
+        if self.unknown or getattr(readonly,'_query_unknown',False) or getattr(readonly,'_nt_create_pending',False):
             if self not in _unknown:_unknown.append(self)
-            raise CRTRefused()  # Unknown WinTrust state may still borrow these original handles.
+            raise CRTRefused()  # Unknown native state may still borrow these original handles.
         need(self.lock.acquire(blocking=False))
         try:self._close_owned()
         finally:self.lock.release()

@@ -9,6 +9,17 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
 # The null fixed source record refuses before candidate IO or execution.
 $record=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'native_business_window.json') -Raw | ConvertFrom-Json
 if ($null -eq $record) {throw 'WINDOW_UNBOUND'}
+# The official hosted image declares an unrelated, disabled PostgreSQL service
+# with these process environment keys. Never adopt it. Remove ONLY that fixed
+# image declaration from this child coordinator's environment; an unknown PG*
+# key still refuses before native work. No machine/user environment or service
+# configuration is changed, and no values are printed.
+$imagePgKeys=@('PGBIN','PGDATA','PGROOT')
+foreach ($key in @([Environment]::GetEnvironmentVariables('Process').Keys)) {
+    if ([string]$key -notmatch '(?i)^PG') {continue}
+    if ([string]$key -notin $imagePgKeys) {throw 'UNEXPECTED_INHERITED_PG_CONFIGURATION'}
+    [Environment]::SetEnvironmentVariable([string]$key,$null,'Process')
+}
 $cache=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
 $python=@(Get-ChildItem -LiteralPath $cache -Directory | Where-Object {
     $_.Name -match '^3\.12\.\d+$' -and
