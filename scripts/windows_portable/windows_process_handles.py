@@ -201,6 +201,8 @@ class WindowsJobProcess:
         backend.bind(r['job'], r['process'], r['pid']); r['bound'] = True
         if self.birth(r['process']) != r['birth']: raise ProcessRefused('CREATION_IDENTITY_CHANGED')
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
+        from .native_mapped_sources import before_resume
+        before_resume(self,group,deadline)
         backend.resume(r['thread']); group.started = True
 
     def observe(self, group, deadline):

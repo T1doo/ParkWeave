@@ -228,6 +228,8 @@ class NativeFixedStoreSecurity:
             need(row['version']==32)
             from .native_trial_authority import bound_state
             if bound_state(self.lease) is not None:
+                from .native_mapped_sources import actual_peer
+                actual_peer(self.lease,connection._endpoint_witness,connection._deadline)
                 from .native_iat_observer import layout,capture_peer
                 if layout() is not None:
                     from .native_loader_images import capture

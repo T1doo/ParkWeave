@@ -85,6 +85,16 @@ def test_owned_sql_wait_honors_absolute_budget_on_real_postgresql(pg):
     assert raw.status==pq.ConnStatus.BAD
 
 
+def test_backend_key_pid_identifies_actual_sql_executor_on_real_postgresql(pg):
+    # Tests libpq's actual BackendKeyData contract used by the new equality
+    # guard, not Windows TCP ownership, Job membership or debug acceptance.
+    import psycopg
+    with psycopg.connect(pg.get_uri(),row_factory=dict_row) as connection:
+        wire_pid=connection.pgconn.backend_pid
+        assert type(wire_pid) is int and wire_pid>0
+        assert connection.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']==wire_pid
+
+
 def test_libpq18_connect_start_has_not_sent_startup_bytes():
     if not 180000<=pq.version()<190000:pytest.skip('pinned libpq18 protocol family only')
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as listener:

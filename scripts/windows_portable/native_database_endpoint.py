@@ -175,7 +175,8 @@ class NativeOwnedDatabaseEndpoint:
         need(type(connection) is _OwnedConnection)
         witness=getattr(connection,'_endpoint_witness',None)
         need(type(witness) is _BackendWitness and witness.endpoint is self
-             and connection.pgconn.socket==witness.socket)
+             and connection.pgconn.socket==witness.socket
+             and type(connection.pgconn.backend_pid) is int and connection.pgconn.backend_pid==witness.pid)
         witness.verify()
 
     def wait_for_listener(self,deadline):
@@ -238,6 +239,9 @@ class NativeOwnedDatabaseEndpoint:
                 elif status==pq.PollingStatus.WRITING:_wait(raw,selectors.EVENT_WRITE,deadline)
                 else:need(False)
             witness.verify();remaining(deadline)
+            # Match authenticated BackendKeyData to the same retained kernel
+            # socket owner before treating its image as the actual SQL backend.
+            need(type(raw.backend_pid) is int and raw.backend_pid==witness.pid)
             raw.nonblocking=1
             connection=_OwnedConnection(raw,row_factory=dict_row)
             connection._deadline=deadline

@@ -37,7 +37,7 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'native_trial_authority.py', 'native_trial_domain.py',
     'native_trial_facts.py', 'native_trial_slot_probes.py',
     'native_trial_interruptions.py', 'native_dpapi_peer.py',
-    'native_iat_observer.py', 'native_loader_images.py',
+    'native_iat_observer.py', 'native_loader_images.py', 'native_mapped_sources.py',
     'desktop_bridge.py', 'desktop_profile.py', 'entry.py',
     'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
     'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',

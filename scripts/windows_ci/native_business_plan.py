@@ -29,6 +29,8 @@ def plan():
             'Stop owned Jobs, original process-HANDLE signal and Job-zero observation, close held resources',
             'Reopen same installation with fresh composition, verify physical identity and exact business readback',
             'Four registered owned interruption children write ONLY inherited original auxiliary file handles; terminate at fixed stages',
+            'One original debug thread attaches only source-bound owned Jobs/processes and actual SQL backend; '
+                'original hFile/FILE_ID_INFO/SHA/signature snapshots; only identified OS break-in trap is handled',
         ],
         secrets='no plaintext secrets in files/logs/argv; original necessary DB connection configuration uses child memory/environment',
         scope_exclusions=['no OS account creation', 'no system ACL/security/privilege changes',
@@ -41,10 +43,15 @@ def plan():
             'LocalService OS-managed profile/masterkey state outside trial directory; never LoadUserProfile, '
             'change ACLs/rights, or manually delete those keys; disposal of temporary runner only. '
             'Thread timeout is UNKNOWN, not forced cancellation; retain original thread/token/buffers until process disposal',
+        debug_side_effects='DebugActiveProcess requests all-access independently; deny means no privilege/DACL repair. '
+            'Attach pauses threads and creates an OS break-in thread. Same original thread pumps all events; '
+            'default debugger-thread-exit terminates attached owned processes. No detach/continue fallback. '
+            'Only original Job PID lists (max128) may supply additional members; original read HANDLE/birth/Job '
+            'is reverified before attach. No unrelated processes or user PC.',
         publication='source-only normal dev push already authorized; candidate bytes/CI enablement need exact source+hash scope',
         execution_ready=False,
-        remaining_source_work=['complete original mapped-image file source producer',
-            'reviewed minimum-runtime/platform policy inputs; actual Windows proof',
+        remaining_source_work=['reviewed minimum-runtime/platform/namespace policy inputs; actual Windows proof',
+            'target signing/domain support may require separately reviewed implementation if catalog-only/other roots appear',
             'independently verify exact deterministic runner build before approving any CI execution'],
         source_admission='IMPLEMENTED_DISABLED_WORKFLOW_AND_NULL_RECORD',
         filesystem_scope='process interruption only; no power-loss/directory-durability acceptance',

@@ -138,12 +138,15 @@ def issuer_status():
         'dpapi_wrong_entropy_refused','original_initdb_pipe_and_job','original_fixed_slots_write_flush_readback',
         'same_file_reopen','exclusive_open_refused','torn_slot_refused_without_repair','interrupted_process_recovery',
         'target_filesystem_durability_scope','signed_system_crt_files','minimum_toolset_compatibility',
-        'dpapi_cross_os_identity_isolation','api_set_resolution')
+        'dpapi_cross_os_identity_isolation','api_set_resolution','original_job_and_backend_loaded_sources')
     return dict(native_acceptance='NOT_ACCEPTED', activation_allowed=False, usable_product=False,
         reviewed_platform_policy=False,
         implemented_producers=list(implemented),
         policy_inputs_missing=['reviewed minimum CRT versions and exact native-image scope; policy is unset',
             'reviewed exact OS tuple and namespace layout/flag/alias semantics; namespace policy is unset'],
+        mapped_source_limits=['checkpoint activity only; not every process/load in Job history',
+            'NULL original event file HANDLE, catalog-only/other signing roots or non-System32 OS images refuse proof',
+            'unrecognized original break-in thread/export stub preserves the exception and refuses proof'],
         missing_producers=[name for name in required if name not in implemented])
 
 
