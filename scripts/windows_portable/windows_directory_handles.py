@@ -178,16 +178,24 @@ class WindowsFilesystem:
             handle = self.hold(self.api.open_relative(handle, part, False))
             self._object(handle, directory=True)
         self._object(handle, directory=True, private=True)
-        if fresh: self.api.create_directory(self.base, name)
+        created = self._create_root(handle, name) if fresh else None
         # FILE_READ_DATA on a directory is FILE_LIST_DIRECTORY. The immutable
         # runtime verifier enumerates this exact original root, read-only.
-        self.root = self.hold(self.api.open_relative(handle, name, True))
+        self.root = self.hold(created if created is not None else self.api.open_relative(handle, name, True))
         self._object(self.root, directory=True, private=True)
+        self._require_domain(fresh=fresh)
         self.lock = self.hold(self.api.relative_file(self.root, LOCK, fresh=fresh, write=True, exclusive=True))
         self._object(self.lock, directory=False, private=True)
         self.root_id, self.lock_id = self.identity(self.root), self.identity(self.lock)
         self.bindings = [(h, self.identity(h), self.api.descriptor(h)) for h in self.handles]
         self.verify()
+
+    def _create_root(self, parent, name):
+        self.api.create_directory(self.base, name)
+        return None
+
+    def _require_domain(self, *, fresh):
+        pass  # Legacy rename backend has no trial admission path.
 
     def verify(self):
         for handle, identity, descriptor in self.bindings:
@@ -232,10 +240,18 @@ class WindowsFilesystem:
 
     def close(self):
         errors = []
+        if getattr(self,'_close_failed',False):raise LeaseRefused('PREVIOUS_NATIVE_LEASE_CLOSE_UNKNOWN')
+        if not hasattr(self,'_close_records'):self._close_records=[]
         lock = getattr(self, 'lock', None)
         order = [h for h in reversed(self.handles) if h != lock] + ([lock] if lock in self.handles else [])
-        self.handles.clear()
         for handle in order:
-            try: self.api.close(handle)
-            except BaseException as error: errors.append(error)
-        if errors: raise BaseExceptionGroup('NATIVE_LEASE_CLOSE_UNKNOWN', errors)
+            from .native_trial_authority import budget
+            try:budget(self,cleanup=True)
+            except BaseException as error:errors.append(error);break
+            record=dict(handle=handle,attempted=True,closed=False);self._close_records.append(record)
+            self.handles.remove(handle)
+            try:self.api.close(handle);record['closed']=True
+            except BaseException as error:errors.append(error)
+        if errors:
+            self._close_failed=True
+            raise BaseExceptionGroup('NATIVE_LEASE_CLOSE_UNKNOWN', errors)

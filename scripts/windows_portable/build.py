@@ -32,8 +32,11 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'windows_process_handles.py', 'windows_user_protection.py',
     'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
     'native_runtime_staging.py', 'native_web_login.py', 'native_system_crt.py', 'crt_pe.py',
-    'native_acceptance_contract.py', 'native_acceptance_issuer.py',
+    'native_acceptance_contract.py', 'native_acceptance_issuer.py', 'native_protected_objects.py',
     'native_business_adapter.py', 'preparation_business_trial.py', 'loader_inputs.py', 'api_set_map.py',
+    'native_trial_authority.py', 'native_trial_domain.py',
+    'native_trial_facts.py', 'native_trial_slot_probes.py',
+    'native_trial_interruptions.py',
     'desktop_bridge.py', 'desktop_profile.py', 'entry.py',
     'native_database_endpoint.py', 'native_protected_bootstrap.py', 'native_preparation_sessions.py',
     'native_secret_store_candidate.py', 'native_layout_candidate.py', 'dpapi_native_candidate.py',
@@ -41,7 +44,9 @@ RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     'restricted_initdb_candidate.py', 'restricted_startup_candidate.py', 'default_dacl_candidate.py',
     'initdb_pipe_candidate.py', 'initdb_client_candidate.py', 'local_preparation.py',
     'local_preparation_identity.py', 'local_preparation_transport.py',
-)) + ('scripts/windows_ci/owned_job.py', 'scripts/windows_ci/job_stop_observation.py')
+)) + ('scripts/windows_ci/owned_job.py', 'scripts/windows_ci/job_stop_observation.py',
+      'scripts/windows_ci/native_business_window.py', 'scripts/windows_ci/native_business_window.json',
+      'scripts/windows_ci/native_slot_interrupt_child.py')
 LAUNCHER_SOURCES = ('scripts/windows_portable/entry.py', 'scripts/windows_portable/payload.py',
                     'scripts/windows_portable/ParkWeave.cmd', 'scripts/windows_portable/desktop_bridge.py')
 REQUIRED = ('runtime/python/python.exe', 'runtime/python/pythonw.exe',

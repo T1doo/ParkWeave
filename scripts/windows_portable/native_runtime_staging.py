@@ -96,7 +96,12 @@ class NativeRuntimeInstallation:
             self._walk_source(source_root)
             manifest = self._open(source_root, payload.MANIFEST)
             need(self._read_all(manifest, len(source.manifest)) == source.manifest)
-            need({name for name, _, _ in self._entries(lease.fs.root)} == CONTROL)
+            from .native_trial_authority import bound_state
+            control=CONTROL
+            if bound_state(lease) is not None:
+                from .native_trial_domain import MARKER
+                control=control|{MARKER}
+            need({name for name, _, _ in self._entries(lease.fs.root)} == control)
             for path in self.directories:
                 parent, _, leaf = path.rpartition('/')
                 self.dest[path] = self._create(self.dest[parent], leaf, True)
@@ -159,6 +164,50 @@ class NativeRuntimeInstallation:
 
     def system_crt_requirements(self,lease,runtime,deadline):
         return self._inspect_pg_snapshot(lease,runtime,deadline,requirements_only=True)
+
+    def all_crt_imports_held(self,lease,runtime,deadline):
+        """Actual complete held native-image scope, never linker-version inference.
+
+        Caller already holds this original lease operation. No migration or
+        external file/path/JSON can supply a replacement import-symbol set.
+        """
+        from .crt_pe import Image
+        from .native_acceptance_issuer import _deadline
+        from .native_trial_authority import budget
+        _deadline(deadline);deadline=budget(lease,deadline)
+        self._issued_binding(lease,runtime);need(_key_held(lease)==self.key)
+        self.deadline=self.probe.deadline=deadline
+        symbols={};scope=[];images={};data={};by_path={name.casefold():name for name,_,_ in self.files}
+        registrations={row[0] for row in payload.WHEEL_DLL_PROFILES}
+        for name,size,digest in self.files:
+            native=name.lower().endswith(('.exe','.dll','.pyd'))
+            if not native and name not in registrations:continue
+            self._gate();h,directory,before=self.rows[name]
+            need(not directory and self._inspect(h,False)==before)
+            need(0<size<=128*CHUNK);self.api.need(self.seek(h,0,None,0))
+            chunks=[];remaining=size
+            while remaining:
+                self._gate();part=self.api.read(h,min(CHUNK,remaining))
+                need(0<len(part)<=remaining);chunks.append(part);remaining-=len(part)
+            need(self.api.read(h,1)==b'');raw=b''.join(chunks)
+            need(sha256(raw).hexdigest()==digest and self._inspect(h,False)==before)
+            data[name]=raw
+            if native:
+                images[name]=raw;scope.append((name,digest))
+        modeled={(row['file'],row['dependency']):row['target']
+            for row in payload.dll_closure(data)['modeled_wheel_dependencies']}
+        from pathlib import PurePosixPath
+        for name,raw in images.items():
+            domain='runtime/postgresql/bin' if name.startswith('runtime/postgresql/') else 'runtime/python'
+            for dll,names in Image(raw).symbol_imports().items():
+                if not re.fullmatch(r'(?:msvcp|vcruntime|concrt)140(?:_[a-z0-9_]+)?[.]dll',dll):continue
+                choices=(str(PurePosixPath(name).parent/dll),domain+'/'+dll)
+                target=next((by_path[p.casefold()] for p in choices if p.casefold() in by_path),None)
+                target=target or modeled.get((name,dll)) or 'SYSTEM32/'+dll
+                symbols.setdefault(target,set()).update(names)
+        need(scope and symbols and all(symbols.values()))
+        private={target:images[target] for target in symbols if not target.startswith('SYSTEM32/')}
+        return tuple(sorted(scope)),{name:tuple(sorted(values)) for name,values in sorted(symbols.items())},private
 
     def _inspect_pg_snapshot(self, lease, runtime, deadline, *, requirements_only=False):
         """Read the original installed pins, never reopen paths or mutable data."""
@@ -336,7 +385,12 @@ class NativeRuntimeInstallation:
             expected = {p[len(prefix):].split('/')[0] for p in self.rows if p.startswith(prefix)}
             actual = {name for name, _, _ in self._entries(handle)}
             if not path:
-                need(CONTROL <= actual and actual - DYNAMIC - CONTROL == expected)
+                from .native_trial_authority import bound_state
+                control=CONTROL
+                if bound_state(self.lease) is not None:
+                    from .native_trial_domain import MARKER
+                    control=control|{MARKER}
+                need(control <= actual and actual - DYNAMIC - control == expected)
             else: need(actual == expected)
         return self
 

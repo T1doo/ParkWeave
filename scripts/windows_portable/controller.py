@@ -165,8 +165,8 @@ class Controller:
         self.database = database
 
     def create(self, root, use):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # Outside finally: refusal calls ZERO ports.
+        from .native_trial_authority import require_owner
+        require_owner(self)  # Unbound production: original refusal, ZERO ports.
         return self._run(root, use, fresh=True)
 
     def reopen(self, root, use):
@@ -186,9 +186,13 @@ class Controller:
         def checkpoint(next_phase, runtime='STARTING'):
             nonlocal phase
             phase = next_phase
+            from .native_trial_authority import budget
+            budget(self)
             lease.checkpoint(phase, initialized, runtime)
 
         try:
+            from .native_trial_authority import budget
+            budget(self)
             db = self.database if self.database is not None else NativeDatabaseOperations()
             self.security.require_runtime_support(db,self.processes)
             if fresh:
@@ -198,6 +202,8 @@ class Controller:
             lease = (self.directories.claim_fresh(root) if fresh else self.directories.open_existing(root))
             if lease.status() != ('NEW' if fresh else 'READY_STOPPED'):
                 raise CandidateRefused('fresh or confirmed stopped installation required')
+            from .native_trial_authority import attach_controller
+            attach_controller(self,lease,register)
             if fresh:
                 self.security.bind_new_lease(lease)  # NEW plan must precede CREDENTIALS; mandatory, not optional.
                 checkpoint('CREDENTIALS')
@@ -241,7 +247,9 @@ class Controller:
             check_before_running(ready)
             checkpoint('RUNNING', 'RUNNING')
             activate_application(ready)  # Exact worker GO only after durable RUNNING.
+            budget(self)
             use(application)  # Return values stay private; never become report data.
+            budget(self)
         except BaseException as error:
             surfaced = error
         finally:
@@ -285,6 +293,8 @@ class Controller:
                     # Ownership may already be gone. Do not write/reacquire
                     # here; the lease adapter must conservatively block the
                     # unconfirmed handoff on the next open_existing.
+        from .native_trial_authority import detach_controller
+        detach_controller(self)
         if surfaced is not None or cleanup:
             failure = ControlFailure(phase, surfaced, cleanup)
             raise failure from surfaced

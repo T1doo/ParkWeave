@@ -197,6 +197,8 @@ class NativeOwnedDatabaseEndpoint:
                     need(False)
 
     def connect(self,parsed,*,autocommit=False,deadline=None):
+        from .native_trial_authority import budget
+        budget(self.adapter.lease)
         from parkweave.installed_fixture_receipt import _dsn,refuse_inherited_configuration
         need(type(parsed) is dict and type(autocommit) is bool)
         database=parsed.get('dbname')
@@ -206,6 +208,7 @@ class NativeOwnedDatabaseEndpoint:
              and checked['user'] in ('postgres','parkweave_app'))
         refuse_inherited_configuration();self.verify()
         deadline=time.monotonic()+10 if deadline is None else deadline
+        deadline=budget(self.adapter.lease,deadline)
         remaining(deadline)
         # libpq 18 pqConnectDBStart returns after CONNECTION_STARTED/MADE,
         # before the startup packet/authentication step. Reject unknown ABI

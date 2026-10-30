@@ -78,8 +78,8 @@ class NativeLoginEnrollment:
 
     def seal(self, store, identities, installation, port):
         from .native_secret_store_candidate import _NativeFixedSecretStore
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()
+        from .native_trial_authority import require_owner
+        require_owner(self)
         need(type(store) is _NativeFixedSecretStore and type(identities) is PreparationIdentities and not self._used)
         self._used = True
         rows = {}

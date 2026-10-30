@@ -86,8 +86,8 @@ class InstanceProcesses:
             raise
 
     def create_cluster(self, lease, credentials, register):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # No standalone creation can bypass the original pause.
+        from .native_trial_authority import require_owner
+        require_owner(self)
         return self._cluster('NEW', lease, credentials, register)
 
     def open_cluster(self, lease, credentials, register):

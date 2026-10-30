@@ -14,6 +14,11 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
         super().__init__(prerequisites,**pins)
         self.endpoint=None;self._adapters={}
 
+    def create_cluster(self,lease,credentials,register):
+        from .native_trial_authority import require_owner
+        require_owner(self.prerequisites.security)
+        return self._run('NEW',lease,credentials,register)
+
     def _require_data_directory(self,lease,inputs):
         # PG's DOS command path differs from the lease's volume-GUID path.
         # Only the original held PGDATA/security binding may authorize it.
@@ -39,7 +44,8 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
         if self.mode is not None or self.failed or not callable(register) or lease.status()!='CLUSTER':
             raise CandidateRefused('single original native cluster attempt required')
         self.mode,self.lease=mode,lease
-        deadline=time.monotonic()+30;phase='CONFIGURATION'
+        from .native_trial_authority import budget
+        deadline=budget(lease,time.monotonic()+30);phase='CONFIGURATION'
         try:
             self.inputs,port=self._configuration(lease,credentials,deadline)
             if mode=='NEW':

@@ -78,11 +78,21 @@ def _snapshot(invocation, deadline):
         installation.deadline = installation.probe.deadline = deadline
         installation.verify()
         database = security._database(inputs, deadline=deadline)
+        from .native_trial_authority import bound_state
+        if bound_state(lease) is not None:
+            from .native_trial_facts import protected_objects,signed_crt,minimum_runtime
+            if lease.record['generation']==1:
+                protected_objects(lease,security)
+                from .native_trial_slot_probes import NativeSlotProbes
+                NativeSlotProbes(lease,security).run()
+            signed_crt(lease,security.system_crt)
+            minimum_runtime(lease,security.system_crt,deadline)
         from .credential_envelope import canonical
         groups = []
         # Only currently live postgres/API/worker are restart subjects. The
         # already completed initdb is not relabelled as a live server.
         for token, owner, stopped, attempted in processes._owned.values():
+            if stopped:continue  # Original registered auxiliary Job already confirmed closed.
             adapter = owner if type(owner) is PrivateProcessAdapter else processes.cluster._adapters.get(id(token))
             need(type(adapter) is PrivateProcessAdapter)
             group = adapter._group(token)
@@ -137,8 +147,8 @@ class NativeBusinessTestAdapter:
         self._entry_lock = threading.Lock()
 
     def run(self, *, consume=lambda observation: None):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # Before reserving UUIDs, files, tokens or PG.
+        from .native_trial_authority import require_owner,bound_state
+        require_owner(self.first.controller)  # Source-bound TRIAL_ONLY or original refusal.
         need(self._entry_lock.acquire(blocking=False))
         try:
             need(not self.started and callable(consume))
@@ -158,6 +168,10 @@ class NativeBusinessTestAdapter:
         # STOPPED_CONFIRMED dictionary never proves a native process stopped.
         for adapter, token, identity in first_snapshot.groups:
             consume_stopped_group(adapter, token, identity)
+        trial=bound_state(self.first.controller)
+        if trial is not None:
+            need(len(trial.generations)==1 and trial.generations[0] is first_snapshot.lease)
+            trial.restart_ready=True
         observed = False
         def reopened_use(workspace):
             nonlocal observed
@@ -170,6 +184,8 @@ class NativeBusinessTestAdapter:
                  and now.database == before.database)
             need(not {identity[1] for _, _, identity in before.groups}.intersection(
                 identity[1] for _, _, identity in now.groups))
+            from .native_trial_facts import journal_reopen
+            journal_reopen(now.lease)
             proof = BusinessRestartObservation()
             _issued[proof] = (self.reopened, now, deadline)
             try:

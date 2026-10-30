@@ -7,6 +7,7 @@ This implementation is not Windows execution or native acceptance evidence.
 """
 import ctypes as C
 import time
+import weakref
 
 from .controller import CandidateRefused
 from .fixed_secret_store import _under_lease
@@ -17,6 +18,14 @@ from .restricted_initdb_candidate import _freeze, _RestrictedInitdbBackend
 from .restricted_token_candidate import _RestrictedPrimaryCandidate, TokenProfile
 from .runtime_payload import RuntimePayloadPrerequisite
 from .processes import PrivateProcessAdapter
+
+class InitdbTransmission:
+    __slots__=('__weakref__',)
+    def __reduce__(self):raise TypeError('initdb transmission cannot be transferred')
+    def __copy__(self):raise TypeError('initdb transmission cannot be copied')
+    def __deepcopy__(self,memo):raise TypeError('initdb transmission cannot be copied')
+
+_transmitted=weakref.WeakKeyDictionary()
 
 
 def need(ok):
@@ -132,6 +141,13 @@ def _transmit(lease,observation,password,deadline):
                 try:
                     writer.send(deadline-.25)
                     writer.finish()
+                    from .native_trial_authority import bound_state,budget
+                    if bound_state(lease) is not None:
+                        budget(lease,deadline)
+                        proof=InitdbTransmission()
+                        _transmitted[proof]=(lease,backend,group,backend.server,
+                            group.resources['birth'],backend.server._handle,group.command.sha256)
+                        return proof
                     # initdb reads one newline-terminated password, then closes
                     # its reader. Keep the server alive until the original Job
                     # exits; write completion alone is not client consumption.
@@ -144,21 +160,24 @@ def _transmit(lease,observation,password,deadline):
 
 
 def initialize(security,lease,inputs,specification,register,deadline):
-    from scripts.windows.lifecycle import require_setup_readiness
+    from .native_trial_authority import require_owner,inherit,budget
     from .native_instance_security import NativeFixedStoreSecurity
-    require_setup_readiness()  # Before token setters, pipes or process creation.
+    require_owner(security)  # Default refusal; explicit original trial resource only.
+    deadline=budget(security,deadline)
     need(type(security) is NativeFixedStoreSecurity and security.lease is lease
          and security.inputs is inputs and callable(register))
     security.processes.cluster.prerequisites.require_system_crt(lease,deadline)
     payload=RuntimePayloadPrerequisite(lease,**security.runtime,native_installation=security.runtime_installation)
     payload.require_for_cluster(lease,deadline)  # Original closed native loading gate.
     owner=security._hold(object.__new__(_RestrictedPrimaryCandidate))
+    inherit(security,owner)
     _RestrictedPrimaryCandidate.__init__(owner,TokenProfile.CREATE_CANDIDATE)
     owner.derive();owner.prepare_default_dacl();owner.prepare_owner()
     server=security._hold(object.__new__(_OwnedInitdbPipe))
     _OwnedInitdbPipe.__init__(server,lease,owner);server.create()
     frozen=_freeze(lease,owner,server,specification,data_target=security.target)
     backend=_RestrictedInitdbBackend(frozen,payload,deadline)
+    inherit(security,backend)
     adapter=PrivateProcessAdapter(lease,{'initdb':frozen.command},_backend=backend)
     token=adapter.launch('initdb',lambda token:register(adapter,token))
     group=adapter._group(token)
@@ -166,11 +185,13 @@ def initialize(security,lease,inputs,specification,register,deadline):
     security.system_crt.observe_group(adapter,token,deadline)
     exchange_deadline=min(deadline-3,time.monotonic()+4)
     observation=verify_running_client(lease,backend,group,exchange_deadline)
-    _transmit(lease,observation,security._secrets['postgres'],exchange_deadline)
+    transmission=_transmit(lease,observation,security._secrets['postgres'],exchange_deadline)
     while True:
         left=deadline-time.monotonic()-3;need(left>0)
         code=adapter.observe(token,min(left,1))
         if code is not None:break
     need(type(code) is int and code==0)
     need(adapter.stop_owned(token) is True)
+    from .native_trial_facts import completed_initdb
+    completed_initdb(lease,adapter,token,transmission)
     return adapter,token

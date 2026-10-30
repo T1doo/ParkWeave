@@ -58,8 +58,8 @@ class NativeFixedStoreSecurity:
         self.database,self.processes=database,processes
 
     def require_creation_support(self):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()
+        from .native_trial_authority import require_owner
+        require_owner(self)
         need(self.mode is ep.PlanMode.NEW and not self.failed and not self.closed)
 
     def _hold(self,value):
@@ -82,12 +82,15 @@ class NativeFixedStoreSecurity:
                 # Every explicitly invoked operation gets its own bounded
                 # observation window; a running UI has no 30-second lifetime.
                 end=time.monotonic()+10 if deadline is None else deadline
+                from .native_trial_authority import budget
+                end=budget(self,end)
                 need(0<end-time.monotonic()<=30)
                 if self.store is not None:self.store.api.deadline=end
                 if self.target is not None:self.target.deadline=end
                 if self.layout is not None:self.layout.deadline=end
                 self._context(lease)
                 result=operation(end)
+                budget(self,end)
                 self._context(lease)
                 return result
             except BaseException:
@@ -122,10 +125,11 @@ class NativeFixedStoreSecurity:
         need(type(self.payload_source) is RuntimeSource and self.runtime_installation is None)
         def stage():
             try:
+                from .native_trial_authority import budget
                 self._context(lease)
                 self.runtime_installation=self._hold(object.__new__(NativeRuntimeInstallation))
                 NativeRuntimeInstallation.__init__(self.runtime_installation,lease,self.payload_source,
-                    self.runtime,create=create,deadline=time.monotonic()+120)
+                    self.runtime,create=create,deadline=budget(self,time.monotonic()+120))
                 self._context(lease)
             except BaseException:
                 self.failed=True
@@ -258,12 +262,19 @@ class NativeFixedStoreSecurity:
         errors=[]
         for value in reversed(self.resources):
             try:
+                from .native_trial_authority import budget
+                budget(self,cleanup=True)
                 if type(value) is _NativeFixedSecretStore:
                     api=getattr(value,'api',None)
                     if api is not None:
                         for cap,row in reversed(tuple(getattr(api,'caps',{}).items())):
+                            budget(self,cleanup=True)
                             if not row.close_attempted:api.close(cap)
                 elif hasattr(value,'close'):value.close()
+                from .restricted_token_candidate import _RestrictedPrimaryCandidate
+                if type(value) is _RestrictedPrimaryCandidate:
+                    from .native_trial_facts import completed_token
+                    completed_token(lease,value)
             except BaseException as error:errors.append(error)
             # Previous uncertain close attempts may already have removed their
             # integer handles from the active set. Preserve them; never retry.
@@ -339,6 +350,8 @@ class NativeClusterPrerequisites:
         need(self.security.system_crt is not None)
         self.security.system_crt.observe_group(adapter,token,deadline)
         endpoint=NativeOwnedDatabaseEndpoint(adapter,token,crt_witness=self.security.system_crt)
+        from .native_trial_authority import inherit
+        inherit(self.security,endpoint)
         endpoint.wait_for_listener(deadline)
         from parkweave.installed_fixture_receipt import _dsn,_identity
         with endpoint.connect(_dsn(inputs.maintenance_dsn,'postgres'),deadline=deadline,autocommit=True) as connection:

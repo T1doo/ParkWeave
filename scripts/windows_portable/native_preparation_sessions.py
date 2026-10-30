@@ -9,12 +9,15 @@ import hashlib
 import json
 import secrets
 import time
+import weakref
 
 from . import credential_envelope as e
 from .controller import CandidateRefused, DatabaseInputs
 from .fixed_secret_store import _under_lease
 from .local_preparation_identity import ENTERPRISES, REVIEWERS, PreparationIdentities
 from .native_secret_store_candidate import _NativeFixedSecretStore
+
+_roundtrip_evidence=weakref.WeakKeyDictionary()
 
 
 class PreparationFile(Enum):
@@ -76,7 +79,7 @@ class NativePreparationSessionProvider:
         return dict(schema='parkweave-native-preparation-identities/1',
                     installation=store.binding.record(), runtime=json.loads(store.runtime), purpose=kind.name)
 
-    def _file(self, store, kind, value=None):
+    def _file(self, store, kind, value=None, *, _audit=None):
         """Hold original parent+file handles through DPAPI, flush and reread."""
         api = store.api
         # Give each explicitly invoked operation a bounded native query window.
@@ -125,11 +128,33 @@ class NativePreparationSessionProvider:
             self.failed = True
             raise BaseExceptionGroup('NATIVE_PREPARATION_STORAGE_UNKNOWN',
                 ([primary] if primary is not None else []) + cleanup) from None
+        frame=(observed,hashlib.sha256(raw).hexdigest(),hashlib.sha256(e.canonical(aad)).hexdigest(),
+            hashlib.sha256(e.canonical(result)).hexdigest())
+        if _audit is not None:_audit.append(frame)
+        from .native_trial_authority import bound_state,budget
+        if value is not None and kind is PreparationFile.IDENTITIES and bound_state(store.lease) is not None:
+            audit=[]
+            reopened=self._file(store,kind,_audit=audit)  # Real close/reopen, original ID/SD and DPAPI.
+            need(audit==[frame] and e.canonical(reopened)==e.canonical(result))
+            from .dpapi_native_candidate import _NativeDPAPI,NativeFailure
+            wrong=_NativeDPAPI()
+            if not hasattr(self,'_trial_crypto'):self._trial_crypto=[]
+            self._trial_crypto.append(wrong)
+            budget(store.lease,api.deadline)
+            try:wrong.unprotect(raw,hashlib.sha256(entropy+b'wrong entropy').digest())
+            except NativeFailure as error:
+                need(error.winerror==13 and error.primary_type=='ProtectionRefused'
+                     and error.phase=='ALLOCATION' and not error.cleanup_types and not wrong.unknown)
+            else:need(False)
+            budget(store.lease,api.deadline)
+            _roundtrip_evidence[self]=(store.lease,kind,frame)
+            from .native_trial_facts import completed_dpapi
+            completed_dpapi(store.lease,self)
         return result
 
     def create_exclusive(self, lease, enterprises):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # Before RNG, DPAPI, files or native queries.
+        from .native_trial_authority import require_owner
+        require_owner(self)  # Production refusal before RNG/DPAPI/files.
         need(not self._created and type(enterprises) is dict and set(enterprises) == set(ENTERPRISES))
         self._created = True
         identities = PreparationIdentities.from_mapping({**enterprises,
@@ -161,8 +186,8 @@ class NativePreparationSessionProvider:
                                 for name, value in identities.mapping().items()})
 
     def publish_binding_exclusive(self, lease, inputs, identities):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()
+        from .native_trial_authority import require_owner
+        require_owner(self)
         need(not self._published and self._created)
         self._published = True
         def publish(store):

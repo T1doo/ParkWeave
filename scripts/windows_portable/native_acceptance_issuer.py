@@ -22,10 +22,12 @@ class AcceptanceRefused(RuntimeError):
 
 @dataclass(frozen=True)
 class _PlatformPolicy:
-    source_commit: str
-    manifest_sha256: str
     nt_version: tuple
     system_crt_sha256: tuple
+    minimum_crt_versions: tuple = ()
+    # Reviewed exact image paths, not hashes of an EXE that embeds this policy.
+    # Actual image hashes come from the separately pinned candidate manifest.
+    toolset_image_scope: tuple = ()
 
 
 # A later source review must supply an exact policy and the missing concrete
@@ -66,30 +68,81 @@ def observe_business_restart(proof, invocation, deadline):
     _deadline(deadline)
     from .native_business_adapter import inspect_restart
     snapshot = inspect_restart(proof, invocation, deadline)
+    from .native_trial_authority import bound_state
+    if bound_state(snapshot.lease) is not None:
+        from .native_trial_facts import subject
+        binding=subject(snapshot.lease)
+    else:binding=snapshot
     cap = VerifiedNativeObservation()
-    _observed[cap] = ('complete_native_business_restart', invocation, proof, snapshot, deadline)
+    _observed[cap] = ('business', invocation, proof, binding, deadline)
+    return cap
+
+
+def observe_trial_fact(proof,invocation,deadline):
+    _deadline(deadline)
+    from .native_trial_facts import inspect
+    binding,names=inspect(proof,invocation.processes.lease,deadline)
+    cap=VerifiedNativeObservation()
+    _observed[cap]=('trial_fact',invocation,proof,binding,deadline)
     return cap
 
 
 def _inspect(cap, invocation, deadline):
     _deadline(deadline)
     _need(type(cap) is VerifiedNativeObservation and cap in _observed)
-    name, original, proof, snapshot, expires = _observed[cap]
+    kind, original, proof, binding, expires = _observed[cap]
     _need(invocation is original and deadline <= expires and time.monotonic() < expires)
-    # Closed dispatch: names/reports supplied by a caller cannot register a
-    # producer. Additional requirements need their own original native proof.
-    _need(name == 'complete_native_business_restart')
-    from .native_business_adapter import inspect_restart
-    _need(inspect_restart(proof, invocation, deadline) == snapshot)
-    return name, snapshot
+    if kind=='business':
+        from .native_business_adapter import inspect_restart
+        snapshot=inspect_restart(proof,invocation,deadline)
+        from .native_trial_authority import bound_state
+        if bound_state(snapshot.lease) is not None:
+            from .native_trial_facts import subject
+            current=subject(snapshot.lease)
+        else:current=snapshot
+        _need(current==binding)
+        return ('complete_native_business_restart',),binding
+    _need(kind=='trial_fact')
+    from .native_trial_facts import inspect
+    current,names=inspect(proof,invocation.processes.lease,deadline)
+    _need(current==binding)
+    return names,binding
+
+
+def collect_trial_facts(invocation,deadline):
+    from .native_trial_authority import bound_state
+    from .native_trial_facts import inspect
+    value=bound_state(invocation.processes.lease);_need(value is not None)
+    seen=set();result=[]
+    for fact in reversed(value.facts):
+        _,names=inspect(fact,invocation.processes.lease,deadline)
+        if not seen.intersection(names):
+            result.append(observe_trial_fact(fact,invocation,deadline));seen.update(names)
+    return tuple(result)
+
+
+def observed_requirements(invocation,observations,deadline):
+    names=set();binding=None
+    for observation in observations:
+        current_names,current=_inspect(observation,invocation,deadline)
+        _need(binding is None or current==binding)
+        _need(not names.intersection(current_names),'DUPLICATE_NATIVE_OBSERVATION')
+        names.update(current_names);binding=current
+    return tuple(sorted(names))
 
 
 def issuer_status():
     required = tuple(name for area in Area for name in requirement(area).observations)
+    implemented=('complete_native_business_restart','derived_token_owner_and_default_dacl',
+        'original_primary_token_unchanged','protected_new_objects','dpapi_current_user_roundtrip',
+        'dpapi_wrong_entropy_refused','original_initdb_pipe_and_job','original_fixed_slots_write_flush_readback',
+        'same_file_reopen','exclusive_open_refused','torn_slot_refused_without_repair','interrupted_process_recovery',
+        'target_filesystem_durability_scope','signed_system_crt_files','minimum_toolset_compatibility')
     return dict(native_acceptance='NOT_ACCEPTED', activation_allowed=False, usable_product=False,
         reviewed_platform_policy=False,
-        implemented_producers=['complete_native_business_restart'],
-        missing_producers=[name for name in required if name != 'complete_native_business_restart'])
+        implemented_producers=list(implemented),
+        policy_inputs_missing=['reviewed minimum CRT versions and exact native-image scope; policy is unset'],
+        missing_producers=[name for name in required if name not in implemented])
 
 
 def issue_accepted(invocation, observations, deadline):
@@ -103,14 +156,16 @@ def issue_accepted(invocation, observations, deadline):
     _need(type(observations) is tuple and len(observations) <= 32)
     names, binding = set(), None
     for cap in observations:
-        name, current = _inspect(cap, invocation, deadline)
-        _need(name not in names, 'DUPLICATE_NATIVE_OBSERVATION')
-        names.add(name)
+        current_names, current = _inspect(cap, invocation, deadline)
+        _need(not names.intersection(current_names), 'DUPLICATE_NATIVE_OBSERVATION')
+        names.update(current_names)
         _need(binding is None or binding == current, 'NATIVE_OBSERVATION_BINDING_CHANGED')
         binding = current
     missing = tuple(name for area in Area for name in requirement(area).observations if name not in names)
     if missing:
         raise AcceptanceRefused('NATIVE_ACCEPTANCE_EVIDENCE_INCOMPLETE', missing)
+    from .native_trial_authority import bound_state
+    _need(bound_state(invocation.controller) is None,'TRIAL_ONLY_IS_NOT_PRODUCT_ACTIVATION')
     policy = _REVIEWED_POLICY
     _need(type(policy) is _PlatformPolicy, 'REVIEWED_PLATFORM_ACCEPTANCE_POLICY_REQUIRED')
     _policy_binding(policy, invocation, binding)
@@ -122,8 +177,9 @@ def issue_accepted(invocation, observations, deadline):
 
 def _policy_binding(policy, invocation, binding):
     _need(policy is _REVIEWED_POLICY and type(policy) is _PlatformPolicy and binding is not None)
-    _need(binding.runtime == tuple(sorted(dict(source_commit=policy.source_commit,
-        manifest_sha256=policy.manifest_sha256).items())))
+    # Product source/manifest come from the original installation and trial
+    # chain. Hardcoding this package's own hash into its own policy is circular.
+    binding.installation._issued_binding(binding.lease,dict(binding.runtime))
     _need(hasattr(sys, 'getwindowsversion'), 'EXACT_NATIVE_PLATFORM_REQUIRED')
     version = sys.getwindowsversion()
     _need((version.major, version.minor, version.build, version.product_type) == policy.nt_version,
@@ -142,9 +198,9 @@ def require_accepted(cap, area, invocation, deadline):
     _policy_binding(policy, invocation, binding)
     names = set()
     for observation in observations:
-        name, current = _inspect(observation, invocation, deadline)
+        current_names, current = _inspect(observation, invocation, deadline)
         _need(current == binding, 'NATIVE_ACCEPTANCE_BINDING_CHANGED')
-        names.add(name)
+        names.update(current_names)
     _need(set(requirement(area).observations) <= names)
     _deadline(deadline)
     return None

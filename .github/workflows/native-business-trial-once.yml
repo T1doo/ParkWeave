@@ -1,0 +1,47 @@
+name: ParkWeave source-bound native business trial preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_directory:
+        description: Pre-staged original hash-pinned candidate; no URL fallback
+        required: true
+        type: string
+      candidate_archive:
+        description: Pre-staged exact approved archive
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-native-business-source-bound-once
+  cancel-in-progress: false
+
+jobs:
+  native-business-trial:
+    if: ${{ false && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Fixed source approval only; disabled and null by default
+        timeout-minutes: 24
+        shell: pwsh
+        env:
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+          PSYCOPG_IMPL: binary
+          PYTHONDONTWRITEBYTECODE: '1'
+          PW_CANDIDATE_DIRECTORY: ${{ inputs.candidate_directory }}
+          PW_CANDIDATE_ARCHIVE: ${{ inputs.candidate_archive }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & ./scripts/windows_ci/native_business_driver.ps1 -CandidateDirectory $env:PW_CANDIDATE_DIRECTORY -CandidateArchive $env:PW_CANDIDATE_ARCHIVE

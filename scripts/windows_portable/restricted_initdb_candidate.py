@@ -127,8 +127,8 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
         _need(command is self.frozen.command and self._preflight_command is None)
         self._time(self.deadline)
         # Public lease.status in payload checks must run outside private gate.
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()
+        from .native_trial_authority import require_owner
+        require_owner(self)
         self.payload.require_for_cluster(self.lease, self.deadline)
         self._preflight_command = command
 

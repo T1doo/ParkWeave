@@ -39,8 +39,8 @@ def create_fresh_native_schema32(
     controller retains its cause/context chain as well as later cleanup errors.
     Do not publish exception text/DSNs or assume SQL error is always top-level.
     """
-    from scripts.windows.lifecycle import require_setup_readiness
-    require_setup_readiness()
+    from .native_trial_authority import require_owner
+    require_owner(endpoint)
 
     # Deliberately below the original pause: even missing runtime dependencies
     # must not obscure the first refusal or cause setup side effects.

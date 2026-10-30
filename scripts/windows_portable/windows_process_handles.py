@@ -22,7 +22,9 @@ _stopped_groups = weakref.WeakKeyDictionary()
 
 def consume_stopped_group(adapter, token, identity):
     from .processes import PrivateProcessAdapter
-    if type(adapter) is not PrivateProcessAdapter or type(adapter.backend) is not WindowsJobProcess:
+    from .restricted_initdb_candidate import _RestrictedInitdbBackend
+    from .native_trial_interruptions import NativeInterruptionBackend
+    if type(adapter) is not PrivateProcessAdapter or type(adapter.backend) not in (WindowsJobProcess,_RestrictedInitdbBackend,NativeInterruptionBackend):
         raise ProcessRefused('ORIGINAL_NATIVE_STOP_OBSERVATION_REQUIRED')
     group = adapter._group(token)
     observed = _stopped_groups.pop(group, None)
@@ -114,6 +116,8 @@ class WindowsJobProcess:
 
     def preflight(self, command):
         if command.model != 'WINDOWS_JOB': raise ProcessRefused('WINDOWS_JOB_PROFILE_REQUIRED')
+        if command.stdio_contract=='FIXED_SLOT_INTERRUPT_V1':
+            raise ProcessRefused('EXACT_TRIAL_INTERRUPTION_BACKEND_REQUIRED')
         if command.stdio_contract=='PIPE_PROBE_V1':
             from .isolated_pipe import HELPER
             from parkweave.runtime_readiness import challenge
@@ -153,6 +157,9 @@ class WindowsJobProcess:
                     fds = [r['worker_go_r'],r['worker_ready_w'],null.fileno()]
                 if getattr(group.command,'stdio_contract','NONE')=='PIPE_PROBE_V1':
                     fds=[r['pipe_borrowed'],r['pipe_result_w'],null.fileno()]
+                if getattr(group.command,'stdio_contract','NONE')=='FIXED_SLOT_INTERRUPT_V1':
+                    from .native_trial_interruptions import prepare_stdio
+                    fds=prepare_stdio(self,group,null.fileno())
                 for fd in fds:
                     duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
                         win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
@@ -165,7 +172,7 @@ class WindowsJobProcess:
                 # Store exact returned handles before any fallible validation or
                 # cleanup. Failure before Job assignment still owns this child.
                 r.update(process=process, thread=thread, pid=pid, bound=False)
-                for key in ('worker_go_r','worker_ready_w'):
+                for key in ('worker_go_r','worker_ready_w','interrupt_file_fd','interrupt_ready_w'):
                     fd=r.pop(key,None)
                     if fd is not None:
                         try:os.close(fd)
@@ -230,7 +237,9 @@ class WindowsJobProcess:
                     if code is None: return False
                     group.returncode = code
                 confirmed = time.monotonic() <= deadline
-                if (confirmed and type(group) is _ProcessState and type(self) is WindowsJobProcess and r.get('bound')
+                from .restricted_initdb_candidate import _RestrictedInitdbBackend
+                from .native_trial_interruptions import NativeInterruptionBackend
+                if (confirmed and type(group) is _ProcessState and type(self) in (WindowsJobProcess,_RestrictedInitdbBackend,NativeInterruptionBackend) and r.get('bound')
                         and 'process' in r and 'birth' in r and group.started
                         and self.birth(r['process']) == r['birth']):
                     identity = (r['pid'], r['birth'], group.command.sha256)
@@ -241,14 +250,22 @@ class WindowsJobProcess:
 
     def close_observed(self, group):
         errors = []
-        for name in ('worker_go_r','worker_go_w','worker_ready_r','worker_ready_w'):
+        records=group.resources.setdefault('native_close_records',[])
+        if any(row['attempted'] and not row['closed'] for row in records):
+            raise ProcessRefused('PREVIOUS_NATIVE_CLOSE_UNKNOWN')
+        for name in ('worker_go_r','worker_go_w','worker_ready_r','worker_ready_w','interrupt_file_fd','interrupt_ready_r','interrupt_ready_w'):
+            from .native_trial_authority import budget
+            budget(getattr(getattr(group,'executable',None),'lease',None),cleanup=True)
             fd=group.resources.pop(name,None)
             if fd is not None:
-                try: os.close(fd)
+                record=dict(name=name,value=fd,attempted=True,closed=False,kind='CRT');records.append(record)
+                try: os.close(fd);record['closed']=True
                 except BaseException as error: errors.append(error)
         for name in ('thread', 'process', 'job'):
+            budget(getattr(getattr(group,'executable',None),'lease',None),cleanup=True)
             handle = group.resources.pop(name, None)
             if handle is not None:
-                try: self.original.close(handle)
+                record=dict(name=name,value=handle,attempted=True,closed=False,kind='HANDLE');records.append(record)
+                try: self.original.close(handle);record['closed']=True
                 except BaseException as error: errors.append(error)
         if errors: raise BaseExceptionGroup('NATIVE_PROCESS_CLOSE_UNKNOWN', errors)

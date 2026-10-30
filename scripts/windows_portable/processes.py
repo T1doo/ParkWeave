@@ -42,7 +42,8 @@ class Command:
                 or len(self.arguments) > 32 or any(type(v) is not str or '\x00' in v or len(v) > 2048 for v in self.arguments)
                 or sum(len(v) for v in self.arguments) > 8192
                 or self.model not in ('SINGLE_PROCESS_ELF', 'WINDOWS_JOB')
-                or self.stdio_contract not in ('NONE','WORKER_READINESS_V1','PIPE_PROBE_V1')
+                or self.stdio_contract not in ('NONE','WORKER_READINESS_V1','PIPE_PROBE_V1','FIXED_SLOT_INTERRUPT_V1')
+                or self.stdio_contract=='FIXED_SLOT_INTERRUPT_V1' and self.model!='WINDOWS_JOB'
                 or self.stdio_contract == 'WORKER_READINESS_V1' and self.model != 'WINDOWS_JOB'):
             raise ProcessRefused('FIXED_PRIVATE_COMMAND_REQUIRED')
         if self.environment:
@@ -415,6 +416,8 @@ class PrivateProcessAdapter:
     provided here. Windows Job containment remains native NOT_RUN.
     """
     def __init__(self, lease, commands, *, startup_seconds=2, stop_seconds=3, _backend=None):
+        from .native_trial_authority import inherit,budget
+        budget(lease)
         if (not commands or len(commands) > 8 or any(type(k) is not str or not k.isascii() or
                 not k.isidentifier() or len(k) > 40 or type(v) is not Command for k,v in commands.items())
                 or any(type(v) not in (int, float) or not math.isfinite(v) or not 0 < v <= 5
@@ -429,6 +432,7 @@ class PrivateProcessAdapter:
                 _backend = WindowsJobProcess()
             else: raise ProcessRefused('SUPPORTED_NATIVE_PROCESS_BACKEND_REQUIRED')
         self.backend, self._issued, self.unknown = _backend, {}, False
+        inherit(lease,self)
 
     def _group(self, group):
         entry = self._issued.get(id(group))
@@ -437,6 +441,8 @@ class PrivateProcessAdapter:
         return entry[1]
 
     def launch(self, name, register):
+        from .native_trial_authority import budget
+        budget(self.lease)
         if self.unknown or len(self._issued) >= 8 or type(name) is not str or name not in self.commands or not callable(register):
             raise ProcessRefused('PROCESS_LAUNCH_REFUSED')
         phase = self.lease.status()
@@ -464,7 +470,8 @@ class PrivateProcessAdapter:
             env['PATH'] = str(Path(executable.path).parent)
             for key in ('TEMP', 'TMP', 'TMPDIR'): env[key] = str(Path(executable.path).parents[len(command.relative_executable.split('/')) - 1])
             env.update(project)  # Frozen explicit app-role inputs only; never inherited project settings.
-            self.backend.create(group, register_once, env, time.monotonic() + self.startup_seconds)
+            self.backend.create(group, register_once, env, budget(self.lease,time.monotonic()+self.startup_seconds))
+            budget(self.lease)
             if not registered: raise ProcessRefused('CREATION_NOT_REGISTERED')
             group.creating = False
             return token
@@ -478,6 +485,8 @@ class PrivateProcessAdapter:
 
     @_owned_operation
     def observe(self, group, seconds=0):
+        from .native_trial_authority import budget
+        budget(self.lease)
         group = self._group(group)
         if type(seconds) not in (int,float) or not math.isfinite(seconds) or not 0 <= seconds <= 5:
             raise ProcessRefused('BOUNDED_OBSERVATION_REQUIRED')
@@ -563,7 +572,8 @@ class PrivateProcessAdapter:
         if group.attempted_stop: return group.stopped
         group.attempted_stop = True
         try:
-            confirmed = self.backend.stop(group, time.monotonic() + self.stop_seconds)
+            from .native_trial_authority import budget
+            confirmed = self.backend.stop(group, budget(self.lease,time.monotonic()+self.stop_seconds,cleanup=True))
             if confirmed:
                 self.backend.close_observed(group)
                 group.executable.close()
