@@ -10,12 +10,13 @@ def main(argv=None):
     parser.add_argument('--execute',action='store_true')
     parser.add_argument('--check-window',action='store_true')
     parser.add_argument('--verify-only',action='store_true')
+    parser.add_argument('--extract-only',action='store_true')
     parser.add_argument('--payload',type=Path)
     parser.add_argument('--candidate-zip',type=Path)
     args=parser.parse_args(argv)
     root=Path(__file__).resolve().parents[2]
     sys.path.insert(0,str(root))
-    if not (args.execute or args.check_window or args.verify_only):
+    if not (args.execute or args.check_window or args.verify_only or args.extract_only):
         from scripts.windows_ci.native_business_plan import plan
         print(json.dumps(plan(),ensure_ascii=False));return 0
     scope=None;primary=None;cleanup=None;pins=None;pin_cleanup_end=None
@@ -25,6 +26,10 @@ def main(argv=None):
         if args.check_window:
             print(json.dumps(dict(window='SOURCE_BOUND_NOT_EXECUTED',activation_allowed=False)));return 0
         need(args.payload is not None and args.candidate_zip is not None)
+        if args.extract_only:
+            from scripts.windows_ci.native_business_window import extract_approved_archive
+            extract_approved_archive(source,args.payload,args.candidate_zip)
+            print(json.dumps(dict(candidate='EXTRACTED_VERIFIED_NOT_EXECUTED',activation_allowed=False)));return 0
         if args.verify_only:
             from scripts.windows_ci.native_business_window import verify_staged_bytes
             verify_staged_bytes(source,args.payload,args.candidate_zip)

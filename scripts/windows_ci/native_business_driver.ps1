@@ -1,5 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$CandidateDirectory,
-      [Parameter(Mandatory=$true)][string]$CandidateArchive)
+      [Parameter(Mandatory=$true)][string]$CandidateArchive,
+      [switch]$ExtractApprovedArchive)
 $ErrorActionPreference='Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or
     $env:RUNNER_OS -ne 'Windows' -or $env:GITHUB_REPOSITORY -ne 'T1doo/ParkWeave') {
@@ -24,11 +25,18 @@ foreach ($path in @($CandidateDirectory,$CandidateArchive)) {
         -not [IO.Path]::GetFullPath($path).StartsWith($temp,[StringComparison]::OrdinalIgnoreCase)) {
         throw 'ORIGINAL_STAGED_RUNNER_TEMP_PATH_REQUIRED'
     }
-    $item=Get-Item -LiteralPath $path -Force
+    if ($path -eq $CandidateDirectory -and $ExtractApprovedArchive) {
+        if (Test-Path -LiteralPath $path) {throw 'EXCLUSIVE_CANDIDATE_EXTRACTION_REQUIRED'}
+        $item=Get-Item -LiteralPath ([IO.Path]::GetDirectoryName($path)) -Force
+    } else {$item=Get-Item -LiteralPath $path -Force}
     while ($null -ne $item) {
         if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {throw 'REPARSE_STAGE_REFUSED'}
         $item=if ($item.PSIsContainer) {$item.Parent} else {$item.Directory}
     }
+}
+if ($ExtractApprovedArchive) {
+    & $bootstrap -I -B -S $entry --extract-only --payload $CandidateDirectory --candidate-zip $CandidateArchive
+    if ($LASTEXITCODE -ne 0) {throw 'CANDIDATE_EXTRACTION_UNKNOWN_NO_RETRY'}
 }
 # The trusted coordinator itself verifies and holds EVERY candidate file and
 # ancestor, then imports pinned vendor code. Only the original native process

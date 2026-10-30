@@ -105,6 +105,8 @@ def _snapshot(invocation, deadline):
         need(len(groups) == 3 and len({id(token) for _, token, _ in groups}) == 3)
         names = sorted(adapter._group(token).command.relative_executable for adapter, token, _ in groups)
         need(names == ['runtime/postgresql/bin/postgres.exe', 'runtime/python/python.exe', 'runtime/python/python.exe'])
+        from .native_iat_observer import capture_groups
+        capture_groups(lease,security.system_crt,tuple(groups),deadline,security._iat_images)
         files = (tuple(lease.fs.root_id), tuple(lease.fs.lock_id), tuple(lease.fs.identity()))
         return _Snapshot(lease, installation, tuple(sorted(security.runtime.items())), files,
             lease._verified_instance_uuid(), lease.record['generation'], canonical(database), tuple(groups))

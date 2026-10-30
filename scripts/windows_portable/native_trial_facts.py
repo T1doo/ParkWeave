@@ -199,6 +199,22 @@ def completed_dpapi(lease,provider):
     return _seal(lease,('dpapi_current_user_roundtrip','dpapi_wrong_entropy_refused'),provider,frame)
 
 
+def cross_identity_dpapi(lease,provider,cipher,entropy,deadline):
+    if a.bound_state(lease) is None:return
+    from .native_preparation_sessions import NativePreparationSessionProvider,PreparationFile,_roundtrip_evidence
+    from .native_dpapi_peer import LocalServiceDPAPIPeer
+    from hashlib import sha256
+    a.need(type(provider) is NativePreparationSessionProvider and provider.lease is lease
+        and provider in _roundtrip_evidence)
+    original,kind,frame=_roundtrip_evidence[provider]
+    a.need(original is lease and kind is PreparationFile.IDENTITIES
+        and sha256(cipher).hexdigest()==frame[1] and entropy.hex()==frame[2])
+    peer=LocalServiceDPAPIPeer(lease,cipher,entropy,deadline)
+    evidence=peer.run()
+    a.need(peer.complete and not peer.failed and all(not row['owned'] or row['closed'] for row in peer.handles))
+    return _seal(lease,('dpapi_cross_os_identity_isolation',),peer,(provider,frame,evidence))
+
+
 def completed_slot_probes(lease,probe):
     if a.bound_state(lease) is None:return
     from .native_trial_slot_probes import NativeSlotProbes,_completed

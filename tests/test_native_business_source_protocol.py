@@ -54,7 +54,8 @@ def test_reports_name_lists_and_unissued_observations_cannot_issue_acceptance():
                 clone(value)
     status = issuer.issuer_status()
     assert not status['reviewed_platform_policy'] and not status['activation_allowed']
-    assert 'api_set_resolution' in status['missing_producers']
+    assert 'api_set_resolution' in status['implemented_producers']
+    assert 'original_job_and_backend_loaded_sources' in status['missing_producers']
 
 
 def test_expired_original_business_window_refuses_before_native_revalidation(monkeypatch):

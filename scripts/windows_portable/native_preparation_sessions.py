@@ -148,7 +148,8 @@ class NativePreparationSessionProvider:
             else:need(False)
             budget(store.lease,api.deadline)
             _roundtrip_evidence[self]=(store.lease,kind,frame)
-            from .native_trial_facts import completed_dpapi
+            from .native_trial_facts import completed_dpapi,cross_identity_dpapi
+            cross_identity_dpapi(store.lease,self,raw,entropy,api.deadline)
             completed_dpapi(store.lease,self)
         return result
 

@@ -201,6 +201,11 @@ def budget(resource, deadline=None, *, cleanup=False):
     return end
 
 
+def fail_resource(resource):
+    value=_lookup(resource)
+    if value is not None:value.failed=True
+
+
 def require_owner(resource):
     value = bound_state(resource)
     if value is None:

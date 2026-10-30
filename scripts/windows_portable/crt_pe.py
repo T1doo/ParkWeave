@@ -61,6 +61,47 @@ class Image:
         """Exact ordinary/delay named and ordinal imports, not DLL presence."""
         return self._imports(None)
 
+    def import_slots(self):
+        """Exact ordinary/delay IAT RVAs for later original-process reads.
+
+        Reading file slots never proves their loaded pointer or resolving host.
+        Keep unresolved delay slots visible rather than forcing a LoadLibrary.
+        """
+        result=[];seen=set()
+        for index,stride in ((1,20),(13,32)):
+            rva,size=self.directory(index)
+            if not rva:need(size==0);continue
+            need(stride<=size<=1024*stride);done=False
+            for i in range(size//stride):
+                p=self.offset(rva+i*stride,stride)
+                if not any(self.raw[p:p+stride]):done=True;break
+                delayed=index==13
+                if delayed:
+                    need(self.u(p,'I')==1)
+                    dll=self.text(self.u(p+4,'I')).lower()
+                    table,iat=self.u(p+16,'I'),self.u(p+12,'I')
+                else:
+                    dll=self.text(self.u(p+12,'I')).lower()
+                    table,iat=self.u(p,'I'),self.u(p+16,'I')
+                need(table>0 and iat>0);terminated=False
+                for n in range(8192):
+                    value=self.u(self.offset(table+n*8,8),'Q')
+                    slot=iat+n*8
+                    initial=self.u(self.offset(slot,8),'Q')
+                    need(0<slot and slot+8<=self.image_size and slot not in seen)
+                    if not value:
+                        need(initial==0);terminated=True;break
+                    if value&(1<<63):
+                        need(value&~((1<<63)|65535)==0 and value&65535)
+                        symbol='#'+str(value&65535)
+                    else:
+                        symbol=self.text(value+2);need(not symbol.startswith('#'))
+                    seen.add(slot)
+                    result.append((dll,symbol,slot,delayed,initial))
+                need(terminated)
+            need(done)
+        return tuple(result)
+
     def _imports(self,wanted):
         result={}
         for index,stride in ((1,20),(13,32)):

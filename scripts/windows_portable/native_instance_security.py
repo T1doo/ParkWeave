@@ -43,7 +43,7 @@ class NativeFixedStoreSecurity:
         self.lease=self.store=self.layout=self.target=self.plan=self.inputs=self.endpoint=None
         self.state=self._state_digest=self._credential=self._secrets=self._sessions=None
         self.database=self.processes=None;self.failed=self.closed=False;self.resources=[]
-        self.system_crt=None
+        self.system_crt=None;self._iat_images=None
         self.payload_source=payload_source;self.runtime_installation=None
 
     def require_runtime_support(self,database,processes):
@@ -226,6 +226,14 @@ class NativeFixedStoreSecurity:
                  and observed['owner_name']==observed['current_name']==observed['session_name']=='postgres')
             row=connection.execute('SELECT max(version) AS version FROM schema_version').fetchone()
             need(row['version']==32)
+            from .native_trial_authority import bound_state
+            if bound_state(self.lease) is not None:
+                from .native_iat_observer import layout,capture_peer
+                if layout() is not None:
+                    from .native_loader_images import capture
+                    end=connection._deadline
+                    self._iat_images=capture(self.lease,self,end)
+                    capture_peer(self.lease,self.system_crt,connection._endpoint_witness,end,self._iat_images)
             binding=self.target._verify()
             return dict(system_identifier=observed['system_identifier'],database_oid=observed['database_oid'],
                 database_name='parkweave',owner='postgres',data_identity=list(binding.root_id),schema_version=32)

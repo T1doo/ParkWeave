@@ -22,7 +22,8 @@ RECORD = 'scripts/windows_ci/native_business_window.json'
 OPERATIONS = frozenset(('NEW_TRIAL_ONLY_OBJECTS', 'OWN_DERIVED_TOKEN_OWNER',
     'OWN_DERIVED_TOKEN_DEFAULT_DACL', 'TEMP_CURRENT_USER_DPAPI_IDENTITIES',
     'PROTECTED_INITDB', 'OWN_PRIVATE_PG_API_WORKER', 'SYNTHETIC_TWO_ROLE_BUSINESS',
-    'OWN_JOB_STOP_AND_REOPEN', 'FIXED_SLOT_AUXILIARY_PROBES','OWN_FIXED_SLOT_INTERRUPTION_CHILDREN'))
+    'OWN_JOB_STOP_AND_REOPEN', 'FIXED_SLOT_AUXILIARY_PROBES','OWN_FIXED_SLOT_INTERRUPTION_CHILDREN',
+    'TEMP_LOCAL_SERVICE_DPAPI_PEER'))
 
 
 class WindowRefused(RuntimeError): pass
@@ -91,7 +92,7 @@ def _read(path, limit):
     return raw
 
 
-def load_source_window():
+def _record():
     # The ONLY pre-admission I/O is this fixed source metadata read. Native
     # imports, candidate files, RNG, Git processes and temp creation follow it.
     raw = _read(Path(__file__).with_suffix('.json'), 8192)
@@ -111,9 +112,14 @@ def load_source_window():
          and frozenset(window.operations) == OPERATIONS
          and type(window.work_seconds) is int and window.work_seconds == 900
          and type(window.cleanup_seconds) is int and window.cleanup_seconds == 60)
+    return window,raw
+
+
+def load_source_window():
+    window,raw=_record()
     expected = dict(GITHUB_ACTIONS='true', RUNNER_ENVIRONMENT='github-hosted', RUNNER_OS='Windows',
         NATIVE_PUBLIC='true', GITHUB_REPOSITORY=window.repository, GITHUB_REF=window.ref,
-        GITHUB_JOB=window.job, GITHUB_EVENT_NAME='workflow_dispatch', GITHUB_RUN_ATTEMPT='1',
+        GITHUB_JOB=window.job, GITHUB_EVENT_NAME='push', GITHUB_RUN_ATTEMPT='1',
         GITHUB_RUN_NUMBER=str(window.run_number), PSYCOPG_IMPL='binary',
         GITHUB_WORKFLOW_REF=window.repository+'/'+WORKFLOW+'@'+window.ref)
     if window.run_id is not None:expected['GITHUB_RUN_ID']=window.run_id
@@ -132,7 +138,7 @@ def load_source_window():
     return grant
 
 
-def _verify_inputs(grant, payload, archive):
+def _verify_archive_inputs(grant, payload, archive):
     need(type(grant) is SourceGrant and grant in _issued)
     window, key, pid, thread, context, approval_commit,record_digest = _issued.pop(grant)
     need(pid == os.getpid() and thread == threading.get_ident()
@@ -161,10 +167,17 @@ def _verify_inputs(grant, payload, archive):
          and sha256(git('show','HEAD:'+RECORD)).hexdigest()==record_digest
          and sha256(_read(repo/WORKFLOW,65536)).hexdigest() == window.workflow_sha256)
     workflow = (repo/WORKFLOW).read_bytes()
-    need(b'timeout-minutes: 25' in workflow and b'persist-credentials: false' in workflow
+    need(b'timeout-minutes: 19' in workflow and b'timeout-minutes: 6' in workflow
+         and b'persist-credentials: false' in workflow
          and b'contents: read' in workflow and b'runs-on: windows-2025' in workflow)
-    need(sha256(_read(archive,window.archive_bytes)).hexdigest() == window.archive_sha256
+    archive_raw=_read(archive,window.archive_bytes)
+    need(sha256(archive_raw).hexdigest() == window.archive_sha256
          and archive.stat().st_size == window.archive_bytes)
+    return window,key,payload,archive_raw,deadline,context
+
+
+def _verify_inputs(grant,payload,archive):
+    window,key,payload,archive_raw,deadline,context=_verify_archive_inputs(grant,payload,archive)
     raw = _read(payload/'payload-manifest.json',4*1024*1024)
     need(sha256(raw).hexdigest() == window.manifest_sha256)
     from scripts.windows_portable.payload import verify_directory
@@ -172,6 +185,39 @@ def _verify_inputs(grant, payload, archive):
     need(manifest['source_commit'] == window.reviewed_parent and manifest['usable_product'] is False
          and time.monotonic() < deadline)
     return window,key,payload,raw,manifest,deadline,context
+
+
+def extract_approved_archive(grant,payload,archive):
+    """Source/byte admission BEFORE exclusive extraction; no executable starts."""
+    import io
+    import zipfile
+    from scripts.windows_portable.payload import parse_manifest,MANIFEST,MAX_FILES,MAX_BYTES
+    window,key,payload,archive_raw,deadline,context=_verify_archive_inputs(grant,payload,archive)
+    need(not payload.exists())
+    with zipfile.ZipFile(io.BytesIO(archive_raw)) as stream:
+        infos=stream.infolist();names=[row.filename for row in infos]
+        need(len(names)<=MAX_FILES+1 and len(names)==len(set(names)))
+        need(sum(row.file_size for row in infos)<=MAX_BYTES
+            and all(0<=row.file_size<=MAX_BYTES and not row.is_dir()
+                and (row.external_attr>>16)&0o170000==0o100000 for row in infos))
+        need(stream.getinfo(MANIFEST).file_size<=4*1024*1024)
+        with stream.open(MANIFEST) as entry:raw=entry.read(4*1024*1024+1)
+        need(len(raw)<=4*1024*1024)
+        need(sha256(raw).hexdigest()==window.manifest_sha256)
+        manifest=parse_manifest(raw)
+        need(manifest['source_commit']==window.reviewed_parent and manifest['usable_product'] is False
+            and set(names)==set(manifest['files'])|{MANIFEST}
+            and sum(row.file_size for row in infos)<=MAX_BYTES)
+        payload.mkdir(mode=0o700)
+        for name in sorted(names):
+            need(time.monotonic()<deadline and current_context()==context)
+            row=manifest['files'].get(name,dict(bytes=len(raw),sha256=window.manifest_sha256))
+            with stream.open(name) as entry:data=entry.read(row['bytes']+1)
+            need(len(data)==row['bytes'] and sha256(data).hexdigest()==row['sha256'])
+            path=payload/name;path.parent.mkdir(parents=True,exist_ok=True)
+            with path.open('xb') as output:output.write(data)
+    # The execution coordinator independently rechecks and holds all bytes.
+    return None
 
 
 def verify_staged_bytes(grant,payload,archive):
