@@ -72,9 +72,13 @@ class InstanceProcesses:
             inputs = method(lease, credentials, self._register(self.cluster, register))
             if not self._owned or type(inputs) is not DatabaseInputs:
                 raise CandidateRefused('registered explicit cluster inputs required')
-            if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
-                raise CandidateRefused('held private cluster directory required')
-            if self.endpoint_source is not None:self.endpoint_source.require_inputs(lease,inputs)
+            from .native_cluster import NativeProtectedClusterProcesses
+            if type(self.cluster) is NativeProtectedClusterProcesses:
+                self.cluster.require_bound_inputs(lease,inputs,self.endpoint_source)
+            else:
+                if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
+                    raise CandidateRefused('held private cluster directory required')
+                if self.endpoint_source is not None:self.endpoint_source.require_inputs(lease,inputs)
             self.inputs = inputs
             return inputs
         except BaseException:

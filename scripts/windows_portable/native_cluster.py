@@ -4,7 +4,7 @@ import time
 from .cluster_processes import FixedClusterProcesses, ClusterStartFailure
 from .controller import CandidateRefused
 from .processes import Command, PrivateProcessAdapter
-from .native_instance_security import NativeClusterPrerequisites
+from .native_instance_security import NativeClusterPrerequisites,NativeFixedStoreSecurity
 
 
 class NativeProtectedClusterProcesses(FixedClusterProcesses):
@@ -13,6 +13,19 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
             raise CandidateRefused('exact native cluster prerequisites required')
         super().__init__(prerequisites,**pins)
         self.endpoint=None;self._adapters={}
+
+    def _require_data_directory(self,lease,inputs):
+        # PG's DOS command path differs from the lease's volume-GUID path.
+        # Only the original held PGDATA/security binding may authorize it.
+        if self.lease is not lease or type(self.prerequisites.security) is not NativeFixedStoreSecurity:
+            raise CandidateRefused('same original native PGDATA binding required')
+        self.prerequisites.security.require_inputs(lease,inputs)
+
+    def require_bound_inputs(self,lease,inputs,security):
+        if (type(security) is not NativeFixedStoreSecurity or security is not self.prerequisites.security
+                or self.lease is not lease or self.inputs is not inputs):
+            raise CandidateRefused('same original native cluster inputs required')
+        security.require_inputs(lease,inputs)
 
     def _register_adapter(self,adapter,register):
         def record(token):

@@ -174,7 +174,7 @@ class NativeFixedStoreSecurity:
     def require_inputs(self,lease,inputs):
         def check(_):
             need(type(inputs) is DatabaseInputs and inputs is self.inputs)
-            self.target._verify()
+            need(inputs.data_directory==_path_held(lease,self.target))
             return ep._record_held(lease,self.plan,mode=self.mode)
         return self._run(lease,check)
 
