@@ -211,10 +211,10 @@ class NativeFixedStoreSecurity:
             return self._credential
         return self._run(lease,load)
 
-    def _database(self,inputs):
+    def _database(self,inputs,*,deadline=None):
         need(inputs is self.inputs and type(self.endpoint) is NativeOwnedDatabaseEndpoint)
         from parkweave.installed_fixture_receipt import _dsn,_identity
-        with self.endpoint.connect(_dsn(inputs.owner_dsn,'parkweave')) as connection:
+        with self.endpoint.connect(_dsn(inputs.owner_dsn,'parkweave'),deadline=deadline) as connection:
             self.endpoint.verify_connection(connection)
             connection.execute('SET TRANSACTION READ ONLY')
             observed=_identity(connection)

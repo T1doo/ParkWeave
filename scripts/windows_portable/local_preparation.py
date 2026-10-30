@@ -7,6 +7,7 @@ explicit; there is no automatic review/confirmation or write retry.
 from dataclasses import dataclass, field
 from hashlib import sha256
 import json
+import math
 import re
 import time
 from typing import Protocol
@@ -122,12 +123,19 @@ class PreparationClient:
         if self.actor.actor[3] != expected:
             raise CandidateRefused('explicit preparation action role required')
 
-    def _request(self, method, path, body=None, key=None, *, binding=None, on_dispatch=None):
+    def _request(self, method, path, body=None, key=None, *, binding=None, on_dispatch=None, deadline=None):
         self.workspace.check()
         application, actor = binding if binding is not None else (self.workspace.application, self.actor)
         if binding is not None and (self.workspace.application is not application or self.actor is not actor):
             raise CandidateRefused('original recovery dispatch binding changed')
-        deadline = time.monotonic() + 30
+        now = time.monotonic()
+        if deadline is None:
+            deadline = now + 30
+        elif (type(deadline) not in (int, float) or not math.isfinite(deadline)
+                or not 0 < deadline - now <= 30):
+            raise CandidateRefused('bounded original request deadline required')
+        if self.workspace.deadline is not None:
+            deadline = min(deadline, self.workspace.deadline)
         if on_dispatch is not None:
             on_dispatch()
         result = self.workspace.transport.request(application, actor,
@@ -182,6 +190,27 @@ class PreparationClient:
         return self._write('CASE_SUBMIT', key, 'POST', '/api/runs', body,
                            lambda value: _uuid(value['run_id']))
 
+    def wait_run(self, run_id, *, seconds=20):
+        """Poll only the submitted run; one absolute budget, no write retry."""
+        self._role('enterprise_operator')
+        _uuid(run_id)
+        if type(seconds) not in (int, float) or not math.isfinite(seconds) or not 0 < seconds <= 30:
+            raise CandidateRefused('bounded worker wait required')
+        deadline = time.monotonic() + seconds
+        if self.workspace.deadline is not None:
+            deadline = min(deadline, self.workspace.deadline)
+        while True:
+            if time.monotonic() >= deadline:
+                raise CandidateRefused('original worker wait deadline')
+            value = self._request('GET', '/api/runs/' + run_id, deadline=deadline)
+            if value.get('run_id') != run_id:
+                raise CandidateRefused('same original worker run required')
+            if value.get('state') == 'SUCCEEDED':
+                return value
+            if value.get('state') not in ('QUEUED', 'RUNNING'):
+                raise CandidateRefused('original worker did not complete successfully')
+            time.sleep(min(.1, max(0, deadline - time.monotonic())))
+
     def create_preparation(self, run_id, key):
         self._role('enterprise_operator')
         _uuid(run_id)
@@ -207,9 +236,11 @@ class PreparationClient:
                 raise CandidateRefused('same preparation and next revision required')
         elif ref.run_id != run_id or ref.revision != 1:
             raise CandidateRefused('original run and initial revision required')
-        expected = {'CREATE': 'IN_PREPARATION', 'ADD_EVIDENCE': 'IN_PREPARATION',
-                    'REVIEW': 'REVIEWED', 'CONFIRM': 'LOCAL_CONFIRMED'}
-        if ref.state != expected[action]:
+        expected = {'CREATE': ('IN_PREPARATION',),
+                    'ADD_EVIDENCE': ('IN_PREPARATION', 'CHANGES_REQUESTED'),
+                    'REQUEST_CHANGES': ('CHANGES_REQUESTED',), 'REOPEN': ('IN_PREPARATION',),
+                    'REVIEW': ('REVIEWED',), 'CONFIRM': ('LOCAL_CONFIRMED',)}
+        if ref.state not in expected[action]:
             raise CandidateRefused('expected local command state required')
         return ref
 
@@ -245,6 +276,17 @@ class PreparationClient:
         self._role('park_specialist')
         return self._command(ref, key, PreparationCommand(action='REVIEW',
                                                         expected_revision=ref.revision, reason=reason))
+
+    def request_changes(self, ref, key, *, reason, slots=None):
+        self._role('park_specialist')
+        fields = {} if slots is None else {'correction_slots': slots}
+        return self._command(ref, key, PreparationCommand(action='REQUEST_CHANGES',
+            expected_revision=ref.revision, reason=reason, **fields))
+
+    def reopen(self, ref, key, *, reason):
+        self._role('enterprise_operator')
+        return self._command(ref, key, PreparationCommand(action='REOPEN',
+            expected_revision=ref.revision, reason=reason))
 
     def confirm(self, ref, key, *, reason):
         self._role('enterprise_operator')
@@ -362,10 +404,14 @@ class PreparationClient:
 
 
 class PreparationWorkspace:
-    def __init__(self, application, identities, transport, check):
+    def __init__(self, application, identities, transport, check, *, deadline=None):
         if type(identities) is not PreparationIdentities or not callable(check):
             raise CandidateRefused('explicit running workspace dependencies required')
         self.application, self.transport = application, transport
+        if deadline is not None and (type(deadline) not in (int, float)
+                or not math.isfinite(deadline) or not 0 < deadline - time.monotonic() <= 180):
+            raise CandidateRefused('bounded business invocation deadline required')
+        self.deadline = deadline
         self._check, self._active = check, True
         values = identities.mapping()
         self.enterprise = PreparationClient(self, ExistingActorProbe(values['fixture-a'],
@@ -376,6 +422,8 @@ class PreparationWorkspace:
     def check(self):
         if not self._active:
             raise CandidateRefused('business session ended with its owned invocation')
+        if self.deadline is not None and time.monotonic() >= self.deadline:
+            raise CandidateRefused('business invocation deadline')
         self._check()
 
     def close(self):
@@ -393,7 +441,7 @@ class LocalPreparationInvocation:
             raise CandidateRefused('one explicit local composition required')
         self.controller, self.processes, self.security, self.transport = controller, processes, security, transport
 
-    def _use(self, use):
+    def _use(self, use, deadline=None):
         if not callable(use):
             raise CandidateRefused('explicit local business callback required')
 
@@ -408,18 +456,22 @@ class LocalPreparationInvocation:
                     raise CandidateRefused('same live running invocation required')
 
             check()
-            workspace = PreparationWorkspace(application, self.security.identities(lease), self.transport, check)
+            workspace = PreparationWorkspace(application, self.security.identities(lease), self.transport, check,
+                                             deadline=deadline)
             try:
                 use(workspace)  # Callback/private materials never become Controller report data.
             finally:
                 workspace.close()
         return run
 
-    def create(self, root, use):
-        return self.controller.create(root, self._use(use))  # Original OWNER gate, unchanged.
+    def create(self, root, use, *, deadline=None):
+        # This optional deadline bounds business callback requests only. It is
+        # not a native execution permission/deadline: Controller startup and
+        # cleanup retain their original independently bounded contracts.
+        return self.controller.create(root, self._use(use, deadline))  # Original OWNER gate, unchanged.
 
-    def reopen(self, root, use):
-        return self.controller.reopen(root, self._use(use))  # No new seed/credential path.
+    def reopen(self, root, use, *, deadline=None):
+        return self.controller.reopen(root, self._use(use, deadline))  # No new seed/credential path.
 
 
 def compose_local_preparation(directories, security, prerequisites: ClusterPrerequisites, sessions,

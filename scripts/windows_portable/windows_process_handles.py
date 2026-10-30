@@ -10,8 +10,27 @@ import os
 from pathlib import Path
 import subprocess
 import time
+import weakref
 
-from .processes import ProcessRefused
+from .processes import ProcessRefused, _ProcessState
+
+
+# Issued while the original process and Job HANDLEs are still held, before
+# close_observed consumes them. A caller report/exit-code cannot create one.
+_stopped_groups = weakref.WeakKeyDictionary()
+
+
+def consume_stopped_group(adapter, token, identity):
+    from .processes import PrivateProcessAdapter
+    if type(adapter) is not PrivateProcessAdapter or type(adapter.backend) is not WindowsJobProcess:
+        raise ProcessRefused('ORIGINAL_NATIVE_STOP_OBSERVATION_REQUIRED')
+    group = adapter._group(token)
+    observed = _stopped_groups.pop(group, None)
+    if (observed != (adapter.backend, identity, group.command)
+            or not group.stopped or group.errors or adapter.unknown
+            or any(name in group.resources for name in ('process', 'thread', 'job'))):
+        raise ProcessRefused('ORIGINAL_NATIVE_STOP_OBSERVATION_REQUIRED')
+    return identity
 
 
 def pin_executable(pin):
@@ -188,6 +207,8 @@ class WindowsJobProcess:
     def stop(self, group, deadline):
         from scripts.windows_ci.owned_job import Accounting, DWORD
         r, backend = group.resources, self.original
+        if type(group) is _ProcessState:
+            _stopped_groups.pop(group, None)
         if 'process' in r and not r.get('bound'):
             # Original abort_suspended operations, but one shared stop deadline.
             # Job accounting zero alone says NOTHING about an unassigned child.
@@ -208,7 +229,13 @@ class WindowsJobProcess:
                     code = self.observe(group, deadline)
                     if code is None: return False
                     group.returncode = code
-                return time.monotonic() <= deadline
+                confirmed = time.monotonic() <= deadline
+                if (confirmed and type(group) is _ProcessState and type(self) is WindowsJobProcess and r.get('bound')
+                        and 'process' in r and 'birth' in r and group.started
+                        and self.birth(r['process']) == r['birth']):
+                    identity = (r['pid'], r['birth'], group.command.sha256)
+                    _stopped_groups[group] = (self, identity, group.command)
+                return confirmed
             time.sleep(min(.01, max(0, deadline - time.monotonic())))
         return False
 
