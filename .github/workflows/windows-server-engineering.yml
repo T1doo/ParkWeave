@@ -1,8 +1,8 @@
-name: ParkWeave Windows Server engineering (mock only)
+name: ParkWeave Windows Server engineering (not Win11)
 
 on:
   push:
-    branches: [dev/f1-foundation]
+    branches: [dev/f1-foundation, dev/local-product-runtime-20261028]
     paths:
       - '.github/workflows/windows-server-engineering.yml'
       - 'scripts/windows_ci/**'
@@ -22,6 +22,13 @@ concurrency:
 
 jobs:
   server-engineering:
+    if: >-
+      github.ref == 'refs/heads/dev/f1-foundation' ||
+      (github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
+       github.event_name == 'push' && github.run_attempt == 1 &&
+       github.ref == 'refs/heads/dev/local-product-runtime-20261028' &&
+       github.event.before == 'e152fd2988df5a3b1e65b7e2e84fd0aa5361565d' &&
+       github.event.head_commit.message == 'ci: bounded Server 2025 source protocol PW_SERVER_PROTOCOL_20261030_A')
     name: Server 2025 / Python 3.12 x64 / isolated Job measurement (not Win11)
     runs-on: windows-2025
     timeout-minutes: 25
@@ -38,6 +45,10 @@ jobs:
           "PARKWEAVE_CI_JOB_UPTIME=$uptime" | Add-Content -LiteralPath $env:GITHUB_ENV
       - name: Checkout without persisted credentials
         uses: actions/checkout@v4
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
         with:
           persist-credentials: false
           fetch-depth: 1
@@ -61,3 +72,39 @@ jobs:
           # No Engineering.ps1, PostgreSQL, app, pip, model or artifact upload.
           & python -m scripts.windows_ci.controlled_job_measurement --run-controlled
           if ($LASTEXITCODE -ne 0) { throw 'CONTROLLED_JOB_MEASUREMENT_NOT_PASSED' }
+      - name: Isolate two existing pinned protocol dependencies
+        if: github.ref == 'refs/heads/dev/local-product-runtime-20261028'
+        timeout-minutes: 2
+        run: |
+          $ErrorActionPreference='Stop'
+          $root=Join-Path $env:RUNNER_TEMP ('parkweave-source-protocol-'+[Guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
+          & python -m venv (Join-Path $root 'venv')
+          if ($LASTEXITCODE -ne 0) { throw 'PROTOCOL_VENV_FAILED' }
+          $python=Join-Path $root 'venv\Scripts\python.exe'
+          & $python -m pip --isolated --disable-pip-version-check install --index-url https://pypi.org/simple --no-cache-dir --no-input --retries 0 --timeout 20 --only-binary=:all: 'psycopg[binary]==3.3.6' 'pydantic==2.13.5'
+          if ($LASTEXITCODE -ne 0) { throw 'EXISTING_PROTOCOL_DEPENDENCY_UNAVAILABLE' }
+          "PARKWEAVE_PROTOCOL_PYTHON=$python" | Add-Content -LiteralPath $env:GITHUB_ENV
+      - name: Compile current entry and check pure native composition without activation
+        if: github.ref == 'refs/heads/dev/local-product-runtime-20261028'
+        timeout-minutes: 2
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+          PYTHONPATH: ${{ github.workspace }}/src
+          PSYCOPG_IMPL: binary
+          PW_PROTOCOL_SHA: ${{ github.sha }}
+          PW_PROTOCOL_BEFORE: ${{ github.event.before }}
+          PW_PROTOCOL_ATTEMPT: ${{ github.run_attempt }}
+          PW_PROTOCOL_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((& git rev-parse HEAD) -ne $env:PW_PROTOCOL_SHA) { throw 'EXACT_CHECKOUT_REQUIRED' }
+          $files=@(Get-ChildItem scripts/windows -Filter '*.ps1' -File)
+          foreach ($file in $files) {
+            $tokens=$null; $errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName,[ref]$tokens,[ref]$errors)
+            if ($errors.Count -ne 0) { throw 'POWERSHELL_ENTRY_SYNTAX_REFUSED' }
+          }
+          Write-Output ('POWERSHELL_7_SYNTAX_FILES='+$files.Count+'; NOT_EXECUTED')
+          & $env:PARKWEAVE_PROTOCOL_PYTHON -B -m scripts.windows_ci.local_product_source_protocol --run-protocol
+          if ($LASTEXITCODE -ne 0) { throw 'LOCAL_PRODUCT_SOURCE_PROTOCOL_NOT_PASSED' }

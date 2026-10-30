@@ -178,7 +178,7 @@ def test_annotations_use_only_notices_and_leave_cleanup_order_unchanged():
     assert preserved.index('Engineering.ps1 -Action Publish')<preserved.index('Engineering.ps1 -Action Stop')
     executable='\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
     assert 'Engineering.ps1' not in executable and 'publish_summary.py' not in executable
-    assert text.count('      - name:')==4
+    assert text.count('      - name:')==6
     assert 'CONTROLLED_JOB_MEASUREMENT_NOT_PASSED' in executable
 
     entry=(ROOT/'scripts/windows_ci/Engineering.ps1').read_text()
