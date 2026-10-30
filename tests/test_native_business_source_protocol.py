@@ -1,6 +1,9 @@
 """Pure source/protocol checks only. Never Windows native execution evidence."""
 import copy
+from pathlib import Path
 import pickle
+import shutil
+import subprocess
 import time
 from unittest.mock import patch
 
@@ -13,6 +16,32 @@ from scripts.windows_portable.native_composition import compose_native_local_pre
 from scripts.windows_portable.endpoint_plan import PlanMode, EndpointRequest
 from scripts.windows_portable.controller import CandidateRefused
 from scripts.windows_portable.preparation_business_trial import PreparationBusinessTrial
+
+
+def test_actual_git_crlf_checkout_keeps_role_bytes_and_original_integrity_gate(tmp_path,monkeypatch):
+    if shutil.which('git') is None:pytest.skip('Git checkout required; no alternative source adoption')
+    from parkweave import store
+    from scripts.windows_portable.controller import NativeDatabaseOperations
+    root=Path(__file__).resolve().parents[1]
+    repo=tmp_path/'checkout';repo.mkdir()
+    subprocess.run(['git','init','-q',str(repo)],check=True,capture_output=True)
+    def git(*args,input=None):
+        return subprocess.check_output(['git','-C',str(repo),*args],input=input)
+    original=(root/'src/parkweave/roles.sql').read_bytes()
+    for name,raw in (('.gitattributes',(root/'.gitattributes').read_bytes()),
+                     ('src/parkweave/roles.sql',original)):
+        blob=git('hash-object','-w','--stdin',input=raw).decode().strip()
+        git('update-index','--add','--cacheinfo','100644',blob,name)
+    # Explicit CRLF reproduces the Windows-native EOL policy without running
+    # Windows, changing system Git config, or calling native security APIs.
+    git('-c','core.autocrlf=false','-c','core.eol=crlf','checkout-index','--all')
+    roles=repo/'src/parkweave/roles.sql'
+    assert roles.read_bytes()==original,'checkout changed the raw role source bytes'
+    monkeypatch.setattr(store,'__file__',str(roles.with_name('store.py')))
+    assert NativeDatabaseOperations().prepare_new()==original
+    # The fix is checkout policy, never canonicalizing or accepting modified SQL.
+    roles.write_bytes(original+b'-- SYNTHETIC corruption must remain refused\n')
+    with pytest.raises(CandidateRefused):NativeDatabaseOperations().prepare_new()
 
 
 def composition(path, mode):
