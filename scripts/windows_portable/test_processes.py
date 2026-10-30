@@ -87,6 +87,22 @@ class ActualProcessChecks(unittest.TestCase):
             self.assertTrue(self.adapter.stop_owned(group))
         self.assertTrue(self.state(group).resources['reaped']); self.assertEqual(self.adapter.observe(group), 0)
 
+    def test_actual_shared_adapter_child_has_no_ambient_database_or_provider_configuration(self):
+        # Environment-only observation of our original harmless ELF child;
+        # this is not a PostgreSQL/API/worker business or Windows observation.
+        with patch.dict(os.environ, {'PGUNKNOWN':'SYNTHETIC_ENV_ONLY','pgpassword':'',
+                'PgServiceFile':'SYNTHETIC_ENV_ONLY','GITHUB_TOKEN':'SYNTHETIC_ENV_ONLY',
+                'PYTHONPATH':'SYNTHETIC_ENV_ONLY','HTTPS_PROXY':'SYNTHETIC_ENV_ONLY'}):
+            token=self.adapter.launch('sleep',lambda cap:None)
+            group=self.state(token);self.assertIsNone(self.adapter.observe(token))
+            raw=Path('/proc',str(group.resources['pid']),'environ').read_bytes()
+            environment=dict(row.split(b'=',1) for row in raw.split(b'\0') if row)
+            self.assertFalse(any(key.upper().startswith(b'PG') for key in environment))
+            self.assertFalse({b'GITHUB_TOKEN',b'PYTHONPATH',b'HTTPS_PROXY',b'HOME'}&environment.keys())
+            self.assertEqual(environment[b'PATH'],os.fsencode(self.root/'runtime/probe'))
+            for key in (b'TEMP',b'TMP',b'TMPDIR'):self.assertEqual(environment[key],os.fsencode(self.root))
+            self.assertTrue(self.adapter.stop_owned(token));self.assertTrue(group.resources['reaped'])
+
     def test_registration_cannot_reenter_stop_and_close_before_creation_finishes(self):
         callbacks = []
         def register(token):

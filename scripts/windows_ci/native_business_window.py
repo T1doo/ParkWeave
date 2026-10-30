@@ -66,7 +66,22 @@ _verified = weakref.WeakKeyDictionary()
 _spent = set()
 CONTEXT_NAMES=('GITHUB_ACTIONS','RUNNER_ENVIRONMENT','RUNNER_OS','NATIVE_PUBLIC','GITHUB_REPOSITORY',
     'GITHUB_REF','GITHUB_JOB','GITHUB_EVENT_NAME','GITHUB_RUN_ATTEMPT','GITHUB_RUN_NUMBER','GITHUB_RUN_ID',
-    'GITHUB_SHA','GITHUB_WORKFLOW_SHA','GITHUB_WORKFLOW_REF','GITHUB_WORKSPACE','RUNNER_TEMP','RUNNER_TOOL_CACHE','PSYCOPG_IMPL')
+    'GITHUB_SHA','GITHUB_WORKFLOW_SHA','GITHUB_WORKFLOW_REF','GITHUB_WORKSPACE','RUNNER_TEMP','RUNNER_TOOL_CACHE','PSYCOPG_IMPL',
+    'RUNNER_TRACKING_ID','PARKWEAVE_TRIAL_START_MONOTONIC')
+
+
+def _trial_work_deadline(window):
+    # Trusted driver generates this once from the system monotonic counter.
+    # Windows Environment.TickCount64 and Python3.12 both use GetTickCount64. This
+    # is bounded timing metadata, never authority or a refreshed work window.
+    raw=os.environ.get('PARKWEAVE_TRIAL_START_MONOTONIC','')
+    need(type(raw) is str and re.fullmatch(r'[0-9]{1,15}(?:[.][0-9]{1,15})?',raw))
+    start=float(raw);now=time.monotonic()
+    need(0<start<=now and now-start<window.work_seconds)
+    if os.name=='nt':need('GetTickCount64' in time.get_clock_info('monotonic').implementation)
+    end=min(start+window.work_seconds,now+window.expires_utc-time.time()-window.cleanup_seconds)
+    need(now<end<=start+window.work_seconds)
+    return end
 
 
 def current_context():
@@ -132,7 +147,9 @@ def load_source_window():
     key = (window.repository, window.ref, window.job, window.run_number, os.environ['GITHUB_RUN_ID'])
     need(key not in _spent); _spent.add(key)
     grant = SourceGrant()
-    need(all(type(os.environ.get(k)) is str and os.environ[k] for k in ('RUNNER_TEMP','GITHUB_WORKSPACE','RUNNER_TOOL_CACHE')))
+    need(all(type(os.environ.get(k)) is str and os.environ[k] for k in
+        ('RUNNER_TEMP','GITHUB_WORKSPACE','RUNNER_TOOL_CACHE','RUNNER_TRACKING_ID')))
+    _trial_work_deadline(window)
     _issued[grant] = (window, key, os.getpid(), threading.get_ident(),current_context(),
         os.environ['GITHUB_SHA'],sha256(raw).hexdigest())
     return grant
@@ -146,8 +163,7 @@ def _verify_archive_inputs(grant, payload, archive):
          and os.environ.get('GITHUB_SHA') == approval_commit
          and not any(k.upper().startswith('PG') for k in os.environ))
     # Time consumed by byte verification counts against this one work window.
-    deadline = min(time.monotonic()+window.work_seconds,
-        time.monotonic()+window.expires_utc-time.time()-window.cleanup_seconds)
+    deadline = _trial_work_deadline(window)
     temp=Path(dict(context[0])['RUNNER_TEMP'])
     need(type(payload) is type(temp) and type(archive) is type(temp)
          and payload.is_absolute() and archive.is_absolute()

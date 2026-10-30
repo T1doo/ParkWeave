@@ -16,7 +16,10 @@ def plan():
         trial_domain='persistent TRIAL_ONLY root marker; formal acquisition and production issuer refuse it',
         source='must pin reviewed full commit and rebuilt candidate manifest/archive SHA256 before enabling',
         operations=[
-            'Remove only inherited PGBIN/PGDATA/PGROOT from own Process environment; refuse any other PG* key',
+            'Create each coordinator with an explicit OS/context-only child environment; no inherited PG* '
+                'or credentials, parent environment unchanged; retain original runner cleanup marker',
+            'One TickCount64-based start across check/extract/execute, original total work/cleanup bounds; '
+                'unknown child exit retained, no restart/kill or success inference',
             'Read original primary token user/owner/default DACL; derive owned restricted primary token',
             'Set TokenOwner (TokenInformationClass 4) and TokenDefaultDacl (6) ONLY on that derived token',
             'Exclusively create one private RUNNER_TEMP trial subtree with creation-time protected descriptors',

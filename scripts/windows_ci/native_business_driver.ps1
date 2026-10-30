@@ -9,17 +9,19 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
 # The null fixed source record refuses before candidate IO or execution.
 $record=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'native_business_window.json') -Raw | ConvertFrom-Json
 if ($null -eq $record) {throw 'WINDOW_UNBOUND'}
-# The official hosted image declares an unrelated, disabled PostgreSQL service
-# with these process environment keys. Never adopt it. Remove ONLY that fixed
-# image declaration from this child coordinator's environment; an unknown PG*
-# key still refuses before native work. No machine/user environment or service
-# configuration is changed, and no values are printed.
-$imagePgKeys=@('PGBIN','PGDATA','PGROOT')
-foreach ($key in @([Environment]::GetEnvironmentVariables('Process').Keys)) {
-    if ([string]$key -notmatch '(?i)^PG') {continue}
-    if ([string]$key -notin $imagePgKeys) {throw 'UNEXPECTED_INHERITED_PG_CONFIGURATION'}
-    [Environment]::SetEnvironmentVariable([string]$key,$null,'Process')
+. (Join-Path $PSScriptRoot 'native_coordinator_environment.ps1')
+# Child-only allowlist: no ambient PG*, tokens, proxies or Python settings.
+# Parent Process/User/Machine state stays untouched. Source no-PG checks stay.
+$coordinatorEnvironment=Get-ParkWeaveCoordinatorEnvironment
+foreach ($name in $script:ParkWeaveCoordinatorContextNames) {
+    if ($name -eq 'PARKWEAVE_TRIAL_START_MONOTONIC') {continue}
+    if ([string]::IsNullOrEmpty($coordinatorEnvironment[$name])) {throw 'COORDINATOR_CONTEXT_REQUIRED'}
 }
+if ([string]::IsNullOrEmpty($coordinatorEnvironment['SystemRoot']) -or
+    $record.work_seconds -ne 900 -or $record.cleanup_seconds -ne 60) {throw 'COORDINATOR_BUDGET_REQUIRED'}
+$started=[Environment]::TickCount64/1000.0
+$coordinatorEnvironment['PARKWEAVE_TRIAL_START_MONOTONIC']=$started.ToString('F9',[Globalization.CultureInfo]::InvariantCulture)
+$cleanupEnd=$started+[Math]::Min(960,($record.expires_utc-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()/1000.0))
 $cache=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
 $python=@(Get-ChildItem -LiteralPath $cache -Directory | Where-Object {
     $_.Name -match '^3\.12\.\d+$' -and
@@ -28,8 +30,13 @@ $python=@(Get-ChildItem -LiteralPath $cache -Directory | Where-Object {
 if ($python.Count -ne 1) {throw 'EXISTING_RUNNER_PYTHON312_X64_REQUIRED'}
 $bootstrap=Join-Path $python[0].FullName 'x64\python.exe'
 $entry=Join-Path $PSScriptRoot 'native_business_entry.py'
-& $bootstrap -I -B -S $entry --check-window
-if ($LASTEXITCODE -ne 0) {throw 'SOURCE_WINDOW_REFUSED'}
+function Invoke-OriginalCoordinator {
+    param([string[]]$StageArguments)
+    $info=New-ParkWeaveCoordinatorStartInfo -Executable $bootstrap -WorkingDirectory (Split-Path (Split-Path $PSScriptRoot)) `
+        -ArgumentValues (@('-I','-B','-S',$entry)+$StageArguments) -EnvironmentValues $coordinatorEnvironment
+    return Invoke-ParkWeaveCoordinator -StartInfo $info -CleanupEnd $cleanupEnd
+}
+if ((Invoke-OriginalCoordinator -StageArguments @('--check-window')) -ne 0) {throw 'SOURCE_WINDOW_REFUSED'}
 $temp=[IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\')+'\'
 foreach ($path in @($CandidateDirectory,$CandidateArchive)) {
     if ($path -notmatch '^[A-Za-z]:\\' -or
@@ -46,12 +53,14 @@ foreach ($path in @($CandidateDirectory,$CandidateArchive)) {
     }
 }
 if ($ExtractApprovedArchive) {
-    & $bootstrap -I -B -S $entry --extract-only --payload $CandidateDirectory --candidate-zip $CandidateArchive
-    if ($LASTEXITCODE -ne 0) {throw 'CANDIDATE_EXTRACTION_UNKNOWN_NO_RETRY'}
+    if ((Invoke-OriginalCoordinator -StageArguments @('--extract-only','--payload',$CandidateDirectory,'--candidate-zip',$CandidateArchive)) -ne 0) {
+        throw 'CANDIDATE_EXTRACTION_UNKNOWN_NO_RETRY'
+    }
 }
 # The trusted coordinator itself verifies and holds EVERY candidate file and
 # ancestor, then imports pinned vendor code. Only the original native process
 # implementation later starts the staged, held private product interpreter.
-& $bootstrap -I -B -S $entry --execute --payload $CandidateDirectory --candidate-zip $CandidateArchive
-if ($LASTEXITCODE -ne 0) {throw 'NATIVE_TRIAL_UNKNOWN_NO_RETRY'}
+if ((Invoke-OriginalCoordinator -StageArguments @('--execute','--payload',$CandidateDirectory,'--candidate-zip',$CandidateArchive)) -ne 0) {
+    throw 'NATIVE_TRIAL_UNKNOWN_NO_RETRY'
+}
 # No transfer, retry, path deletion, account creation or production activation.

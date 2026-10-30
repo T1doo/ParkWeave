@@ -33,6 +33,12 @@
   },
   "hosted_image_environment": {
     "known_unrelated_postgresql_keys": ["PGBIN", "PGDATA", "PGROOT"],
-    "preparation": "Remove only those fixed image declarations from the trial coordinator Process environment after source-record admission. Unknown PG* refuses. No service, user or machine environment mutation."
+    "preparation": "Known image declarations are not an allowlist. After source-record admission, construct an OS/context-only child environment; no ambient PG* names or values inherited. Parent Process/User/Machine environment and services remain unchanged. Original RUNNER_TRACKING_ID is retained only in coordinator for best-effort runner cleanup, never printed or generated.",
+    "clock": "One Environment.TickCount64 start across source check/extraction/execution; Python3.12 monotonic GetTickCount64 checked before admission. Original work900+cleanup60 upper bound, never refreshed per stage.",
+    "clock_sources": [
+      "https://raw.githubusercontent.com/python/cpython/v3.12.10/Python/pytime.c",
+      "https://raw.githubusercontent.com/dotnet/runtime/v10.0.0/src/libraries/System.Private.CoreLib/src/System/Environment.Windows.cs"
+    ],
+    "runner_cleanup_source": "https://raw.githubusercontent.com/actions/runner/v2.338.0/src/Runner.Worker/JobExtension.cs"
   }
 }
