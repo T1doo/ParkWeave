@@ -38,8 +38,9 @@ def exception_chain(error):
 
 
 class ControlFailure(RuntimeError):
-    def __init__(self, phase, surfaced, cleanup_errors):
+    def __init__(self, phase, surfaced, cleanup_errors, *, operation=None):
         self.phase = phase
+        self.operation = operation
         self.outcome = 'UNKNOWN'
         self.surfaced = surfaced
         self.causes = exception_chain(surfaced) if surfaced is not None else ()
@@ -49,11 +50,15 @@ class ControlFailure(RuntimeError):
 
     def public(self):
         # No exception text, paths, DSNs, tokens, environment or page state.
-        return dict(outcome=self.outcome, phase=self.phase,
+        result = dict(outcome=self.outcome, phase=self.phase,
                     cause_count=len(self.causes), cleanup_count=len(self.cleanup_errors),
                     causes=[type(e).__name__[:64] for e in self.causes[:16]],
                     cleanup=[dict(phase=p, types=[type(e).__name__[:64] for e in exception_chain(err)[:16]])
                              for p, err in self.cleanup_errors[:16]])
+        if self.operation is not None:
+            result['operation'] = (self.operation if type(self.operation) is str and
+                self.operation in ('CREATE','REOPEN') else 'UNLISTED_OPERATION')
+        return result
 
 
 @dataclass(frozen=True, repr=False)
@@ -296,7 +301,7 @@ class Controller:
         from .native_trial_authority import detach_controller
         detach_controller(self)
         if surfaced is not None or cleanup:
-            failure = ControlFailure(phase, surfaced, cleanup)
+            failure = ControlFailure(phase, surfaced, cleanup, operation='CREATE' if fresh else 'REOPEN')
             raise failure from surfaced
         return dict(initialization='READY', runtime='STOPPED_CONFIRMED', mode='NEW' if fresh else 'REOPEN')
 

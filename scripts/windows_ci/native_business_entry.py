@@ -30,24 +30,28 @@ _ERROR_TYPES=frozenset(('BaseException','Exception','ExceptionGroup','BaseExcept
 
 
 def _error_type(error):
+    diagnostics=sys.modules.get('scripts.windows_ci.native_failure_diagnostics')
+    known=diagnostics.known_exception(error) if diagnostics is not None else None
+    if known is not None:return known['type']
     name=type(error).__name__
     return name if name in _ERROR_TYPES else 'UNLISTED_EXCEPTION'
 
 
-def _control_summary(value):
+def _control_summary(value,error,chain):
     # public() excludes exception text but its phase/type fields are not an
     # output allowlist. Never serialize caller-selected strings or extra keys.
     def phase(item):return item if type(item) is str and item in _PHASES else 'UNLISTED_PHASE'
-    def names(items):
-        return [item if type(item) is str and item in _ERROR_TYPES else 'UNLISTED_EXCEPTION'
-            for item in items[:16]]
-    return dict(outcome='UNKNOWN',phase=phase(value['phase']),
+    result=dict(outcome='UNKNOWN',phase=phase(value['phase']),
         cause_count=value['cause_count'],cleanup_count=value['cleanup_count'],
-        causes=names(value['causes']),cleanup=[dict(phase=phase(row['phase']),types=names(row['types']))
-            for row in value['cleanup'][:16]])
+        causes=[_error_type(item) for item in error.causes[:16]],
+        cleanup=[dict(phase=phase(row['phase']),types=[_error_type(item) for item in chain(original[1])[:16]])
+            for row,original in zip(value['cleanup'][:16],error.cleanup_errors[:16])])
+    if 'operation' in value:
+        result['operation']=value['operation'] if type(value['operation']) is str and value['operation'] in ('CREATE','REOPEN') else 'UNLISTED_OPERATION'
+    return result
 
 
-def _failure_diagnostic(error):
+def _failure_diagnostic(error,sites=None):
     if error is None:return None
     result=dict(type=_error_type(error))
     # No product/native import on a null source window. Only an already loaded
@@ -56,17 +60,39 @@ def _failure_diagnostic(error):
     cls=vars(module).get('ControlFailure') if module is not None else None
     if cls is None or type(error) is not cls:return result
     try:
-        result['control']=_control_summary(cls.public(error))
+        chain=vars(module)['exception_chain']
+        result['control']=_control_summary(cls.public(error),error,chain)
         nested=[];seen={id(error)};truncated=len(error.causes)>64
         # Causal postorder places wrapper ControlFailures AFTER their leaves.
         # Scan a bounded suffix backwards to retain the nearest wrappers too.
         for cause in reversed(error.causes[-64:]):
             if type(cause) is cls and id(cause) not in seen:
                 seen.add(id(cause))
-                if len(nested)<4:nested.append(_control_summary(cls.public(cause)))
+                if len(nested)<4:nested.append(_control_summary(cls.public(cause),cause,chain))
                 else:truncated=True
         result['nested_controls']=nested
         result['nested_controls_truncated']=truncated
+        diagnostics=sys.modules.get('scripts.windows_ci.native_failure_diagnostics')
+        if diagnostics is not None:
+            # Shared references distinguish repeated causal/context appearances
+            # from independent faults. Never expose process object addresses.
+            details=[];references={};limited=(len(error.causes)>16 or len(error.cleanup_errors)>16)
+            budget=dict(nodes=64,frames=16)
+            def describe(item):
+                nonlocal limited
+                if id(item) in references:return references[id(item)]
+                if len(details)>=32:limited=True;return 'DETAIL_LIMIT'
+                reference=len(details);references[id(item)]=reference
+                details.append(diagnostics.detail(item,_error_type(item),sites,budget))
+                return reference
+            result['cause_details']=[describe(item) for item in error.causes[:16]]
+            cleanup_details=[]
+            for row,original in zip(result['control']['cleanup'],error.cleanup_errors[:16]):
+                causes=chain(original[1]);limited=limited or len(causes)>16
+                cleanup_details.append(dict(phase=row['phase'],errors=[describe(item) for item in causes[:16]]))
+            result['cleanup_details']=cleanup_details
+            result['exception_details']=details
+            result['details_truncated']=limited or any(item['source_sites']['truncated'] for item in details)
     except BaseException:
         # Diagnostic failure cannot replace the original failure or exit code.
         result=dict(type=_error_type(error),diagnostic='UNAVAILABLE')
@@ -87,11 +113,12 @@ def main(argv=None):
     if not (args.execute or args.check_window or args.verify_only or args.extract_only):
         from scripts.windows_ci.native_business_plan import plan
         print(json.dumps(plan(),ensure_ascii=False));return 0
-    scope=None;primary=None;cleanup=None;pins=None;pin_cleanup_end=None
+    scope=None;primary=None;cleanup=None;pins=None;pin_cleanup_end=None;sites=None
     stage='SOURCE_WINDOW';failure_stage=None;cleanup_scope='NOT_ATTEMPTED'
     try:
         from scripts.windows_ci.native_business_window import load_source_window,verify_bootstrap_and_consume,need
         source=load_source_window()  # Null currently: refuse BEFORE native/candidate/RNG/OS actions.
+        from scripts.windows_ci.native_failure_diagnostics import SourceSites
         if args.check_window:
             print(json.dumps(dict(window='SOURCE_BOUND_NOT_EXECUTED',activation_allowed=False)));return 0
         stage='CANDIDATE_ARGUMENTS'
@@ -112,6 +139,9 @@ def main(argv=None):
         from scripts.windows_ci.native_business_window import _verified
         pins=_verified[verified][7]
         pin_cleanup_end=_verified[verified][5]+_verified[verified][0].cleanup_seconds
+        # Optional source diagnostics never grant work or change failure into success.
+        try:sites=SourceSites(root,_verified[verified][0].reviewed_parent)
+        except Exception:sites=None
         stage='PINNED_IMPORTS'
         from scripts.windows_ci.pinned_vendor_imports import restrict_bootstrap_imports
         restrict_bootstrap_imports(root,pins)
@@ -135,7 +165,7 @@ def main(argv=None):
             primary_type=_error_type(primary) if primary is not None else None,
             cleanup_type=_error_type(cleanup) if cleanup is not None else None,
             failure_stage=failure_stage or cleanup_scope,
-            primary=_failure_diagnostic(primary),cleanup=_failure_diagnostic(cleanup),
+            primary=_failure_diagnostic(primary,sites),cleanup=_failure_diagnostic(cleanup,sites),
             outer_cleanup=dict(scope=cleanup_scope,
                 returned_without_exception=cleanup_scope!='NOT_ATTEMPTED' and cleanup is None,
                 controller_cleanup='SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED'),

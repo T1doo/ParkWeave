@@ -32,7 +32,7 @@ class Pins:
         events.append('pins-close')
         if scenario=='pins-failure':raise OSError(private)
 window.load_source_window=load;window.verify_bootstrap_and_consume=verify;window.need=need
-window._verified={verified:(types.SimpleNamespace(cleanup_seconds=60),None,None,None,None,100,None,Pins())}
+window._verified={verified:(types.SimpleNamespace(cleanup_seconds=60,reviewed_parent='a'*40),None,None,None,None,100,None,Pins())}
 sys.modules[window.__name__]=window
 imports=types.ModuleType('scripts.windows_ci.pinned_vendor_imports')
 def restrict(*args):
@@ -44,6 +44,10 @@ class Scope:
     def __init__(self,source):events.append('scope')
     def run(self):
         events.append('business-protocol')
+        if scenario=='source-site':
+            from scripts.windows_portable import directories
+            try:directories._decode(b'')  # Real fixed-source pure validation.
+            except directories.LeaseRefused as cause:raise ControlFailure('ACQUIRE',cause,[]) from cause
         if scenario in ('failure','both-nested','diagnostic-unavailable'):
             try:
                 subprocess.run([sys.executable,'-I','-B','-S','-c',
@@ -121,6 +125,18 @@ def test_actual_entry_pins_cleanup_failure_preserves_primary_stage():
     assert report['failure_stage']=='PINNED_IMPORTS'
     assert report['primary_type']=='ValueError' and report['cleanup_type']=='OSError'
     assert report['outer_cleanup']['scope']=='PINS_CLOSE'
+
+
+def test_actual_entry_uses_verified_source_sites_without_private_paths():
+    process,report,events=run_entry('source-site')
+    assert process.returncode==2 and events[-1]=='scope-close-failed-True'
+    assert report['result']=='NOT_EXECUTED_OR_UNKNOWN' and report['primary']['control']['outcome']=='UNKNOWN'
+    primary=report['primary'];reference=primary['cause_details'][0]
+    location=primary['exception_details'][reference]['source_sites']
+    assert location['source_commit']=='a'*40 and location['status']=='MATCHED'
+    assert any(row['module']=='scripts.windows_portable.directories' and row['function']=='_decode'
+        for row in location['frames'])
+    assert str(ROOT) not in process.stdout
 
 
 def test_actual_entry_diagnostic_failure_never_replaces_original_exit():
