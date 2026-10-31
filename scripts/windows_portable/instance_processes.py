@@ -1,7 +1,6 @@
-"""Fixed application-pair wiring, not a concrete cluster or security provider.
+"""Fixed application-pair wiring for the explicit native composition.
 
-No entry/CLI calls this adapter. Cluster creation and reopen are distinct ports;
-native admission, secrets, SESSION/CONFIG and cluster startup remain unimplemented.
+Cluster creation and reopen are distinct ports; native admission stays gated.
 The controller alone authenticates readiness, persists RUNNING and sends GO.
 """
 from typing import Protocol
@@ -23,11 +22,11 @@ class InstanceProcesses:
     """One invocation, one exact lease, one create OR reopen, one app pair.
 
     The supplied cluster port is trusted internal code, not a loader or approval.
-    Its concrete production implementation is still absent. Tokens go directly
-    to the controller at original creation time, before startup can finish.
+    The native composition supplies NativeProtectedClusterProcesses. Tokens go
+    directly to the controller at original creation time, before startup finishes.
     """
     def __init__(self, cluster: ClusterProcesses, *, python_sha256, python_size, api_port=None, challenge,
-                 endpoint_source=None):
+                 endpoint_source=None,session_provider=None):
         from parkweave.runtime_readiness import challenge as require_challenge
         require_challenge(challenge)
         if endpoint_source is None:
@@ -35,12 +34,18 @@ class InstanceProcesses:
                 raise CandidateRefused('fixed local API port required')
         else:
             from .fixed_store_security import IsolatedFixedStoreSecurity
-            if type(endpoint_source) is not IsolatedFixedStoreSecurity or api_port is not None:
+            from .native_instance_security import NativeFixedStoreSecurity
+            if type(endpoint_source) not in (IsolatedFixedStoreSecurity,NativeFixedStoreSecurity) or api_port is not None:
                 raise CandidateRefused('explicit endpoint source OR API port required')
         # Validate frozen payload identity without opening or executing anything.
         self.python = Command('runtime/python/python.exe', python_sha256, python_size, model='WINDOWS_JOB')
         self.cluster, self.api_port, self.challenge = cluster, api_port, challenge
         self.endpoint_source = endpoint_source
+        if session_provider is not None:
+            from .native_preparation_sessions import NativePreparationSessionProvider
+            if type(session_provider) is not NativePreparationSessionProvider:
+                raise CandidateRefused('original native session provider required')
+        self.session_provider = session_provider
         self.lease = self.inputs = self.application = None
         self.mode = None
         self.app_attempted = self.failed = False
@@ -67,9 +72,13 @@ class InstanceProcesses:
             inputs = method(lease, credentials, self._register(self.cluster, register))
             if not self._owned or type(inputs) is not DatabaseInputs:
                 raise CandidateRefused('registered explicit cluster inputs required')
-            if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
-                raise CandidateRefused('held private cluster directory required')
-            if self.endpoint_source is not None:self.endpoint_source.require_inputs(lease,inputs)
+            from .native_cluster import NativeProtectedClusterProcesses
+            if type(self.cluster) is NativeProtectedClusterProcesses:
+                self.cluster.require_bound_inputs(lease,inputs,self.endpoint_source)
+            else:
+                if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
+                    raise CandidateRefused('held private cluster directory required')
+                if self.endpoint_source is not None:self.endpoint_source.require_inputs(lease,inputs)
             self.inputs = inputs
             return inputs
         except BaseException:
@@ -77,8 +86,8 @@ class InstanceProcesses:
             raise
 
     def create_cluster(self, lease, credentials, register):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # No standalone creation can bypass the original pause.
+        from .native_trial_authority import require_owner
+        require_owner(self)
         return self._cluster('NEW', lease, credentials, register)
 
     def open_cluster(self, lease, credentials, register):
@@ -101,12 +110,18 @@ class InstanceProcesses:
                 raise CandidateRefused('distinct fixed database and API ports required')
             environment = (('PARKWEAVE_DSN', inputs.application_dsn), ('PARKWEAVE_MODE', 'LOCAL'),
                            ('PARKWEAVE_FILE_ROOT', str(private_root(lease) / 'files')))
-            def command(arguments, stdio='NONE'):
+            api_environment=environment
+            api_factory='parkweave.api:configured_app'
+            if self.session_provider is not None:
+                from .native_web_login import ENVIRONMENT
+                api_environment=environment+((ENVIRONMENT,self.session_provider.web_configuration(lease,inputs)),)
+                api_factory='scripts.windows_portable.native_web_login:configured_app'
+            def command(arguments, stdio='NONE', *, config=environment):
                 return Command(self.python.relative_executable, self.python.sha256, self.python.size,
-                               arguments, 'WINDOWS_JOB', stdio, environment)
+                               arguments, 'WINDOWS_JOB', stdio, config)
             commands = {
-                'api': command(('-I', '-B', '-m', 'uvicorn', 'parkweave.api:configured_app', '--factory',
-                                '--host', '127.0.0.1', '--port', str(self.api_port), '--no-access-log')),
+                'api': command(('-I', '-B', '-m', 'uvicorn', api_factory, '--factory',
+                                '--host', '127.0.0.1', '--port', str(self.api_port), '--no-access-log'),config=api_environment),
                 'worker': command(('-I', '-B', '-m', 'parkweave.worker', '--readiness-stdio',
                                    '--readiness-challenge', self.challenge), 'WORKER_READINESS_V1'),
             }
@@ -114,7 +129,8 @@ class InstanceProcesses:
             record = self._register(adapter, register)
             api = adapter.launch('api', record)
             worker = adapter.launch('worker', record)
-            self.application = RegisteredApplication(adapter, api, worker, self.api_port, self.challenge)
+            self.application = RegisteredApplication(adapter, api, worker, self.api_port, self.challenge,
+                database_endpoint=getattr(self.cluster,'endpoint',None))
             return self.application  # NOT ready; no probe, checkpoint or GO here.
         except BaseException:
             self.failed = True

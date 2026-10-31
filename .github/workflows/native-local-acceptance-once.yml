@@ -1,0 +1,41 @@
+name: ParkWeave native source-bound acceptance preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_uri:
+        description: Original hash-pinned 5a048db candidate; publication requires separate approval
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-native-local-acceptance-once-20261028
+  cancel-in-progress: false
+
+jobs:
+  native-acceptance:
+    if: ${{ false && github.event.repository.private == false && github.repository == 'T1doo/ParkWeave' }}
+    runs-on: windows-2025
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Reviewed source-data window only; currently unbound
+        timeout-minutes: 5
+        shell: pwsh
+        env:
+          CANDIDATE_URI: ${{ inputs.candidate_uri }}
+          PYTHONDONTWRITEBYTECODE: '1'
+          PSYCOPG_IMPL: binary
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          & ./scripts/windows_ci/native_acceptance_driver.ps1 -CandidateUri $env:CANDIDATE_URI

@@ -38,8 +38,9 @@ def exception_chain(error):
 
 
 class ControlFailure(RuntimeError):
-    def __init__(self, phase, surfaced, cleanup_errors):
+    def __init__(self, phase, surfaced, cleanup_errors, *, operation=None):
         self.phase = phase
+        self.operation = operation
         self.outcome = 'UNKNOWN'
         self.surfaced = surfaced
         self.causes = exception_chain(surfaced) if surfaced is not None else ()
@@ -49,11 +50,15 @@ class ControlFailure(RuntimeError):
 
     def public(self):
         # No exception text, paths, DSNs, tokens, environment or page state.
-        return dict(outcome=self.outcome, phase=self.phase,
+        result = dict(outcome=self.outcome, phase=self.phase,
                     cause_count=len(self.causes), cleanup_count=len(self.cleanup_errors),
                     causes=[type(e).__name__[:64] for e in self.causes[:16]],
                     cleanup=[dict(phase=p, types=[type(e).__name__[:64] for e in exception_chain(err)[:16]])
                              for p, err in self.cleanup_errors[:16]])
+        if self.operation is not None:
+            result['operation'] = (self.operation if type(self.operation) is str and
+                self.operation in ('CREATE','REOPEN') else 'UNLISTED_OPERATION')
+        return result
 
 
 @dataclass(frozen=True, repr=False)
@@ -165,8 +170,8 @@ class Controller:
         self.database = database
 
     def create(self, root, use):
-        from scripts.windows.lifecycle import require_setup_readiness
-        require_setup_readiness()  # Outside finally: refusal calls ZERO ports.
+        from .native_trial_authority import require_owner
+        require_owner(self)  # Unbound production: original refusal, ZERO ports.
         return self._run(root, use, fresh=True)
 
     def reopen(self, root, use):
@@ -186,9 +191,13 @@ class Controller:
         def checkpoint(next_phase, runtime='STARTING'):
             nonlocal phase
             phase = next_phase
+            from .native_trial_authority import budget
+            budget(self)
             lease.checkpoint(phase, initialized, runtime)
 
         try:
+            from .native_trial_authority import budget
+            budget(self)
             db = self.database if self.database is not None else NativeDatabaseOperations()
             self.security.require_runtime_support(db,self.processes)
             if fresh:
@@ -198,6 +207,8 @@ class Controller:
             lease = (self.directories.claim_fresh(root) if fresh else self.directories.open_existing(root))
             if lease.status() != ('NEW' if fresh else 'READY_STOPPED'):
                 raise CandidateRefused('fresh or confirmed stopped installation required')
+            from .native_trial_authority import attach_controller
+            attach_controller(self,lease,register)
             if fresh:
                 self.security.bind_new_lease(lease)  # NEW plan must precede CREDENTIALS; mandatory, not optional.
                 checkpoint('CREDENTIALS')
@@ -241,7 +252,9 @@ class Controller:
             check_before_running(ready)
             checkpoint('RUNNING', 'RUNNING')
             activate_application(ready)  # Exact worker GO only after durable RUNNING.
+            budget(self)
             use(application)  # Return values stay private; never become report data.
+            budget(self)
         except BaseException as error:
             surfaced = error
         finally:
@@ -253,6 +266,20 @@ class Controller:
                 except BaseException as error:
                     cleanup.append(('STOP_OWNED', error))
             if lease is not None:
+                closer=getattr(self.security,'close_owned_files',None)
+                if callable(closer) and not cleanup:
+                    try:closer(lease)
+                    except BaseException as error:
+                        cleanup.append(('CLOSE_SECURITY_FILES',error))
+                        retain=getattr(self.security,'retain_owned_files',None)
+                        if callable(retain):
+                            try:retain(lease)
+                            except BaseException as nested:cleanup.append(('RETAIN_SECURITY_FILES',nested))
+                elif cleanup:
+                    retain=getattr(self.security,'retain_owned_files',None)
+                    if callable(retain):
+                        try:retain(lease)
+                        except BaseException as error:cleanup.append(('RETAIN_SECURITY_FILES',error))
                 try:
                     if surfaced is not None or cleanup:
                         lease.mark_unknown(phase)
@@ -271,8 +298,10 @@ class Controller:
                     # Ownership may already be gone. Do not write/reacquire
                     # here; the lease adapter must conservatively block the
                     # unconfirmed handoff on the next open_existing.
+        from .native_trial_authority import detach_controller
+        detach_controller(self)
         if surfaced is not None or cleanup:
-            failure = ControlFailure(phase, surfaced, cleanup)
+            failure = ControlFailure(phase, surfaced, cleanup, operation='CREATE' if fresh else 'REOPEN')
             raise failure from surfaced
         return dict(initialization='READY', runtime='STOPPED_CONFIRMED', mode='NEW' if fresh else 'REOPEN')
 
@@ -280,6 +309,13 @@ class Controller:
 class NativeDatabaseOperations:
     """Real original consumers; ports and production activation remain absent."""
     ROLES_SHA256 = '604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3'
+
+    def bind_owned_endpoint(self,endpoint):
+        from .native_database_endpoint import NativeOwnedDatabaseEndpoint
+        if type(endpoint) is not NativeOwnedDatabaseEndpoint or getattr(self,'_owned_endpoint',None) is not None:
+            raise CandidateRefused('one exact native database endpoint required')
+        endpoint.verify()
+        self._owned_endpoint=endpoint
 
     def prepare_new(self):
         from hashlib import sha256
@@ -293,13 +329,17 @@ class NativeDatabaseOperations:
     def create_schema32(self, inputs):
         from .initialize import create_fresh_native_schema32
         return create_fresh_native_schema32(inputs.maintenance_dsn, inputs.owner_dsn,
-                                          inputs.application_dsn, inputs.data_directory)
+                                          inputs.application_dsn, inputs.data_directory,
+            **({'endpoint':self._owned_endpoint} if getattr(self,'_owned_endpoint',None) is not None else {}))
 
     def _owner(self, owner):
         from parkweave.installed_fixture_receipt import _InstalledSyntheticSetupStore, NativeDatabaseCreationEvidence
         if (type(owner) is not _InstalledSyntheticSetupStore or
                 type(getattr(owner, '_case_fact_fixture_receipt', None)) is not NativeDatabaseCreationEvidence):
             raise CandidateRefused('exact live native owner required')
+        endpoint=getattr(self,'_owned_endpoint',None)
+        if endpoint is not None and owner._owned_database_endpoint is not endpoint:
+            raise CandidateRefused('same original native owner endpoint required')
 
     def grant_roles(self, owner, prepared):
         from hashlib import sha256
@@ -321,13 +361,13 @@ class NativeDatabaseOperations:
         Store.seed(owner, identities)
 
     def verify_existing(self, inputs):
-        from parkweave.installed_fixture_receipt import _dsn, _connect
+        from parkweave.installed_fixture_receipt import _dsn, _connect_bound
         from scripts.windows.lifecycle import check_dsn_scope
         parsed = _dsn(inputs.application_dsn, 'parkweave')
         if parsed['host'] != '127.0.0.1':
             raise CandidateRefused('original Setup host required')
         def read_only():
-            connection = _connect(parsed, autocommit=False)
+            connection = _connect_bound(parsed, autocommit=False,endpoint=getattr(self,'_owned_endpoint',None))
             try:
                 connection.execute('SET TRANSACTION READ ONLY')
             except BaseException:

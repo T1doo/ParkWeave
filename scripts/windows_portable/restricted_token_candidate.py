@@ -10,8 +10,15 @@ native acceptance, default DACL and actual process creation remain outstanding.
 import ctypes as C
 import os
 import struct
+import weakref
 from enum import Enum
 from threading import RLock
+
+def _native_registry():
+    """No eager registry construction or native work at module import."""
+    if not hasattr(_native_registry,'values'):
+        _native_registry.values=(weakref.WeakKeyDictionary(),weakref.WeakKeyDictionary())
+    return _native_registry.values
 
 
 class TokenRefused(RuntimeError):
@@ -227,6 +234,9 @@ class _RestrictedPrimaryCandidate:
                 self._handles.append(base.value)  # successful transfer, before queries
             _need(ok and base.value)
             snapshots = self._query(base)
+            from .native_trial_authority import bound_state
+            if bound_state(self) is not None:
+                _native_registry()[0][self]=(base.value,self._primary_full(base.value))
             # Binary S-1-5-32-544 and S-1-5-32-547; no SID allocator to release.
             sids = [b'\x01\x02' + b'\x00' * 5 + b'\x05' + struct.pack('<II', 32, rid)
                     for rid in (544, 547)]
@@ -258,12 +268,15 @@ class _RestrictedPrimaryCandidate:
                 cleanup_type = type(cleanup_error).__name__
             raise TokenFailure(primary_type, cleanup_type, self._phase, self._winerror) from None
 
-    def _read_default_dacl(self):
+    def _read_default_dacl(self,token=None):
         buffer, used = C.create_string_buffer(65536), C.c_uint32()
         self._phase = 'QUERY_DEFAULT_DACL'
-        self._api(self._adv.GetTokenInformation(self._derived, 6, buffer,
+        self._api(self._adv.GetTokenInformation(self._derived if token is None else token, 6, buffer,
                                                C.sizeof(buffer), C.byref(used)))
         return _dacl_bytes(buffer, used.value)
+
+    def _primary_full(self,token):
+        return self._query(token),self._read_owner(token),self._read_default_dacl(token)
 
     def _read_owner(self, token=None):
         buffer, used = C.create_string_buffer(4096), C.c_uint32()
@@ -336,11 +349,24 @@ class _RestrictedPrimaryCandidate:
     def close(self):
         if self._closed:
             return
+        errors = 0;completed=None
+        original=_native_registry()[0].pop(self,None)
+        if original is not None and not self._failed and self._prepared_owner is not None and self._prepared_dacl is not None:
+            try:
+                from .native_trial_authority import budget
+                budget(self,cleanup=True)
+                base,before=original;after=self._primary_full(base)
+                _need(after==before and self._read_owner()==self._prepared_owner
+                      and self._read_default_dacl()==self._prepared_dacl
+                      and self._query(self._derived)==self._restricted_snapshot)
+                completed=(base,self._derived,before,after,self._prepared_owner,self._prepared_dacl)
+            except BaseException:errors+=1
         self._closed = True
-        errors = 0
         # Attempt each original handle once; never reopen by PID or retry close.
         for handle in reversed(self._handles):
             try:
+                from .native_trial_authority import budget
+                budget(self,cleanup=True)
                 if not self._kernel.CloseHandle(handle):
                     errors += 1
             except BaseException:
@@ -351,3 +377,4 @@ class _RestrictedPrimaryCandidate:
         if errors:
             self._failed = True
             raise TokenRefused('RESTRICTED_TOKEN_CLOSE_UNKNOWN')
+        if completed is not None:_native_registry()[1][self]=completed

@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import struct
 import tempfile
 import time
 import unittest
@@ -11,7 +12,21 @@ from unittest.mock import patch
 
 from . import payload, runtime_payload as r, processes as p
 from .fixed_directories import FixedPrivateDirectories
-from .test_payload import pe
+from .test_payload import pe as name_only_pe
+
+
+def pe(names=(),delay=()):
+    # Complete bounded lookup tables for this static-symbol consumer. These
+    # remain nonexecuted synthetic PE bytes, not Windows loading evidence.
+    raw=bytearray(name_only_pe(names,delay))
+    for is_delay,items,start,stride in ((False,names,512,20),(True,delay,768,32)):
+        for i,_ in enumerate(items):
+            offset=1792+(i+(8 if is_delay else 0))*16
+            if offset+16>len(raw):raw.extend(b'\0'*(offset+16-len(raw)))
+            struct.pack_into('<I',raw,start+i*stride+(16 if is_delay else 0),0x1000+offset-512)
+            struct.pack_into('<QQ',raw,offset,(1<<63)|1,0)
+    if len(raw)>2048:struct.pack_into('<I',raw,0x98+240+16,len(raw)-512)
+    return bytes(raw)
 
 SOURCE = 'a' * 40
 
@@ -121,12 +136,43 @@ class RuntimePayloadFileChecks(unittest.TestCase):
         manifest['source_commit'] = SOURCE; manifest['usable_product'] = True; self.write_manifest(manifest)
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'SOURCE_OR_SCOPE'): self.inspect()
 
+    def test_native_capability_cannot_be_forged_or_replace_posix_pin_policy(self):
+        from .native_runtime_staging import NativeRuntimeInstallation
+        from .controller import CandidateRefused
+        forged = object.__new__(NativeRuntimeInstallation)
+        # Refuse before native queries, reads, or any purported capability data.
+        with self.assertRaises(CandidateRefused):
+            r.RuntimePayloadPrerequisite(self.lease,manifest_sha256=self.digest,
+                source_commit=SOURCE,native_installation=forged)
+        with self.assertRaises(CandidateRefused):
+            forged.inspect_pg_static(self.lease,dict(source_commit=SOURCE,manifest_sha256=self.digest),time.monotonic()+5)
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'ORIGINAL_NATIVE_INSTALLATION_REQUIRED'):
+            r.RuntimePayloadPrerequisite(self.lease,manifest_sha256=self.digest,
+                source_commit=SOURCE,native_installation={'files':self.files})
+
     def test_static_delayed_import_and_bootstrap_dynamic_missing_are_not_closed_by_manifest_claim(self):
         self.files[r.PG + 'bin/postgres.exe'] = pe(delay=('missing.dll',)); self.write_payload()
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'STATIC_IMPORT_UNRESOLVED'): self.inspect()
         self.files[r.PG + 'bin/postgres.exe'] = pe(('kernel32.dll',))
         self.files[r.PG + 'share/postgres.bki'] += b' $libdir/unshipped_conversion'; self.write_payload()
         with self.assertRaisesRegex(r.RuntimePayloadRefused, 'DYNAMIC_BOOTSTRAP_MISSING'): self.inspect()
+
+    def test_platform_requirements_remain_visible_without_becoming_private_missing_or_loading_permission(self):
+        self.files[r.PG + 'bin/postgres.exe'] = pe(('vcruntime140.dll','msvcp140.dll',
+            'api-ms-win-crt-runtime-l1-1-0.dll','pdh.dll'))
+        self.write_payload()
+        report = self.inspect()
+        self.assertEqual(report['static_loading'],'STATIC_PLATFORM_REQUIREMENTS_UNVERIFIED')
+        self.assertEqual(len(report['unresolved']),4)
+        self.assertTrue(all(row['observed'] is False for row in report['platform_requirements']))
+        self.assertEqual(report['missing_private_dependencies'],[])
+        self.assertFalse(report['activation_allowed'])
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED'):
+            self.guard().require_for_cluster(self.lease,time.monotonic()+10)
+        self.assertNotIn('vcruntime140.dll',payload.OS_DLLS)
+        self.files[r.PG + 'bin/postgres.exe'] = pe(('api-ms-win-madeup.dll',))
+        self.write_payload()
+        with self.assertRaisesRegex(r.RuntimePayloadRefused,'PG_STATIC_IMPORT_UNRESOLVED'):self.inspect()
 
     def test_same_lease_state_and_ancestor_names_must_still_match_before_return(self):
         other = self.claim(self.base / 'other')

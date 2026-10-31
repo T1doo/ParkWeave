@@ -42,7 +42,7 @@ AUTHORITY = ('principals', 'capability_grants', 'action_grants', 'preparation_gr
 SQL_RIGHTS = {
     'SELECT': ('schema_version', 'principals', 'capability_grants', 'action_grants',
                'preparation_grants', 'preparation_catalog', 'field_grants', 'run_assignments',
-               'model_steps', 'dispatch_notice_outbox', 'controlled_plans'),
+               'model_steps', 'dispatch_notice_outbox', 'service_dispatch_events', 'controlled_plans'),
     'SELECT,INSERT,UPDATE': ('runs', 'operations', 'outbox', 'run_projection',
                              'deliveries', 'preparations'),
     'SELECT,INSERT': ('cases', 'preparation_evidence', 'preparation_events'),
@@ -56,6 +56,8 @@ def dump(path, value):
     with path.open('x', encoding='utf-8') as stream:
         json.dump(value, stream, ensure_ascii=False, indent=2, default=str)
         stream.write('\n')
+        stream.flush()
+        os.fsync(stream.fileno())
 
 
 def pg_bin(name):
@@ -162,7 +164,7 @@ def authority(c):
     return dict(sha256=sha256(raw).hexdigest(), counts={k: len(v) for k, v in values.items()})
 
 
-def setup():
+def setup(*, session_provider=None):
     global _last_owned_state
     if sys.platform != 'linux' or os.geteuid() == 0:
         raise Denied('existing unprivileged Linux environment required')
@@ -190,39 +192,55 @@ def setup():
         owner._case_fact_fixture_receipt = receipt
         # Preserve observed creation data, never reconstruct an issued receipt from it.
         dump(p / 'creation-observation.json', asdict(receipt))
-        owner.migrate()
-        tokens = dict(enterprise=secrets.token_urlsafe(32), specialist=secrets.token_urlsafe(32))
-        park, org = 'synthetic-material-park', 'synthetic-material-org'
-        ids = dict(enterprise='material-demo-enterprise', specialist='material-demo-specialist')
-        with owner.connect() as c:
-            for actor, role in (('enterprise', 'enterprise_operator'), ('specialist', 'park_specialist')):
-                c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',
-                          (ids[actor], digest(tokens[actor]), park, org, role))
-            for actor, cap in (('enterprise', 'READ'), ('enterprise', 'EXECUTE'), ('specialist', 'READ')):
-                c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',
-                          (ids[actor], cap, park, org))
-            c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)", (ids['enterprise'], park, org))
-            for actor, cap in (('enterprise', 'PREPARE'), ('specialist', 'REVIEW_ASSIGNED')):
-                c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',
-                          (ids[actor], park, org, cap))
-            source = dict(kind='SYNTHETIC', id='MATERIAL_ONLY_LOCAL_DEMO', revision='1',
-                          statement='仅合成资料整理定义；无资格条件，不是模板发布或正式批准。')
-            c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,'企业资料整理（合成）',%s,'SYNTHETIC','NOT_EVALUATED')", (park, Jsonb(source)))
-            c.execute('GRANT CONNECT ON DATABASE parkweave TO parkweave_app')
-            c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
-            for operations, tables in SQL_RIGHTS.items():
-                c.execute('GRANT ' + operations + ' ON ' + ','.join(tables) + ' TO parkweave_app')
-            identity = c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
-            oid = c.execute("SELECT oid::bigint FROM pg_database WHERE datname='parkweave'").fetchone()['oid']
-            snapshot = authority(c)
-            assert snapshot['counts'] == dict(principals=2, capability_grants=3, action_grants=1,
-                preparation_grants=2, preparation_catalog=1, run_assignments=0, field_grants=0,
-                synthetic_resources=0, synthetic_resource_grants=0)
-        dump(p / 'sessions.json', tokens)
-        dump(p / 'state.json', dict(schema='parkweave-material-only-demo/1', **source_binding(),
-             system_identifier=identity['system_identifier'], database_oid=oid, schema_version=32,
-             authority=snapshot, ids=ids, sql_rights=SQL_RIGHTS, session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
+        populate(p, owner, session_provider=session_provider)
     return p
+
+
+def populate(p, owner, *, session_provider=None, persistent=False):
+    if persistent:
+        from parkweave.local_identity import LocalSessionVault
+        if type(session_provider) is not LocalSessionVault:
+            raise Denied('persistent installation requires sealed identities')
+    owner.migrate()
+    tokens = (session_provider.generate() if session_provider is not None else
+              dict(enterprise=secrets.token_urlsafe(32), specialist=secrets.token_urlsafe(32)))
+    park, org = 'synthetic-material-park', 'synthetic-material-org'
+    ids = dict(enterprise='material-demo-enterprise', specialist='material-demo-specialist')
+    with owner.connect() as c:
+        for actor, role in (('enterprise', 'enterprise_operator'), ('specialist', 'park_specialist')):
+            c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',
+                      (ids[actor], digest(tokens[actor]), park, org, role))
+        for actor, cap in (('enterprise', 'READ'), ('enterprise', 'EXECUTE'), ('specialist', 'READ')):
+            c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',
+                      (ids[actor], cap, park, org))
+        c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)", (ids['enterprise'], park, org))
+        for actor, cap in (('enterprise', 'PREPARE'), ('specialist', 'REVIEW_ASSIGNED')):
+            c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',
+                      (ids[actor], park, org, cap))
+        source = dict(kind='SYNTHETIC', id='MATERIAL_ONLY_LOCAL_DEMO', revision='1',
+                      statement='仅合成资料整理定义；无资格条件，不是模板发布或正式批准。')
+        c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,'企业资料整理（合成）',%s,'SYNTHETIC','NOT_EVALUATED')", (park, Jsonb(source)))
+        c.execute('GRANT CONNECT ON DATABASE parkweave TO parkweave_app')
+        c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
+        for operations, tables in SQL_RIGHTS.items():
+            c.execute('GRANT ' + operations + ' ON ' + ','.join(tables) + ' TO parkweave_app')
+        identity = c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
+        oid = c.execute("SELECT oid::bigint FROM pg_database WHERE datname='parkweave'").fetchone()['oid']
+        snapshot = authority(c)
+        assert snapshot['counts'] == dict(principals=2, capability_grants=3, action_grants=1,
+            preparation_grants=2, preparation_catalog=1, run_assignments=0, field_grants=0,
+            synthetic_resources=0, synthetic_resource_grants=0)
+    marker = dict(schema='parkweave-local-material-installation/1' if persistent else 'parkweave-material-only-demo/1', **source_binding(),
+         system_identifier=identity['system_identifier'], database_oid=oid, schema_version=32,
+         authority=snapshot, ids=ids, sql_rights=SQL_RIGHTS, session_expiry='NONE_MANUAL_REVOCATION_REQUIRED')
+    if session_provider is None:
+        dump(p / 'sessions.json', tokens)
+    else:
+        session_provider.publish(p, marker)
+        marker['session_storage'] = 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
+        from scripts.local_product import runtime_source_binding
+        marker['runtime_source_sha256'] = runtime_source_binding()
+    dump(p / 'state.json', marker)
 
 
 def serve(value, port):

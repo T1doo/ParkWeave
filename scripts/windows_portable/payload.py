@@ -12,8 +12,9 @@ MAX_BYTES = 1024 * 1024 * 1024
 MANIFEST = 'payload-manifest.json'
 SCHEMA = 'parkweave-windows-portable-candidate/1'
 DEVICE = re.compile(r'(?i)^(con|prn|aux|nul|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)')
-# Windows 10/11 API-set contracts and named OS DLLs only. CRT/PG/Python DLLs
-# are deliberately absent: these must be resolved inside the payload domain.
+# Named OS DLL declarations only. CRT is NOT an OS_DLLS shortcut: the explicit
+# existing-system CRT contract requires an issued native read-only witness.
+# Other PG/Python libraries remain confined to their own payload domain.
 OS_DLLS = frozenset(('kernel32.dll kernelbase.dll ntdll.dll advapi32.dll user32.dll '
     'gdi32.dll gdi32full.dll shell32.dll shlwapi.dll ole32.dll oleaut32.dll '
     'ws2_32.dll crypt32.dll bcrypt.dll bcryptprimitives.dll secur32.dll '
@@ -21,6 +22,14 @@ OS_DLLS = frozenset(('kernel32.dll kernelbase.dll ntdll.dll advapi32.dll user32.
     'normaliz.dll psapi.dll userenv.dll netapi32.dll wldap32.dll dnsapi.dll '
     'iphlpapi.dll mswsock.dll ncrypt.dll wintrust.dll setupapi.dll ucrtbase.dll '
     'msvcrt.dll shfolder.dll dbghelp.dll winspool.drv').split())
+# Classification only: these remain unresolved until observed on the target.
+SYSTEM_DLL_CANDIDATES = frozenset(('cabinet.dll','msi.dll','propsys.dll','pdh.dll','powrprof.dll'))
+SYSTEM_CRT_PREREQUISITES=frozenset(('vcruntime140.dll','msvcp140.dll'))
+# Reviewed, whole-file byte profile from the existing locked psycopg-binary
+# 3.3.6 wheel. No execution/AST guessing and no arbitrary .libs directory scan.
+WHEEL_DLL_PROFILES = (('vendor/psycopg_binary/__init__.py',
+    '712ff217ff67595f391b6dd2a0e148c78a6e74f3e8f4a66116f873c0e49395b4',
+    'vendor/psycopg_binary','vendor/psycopg_binary.libs'),)
 
 
 class PayloadRefused(RuntimeError):
@@ -103,12 +112,12 @@ def parse_manifest(raw):
     return manifest
 
 
-def verify_directory(root):
+def verify_directory(root, *, manifest_raw=None):
     root = Path(root).absolute()
     require(root.resolve() == root and not root.is_symlink(), 'ROOT_LINK')
     path = root / MANIFEST
     require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 4 * 1024 * 1024, 'MANIFEST_FILE')
-    manifest = parse_manifest(path.read_bytes())
+    manifest = parse_manifest(path.read_bytes() if manifest_raw is None else manifest_raw)
     expected = manifest['files']
     actual = {}; total = 0; seen = set()
     for child in root.rglob('*'):
@@ -183,6 +192,13 @@ def pe_imports(data):
 def dll_closure(files):
     domains = {'python': {}, 'postgresql': {}}; imports = {}; unresolved = []; contracts = []
     by_path = {name.casefold(): name for name in files}
+    registrations = []
+    for source, digest, package, directory in WHEEL_DLL_PROFILES:
+        raw = files.get(source)
+        if raw is not None and sha256(raw).hexdigest() == digest:
+            registrations.append(dict(source=source,sha256=digest,package=package,directory=directory,
+                status='DECLARED_BY_PINNED_WHEEL_CODE_NOT_EXECUTED'))
+    modeled = []; platform = []; missing = []
     for name, data in files.items():
         if not name.lower().endswith(('.exe', '.dll', '.pyd')):
             continue
@@ -196,14 +212,42 @@ def dll_closure(files):
         for dll in row['dependencies']:
             executable_dir = 'runtime/postgresql/bin' if row['domain'] == 'postgresql' else 'runtime/python'
             candidates = (str(PurePosixPath(name).parent / dll), executable_dir + '/' + dll)
-            if any(n.casefold() in by_path for n in candidates) or dll in OS_DLLS:
+            if any(n.casefold() in by_path for n in candidates):
                 continue
+            if dll in OS_DLLS:
+                platform.append(dict(file=name,dependency=dll,kind='DECLARED_SYSTEM_DLL',observed=False))
+                continue  # Existing declared-system policy, not new acceptance.
+            matches = [profile for profile in registrations if row['domain']=='python' and
+                (name.startswith(profile['package']+'/') or name.startswith(profile['directory']+'/'))
+                and (profile['directory']+'/'+dll).casefold() in by_path]
+            if matches:
+                require(len(matches)==1,'WHEEL_DLL_DIRECTORY_AMBIGUOUS')
+                profile=matches[0]
+                modeled.append(dict(file=name,dependency=dll,target=by_path[(profile['directory']+'/'+dll).casefold()],
+                    registration_source=profile['source'],registration_sha256=profile['sha256'],
+                    status='STATIC_FILE_PRESENT_IN_DECLARED_WHEEL_DIRECTORY',native_loading='NOT_RUN'))
+                continue
+            reason='PRIVATE_DLL_MISSING_FROM_DOMAIN'
             if dll.startswith(('api-ms-win-', 'ext-ms-win-')):
                 # An API-set-shaped name does not prove that the target OS
                 # supplies it. Preserve it as an unresolved OS contract.
-                contracts.append(dict(file=name, contract=dll))
-            unresolved.append(dict(file=name, dependency=dll))
+                valid=bool(re.fullmatch(r'(?:api|ext)-ms-[a-z0-9-]+-l[0-9]+-[0-9]+-[0-9]+\.dll',dll))
+                contracts.append(dict(file=name, contract=dll,syntax_valid=valid,observed=False))
+                reason='API_SET_REQUIRES_TARGET_SCHEMA' if valid else 'UNRECOGNIZED_API_SET_NAME'
+                platform.append(dict(file=name,dependency=dll,kind=reason,observed=False))
+            elif dll in SYSTEM_CRT_PREREQUISITES:
+                reason='EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED'
+                platform.append(dict(file=name,dependency=dll,kind=reason,observed=False))
+            elif dll in SYSTEM_DLL_CANDIDATES:
+                reason='SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION'
+                platform.append(dict(file=name,dependency=dll,kind=reason,observed=False))
+            else:
+                missing.append(dict(file=name,dependency=dll,domain=row['domain']))
+            unresolved.append(dict(file=name, dependency=dll,reason=reason))
     return dict(status='PRIVATE_IMPORTS_PRESENT_OS_LOADING_UNVERIFIED' if not unresolved else 'UNRESOLVED',
                 native_files=len(imports), imports=imports, unresolved=unresolved,
                 unverified_api_contracts=contracts, native_loading='NOT_RUN',
+                missing_private_dependencies=missing,platform_requirements=platform,
+                wheel_directory_registrations=registrations,modeled_wheel_dependencies=modeled,
+                platform_evidence='NOT_PROVIDED',activation_allowed=False,
                 symbols_and_forwarders='NOT_CHECKED', system_lookup='DECLARED_WINDOWS_10_11_DLLS_NOT_OBSERVED')

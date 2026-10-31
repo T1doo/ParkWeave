@@ -1,0 +1,73 @@
+name: ParkWeave source-bound native business trial preparation
+
+on:
+  push:
+    branches: [dev/local-product-runtime-20261028]
+    paths:
+      - scripts/windows_ci/native_business_window.json
+      - .github/workflows/native-business-trial-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-native-business-source-bound-once
+  cancel-in-progress: false
+
+jobs:
+  candidate-build:
+    if: ${{ false && github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Build exact approved parent from locked official public inputs
+        id: build
+        env:
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+        run: python3 -I -B -S scripts/windows_ci/native_candidate_build.py
+      - name: Same-run candidate only, no Release or external upload
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-candidate-${{ github.run_id }}
+          path: ${{ steps.build.outputs.artifact }}/candidate.zip
+          retention-days: 1
+          if-no-files-found: error
+          compression-level: 0
+
+  native-business-trial:
+    needs: candidate-build
+    if: ${{ false && github.event_name == 'push' && needs.candidate-build.result == 'success' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    runs-on: windows-2025
+    timeout-minutes: 19
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Download only this run's original artifact ID
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          artifact-ids: ${{ needs.candidate-build.outputs.artifact-id }}
+          path: ${{ runner.temp }}/parkweave-candidate-stage
+          merge-multiple: true
+      - name: Source-bound extraction, then original native trial
+        shell: pwsh
+        env:
+          NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
+          PSYCOPG_IMPL: binary
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage=Join-Path $env:RUNNER_TEMP 'parkweave-candidate-stage'
+          & ./scripts/windows_ci/native_business_driver.ps1 -CandidateDirectory (Join-Path $stage 'payload') -CandidateArchive (Join-Path $stage 'candidate.zip') -ExtractApprovedArchive

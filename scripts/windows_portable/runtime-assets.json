@@ -403,5 +403,35 @@
   ],
   "development_tools_included": false,
   "python_security_status": "3.12.10_PINNED_LEGACY_APPLICATION_COMPATIBILITY_PREVIEW_NATIVE_VALIDATION_REQUIRED",
-  "redistribution_status": "LICENSE_TEXTS_IDENTIFIED_AND_PRESERVED_NOT_A_LEGAL_OR_SECURITY_SIGNOFF"
+  "redistribution_status": "LICENSE_TEXTS_IDENTIFIED_AND_PRESERVED_NOT_A_LEGAL_OR_SECURITY_SIGNOFF",
+  "external_prerequisites": {
+    "msvc_x64": {
+      "status": "EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED",
+      "required_by": [
+        "runtime/postgresql/bin/*.exe",
+        "runtime/postgresql/bin/*.dll",
+        "runtime/postgresql/lib/*.dll"
+      ],
+      "required_dlls": [
+        "vcruntime140.dll",
+        "msvcp140.dll"
+      ],
+      "packaged": false,
+      "installer_execution": false,
+      "official_download_reference": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+      "redistribution_reference": "https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170",
+      "inspection_only": {
+        "url": "https://download.visualstudio.microsoft.com/download/pr/ebdab8e5-1d7b-4d9f-a11b-cbb1720c3b12/843068991DAAA1F73AD9F6239BCE4D0F6A07A51F18C37EA2A867E9BECA71295C/VC_redist.x64.exe",
+        "bytes": 18731856,
+        "sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c"
+      },
+      "condition": "Use only existing trusted System32 files after original-handle/signature/version/export and original-process loaded-source checks. Missing or unverified exits with official instructions; no registry/PATH authority, installer execution, new terms acceptance or CRT redistribution.",
+      "strategy": "EXISTING_OFFICIAL_SYSTEM_RUNTIME_NO_INSTALL_OR_REDISTRIBUTION",
+      "architecture": "NATIVE_AMD64_ONLY",
+      "runtime_major": 14,
+      "automatic_installation": false,
+      "minimum_toolset_compatibility": "NOT_ESTABLISHED_BY_VERSION_FAMILY_OR_SYMBOLS_ALONE",
+      "private_redistribution_alternative": "REQUIRES_SEPARATE_EXISTING_APPLICABLE_RIGHTS; NOT_SELECTED"
+    }
+  }
 }

@@ -50,8 +50,9 @@ def test_workflow_keeps_one_job_and_25_minutes_with_independent_followups():
     # Historical test ID retained; current authorized mode is isolated measurement.
     actions=['Anchor existing','Checkout without','Select Python','Independent controlled Job measurement']
     positions=[text.index(s) for s in actions]
-    assert positions==sorted(positions) and text.count('      - name:')==4
-    assert text.count('timeout-minutes: 2\n')==1
+    assert positions==sorted(positions) and text.count('      - name:')==6
+    assert text.count('timeout-minutes: 2\n')==3
+    assert text.index('Independent controlled Job measurement')<text.index('Isolate two existing pinned protocol dependencies')<text.index('Compile current entry')
     assert 'python -m scripts.windows_ci.controlled_job_measurement --run-controlled' in text
     executable='\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
     for prohibited in ('Engineering.ps1','native_failure_oracles.py','SetOwner','Set-Acl','if: always()'):

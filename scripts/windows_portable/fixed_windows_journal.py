@@ -19,13 +19,25 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     @property
     def journal_format(self): return self._journal_format
 
+    def _create_root(self, parent, name):
+        from .native_protected_objects import create
+        return create(self.api, parent, name, directory=True)
+
+    def _require_domain(self, *, fresh):
+        from .native_trial_domain import require_domain
+        require_domain(self,fresh=fresh)
+
     def acquire(self, name, *, fresh):
+        self._trial_fresh=fresh
         if fresh:
-            from scripts.windows.lifecycle import require_setup_readiness
-            require_setup_readiness()
+            from .native_trial_authority import require_owner
+            require_owner(self)
         if self.api is None: self.api = NativeFixedLeaseAPI()
+        from .native_trial_authority import inherit
+        inherit(self,self.api)
         self.api.require_fixed_file_prerequisites(self.base)
-        require_fixed_native_acceptance()  # Independent closed gate, not a flag.
+        from .native_trial_authority import require_fixed
+        require_fixed(self)  # Production gate unchanged; trial is a separate domain.
         self._acquire_handles(name, fresh=fresh)
         self.journal = self.hold(self.api.relative_file(self.root, FIXED_JOURNAL,
                                    fresh=fresh, write=True, exclusive=True))
@@ -79,10 +91,17 @@ def require_fixed_native_acceptance():
     # No environment/boolean/mock result can issue acceptance. A future source
     # change requires independent actual Windows validation and review. This is
     # separate from legacy rename durability and from OWNER permission.
-    raise LeaseRefused('WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED')
+    from .native_acceptance_contract import Area,requirement
+    raise LeaseRefused(requirement(Area.FIXED_JOURNAL).reason)
 
 
 class NativeFixedLeaseAPI(NativeLeaseAPI):
+    def relative_file(self, parent, name, *, fresh=False, write=False, exclusive=False, rename=False):
+        if fresh:
+            from .native_protected_objects import create
+            return create(self, parent, name, directory=False, write=write, exclusive=exclusive, rename=rename)
+        return super().relative_file(parent, name, fresh=False, write=write, exclusive=exclusive, rename=rename)
+
     def require_fixed_file_prerequisites(self, base):
         import os
         import re

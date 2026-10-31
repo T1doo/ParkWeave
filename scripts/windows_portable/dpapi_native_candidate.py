@@ -1,7 +1,7 @@
-"""Unwired native implementation candidate; importing never loads Windows DLLs.
+"""Native implementation source candidate; importing never loads Windows DLLs.
 
-The accepted factory in windows_user_protection remains closed. This module is
-not added to the portable payload or Security adapter. Constructing _NativeDPAPI
+The accepted factory in windows_user_protection remains closed. The explicit
+native composition packages this implementation behind original gates. Constructing _NativeDPAPI
 would load system DLLs; calling it would perform real current-user DPAPI work.
 Neither is authorized by source-only checks. No file, ACL or token operation.
 
@@ -77,6 +77,7 @@ class _NativeDPAPI:
         self._free = kernel.LocalFree
         self._free.argtypes, self._free.restype = (C.c_void_p,), C.c_void_p
         self.failed = False
+        self.unknown = []  # Original output/input storage; never retry an uncertain free.
 
     def protect(self, data, entropy):
         return self._call(True, data, entropy, MAX_PLAINTEXT, MAX_CIPHERTEXT)
@@ -134,16 +135,14 @@ class _NativeDPAPI:
                 try:
                     if self._free(output.pbData):
                         raise ProtectionRefused('NATIVE_DPAPI_FREE_UNKNOWN')
+                    output.pbData = None
+                    output.cbData = 0
                 except BaseException as error:
                     cleanup.append(type(error).__name__)
-                output.pbData = None
-                output.cbData = 0
             elif output.pbData:
                 # Failure output integers have no documented ownership
                 # transfer. Never inspect/erase/free an unknown allocation.
                 cleanup.append('FAILED_OUTPUT_OWNERSHIP_UNKNOWN')
-                output.pbData = None
-                output.cbData = 0
             for item in (extra, source):
                 if item is not None:
                     try:
@@ -152,6 +151,11 @@ class _NativeDPAPI:
                         cleanup.append(type(error).__name__)
         if primary is not None or cleanup:
             self.failed = True
+            if cleanup:
+                # Keep the original DataBlob and mutable inputs alive. Neither
+                # ownership nor successful erasure/free is inferred on failure.
+                if not hasattr(self, 'unknown'): self.unknown = []
+                self.unknown.append((output, source, extra, allocation_size))
             # Drop this frame's immutable copies before raising a diagnostic.
             # This cannot erase caller bytes or other debugger/traceback frames;
             # never persist frame locals as an installation failure report.
