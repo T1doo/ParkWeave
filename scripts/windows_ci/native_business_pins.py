@@ -31,20 +31,7 @@ class NativeBootstrapPins:
         self.deadline,self.context=deadline,context
         _live.append(self)  # Before any native construction/call or partial failure.
         need(os.name=='nt' and C.sizeof(C.c_void_p)==8)
-        self.k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
-        declarations={
-            'CreateFileW':(C.c_void_p,[C.c_wchar_p,C.c_uint32,C.c_uint32,C.c_void_p,C.c_uint32,C.c_uint32,C.c_void_p]),
-            'GetFileInformationByHandle':(C.c_int32,[C.c_void_p,C.POINTER(FileInfo)]),
-            'GetFinalPathNameByHandleW':(C.c_uint32,[C.c_void_p,C.c_wchar_p,C.c_uint32,C.c_uint32]),
-            'SetFilePointerEx':(C.c_int32,[C.c_void_p,C.c_int64,C.c_void_p,C.c_uint32]),
-            'ReadFile':(C.c_int32,[C.c_void_p,C.c_void_p,C.c_uint32,C.POINTER(C.c_uint32),C.c_void_p]),
-            'CloseHandle':(C.c_int32,[C.c_void_p]),
-            'GetCurrentProcess':(C.c_void_p,[]),
-            'QueryFullProcessImageNameW':(C.c_int32,[C.c_void_p,C.c_uint32,C.c_wchar_p,C.POINTER(C.c_uint32)]),
-            'GetDriveTypeW':(C.c_uint32,[C.c_wchar_p]),
-        }
-        for name,(result,args) in declarations.items():
-            fn=getattr(self.k,name);fn.restype,fn.argtypes=result,args
+        self._bind_kernel()
         self.payload=Path(payload);self.raw=raw
         self.manifest=manifest
         # Hold the actual coordinator image and its full ancestor chain too.
@@ -67,6 +54,24 @@ class NativeBootstrapPins:
                  and self._info(h,False)==before)
             self.files[name]=(h,before,row['sha256'])
         self.verify()
+
+    def _bind_kernel(self):
+        # Shared declarations only. The extraction writer does not construct
+        # read pins, issue source authority, or import product/vendor modules.
+        self.k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
+        declarations={
+            'CreateFileW':(C.c_void_p,[C.c_wchar_p,C.c_uint32,C.c_uint32,C.c_void_p,C.c_uint32,C.c_uint32,C.c_void_p]),
+            'GetFileInformationByHandle':(C.c_int32,[C.c_void_p,C.POINTER(FileInfo)]),
+            'GetFinalPathNameByHandleW':(C.c_uint32,[C.c_void_p,C.c_wchar_p,C.c_uint32,C.c_uint32]),
+            'SetFilePointerEx':(C.c_int32,[C.c_void_p,C.c_int64,C.c_void_p,C.c_uint32]),
+            'ReadFile':(C.c_int32,[C.c_void_p,C.c_void_p,C.c_uint32,C.POINTER(C.c_uint32),C.c_void_p]),
+            'CloseHandle':(C.c_int32,[C.c_void_p]),
+            'GetCurrentProcess':(C.c_void_p,[]),
+            'QueryFullProcessImageNameW':(C.c_int32,[C.c_void_p,C.c_uint32,C.c_wchar_p,C.POINTER(C.c_uint32)]),
+            'GetDriveTypeW':(C.c_uint32,[C.c_wchar_p]),
+        }
+        for name,(result,args) in declarations.items():
+            fn=getattr(self.k,name);fn.restype,fn.argtypes=result,args
 
     def _time(self):
         from .native_business_window import current_context

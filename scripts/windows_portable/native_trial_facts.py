@@ -100,11 +100,19 @@ def protected_objects(lease,security):
     return _seal(lease,('protected_new_objects',),security,(controls,layout,data))
 
 
+@_exclusive_operation
 def journal_write(lease):
     if a.bound_state(lease,cleanup=True) is None:return
-    from .fixed_journal import FixedJournal,FixedFormat
+    from .fixed_journal import FixedJournal,FixedFormat,decode
     a.need(type(lease.fs.storage) is FixedJournal and lease._journal_format is FixedFormat.INSTANCE_V2)
     lease._verify();a.need(lease.fs.read()==lease.snapshot)
+    # UNKNOWN publication is a durable refusal, never successful native
+    # acceptance. It has already committed before this observer runs. Do not
+    # ask subject() for its deliberately forbidden usable instance identity,
+    # or turn that correct identity refusal into a spurious cleanup failure.
+    # Check the original snapshot under the same lease gate; no caller flag or
+    # mutable record can suppress verification or issue a success fact here.
+    if decode(lease.snapshot[0],format=lease._journal_format)['phase']=='UNKNOWN':return
     return _seal(lease,('original_fixed_slots_write_flush_readback',),lease.fs,
         (lease.snapshot,lease.fs.journal_id),cleanup=True)
 

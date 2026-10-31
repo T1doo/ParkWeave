@@ -224,14 +224,25 @@ def extract_approved_archive(grant,payload,archive):
         need(manifest['source_commit']==window.reviewed_parent and manifest['usable_product'] is False
             and set(names)==set(manifest['files'])|{MANIFEST}
             and sum(row.file_size for row in infos)<=MAX_BYTES)
-        payload.mkdir(mode=0o700)
-        for name in sorted(names):
-            need(time.monotonic()<deadline and current_context()==context)
-            row=manifest['files'].get(name,dict(bytes=len(raw),sha256=window.manifest_sha256))
-            with stream.open(name) as entry:data=entry.read(row['bytes']+1)
-            need(len(data)==row['bytes'] and sha256(data).hexdigest()==row['sha256'])
-            path=payload/name;path.parent.mkdir(parents=True,exist_ok=True)
-            with path.open('xb') as output:output.write(data)
+        def entries():
+            for name in sorted(names):
+                need(time.monotonic()<deadline and current_context()==context)
+                row=manifest['files'].get(name,dict(bytes=len(raw),sha256=window.manifest_sha256))
+                with stream.open(name) as entry:data=entry.read(row['bytes']+1)
+                need(len(data)==row['bytes'] and sha256(data).hexdigest()==row['sha256'])
+                yield name,data
+        if os.name=='nt':
+            # Ordinary ZIP mkdir() does not create protected Windows ACLs.
+            # Every original object must match RuntimeInstallation's existing
+            # private source contract, without repairing an extracted tree.
+            from .native_private_archive import extract_private
+            extract_private(payload,entries(),deadline,context)
+        else:
+            need(os.name=='posix')  # Protocol extraction only; no native fallback.
+            payload.mkdir(mode=0o700)
+            for name,data in entries():
+                path=payload/name;path.parent.mkdir(parents=True,exist_ok=True)
+                with path.open('xb') as output:output.write(data)
     # The execution coordinator independently rechecks and holds all bytes.
     return None
 
