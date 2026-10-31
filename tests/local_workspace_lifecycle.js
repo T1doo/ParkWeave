@@ -7,8 +7,8 @@ const part=(start,end)=>{const a=page.indexOf(start),b=page.indexOf(end,a);asser
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve}};
 function context(){
  const nodes=new Map();
- function node(id){return {id,value:'',hidden:false,disabled:false,textContent:'',children:[],
-  replaceChildren(){this.children=[]},append(...items){this.children.push(...items)},setAttribute(){},
+ function node(id){return {id,value:'',hidden:false,disabled:false,textContent:'',children:[],dataset:{},attributes:{},
+  replaceChildren(){this.children=[]},append(...items){this.children.push(...items)},setAttribute(k,v){this.attributes[k]=v},
   classList:{toggle(){}},focus(){},querySelector(){return nodes.get('evidence-submit')}}}
  for(const match of page.matchAll(/\bid="([^"]+)"/g))nodes.set(match[1],node(match[1]));
  nodes.set('login-submit',node('login-submit'));nodes.set('evidence-submit',node('evidence-submit'));
@@ -86,8 +86,27 @@ async function clearRun(){
  }
  assert.equal(calls,0);
 }
+async function selectedListItemFollowsActualOpen(){
+ const {c,$}=context();
+ const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002';
+ const rows=[a,b].map(id=>({id,goal:'SYNTHETIC '+id,state:'IN_PREPARATION',revision:1}));
+ const reads=[];c.api=async path=>{reads.push(path);return path.includes('?')?{items:rows,next_before:null}:
+  {preparation:{...rows.find(row=>row.id===path.split('/').pop()),case_id:'synthetic-case'},current_materials:[],history:[]}};
+ vm.runInContext(part('async function list(','async function open('),c);
+ await vm.runInContext('list()',c);
+ let buttons=$('items').children;assert.equal(buttons.length,2);
+ buttons[0].onclick();await task(c);
+ assert.equal(buttons[0].attributes['aria-current'],'true','opened first detail but list did not select it');
+ buttons[1].onclick();await task(c);
+ assert.equal(buttons[0].attributes['aria-current'],'false','old list row still selected after another detail opened');
+ assert.equal(buttons[1].attributes['aria-current'],'true','current detail and selected list row disagree');
+ assert.equal(vm.runInContext('current.preparation.id',c),b);
+ await vm.runInContext('list()',c);buttons=$('items').children;
+ assert.equal(buttons[0].attributes['aria-current'],'false');assert.equal(buttons[1].attributes['aria-current'],'true');
+ assert.equal(reads.filter(path=>!path.includes('?')).length,2,'selection must only read each selected detail once');
+}
 (async()=>{
- const cases={duplicateLogin,staleLogin,itemDrafts,clearRun},results=[];
+ const cases={duplicateLogin,staleLogin,itemDrafts,clearRun,selectedListItemFollowsActualOpen},results=[];
  for(const [name,check] of Object.entries(cases)){
   try{await check();results.push({name,status:'PASS'})}
   catch(error){results.push({name,status:'FAIL',reason:error.message})}
