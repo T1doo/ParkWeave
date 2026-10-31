@@ -281,3 +281,22 @@ def test_each_native_call_rechecks_work_deadline_without_extending_cleanup(wired
     assert not events and tree.cleanup_end==end and not tree.native_unknown
     tree.close()  # Known completed work may release original handles within the original cleanup window.
     assert not tree.handles and all(row['closed'] for row in tree.ownership)
+
+
+@pytest.mark.parametrize('changed_attributes',[0x20,0x22])
+def test_owned_write_allows_archive_metadata_change_only(wired_tree,changed_attributes):
+    tree,root,calls,closed=wired_tree
+    original_info,original_write=tree._info,tree.k.WriteFile;modified=set()
+    def info(h,directory):
+        value=original_info(h,directory)
+        if not directory and h in modified:return (*value[:3],changed_attributes,*value[4:])
+        return value
+    def write(h,*args):
+        result=original_write(h,*args);modified.add(h);return result
+    tree._info,tree.k.WriteFile=info,write
+    if changed_attributes==0x20:
+        tree.write('file',b'owned synthetic bytes')
+        assert tree.files['file'][0]==0x20 and (root/'file').read_bytes()==b'owned synthetic bytes'
+    else:
+        with pytest.raises(window.WindowRefused):tree.write('file',b'owned synthetic bytes')
+    tree.close()

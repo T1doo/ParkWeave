@@ -277,7 +277,11 @@ class NativePrivateArchive(NativeBootstrapPins):
             need(ok and used.value==len(raw))
         need(self._call(self.k.FlushFileBuffers,(h,),()))
         after=self._info(h,False)
-        need(after[:2]==before[:2] and after[2]==len(data) and after[3:5]==before[3:5]
+        # The filesystem may set ARCHIVE on our write, replacing NORMAL.
+        # These two metadata bits are not an identity or ACL witness. Other
+        # attribute changes remain refused; _info rejects unsafe/type changes.
+        need(after[:2]==before[:2] and after[2]==len(data) and after[4]==before[4]==1
+            and (after[3]^before[3])&~0xa0==0
             and self._security(h)==security and self._hash(h,len(data))==sha256(data).hexdigest()
             and self._info(h,False)==after)
         self.files[name]=(after[3],after[1])
