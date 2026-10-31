@@ -119,7 +119,9 @@ class _NativeSecretFiles:
     def _gate(self):
         need(not self.failed and type(self.lease) is FixedDirectoryLease and
              type(self.lease.fs) is FixedWindowsFilesystem and self.api is self.lease.fs.api)
-        self._time();need(ep._key_held(self.lease)==self.key and self.current_sid_bytes()==self.sid_bytes)
+        self._time();key=ep._key_held(self.lease)
+        need(key==self.key and self.current_sid_bytes()==self.sid_bytes)
+        return key  # This call's verified binding, never a cached admission.
 
     def binds(self,lease):
         need(lease is self.lease);self._gate()

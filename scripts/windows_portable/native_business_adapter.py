@@ -159,13 +159,27 @@ class NativeBusinessTestAdapter:
             self.started = True
         finally:
             self._entry_lock.release()
-        deadline = self.trial.begin()
+        source=bound_state(self.first.controller)
+        if source is None:
+            deadline=self.trial.begin()  # Existing unbound/default budget.
+            startup_end=deadline
+        else:
+            # Source authority already owns one immutable absolute OS budget.
+            # Reserve the single scenario before startup, then start its one
+            # <=180s business clock only when the first workspace is ready.
+            self.trial.reserve()
+            deadline=None
+            startup_end=source.deadline
         first_snapshot = None
         def first_use(workspace):
-            nonlocal first_snapshot
+            nonlocal first_snapshot,deadline
+            if source is not None:
+                need(bound_state(self.first.controller) is source)
+                deadline=self.trial.start_business(source.deadline)
+                workspace.limit_deadline(deadline)
             self.trial.create(workspace)
             first_snapshot = _snapshot(self.first, min(deadline, time.monotonic() + 20))
-        need(time.monotonic() < deadline)
+        need(time.monotonic() < startup_end)
         self.first.create(self.root, first_use, deadline=deadline)
         need(first_snapshot is not None and not first_snapshot.lease.active)
         # Consumes original before-close observations. Merely obtaining a

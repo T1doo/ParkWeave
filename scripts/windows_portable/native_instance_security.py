@@ -29,6 +29,7 @@ def need(value):
 
 
 _unknown_security_resources=[]
+RUNTIME_STAGING_SECONDS=600  # Complete immutable tree; not a per-file renewal.
 
 
 class NativeFixedStoreSecurity:
@@ -129,7 +130,7 @@ class NativeFixedStoreSecurity:
                 self._context(lease)
                 self.runtime_installation=self._hold(object.__new__(NativeRuntimeInstallation))
                 NativeRuntimeInstallation.__init__(self.runtime_installation,lease,self.payload_source,
-                    self.runtime,create=create,deadline=budget(self,time.monotonic()+120))
+                    self.runtime,create=create,deadline=budget(self,time.monotonic()+RUNTIME_STAGING_SECONDS))
                 self._context(lease)
             except BaseException:
                 self.failed=True

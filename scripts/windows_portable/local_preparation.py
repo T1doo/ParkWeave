@@ -426,6 +426,16 @@ class PreparationWorkspace:
             raise CandidateRefused('business invocation deadline')
         self._check()
 
+    def limit_deadline(self, deadline):
+        """Install or tighten one bounded business window for both clients."""
+        if (type(deadline) not in (int,float) or not math.isfinite(deadline)
+                or not 0 < deadline-time.monotonic() <= 180):
+            raise CandidateRefused('bounded business invocation deadline required')
+        self.check()  # An expired/ended workspace cannot be revived.
+        self.deadline=deadline if self.deadline is None else min(self.deadline,deadline)
+        self.check()
+        return self.deadline
+
     def close(self):
         self._active = False
 

@@ -58,11 +58,13 @@ def test_real_adapter_scenario_slot_corrections_unicode_two_roles_and_cold_http_
     f = preparation_fixture
     identities = PreparationIdentities.from_mapping(f[2])  # Actual seeded synthetic principals.
     trial = PreparationBusinessTrial(seconds=120)
-    deadline = trial.begin()
+    trial.reserve()  # Controller startup is reserved before the business clock.
     with ordinary_worker(f, tmp_path/'first-worker'):
         with ordinary_api(f, tmp_path/'first-api') as api:
             transport = ActualHTTP(api)
-            first = PreparationWorkspace(object(), identities, transport, lambda: None, deadline=deadline)
+            first = PreparationWorkspace(object(), identities, transport, lambda: None)
+            deadline=trial.start_business(time.monotonic()+600)
+            first.limit_deadline(deadline)
             trial.create(first)
             assert trial.state == 'FIRST_CONFIRMED'
             assert len(transport.writes) == len(set(transport.writes)) == 11

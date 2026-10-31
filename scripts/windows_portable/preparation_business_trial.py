@@ -53,6 +53,29 @@ class PreparationBusinessTrial:
             self.deadline = time.monotonic() + self.seconds
             return self.deadline
 
+    def reserve(self):
+        """Consume the scenario before startup, without starting business IO.
+
+        Native startup still requires its separate original source deadline.
+        This method grants no time or OS authority and cannot be repeated.
+        """
+        with self._lock:
+            if self.state != 'NOT_STARTED':
+                raise CandidateRefused('business trial is single use')
+            self.state = 'RESERVED'
+
+    def start_business(self, absolute_end):
+        """Start ONE bounded callback window; restart/readback never renew it."""
+        with self._lock:
+            if self.state != 'RESERVED' or self.deadline is not None:
+                raise CandidateRefused('business clock is single use')
+            now=time.monotonic()
+            if (type(absolute_end) not in (int,float) or not math.isfinite(absolute_end)
+                    or absolute_end<=now):
+                raise CandidateRefused('original absolute source deadline required')
+            self.deadline=min(now+self.seconds,absolute_end)
+            return self.deadline
+
     def create(self, workspace):
         with self._lock:
             if self.state != 'RESERVED':

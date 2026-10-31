@@ -264,8 +264,12 @@ class NativeRuntimeInstallation:
 
     def _gate(self):
         need(not self.failed and not self.closed and time.monotonic() < self.deadline)
-        self.lease._verify(); self.probe._gate()
-        need(_key_held(self.lease) == self.key and self.api is self.lease.fs.api and
+        # The original probe verifies this same lease/snapshot/key and current
+        # OS identity on EVERY call. Consume that result once, instead of
+        # reading the same fixed journal three times inside one gate.
+        key=self.probe._gate()
+        need(self.probe.lease is self.lease and self.probe.api is self.api
+             and key == self.key and self.api is self.lease.fs.api and
              self.api.descriptor(self.lease.fs.root) == self.root_sd and
              self.api.final_path(self.lease.fs.root) == self.root_path)
 
