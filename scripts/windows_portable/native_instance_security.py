@@ -330,6 +330,10 @@ class NativeClusterPrerequisites:
 
     def require_system_crt(self,lease,deadline):
         from .native_system_crt import NativeSystemCRT
+        from .native_acceptance_issuer import _deadline
+        from .native_trial_authority import budget
+        _deadline(deadline)  # Preserve the original <=30s caller contract.
+        deadline=budget(lease,deadline)  # No fresh subwindow beyond source end.
         need(self.security.lease is lease)
         if self.security.system_crt is None:
             value=self.security._hold(object.__new__(NativeSystemCRT))

@@ -217,6 +217,8 @@ class NativeRuntimeInstallation:
         self._issued_binding(lease, runtime)
         need(type(deadline) in (int,float) and math.isfinite(deadline)
              and 0 < deadline-time.monotonic() <= 30)
+        from .native_trial_authority import budget
+        deadline=budget(lease,deadline)
         def inspect():
             try:
                 self._issued_binding(lease, runtime)

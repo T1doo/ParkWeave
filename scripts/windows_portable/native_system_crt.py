@@ -103,7 +103,7 @@ class NativeSystemCRT:
              and type(lease.fs.api) is NativeFixedLeaseAPI and type(installation) is NativeRuntimeInstallation)
         self.lease,self.installation,self.runtime=lease,installation,dict(runtime)
         self.api=lease.fs.api;self.deadline=deadline
-        self._time();requirements=installation.system_crt_requirements(lease,runtime,deadline)
+        self._time();requirements=installation.system_crt_requirements(lease,runtime,self.deadline)
         self.requirements=requirements
         k=self.api.readonly.k
         self.system=bind(k,'GetSystemDirectoryW',D,[C.c_wchar_p,D])
@@ -146,6 +146,8 @@ class NativeSystemCRT:
     def _time(self):
         need(not self.failed and not self.closed and type(self.deadline) in (int,float)
              and math.isfinite(self.deadline) and 0<self.deadline-time.monotonic()<=30)
+        from .native_trial_authority import budget
+        self.deadline=budget(self.lease,self.deadline)
 
     def _hold(self,h):self.handles.append(h);return h
 

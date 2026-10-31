@@ -64,9 +64,9 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
             assert server.returncode==0
         server=None
         assert not (path/'data/postmaster.pid').exists()
-    def login():
+    def login(role='enterprise'):
         response=httpx.post(base+'/api/local/session',headers={'Origin':base},
-            json=dict(role='enterprise',password=passwords['enterprise']))
+            json=dict(role=role,password=passwords[role]))
         assert response.status_code==200
         value=response.json()
         return {'Authorization':'Bearer '+value['bearer']},value['installation_id'],value
@@ -115,16 +115,46 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
                 assert len(committed)==1
             finally:proxy.shutdown();thread.join(timeout=2)
         original=committed[0]
+        # Complete the same persistent installation's two-role workflow before
+        # stopping the real PG/API/worker process group. The earlier lost
+        # acknowledgement keeps its immutable recovery key; it is not replayed.
+        reviewer_headers,reviewer_installation,_=login('specialist')
+        assert reviewer_installation==installation_id
+        reference=original
+        def command(actor,action,**fields):
+            nonlocal reference
+            reference=post(route+'/commands',actor,
+                dict(action=action,expected_revision=reference['revision'],**fields),200)
+        command(reviewer_headers,'REQUEST_CHANGES',reason='SYNTHETIC revise both slots',
+            correction_slots=['need_summary','material_outline'])
+        command(headers,'ADD_EVIDENCE',slot='need_summary',text='\u0085SYNTHETIC persistent revision\u0085',
+            source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC revised source')
+        assert reference['state']=='CHANGES_REQUESTED'
+        command(headers,'ADD_EVIDENCE',slot='material_outline',text='\ufeffSYNTHETIC persistent outline\ufeff',
+            source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC outline')
+        command(reviewer_headers,'REVIEW',reason='SYNTHETIC review current materials')
+        command(headers,'CONFIRM',reason='SYNTHETIC confirm current review')
+        command(headers,'REOPEN',reason='SYNTHETIC explicit business reopen')
+        command(reviewer_headers,'REVIEW',reason='SYNTHETIC review again after reopen')
+        command(headers,'CONFIRM',reason='SYNTHETIC confirm again')
         before=httpx.get(base+route,headers=headers).json()
+        assert before['preparation']['state']=='LOCAL_CONFIRMED' and before['preparation']['revision']==10
+        expected=['CREATE','ADD_EVIDENCE','REQUEST_CHANGES','ADD_EVIDENCE','ADD_EVIDENCE',
+            'REVIEW','CONFIRM','REOPEN','REVIEW','CONFIRM']
+        assert [event['action'] for event in before['history']]==expected
+        first_pg_pid=int((path/'data/postmaster.pid').read_text().splitlines()[0])
         stop()
         assert json.loads((path/STATE).read_text())['phase']=='RELEASE_PENDING'
         start();headers,reopened_id,_=login()
+        assert int((path/'data/postmaster.pid').read_text().splitlines()[0])!=first_pg_pid
         assert reopened_id==installation_id
         after=httpx.get(base+route,headers=headers).json()
         assert after==before
         recovery=httpx.get(base+route+'/command-recovery',headers={**headers,'Idempotency-Key':key}).json()
         assert recovery['status']=='COMMITTED' and recovery['event']==original
-        assert len(after['history'])==2  # no recovery replay or startup seed
+        after_recovery=httpx.get(base+route,headers=headers).json()
+        assert after_recovery==before  # Fresh read AFTER recovery; no replay/seed/event append.
+        assert len(after_recovery['history'])==10
         stop()
         with PersistentInstallation.open_existing(path) as reopened:
             with pytest.raises(Denied):create_database(reopened)
@@ -132,6 +162,8 @@ def test_persistent_root_real_create_and_reopen_without_fixture_receipt(tmp_path
             runtime_source_sha256=marker['runtime_source_sha256'],persistent_root_outside_tmp=True,
             issuer='LocalDatabaseCreationEvidence',fixture_contract_unchanged=True,
             independent_http_process_reopen_exact=True,original_evidence_recovery_read_only=True,
+            full_business_history=expected,confirmed_revision=10,two_role_business_complete=True,
+            actual_pg_process_stop_and_restart=True,whole_business_readback_exact=True,
             committed_response_truncated=True,actual_page_api_two_contexts_one_post=True,
             actual_logout_and_recovery_handlers=True,other_identity_recovery_reads=0,
             reloaded_original_identity_recovery_gets=2,write_replay_count=0,
