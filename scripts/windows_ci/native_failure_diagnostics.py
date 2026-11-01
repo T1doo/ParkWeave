@@ -35,6 +35,7 @@ _SOURCES=(
     ('scripts.windows_portable.native_secret_store_candidate','scripts/windows_portable/native_secret_store_candidate.py'),
     ('scripts.windows_portable.native_preparation_sessions','scripts/windows_portable/native_preparation_sessions.py'),
     ('scripts.windows_portable.native_system_crt','scripts/windows_portable/native_system_crt.py'),
+    ('scripts.windows_portable.authenticode_signature','scripts/windows_portable/authenticode_signature.py'),
     ('scripts.windows_portable.native_protected_objects','scripts/windows_portable/native_protected_objects.py'),
     ('scripts.windows_portable.native_trial_authority','scripts/windows_portable/native_trial_authority.py'),
     ('scripts.windows_portable.native_trial_domain','scripts/windows_portable/native_trial_domain.py'),

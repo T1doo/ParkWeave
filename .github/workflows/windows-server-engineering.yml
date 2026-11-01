@@ -21,6 +21,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  crt-signature-readonly:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
+      github.event_name == 'push' && github.run_attempt == 1 &&
+      github.ref == 'refs/heads/dev/local-product-runtime-20261028' &&
+      github.event.before == 'aef35e66c234496ee99b682061570938baab8f08' &&
+      github.event.head_commit.message == 'ci: read-only system CRT signature PW_CRT_RO_20261101_A'
+    name: Read-only System32 CRT signatures / no native business acceptance
+    runs-on: windows-2025
+    timeout-minutes: 3
+    steps:
+      - name: Exact source checkout without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Read existing CRT signatures with existing Python only
+        timeout-minutes: 2
+        shell: pwsh
+        env:
+          PW_RO_PUBLIC: ${{ github.event.repository.private == false }}
+          PW_RO_BEFORE: ${{ github.event.before }}
+          PW_RO_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          $ErrorActionPreference='Stop'
+          if ((& git rev-parse HEAD) -ne $env:GITHUB_SHA) { throw 'EXACT_READONLY_SOURCE_REQUIRED' }
+          $cached=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
+          $versions=@(Get-ChildItem -LiteralPath $cached -Directory | Where-Object { $_.Name -match '^3\.12\.\d+$' } | Sort-Object { [version]$_.Name } -Descending)
+          if ($versions.Count -eq 0) { throw 'EXISTING_PYTHON_312_UNAVAILABLE_NO_DOWNLOAD' }
+          $python=Join-Path $versions[0].FullName 'x64\python.exe'
+          if (!(Test-Path -LiteralPath $python -PathType Leaf)) { throw 'EXISTING_X64_PYTHON_UNAVAILABLE_NO_DOWNLOAD' }
+          & $python -I -B -S scripts/windows_ci/crt_signature_readonly.py --run-readonly
+          if ($LASTEXITCODE -ne 0) { throw 'READONLY_DIAGNOSTIC_UNKNOWN_NO_RETRY' }
+
   server-engineering:
     if: >-
       github.ref == 'refs/heads/dev/f1-foundation' ||
