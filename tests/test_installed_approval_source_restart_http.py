@@ -59,10 +59,12 @@ def generation(run,tag):
                 while time.monotonic()<end:
                     assert child.poll() is None,'continuous worker failed before source attestation'
                     if ready.exists():
-                        values=json.loads(ready.read_text())
-                        assert len(values)==1 and values[0]['pid']==child.pid and values[0]['stage']=='BEFORE_WORK'
-                        fact['source_attestation_observed']=True
-                        break
+                        try:values=json.loads(ready.read_text())
+                        except json.JSONDecodeError:values=None  # Original writer may still be publishing.
+                        if values is not None:
+                            assert len(values)==1 and values[0]['pid']==child.pid and values[0]['stage']=='BEFORE_WORK'
+                            fact['source_attestation_observed']=True
+                            break
                     time.sleep(.05)
                 else:raise AssertionError('continuous worker source readiness deadline')
                 yield
