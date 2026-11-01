@@ -30,14 +30,53 @@ from .fixed_windows_journal import FixedWindowsFilesystem, NativeFixedLeaseAPI
 
 PROFILE = 'parkweave-pgdata-current-user-inheritance/1'
 FILE_ALL = 0x1f01ff
+PGDATA_STAGES=frozenset(('NOT_STARTED','LEASE_BINDING','USER_IDENTITY','OPEN_DATA_PARENT',
+    'VERIFY_DATA_PARENT','CREATE_PGDATA','VERIFY_ROOT_SECURITY','PIN_COMMAND_PATH',
+    'VERIFY_BINDING','VERIFY_EMPTY_ROOT','COMPLETED'))
+PGDATA_CHECKS=frozenset(('UNSPECIFIED','DEADLINE','NATIVE_COMPLETION','EXCLUSIVE_CREATE',
+    'TOKEN_OUTPUT','TOKEN_USER_MATCH','DATA_PARENT_BINDING','DATA_PARENT_PATH',
+    'DISTINCT_IDENTITIES','ROOT_PATH','COMMAND_PATH_BINDING','EMPTY_ROOT',
+    'DOS_PATH_KIND','DOS_PATH_LENGTH','FIRST_GENERATION_CLUSTER','SECURITY_PROFILE',
+    'RAW_ACL','OBJECT_METADATA'))
+PGDATA_CALLS=frozenset(('NT_CREATE','DOS_PATH','OPEN_TOKEN','TOKEN_USER','ENUM_DIRECTORY'))
+PGDATA_FIELDS=frozenset(('OWNER','CONTROL_FLAGS','ACE_SHAPE','DACL_PAYLOAD','VOLUME',
+    'IDENTITY','ATTRIBUTES','KIND','LINKS'))
 
 
 class DataRefused(RuntimeError):
-    pass
+    def __init__(self,message='PRIVATE_PGDATA_REFUSED',*,check='UNSPECIFIED',changed_fields=()):
+        self.check=check if type(check) is str and check in PGDATA_CHECKS else 'UNSPECIFIED'
+        self.changed_fields=changed_fields
+        super().__init__(message)
 
 
-def _need(ok):
-    if not ok: raise DataRefused('PRIVATE_PGDATA_REFUSED')
+def _need(ok,check='UNSPECIFIED'):
+    if not ok: raise DataRefused(check=check)
+
+
+class DataConstructionFailure(DataRefused):
+    """Known construction boundary, never serialize primary/args or paths."""
+    def __init__(self,target,primary):
+        check=vars(primary).get('check') if type(primary) is DataRefused else 'UNSPECIFIED'
+        super().__init__('PRIVATE_PGDATA_CONSTRUCTION_UNKNOWN',check=check)
+        self.changed_fields=vars(primary).get('changed_fields',()) if type(primary) is DataRefused else ()
+        self.primary=primary
+        self.stage,self.native,self.cleanup='NOT_STARTED',None,None
+        try:
+            state=vars(target);lease=vars(state['lease']);record=lease['record']
+            flags=vars(vars(state['api'])['readonly'])
+            self.stage=state.get('stage','NOT_STARTED');self.native=state.get('last_native')
+            self.cleanup=dict(captured_at='PGDATA_FAILURE_BEFORE_CONTROLLER_RELEASE',
+                target_close_confirmed=state.get('closed',False),
+                remaining_unattempted_handle_count=len(state['handles']),
+                close_error_record_count=len(state['cleanup_errors']),lease_poisoned=lease['poisoned'],
+                nt_create_unknown=flags.get('_nt_create_pending',False),query_unknown=flags.get('_query_unknown',False),
+                lease_active=lease['active'],memory_phase=record['phase'],memory_handoff=record['handoff'],
+                initialized=record['initialized'],first_generation=record['generation']==1,
+                persistent_journal_reobserved=False)
+        except BaseException:
+            # Missing diagnostic fields never replace the original exception.
+            self.cleanup=None
 
 
 def _sid_text(raw):
@@ -62,14 +101,15 @@ def check_descriptor(value, sid, *, root, directory):
     expected = struct.pack('<BBHHH', 2, 0, 8+len(ace), 1, 0) + ace
     check_security(Security(owner, control, (Ace(0, flags, FILE_ALL, _sid_text(sid)),)),
                    _sid_text(sid), root=root, directory=directory)
-    _need(type(raw) is bytes and raw == expected)  # No ignored payload/free ACE area.
+    if not (type(raw) is bytes and raw == expected):
+        raise DataRefused(check='RAW_ACL',changed_fields=('DACL_PAYLOAD',))
 
 
 def pg_command_path(value):
     """A conservative DOS argv representation, never filesystem authority."""
-    _need(type(value) is str and re.match(r'^\\\\\?\\[A-Za-z]:\\', value) is not None)
+    _need(type(value) is str and re.match(r'^\\\\\?\\[A-Za-z]:\\', value) is not None,'DOS_PATH_KIND')
     path = value[4:]
-    _need(len(path.encode('utf-16-le', errors='strict'))//2 <= 240)
+    _need(len(path.encode('utf-16-le', errors='strict'))//2 <= 240,'DOS_PATH_LENGTH')
     parts = path[3:].split('\\')
     _need(parts and len(parts) <= 64)
     for part in parts: component(part)
@@ -88,19 +128,22 @@ def check_security(value, user, *, root, directory):
     # Concrete FILE_ALL and concrete user SID have no generic mapping or
     # effective/inherit-only splitting. Reject all broader ACL shapes.
     flags = 3 if root else (0x13 if directory else 0x10)
-    _need(value.owner == user and type(value.control) is int and
-          value.control & DACL_PRESENT and
-          bool(value.control & PROTECTED) == root and
-          value.control & ~(0x8000|0x1000|0x400|0x4) == 0 and
-          type(value.aces) is tuple and value.aces == (Ace(0, flags, FILE_ALL, user),))
+    changed=tuple(name for name,ok in (
+        ('OWNER',value.owner==user),
+        ('CONTROL_FLAGS',type(value.control) is int and bool(value.control&DACL_PRESENT)
+            and bool(value.control&PROTECTED)==root and value.control&~(0x8000|0x1000|0x400|0x4)==0),
+        ('ACE_SHAPE',type(value.aces) is tuple and value.aces==(Ace(0,flags,FILE_ALL,user),))) if not ok)
+    if changed:raise DataRefused(check='SECURITY_PROFILE',changed_fields=changed)
 
 
 def _metadata(info, volume, *, directory):
-    _need(type(info.volume) is int and info.volume == volume and
-          type(info.identity) is int and 0 < info.identity < 2**64 and
-          type(info.attributes) is int and not info.attributes & (REPARSE|UNSAFE_ATTRIBUTES) and
-          bool(info.attributes & DIRECTORY) == directory and
-          (directory or info.links == 1))
+    changed=tuple(name for name,ok in (
+        ('VOLUME',type(info.volume) is int and info.volume==volume),
+        ('IDENTITY',type(info.identity) is int and 0<info.identity<2**64),
+        ('ATTRIBUTES',type(info.attributes) is int and not info.attributes&(REPARSE|UNSAFE_ATTRIBUTES)),
+        ('KIND',type(info.attributes) is int and bool(info.attributes&DIRECTORY)==directory),
+        ('LINKS',directory or info.links==1)) if not ok)
+    if changed:raise DataRefused(check='OBJECT_METADATA',changed_fields=changed)
     return (info.volume, info.identity)
 
 
@@ -164,11 +207,11 @@ def _create_target_held(lease,target,*,layout):
     try:
         target.layout=layout  # Freeze only after entry and single-attempt ownership.
         key = _key_held(lease)
-        _need(key[-1] == 1 and lease.record['phase'] == 'CLUSTER' and not lease.record['initialized'])
+        _need(key[-1] == 1 and lease.record['phase'] == 'CLUSTER' and not lease.record['initialized'],'FIRST_GENERATION_CLUSTER')
         target._create_native(key)
-    except BaseException:
+    except BaseException as primary:
         target._fail()
-        raise
+        raise DataConstructionFailure(target,primary) from primary
 
 
 @_exclusive_operation
@@ -271,6 +314,7 @@ class _NewDataTarget:
         self.lease, self.deadline = lease, deadline
         self.handles, self.data, self.root = [], None, None
         self.failed, self.closed, self.outcome, self.cleanup_errors = False, False, 'NOT_CREATED', []
+        self.stage,self.last_native='NOT_STARTED',None
         self.api = lease.fs.api
         _need(type(self.api) is NativeFixedLeaseAPI)
         self.query = self.api.k.GetFileInformationByHandleEx
@@ -291,7 +335,25 @@ class _NewDataTarget:
     def _time(self):
         require_nt_create_ready(self.api.readonly)
         require_query_ready(self.api.readonly)
-        _need(time.monotonic() < self.deadline)
+        _need(time.monotonic() < self.deadline,'DEADLINE')
+
+    def _stage(self,name):
+        self.stage,self.last_native=name,None
+
+    def _native(self,call,*,returned=False,code=None,iosb=None,information=None,handle_output='NOT_APPLICABLE'):
+        # Numeric API results only; no HANDLE values, names, SID, SD or buffers.
+        self.last_native=dict(call=call,returned=returned,code=code,iosb_status=iosb,
+            information=information,handle_output=handle_output)
+
+    def _record_native(self,*args,**kwargs):
+        try:self._native(*args,**kwargs)
+        except BaseException:self.last_native=None
+
+    @staticmethod
+    def _win32_error(ok):
+        if ok:return None
+        try:return C.get_last_error()
+        except BaseException:return None
 
     def _query(self,function,*args):
         self._time()
@@ -310,20 +372,25 @@ class _NewDataTarget:
         handle, io = PTR(), IOStatus()
         from .native_protected_objects import submit_create,transfer_completed_create
         self._time()
+        self._record_native('NT_CREATE')
         status=submit_create(self.api,handle,io,attrs,(unicode,text,sd),access=0x120081,
             attributes=0x10 if create else 0,share=3 if anchor else 7,
             disposition=2 if create else 1,options=0x20|0x200000|(1 if create else 0))
-        if status==0 and io.Status not in (None,0):
-            retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
-            _need(False)
         owned=completed_nt_handle(status,handle.value)
+        inconsistent=status==0 and io.Status not in (None,0)
+        if inconsistent:
+            retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
         if not owned and (status>=0 or handle.value not in (None,0)):
             retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
-        if owned:self.handles.append(handle.value)
+        if owned and not inconsistent:self.handles.append(handle.value)
+        self._record_native('NT_CREATE',returned=True,code=status&0xffffffff,
+            iosb=0 if io.Status is None else io.Status&0xffffffff,information=io.Information,
+            handle_output='VALID' if owned else 'EMPTY' if handle.value in (None,0) else 'INVALID')
+        _need(not inconsistent,'NATIVE_COMPLETION')
         transfer_completed_create(self.api,handle,io,attrs,self.handles)
         self._time()
-        _need(status==0 and owned)  # Information-success is owned, but not admitted.
-        if create: _need(io.Information == 2)  # FILE_CREATED, never OPEN_IF.
+        _need(status==0 and owned,'NATIVE_COMPLETION')  # Information-success is owned, but not admitted.
+        if create: _need(io.Information == 2,'EXCLUSIVE_CREATE')  # FILE_CREATED, never OPEN_IF.
         return handle.value
 
     def _identity(self, handle, *, directory):
@@ -333,8 +400,11 @@ class _NewDataTarget:
     def _dos_path(self):
         self._time()
         buffer = C.create_unicode_buffer(4096)
+        self._record_native('DOS_PATH')
         count=query_call(self.api.readonly,'PGDATA_DOS_PATH',self.api.getpath,
             (self.root,buffer,len(buffer),0),(self,buffer))  # VOLUME_NAME_DOS.
+        error=self._win32_error(count)
+        self._record_native('DOS_PATH',returned=True,code=error,information=count)
         self._time()
         _need(0 < count < len(buffer))
         return pg_command_path(buffer.value)
@@ -351,71 +421,86 @@ class _NewDataTarget:
             identity = self._identity(handle, directory=True)
             chain.append((handle, identity, self._query(self.api.descriptor,handle)))
         _need(chain[-1][1] == root_id and self._query(self.api.final_path,handle) == guid_path and
-              self._dos_path()[0] == before)
+              self._dos_path()[0] == before,'COMMAND_PATH_BINDING')
         return before, tuple(chain)  # Held until this target closes, not just path resolution.
 
     def _current_user_sid(self):
         self._time()
-        # Read the actual current TOKEN_USER through existing API; never accept
-        # an imported SID or substitute token owner for the user principal.
-        token, used, primary, cleanup = PTR(), C.c_uint32(), None, None
-        self._user_token=token  # Preserve original output even before ownership classification.
+        token,used,primary,cleanup=PTR(),C.c_uint32(),None,None
+        self._user_token=token
+        self._record_native('OPEN_TOKEN')
         opened=query_call(self.api.readonly,'PGDATA_USER_TOKEN',self.api.opentoken,
             (self.api.process(),8,C.byref(token)),(self,token))
         valid=type(token.value) is int and 0<token.value<PTR(-1).value-15
-        if (not opened and token.value not in (None,0)) or (opened and not valid):
-            retain_query_unknown(self.api.readonly,'PGDATA_USER_TOKEN_OUTPUT',self,token)
-            _need(False)
-        self.api.need(opened);_need(valid)
+        ambiguous=(not opened and token.value not in (None,0)) or (opened and not valid)
+        if ambiguous:retain_query_unknown(self.api.readonly,'PGDATA_USER_TOKEN_OUTPUT',self,token)
+        if ambiguous or not opened:
+            error=self._win32_error(opened)
+            self._record_native('OPEN_TOKEN',returned=True,code=error,
+                handle_output='VALID' if valid else 'EMPTY' if token.value in (None,0) else 'INVALID')
+            _need(not ambiguous,'TOKEN_OUTPUT')
+            self.api.need(opened);_need(valid,'TOKEN_OUTPUT')
         self.handles.append(token.value)
         try:
+            # Ownership and finally coverage precede diagnostics.
+            self._record_native('OPEN_TOKEN',returned=True,handle_output='VALID')
             self._time()
-            buffer = C.create_string_buffer(4096)
-            self.api.need(query_call(self.api.readonly,'PGDATA_USER_SID',self.api.tokeninfo,
-                (token,1,buffer,len(buffer),C.byref(used)),(self,token,buffer,used)))
+            buffer=C.create_string_buffer(4096)
+            self._record_native('TOKEN_USER')
+            ok=query_call(self.api.readonly,'PGDATA_USER_SID',self.api.tokeninfo,
+                (token,1,buffer,len(buffer),C.byref(used)),(self,token,buffer,used))
+            error=self._win32_error(ok)
+            self._record_native('TOKEN_USER',returned=True,code=error,information=used.value)
+            self.api.need(ok)
             from .restricted_token_candidate import _parse
-            sid = _parse(buffer, used.value, 1)
-            _need(_sid_text(sid) == self.user)
-        except BaseException as error:
-            primary = error
+            sid=_parse(buffer,used.value,1)
+            _need(_sid_text(sid)==self.user,'TOKEN_USER_MATCH')
+        except BaseException as error:primary=error
         finally:
-            try:
-                self._close_one(token.value)
+            try:self._close_one(token.value)
             except BaseException as error:
-                cleanup = error
-                self.cleanup_errors.append(('TOKEN_CLOSE_UNKNOWN', token.value))
+                cleanup=error;self.cleanup_errors.append(('TOKEN_CLOSE_UNKNOWN',token.value))
         if primary is not None or cleanup is not None:
             raise BaseExceptionGroup('PGDATA_USER_QUERY_UNKNOWN',
-                                     [x for x in (primary, cleanup) if x is not None])
+                [x for x in (primary,cleanup) if x is not None])
         return sid
 
     def _create_native(self, key):
+        self._stage('LEASE_BINDING')
         self.lease._verify()
         from .native_layout_candidate import _leaf_held
         _,_,expected_data,expected_sd=_leaf_held(self.lease,self.layout,'data')
+        self._stage('USER_IDENTITY')
         self.user = self._query(self.api.user_sid)
         sid=self._current_user_sid()
+        self._stage('OPEN_DATA_PARENT')
         self.data = self._open(self.lease.fs.root, 'data', anchor=True)
+        self._stage('VERIFY_DATA_PARENT')
         data_id = self._identity(self.data, directory=True)
         private_acl(self._query(self.api.security,self.data), self.user)
         data_sd = self._query(self.api.descriptor,self.data)
-        _need(data_id==expected_data and data_sd==expected_sd)
-        _need(self._query(self.api.final_path,self.data) == self._query(self.api.final_path,self.lease.fs.root).rstrip('\\')+'\\data')
+        _need(data_id==expected_data and data_sd==expected_sd,'DATA_PARENT_BINDING')
+        _need(self._query(self.api.final_path,self.data) == self._query(self.api.final_path,self.lease.fs.root).rstrip('\\')+'\\data','DATA_PARENT_PATH')
+        self._stage('CREATE_PGDATA')
         self.root = self._open(self.data, 'postgresql', create=True,
                               descriptor=root_descriptor(sid), anchor=True)
+        self._stage('VERIFY_ROOT_SECURITY')
         root_id = self._identity(self.root, directory=True)
-        _need(len({tuple(self.lease.fs.root_id), data_id, root_id}) == 3)
+        _need(len({tuple(self.lease.fs.root_id), data_id, root_id}) == 3,'DISTINCT_IDENTITIES')
         check_security(self._query(self.api.security,self.root), self.user, root=True, directory=True)
         root_sd = self._query(self.api.descriptor,self.root)
         path = self._query(self.api.final_path,self.data).rstrip('\\')+'\\postgresql'
-        _need(self._query(self.api.final_path,self.root) == path)
+        _need(self._query(self.api.final_path,self.root) == path,'ROOT_PATH')
         check_descriptor(root_sd, sid, root=True, directory=True)
+        self._stage('PIN_COMMAND_PATH')
         command_path, chain = self._pin_command_path(root_id, path)
         binding = _Binding(key, self.user, sid, data_id, root_id, data_sd, root_sd, path, command_path, chain)
         _issued[self] = binding
-        self._verify()
-        _need(self._entries(self.root) == ())  # Only this invocation's new empty root.
-        self._verify()
+        self._stage('VERIFY_BINDING');self._verify()
+        self._stage('VERIFY_EMPTY_ROOT')
+        _need(self._entries(self.root) == (),'EMPTY_ROOT')  # Only this invocation's new empty root.
+        self._stage('VERIFY_BINDING');self._verify()
+        self._stage('COMPLETED')
         self.outcome = 'NEW_ROOT_OBSERVED_NOT_NATIVE_ACCEPTANCE'
 
     def _verify(self):
@@ -447,11 +532,14 @@ class _NewDataTarget:
         for _ in range(4096):
             self._time()
             buffer = C.create_string_buffer(65536)
+            self._record_native('ENUM_DIRECTORY')
             ok=query_call(self.api.readonly,'PGDATA_DIRECTORY_ENTRIES',self.query,
                 (handle,11 if restart else 10,buffer,len(buffer)),(self,handle,buffer))
+            error=self._win32_error(ok)
+            self._record_native('ENUM_DIRECTORY',returned=True,code=error)
             self._time()
             if not ok:
-                _need(C.get_last_error() == 18)  # ERROR_NO_MORE_FILES only.
+                _need(error == 18)  # ERROR_NO_MORE_FILES only.
                 return tuple(sorted(rows))
             restart = False
             for row in directory_batch(buffer.raw):

@@ -79,6 +79,26 @@ def test_observer_decodes_verified_snapshot_instead_of_mutable_record(observed_l
     finally:lease.fs.close();lease.active=False
 
 
+def test_poisoned_cluster_failure_cannot_publish_or_become_a_normal_reopen(observed_lease,monkeypatch):
+    dirs,lease,_=observed_lease
+    lease.checkpoint('CREDENTIALS',False,'STARTING');lease.checkpoint('CLUSTER',False,'STARTING')
+    before=lease.fs.read()
+    lease.poisoned=True  # The production PGDATA failure transition, not a recovery action.
+    monkeypatch.setattr(lease.fs,'replace',lambda *args:pytest.fail('poisoned lease must not write'))
+    for _ in range(2):
+        with pytest.raises(LeaseRefused,match='LEASE_NOT_WRITABLE'):lease.mark_unknown('CLUSTER')
+    lease.release()
+    assert not lease.active and lease.poisoned and lease.fs.handles==[]
+    assert lease.record['phase']=='CLUSTER' and lease.record['handoff']=='OWNED'
+    from scripts.windows_portable.fixed_directories import FIXED_JOURNAL
+    from pathlib import Path
+    # This is the fresh Linux test directory, never an old native UNKNOWN root.
+    raw=(Path(dirs.base)/'owned-synthetic-case'/FIXED_JOURNAL).read_bytes()
+    assert journal.pair(raw,format=journal.FixedFormat.INSTANCE_V2)[0]==journal.decode(before[0],format=journal.FixedFormat.INSTANCE_V2)
+    with pytest.raises(LeaseRefused,match='CONFIRMED_HANDOFF_REQUIRED'):
+        dirs.open_existing(dirs.base+'/owned-synthetic-case')
+
+
 def test_controller_preserves_original_denial_without_spurious_cleanup_cascade(observed_lease,monkeypatch):
     dirs,lease,observed=observed_lease
     from parkweave import windows_files

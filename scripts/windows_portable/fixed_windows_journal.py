@@ -4,6 +4,7 @@ No instance root opened until fixed-file prerequisites and acceptance pass.
 No rename, volume flush, ACL setter or automatic missing-name repair.
 """
 import ctypes as C
+from parkweave.windows_handles import query_call
 
 from .directories import LeaseRefused
 from .fixed_directories import FIXED_JOURNAL
@@ -59,7 +60,9 @@ class FixedWindowsFilesystem(WindowsFilesystem):
 
     def signature(self):
         from parkweave.windows_handles import FileInfo
-        info = FileInfo(); self.api.need(self.api.getinfo(self.journal, C.byref(info)))
+        info = FileInfo()
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_SIGNATURE',self.api.getinfo,
+            (self.journal,C.byref(info)),(self,info)))
         # Access time may change from our own read; write/identity fields may not.
         return (info.Attributes, info.Creation.Low, info.Creation.High, info.Write.Low, info.Write.High,
                 info.Volume, info.SizeHigh, info.SizeLow, info.Links, info.IndexHigh, info.IndexLow)
@@ -69,7 +72,8 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     def _seek(self, offset):
         seek = self.api.readonly.k.SetFilePointerEx
         seek.argtypes, seek.restype = [C.c_void_p, C.c_int64, C.c_void_p, C.c_uint32], C.c_int32
-        self.api.need(seek(self.journal, offset, None, 0))
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_SEEK',seek,
+            (self.journal,offset,None,0),(self,)))
 
     def read_at(self, offset, count):
         self._seek(offset)
@@ -78,7 +82,8 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     def write_at(self, offset, raw):
         self._seek(offset)
         buffer, count = C.create_string_buffer(raw), C.c_uint32()
-        self.api.need(self.api.writefile(self.journal, buffer, len(raw), C.byref(count), None))
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_WRITE',self.api.writefile,
+            (self.journal,buffer,len(raw),C.byref(count),None),(self,buffer,count)))
         if count.value > len(raw): raise LeaseRefused('FIXED_NATIVE_WRITE_COUNT')
         return count.value
 
