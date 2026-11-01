@@ -218,3 +218,32 @@ def test_original_crt_end_prevents_following_queries_or_expired_result(monkeypat
         v.modules=modules;v.module_path=path;operation=lambda:v._loaded(41);expected=['modules','module_path']
     with pytest.raises(crt.CRTRefused):operation()
     assert calls==expected[:expected.index(expires_at)+1] and v.deadline==1001.
+
+
+@pytest.mark.parametrize('revocation,other_error,unavailable,close_failed',[(0x80092013,0,True,False),(0x80092010,0,False,False),(1,0,False,False),(0x80092013,1,False,False),(0x80092013,0,True,True)])
+def test_observed_revocation_offline_is_precise_refusal_never_a_pass_or_revoked_verdict(revocation,other_error,unavailable,close_failed):
+    from scripts.windows_portable import authenticode_signature as shared,entry as portable_entry
+    from scripts.windows_portable.controller import exception_chain
+    v,calls=value();v.provider=lambda state:19
+    original=v.wvt
+    def wvt(hwnd,action,data):
+        status=original(hwnd,action,data)
+        return -1 if close_failed and data._obj.action==2 else status
+    v.wvt=wvt
+    signer=crt.Signer();signer.size=C.sizeof(signer);signer.count=3
+    v.signer=lambda *args:C.pointer(signer)
+    cert=crt.ProviderCert();cert.size=C.sizeof(cert);cert.revoked=revocation;cert.error=other_error
+    context=crt.CertContext();cert.cert=C.pointer(context);v.cert=lambda *args:C.pointer(cert)
+    with pytest.raises(crt.CRTTrustFailure) as caught:v._signature(41,'C:/synthetic.dll')
+    failure=caught.value
+    assert failure.stage==('CLOSE' if close_failed else 'CERTIFICATE_POLICY') and failure.verify_ok
+    assert failure.close_outcome==('UNKNOWN' if close_failed else 'RETURNED_SUCCESS')
+    assert any(type(e) is shared.CRTRevocationUnavailable for e in exception_chain(failure)) is unavailable
+    control=ControlFailure('ACQUIRE',failure,[('RELEASE',RuntimeError(PRIVATE))] if close_failed else [])
+    assert portable_entry.public_failure_reason(control,verified=True)==('SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE' if unavailable else 'SYSTEM_CRT_PREREQUISITE_UNVERIFIED')
+    assert calls==[1,2] and bool(v.unknown) is close_failed and control.outcome=='UNKNOWN'
+    details=report(failure)
+    assert any(row['type']=='CRTRevocationUnavailable' for row in details['exception_details']) is unavailable
+    assert PRIVATE not in json.dumps(details)
+    fake=type('CRTRevocationUnavailable',(RuntimeError,),{'parkweave_lifecycle_reason':'SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'})()
+    assert portable_entry.public_failure_reason(fake,verified=True)!='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'

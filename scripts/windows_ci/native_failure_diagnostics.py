@@ -20,7 +20,9 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
          "RuntimeMetadataChanged","RUNTIME_METADATA_MISMATCH"),
         ("scripts.windows_portable.native_runtime_staging","RuntimeStagingFailure",
          "RuntimeStagingFailure","RUNTIME_CONSTRUCTION"),
-        ("scripts.windows_portable.native_system_crt","CRTTrustFailure",
+        ("scripts.windows_portable.authenticode_signature","CRTRevocationUnavailable",
+         "CRTRevocationUnavailable","CRT_REVOCATION_EVIDENCE_UNAVAILABLE"),
+        ("scripts.windows_portable.authenticode_signature","CRTTrustFailure",
          "CRTTrustFailure","CRT_SIGNATURE_INSPECTION"))
 _SOURCES=(
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
@@ -118,7 +120,7 @@ def detail(error,public_type,sites=None,budget=None):
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
     if kind is not None and kind['category']=='CRT_SIGNATURE_INSPECTION':
-        from scripts.windows_portable.native_system_crt import TRUST_PHASES,TRUST_ACTIVITIES,TRUST_CLOSE,CRT_DLLS
+        from scripts.windows_portable.authenticode_signature import TRUST_PHASES,TRUST_ACTIVITIES,TRUST_CLOSE,CRT_DLLS
         data=vars(error);stage=data.get('stage');activity=data.get('activity')
         returned=data.get('verify_returned');ok=data.get('verify_ok');closed=data.get('close_outcome')
         if (type(stage) is str and stage in TRUST_PHASES and type(activity) is str and activity in TRUST_ACTIVITIES

@@ -42,6 +42,28 @@ def test_original_entry_owner_gate_precedes_hidden_enrollment_profile_and_ready(
     assert sink.getvalue()==b'PW1\tREFUSED\tOWNER_MUTATION_PAUSED\n'
 
 
+def test_precise_revocation_evidence_refusal_reaches_desktop_without_profile_or_install_hint(tmp_path,monkeypatch,capsys):
+    from scripts.windows_portable.authenticode_signature import CRTRefused,CRTRevocationUnavailable
+    from scripts.windows_portable.controller import ControlFailure
+    reason='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'
+    try:
+        try:raise CRTRevocationUnavailable()
+        except CRTRevocationUnavailable as original:raise CRTRefused() from original
+    except CRTRefused as error:control=ControlFailure('ACQUIRE',error,[])
+    monkeypatch.setattr(entry,'verified_payload',lambda:(tmp_path,{},b'FROZEN'))
+    def invocation(*args,**kw):raise control
+    monkeypatch.setattr(entry,'native_invocation',invocation)
+    assert entry.main(['--action','reopen','--instance',str(tmp_path)])==2
+    output=capsys.readouterr().err
+    assert reason in output and '现有离线信息' in output and 'vc-redist' not in output
+    class Entry:
+        @staticmethod
+        def main(*args,**kw):print(reason);return 2
+    sink=io.BytesIO();channel=d.Channel(io.BytesIO(),sink)
+    assert d.run(value(),channel,entry_module=Entry,profile_factory=lambda *a:pytest.fail('profile after refused entry'))==2
+    assert sink.getvalue()==b'PW1\tUNKNOWN\tSYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE\n'
+
+
 @pytest.mark.parametrize('signal,normal',[(b'S',True),(b'',False),(b'U',False)])
 def test_real_pipe_lifetime_close_confirmation_and_eof_do_not_share_stopped_outcome(signal,normal):
     import os

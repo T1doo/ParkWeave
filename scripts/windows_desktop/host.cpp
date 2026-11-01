@@ -52,6 +52,7 @@ static HANDLE pythonPin=INVALID_HANDLE_VALUE;
 static HANDLE uiJob=nullptr, browserHandle=nullptr;
 static UINT32 browserPID=0;
 static bool environmentPending=false,controllerPending=false,browserExited=true,uiUnknown=false,stopSent=false;
+static bool crtRevocationUnknown=false;
 static std::vector<HANDLE> bootstrapPins;
 static std::vector<HANDLE> runtimeDirectories;
 static std::vector<HANDLE> retainedFilePins;
@@ -274,6 +275,7 @@ static void launch(const std::wstring& action){
 static void event(const std::string& line){
  if(line=="PW1\tALIVE"){if(stopping)return;need(backendReady);lastAlive=GetTickCount64();return;}
  if(line=="PW1\tSTOPPED"){need(stopping&&stopSent&&browserExited&&!uiUnknown);terminal=true;status(L"本次后台已正常停止，资料与待核对请求均已保留。");if(closeWhenStopped)PostMessageW(window,WM_CLOSE,0,0);return;}
+ if(line=="PW1\tUNKNOWN\tSYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE"){terminal=true;uiUnknown=true;crtRevocationUnknown=true;stop();signalBackend(false);status(L"无法使用现有离线信息完成证书吊销核验，请由系统维护方检查。本次状态未确认，请保留现场。");return;}
  if(line.rfind("PW1\tREFUSED\t",0)==0){terminal=true;std::wstring reason(line.begin()+12,line.end());status((L"原始入口拒绝："+reason+L"。没有自动初始化、修复或重试。").c_str());return;}
  if(line.rfind("PW1\tRUNNING\t",0)==0){need(!stopping&&!backendReady);auto split=line.find('\t',12);need(split!=std::string::npos);std::string p=line.substr(12,split-12);need(!p.empty()&&p.find_first_not_of("0123456789")==std::string::npos);int port=std::stoi(p);need(port>0&&port<=65535);origin=L"http://127.0.0.1:"+std::to_wstring(port);backendReady=true;lastAlive=GetTickCount64();showWeb(unhex(line.substr(split+1)));return;}
  uiUnknown=true;status(L"本次状态未知，已停止页面通信并保留现场；没有重启或重试。");stop();signalBackend(false);
@@ -291,7 +293,7 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
  case WM_COMMAND:if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
  case EVENT_LINE:{auto p=(std::string*)l;std::string line=*p;delete p;event(line);return 0;}
  case EVENT_EXIT:{if(reader.joinable())reader.join();closeTracked(childOutput);closeTracked(child);if(childInput){closeTracked(childInput);}if(job){closeTracked(job);}if(pythonPin!=INVALID_HANDLE_VALUE){closeTracked(pythonPin);}
-  closeView();backendReady=false;if(!terminal||uiUnknown){stopping=true;status(L"本次后台退出未获确认：状态未知，保留目录与请求，不自动重开。");}else if(closeWhenStopped)DestroyWindow(h);else{stopping=true;}return 0;}
+  closeView();backendReady=false;if(!terminal||uiUnknown){stopping=true;if(crtRevocationUnknown)status(L"无法完成系统运行库的离线吊销核验。本次状态未确认，保留目录与请求，不自动重开或更改信任设置。");else status(L"本次后台退出未获确认：状态未知，保留目录与请求，不自动重开。");}else if(closeWhenStopped)DestroyWindow(h);else{stopping=true;}return 0;}
  case WM_TIMER:finishUIStop();if(child&&!reader.joinable()&&WaitForSingleObject(child,0)==WAIT_OBJECT_0)PostMessageW(window,EVENT_EXIT,0,0);if(backendReady&&!stopping&&GetTickCount64()-lastAlive>4000)stop();if(stopping&&child&&GetTickCount64()-stopStarted>30000){uiUnknown=true;signalBackend(false);status(L"嵌入进程退出未确认：本次保留UNKNOWN，不重试或认作正常停止。");}return 0;
  case WM_SIZE:resize();return 0;
  case WM_GETMINMAXINFO:{auto m=(MINMAXINFO*)l;m->ptMinTrackSize={1040,720};return 0;}

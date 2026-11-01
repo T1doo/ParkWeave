@@ -112,13 +112,15 @@ def run(value,channel,*,entry_module=None,profile_factory=None,observe=None):
         def __init__(self):self.reason='ORIGINAL_ENTRY_GATE_OR_FAILURE'
         def write(self,text):
             for code in ('OWNER_MUTATION_PAUSED','WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED',
-                         'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED','SYSTEM_CRT_PREREQUISITE_UNVERIFIED'):
+                         'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED','SYSTEM_CRT_PREREQUISITE_UNVERIFIED',
+                         'SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'):
                 if code in text:self.reason=code
             return len(text)
     diagnostic=Discard()
     with contextlib.redirect_stdout(diagnostic),contextlib.redirect_stderr(diagnostic):
         code=entry_module.main(args,read=lambda _: (_ for _ in ()).throw(EOFError()),use_workspace=use,enroll=enroll)
     if code==0 and value['action']!='status':channel.emit('STOPPED')
+    elif diagnostic.reason=='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE':channel.emit('UNKNOWN',diagnostic.reason)
     elif not entered and diagnostic.reason!='ORIGINAL_ENTRY_GATE_OR_FAILURE':channel.emit('REFUSED',diagnostic.reason)
     else:channel.emit('UNKNOWN','ORIGINAL_ENTRY_FAILED_OR_STOP_UNKNOWN')
     return code

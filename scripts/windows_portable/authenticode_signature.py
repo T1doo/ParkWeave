@@ -25,6 +25,11 @@ class SignatureRejected(CRTRefused):
         super().__init__()
 
 
+class CRTRevocationUnavailable(CRTRefused):
+    """The observed offline status remains a refusal, never a revoked verdict."""
+    parkweave_lifecycle_reason='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'
+
+
 TRUST_PHASES=('VERIFY','PROVIDER_STATE','PROVIDER_DATA','SIGNER_DATA','SIGNER_LAYOUT','SIGNER_POLICY',
     'CERTIFICATE_DATA','CERTIFICATE_LAYOUT','CERTIFICATE_POLICY','CERTIFICATE_DER',
     'PUBLISHER_QUERY','PUBLISHER_VALUE','ROOT_PIN','CLOSE')
@@ -121,7 +126,11 @@ class SignatureVerification:
             for index in range(signer.contents.count):
                 cert=work('CERTIFICATE_DATA',self.cert,signer,index);need(cert)
                 stage='CERTIFICATE_LAYOUT';row=cert.contents;need(row.size==C.sizeof(ProviderCert) and row.cert)
-                stage='CERTIFICATE_POLICY';need(not row.test and not row.cyclic and not row.error and not row.revoked)
+                stage='CERTIFICATE_POLICY'
+                need(not row.test and not row.cyclic and not row.error)
+                if row.revoked==0x80092013:
+                    raise CRTRevocationUnavailable()
+                need(not row.revoked)
                 stage='CERTIFICATE_DER';context=row.cert.contents;need(context.der and 0<context.length<=65536)
                 roots.append(sha256(C.string_at(context.der,context.length)).hexdigest())
                 if index==0:

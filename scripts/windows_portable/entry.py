@@ -91,7 +91,9 @@ def public_failure_reason(error, *, verified=False):
     if not verified:return fallback
     known = {'OWNER_MUTATION_PAUSED','WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED',
              'NATIVE_RUNTIME_LOADING_NOT_ACCEPTED','SYSTEM_CRT_PREREQUISITE_UNVERIFIED'}
-    pending = [error]; seen = set()
+    pending = [error]; seen = set();generic=precise=None
+    crt_module=sys.modules.get('scripts.windows_portable.authenticode_signature')
+    unavailable_type=vars(crt_module).get('CRTRevocationUnavailable') if crt_module is not None else None
     module = sys.modules.get('scripts.windows_portable.controller')
     failure_type = getattr(module,'ControlFailure',None) if module is not None else None
     if failure_type is not None and type(error) is failure_type:
@@ -101,12 +103,19 @@ def public_failure_reason(error, *, verified=False):
         cause = pending.pop()
         if cause is None or id(cause) in seen:continue
         seen.add(id(cause))
+        if unavailable_type is not None and type(cause) is unavailable_type:
+            precise='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE'
         reason = getattr(cause,'parkweave_lifecycle_reason',None)
-        if type(reason) is str and reason in known:return reason
-        if str(cause) in known:return str(cause)
+        if type(reason) is str and reason in known:
+            if reason=='SYSTEM_CRT_PREREQUISITE_UNVERIFIED':generic=reason
+            else:return reason
+        text=str(cause)
+        if text in known:
+            if text=='SYSTEM_CRT_PREREQUISITE_UNVERIFIED':generic=text
+            else:return text
         pending.extend((cause.__cause__,cause.__context__))
         if isinstance(cause,BaseExceptionGroup):pending.extend(cause.exceptions[:16])
-    return fallback
+    return precise or generic or fallback
 
 
 def main(argv=None, *, read=None, use_workspace=None, enroll=None):
@@ -162,7 +171,9 @@ def main(argv=None, *, read=None, use_workspace=None, enroll=None):
         return 2  # Prompt interrupted; never choose a mode or restart on behalf of the user.
     except Exception as error:
         reason = public_failure_reason(error,verified=verified)
-        if reason=='SYSTEM_CRT_PREREQUISITE_UNVERIFIED':
+        if reason=='SYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE':
+            print('无法使用现有离线信息完成系统运行库的证书吊销核验。请由系统维护方检查可用的吊销资料；程序不会自动联网取证或更改信任设置。',file=sys.stderr)
+        elif reason=='SYSTEM_CRT_PREREQUISITE_UNVERIFIED':
             print('已有官方 x64 系统运行库缺失或未能核验。请由安装者核对微软说明；不会自动安装或修改系统：\n'
                   'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170',file=sys.stderr)
         print('ParkWeave 未启动或未正常结束：'+reason+'；保留现有状态，没有自动初始化或重试。',file=sys.stderr)

@@ -15,7 +15,7 @@ def test_shared_function_identity_and_stdlib_only_import_without_factory():
     assert production.ROOT_SHA256==shared.ROOT_SHA256
     assert not issubclass(diagnostic.ReadOnlySignature,production.NativeSystemCRT)
     root=Path(__file__).parents[1]
-    code="import sys;sys.path.insert(0,sys.argv[1]);from scripts.windows_ci import crt_signature_readonly;assert not any(n in sys.modules for n in ('psycopg','pydantic','parkweave.store','scripts.windows_portable.native_system_crt','scripts.windows_portable.native_trial_authority','scripts.windows_portable.native_instance_security'))"
+    code="import sys;sys.path.insert(0,sys.argv[1]);from scripts.windows_ci import crt_signature_readonly,native_failure_diagnostics;from scripts.windows_portable.authenticode_signature import CRTTrustFailure;assert native_failure_diagnostics.detail(CRTTrustFailure('VERIFY','CALL',False,None,'RETURNED_SUCCESS'),'CRTTrustFailure')['category']=='CRT_SIGNATURE_INSPECTION';assert not any(n in sys.modules for n in ('psycopg','pydantic','parkweave.store','scripts.windows_portable.native_system_crt','scripts.windows_portable.native_trial_authority','scripts.windows_portable.native_instance_security'))"
     subprocess.run([sys.executable,'-I','-B','-S','-c',code,str(root)],check=True,timeout=10)
 
 
