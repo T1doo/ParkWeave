@@ -65,8 +65,10 @@ def main():
             loader=z.read('build/native/x64/WebView2Loader.dll');license=z.read('LICENSE.txt')
         compatibility_header=Path(__file__).with_name('EventToken.h').read_bytes()
         namespace_header=Path(__file__).with_name('namespace_guard.h').read_bytes()
+        settings_header=Path(__file__).with_name('webview_settings.h').read_bytes()
         (work/'EventToken.h').write_bytes(compatibility_header)
         (work/'namespace_guard.h').write_bytes(namespace_header)
+        (work/'webview_settings.h').write_bytes(settings_header)
         # Preserve the official SDK ABI. MinGW does not emit uuidof metadata
         # from MIDL_INTERFACE; generate typed IID constants from that same SDK.
         iids='template<class T>const GUID& interfaceID();\n'
@@ -107,6 +109,7 @@ def main():
         bootstrap_files=pins,bootstrap_header_sha256=sha256(header.encode()).hexdigest(),
         compatibility_header_sha256=sha256(compatibility_header).hexdigest(),
         namespace_policy_sha256=sha256(namespace_header).hexdigest(),
+        settings_policy_sha256=sha256(settings_header).hexdigest(),
         sdk='Microsoft.Web.WebView2/1.0.3537.50',sdk_sha256=SDK_SHA,python_sha256=python_exe,
         native_windows_execution=False,desktop_product_acceptance=False,
         files={n:dict(bytes=(args.output/n).stat().st_size,sha256=sha256((args.output/n).read_bytes()).hexdigest())

@@ -179,19 +179,21 @@ class NativeSystemCRT:
         self._time();info=self.api.info(h)
         need(not info.attributes&(REPARSE|UNSAFE_ATTRIBUTES) and bool(info.attributes&DIRECTORY)==directory
              and info.identity>0 and (directory or info.links>=1 and 0<info.size<=128*1024*1024))
-        os_security(self.api.security(h),ancestor=ancestor)
-        return info,self.api.descriptor(h),self.api.final_path(h)
+        self._time();os_security(self.api.security(h),ancestor=ancestor)
+        self._time();descriptor=self.api.descriptor(h)
+        self._time();path=self.api.final_path(h);self._time()
+        return info,descriptor,path
 
     def _directory(self,h):
-        value=self._identity(h,True,ancestor=True);need(self.api.filesystem(h)=='NTFS')
+        value=self._identity(h,True,ancestor=True);self._time();need(self.api.filesystem(h)=='NTFS');self._time()
         self.directories.append((h,value))
 
     def _read(self,h,size):
-        self.api.need(self.seek(h,0,None,0));chunks=[];remaining=size
+        self._time();self.api.need(self.seek(h,0,None,0));chunks=[];remaining=size
         while remaining:
             self._time();raw=self.api.read(h,min(1024*1024,remaining));need(0<len(raw)<=remaining)
             chunks.append(raw);remaining-=len(raw)
-        need(self.api.read(h,1)==b'');return b''.join(chunks)
+        self._time();need(self.api.read(h,1)==b'');self._time();return b''.join(chunks)
 
     def _signature(self,h,path,*,image_name=None,delegation=None,deadline=None):
         file=FileTrust(C.sizeof(FileTrust),path,h,None)
@@ -310,18 +312,19 @@ class NativeSystemCRT:
     def _loaded(self,process):
         self._time();self._architecture(process)
         modules=(P*4096)();count=D()
+        self._time()
         need(self.modules(process,modules,C.sizeof(modules),C.byref(count),3)
              and 0<count.value<=C.sizeof(modules) and count.value%C.sizeof(P)==0)
         result={};observed=[]
         for module in modules[:count.value//C.sizeof(P)]:
-            text=C.create_unicode_buffer(4096);n=self.module_path(process,module,text,len(text))
+            self._time();text=C.create_unicode_buffer(4096);n=self.module_path(process,module,text,len(text));self._time()
             need(0<n<len(text));path=text.value
             need(module and all(module!=prior[0] for prior in observed));observed.append((module,path.casefold()))
             name=path.rsplit('\\',1)[-1].lower()
             if name in CRT_DLLS:
                 need(name not in result and path.casefold()==(self.path+'\\'+name).casefold())
                 result[name]=path.casefold()
-        return dict(crt=result,modules=tuple(sorted(observed)))
+        self._time();return dict(crt=result,modules=tuple(sorted(observed)))
 
     def _observe(self,process,check,required,deadline):
         self._binding();need(self.lock.acquire(blocking=False))

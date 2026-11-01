@@ -90,9 +90,63 @@ def test_desktop_current_source_never_uses_cli_passwords_or_browser_fallback():
     cpp=Path('scripts/windows_desktop/host.cpp').read_text()
     assert 'ShellExecute' not in cpp.replace('// ParkWeave native desktop host. No ShellExecute/browser/installer fallback.','')
     assert 'BrowserProcessExited' in cpp and 'PROC_THREAD_ATTRIBUTE_HANDLE_LIST' in cpp
-    assert 'put_IsPasswordAutosaveEnabled(FALSE)' in cpp and 'put_IsWebMessageEnabled(FALSE)' in cpp
+    settings=Path('scripts/windows_desktop/webview_settings.h').read_text()
+    assert 'configureDesktopSettings<ICoreWebView2Settings,ICoreWebView2Settings4>' in cpp
+    assert 'put_IsPasswordAutosaveEnabled(FALSE)' in settings and 'put_IsWebMessageEnabled(FALSE)' in settings
     batch=Path('scripts/windows_portable/ParkWeave.cmd').read_text()
     assert 'if "%~1"=="" goto desktop' in batch and '"%~dp0ParkWeave.exe"' in batch
+
+
+def test_production_settings_function_queries_original_com_identity_and_releases_every_branch(tmp_path):
+    """Compile the actual shared production function against distinct COM identities.
+
+    This exercises receiver/reference ownership, not WebView2/Windows execution.
+    """
+    import shutil,subprocess
+    compiler=shutil.which('g++')
+    if compiler is None:pytest.skip('portable C++ compiler unavailable')
+    code=tmp_path/'settings.cpp'
+    code.write_text(r'''
+#include <cstdlib>
+#include <stdexcept>
+constexpr int FALSE=0;
+#include "webview_settings.h"
+int mode=0,step=0,baseRefs=0,extendedRefs=0,baseReleases=0,extendedReleases=0,sets=0,viewQueries=0;
+int setting(int value){if(value!=0||baseRefs!=1)throw std::runtime_error("SETTING");
+ ++sets;return ++step==mode?-1:0;}
+struct Extended {
+ int put_IsPasswordAutosaveEnabled(int v){return setting(v);}
+ int put_IsGeneralAutofillEnabled(int v){return setting(v);}
+ void Release(){if(extendedRefs!=1)throw std::runtime_error("EXTENDED_RELEASE");--extendedRefs;++extendedReleases;}
+} extended;
+struct Settings {
+ int put_AreHostObjectsAllowed(int v){return setting(v);}
+ int put_IsWebMessageEnabled(int v){return setting(v);}
+ int put_AreDevToolsEnabled(int v){return setting(v);}
+ int put_AreDefaultContextMenusEnabled(int v){return setting(v);}
+ int put_AreDefaultScriptDialogsEnabled(int v){return setting(v);}
+ int QueryInterface(int iid,void** out){if(iid!=4||baseRefs!=1)throw std::runtime_error("IDENTITY");
+  ++step;if(step==mode)return -1;
+  if(mode==10){*out=nullptr;return 0;}
+  *out=&extended;++extendedRefs;return 0;}
+ void Release(){if(baseRefs!=1||extendedRefs)throw std::runtime_error("BASE_RELEASE");--baseRefs;++baseReleases;}
+} settings;
+struct View {
+ int get_Settings(Settings** out){*out=&settings;++baseRefs;return ++step==mode?-1:0;}
+ int QueryInterface(int,void**){++viewQueries;return -1;} // Independent view identity rejects Settings4.
+} view;
+int main(int argc,char** argv){mode=std::atoi(argv[1]);bool failed=false;
+ try{configureDesktopSettings<Settings,Extended>(&view,4,[](int hr){if(hr<0)throw std::runtime_error("HRESULT");});}
+ catch(...){failed=true;}
+ if(failed!=(mode!=0)||viewQueries||baseRefs||extendedRefs||baseReleases!=1)return 2;
+ if(extendedReleases!=((mode==0||mode==8||mode==9)?1:0))return 3;
+ if(mode==0&&sets!=7)return 4;
+ return 0;
+}
+''')
+    binary=tmp_path/'settings-policy'
+    subprocess.run([compiler,'-std=c++17','-Wall','-Wextra','-I','scripts/windows_desktop',str(code),'-o',str(binary)],check=True,timeout=20)
+    for mode in range(11):subprocess.run([str(binary),str(mode)],check=True,timeout=5)
 
 
 def test_actual_host_interpreter_reaches_original_payload_gate_with_pipe_stream_contract(tmp_path,monkeypatch):

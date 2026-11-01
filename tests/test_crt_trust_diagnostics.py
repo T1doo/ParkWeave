@@ -133,3 +133,88 @@ def test_image_name_is_per_call_and_never_stale_across_other_system_images():
     assert other.value.image_name is None
     assert 'image_name' not in diagnostics.detail(other.value,entry._error_type(other.value))['crt_signature']
     assert calls==[1,2,1,2]
+
+
+@pytest.mark.parametrize('change,stage',[
+    (None,None),('state','PROVIDER_STATE'),('provider','PROVIDER_DATA'),('signer','SIGNER_DATA'),
+    ('signer_size','SIGNER_LAYOUT'),('signer_error','SIGNER_POLICY'),('signer_type','SIGNER_POLICY'),
+    ('short_chain','SIGNER_POLICY'),('long_chain','SIGNER_POLICY'),('certificate','CERTIFICATE_DATA'),
+    ('certificate_size','CERTIFICATE_LAYOUT'),('test','CERTIFICATE_POLICY'),('cyclic','CERTIFICATE_POLICY'),
+    ('error','CERTIFICATE_POLICY'),('revoked','CERTIFICATE_POLICY'),('der','CERTIFICATE_DER'),
+    ('der_length','CERTIFICATE_DER'),
+])
+def test_strict_chain_counterexamples_and_original_call_contract(monkeypatch,change,stage):
+    """Synthetic provider graph; no certificate is accepted on an actual OS."""
+    import uuid
+    v,calls=value();original=v.wvt
+    def wvt(hwnd,action,data):
+        row=C.cast(data,C.POINTER(crt.TrustData)).contents
+        assert hwnd.value==C.c_void_p(-1).value
+        assert C.string_at(action,16)==uuid.UUID('00aac56b-cd44-11d0-8cc2-00c04fc295ee').bytes_le
+        assert (row.ui,row.revocation,row.choice,row.flags)==(2,1,1,0x80|0x1000|0x2000)
+        assert row.file.contents.file==41
+        status=original(hwnd,action,data)
+        if change=='state':row.state=None
+        return status
+    v.wvt=wvt;v.provider=lambda state:None if change=='provider' else 19
+    signer=crt.Signer();signer.size=C.sizeof(signer);signer.count=2
+    if change=='signer_size':signer.size=0
+    if change=='signer_error':signer.error=1
+    if change=='signer_type':signer.type=0x10
+    if change=='short_chain':signer.count=1
+    if change=='long_chain':signer.count=9
+    v.signer=lambda *args:None if change=='signer' else C.pointer(signer)
+    encoded=C.create_string_buffer(b'SYNTHETIC_ROOT_NOT_A_REAL_CERTIFICATE')
+    # Only this controlled graph's trust oracle is substituted, never production
+    # root/publisher/flags. The unchanged real pin is tested separately above.
+    monkeypatch.setattr(crt,'ROOT_SHA256',sha256(encoded.raw).hexdigest())
+    context=crt.CertContext();context.der=C.cast(encoded,crt.P);context.length=len(encoded)
+    certificate=crt.ProviderCert();certificate.size=C.sizeof(certificate);certificate.cert=C.pointer(context)
+    if change=='certificate_size':certificate.size=0
+    if change in ('test','cyclic','error','revoked'):setattr(certificate,change,1)
+    if change=='der':context.der=None
+    if change=='der_length':context.length=65537
+    v.cert=lambda *args:None if change=='certificate' else C.pointer(certificate)
+    def name(cert,kind,flags,oid,buffer,length):
+        assert kind==3 and flags==0 and oid.value==b'2.5.4.10' and length==256
+        buffer.value='Microsoft Corporation';return len(buffer.value)+1
+    v.cert_name=name
+    if stage is None:
+        assert v._signature(41,'C:/synthetic.dll')==(crt.ROOT_SHA256,crt.ROOT_SHA256)
+    else:
+        with pytest.raises(crt.CRTTrustFailure) as caught:v._signature(41,'C:/synthetic.dll')
+        assert caught.value.stage==stage and caught.value.verify_ok and caught.value.close_outcome=='RETURNED_SUCCESS'
+    assert calls==[1,2] and not v.unknown
+
+
+@pytest.mark.parametrize('expires_at',['info','security','descriptor','final_path','seek','read','eof','modules','module_path'])
+def test_original_crt_end_prevents_following_queries_or_expired_result(monkeypatch,expires_at):
+    v,_=value();clock=[1000.];v.deadline=1001.;calls=[]
+    monkeypatch.setattr(crt,'time',SimpleNamespace(monotonic=lambda:clock[0]))
+    monkeypatch.setattr(authority,'budget',lambda resource,deadline=None,**kw:deadline)
+    def query(name,result):
+        calls.append(name)
+        if name==expires_at:clock[0]=1002.
+        return result
+    info=SimpleNamespace(attributes=crt.DIRECTORY,identity=1)
+    v.api=SimpleNamespace(info=lambda h:query('info',info),security=lambda h:query('security',None),
+        descriptor=lambda h:query('descriptor',b'CONTROLLED'),final_path=lambda h:query('final_path','CONTROLLED'),need=crt.need)
+    if expires_at in ('info','security','descriptor','final_path'):
+        monkeypatch.setattr(crt,'os_security',lambda *args,**kw:None)
+        operation=lambda:v._identity(41,True)
+        expected=['info','security','descriptor','final_path']
+    elif expires_at in ('seek','read','eof'):
+        v.seek=lambda *args:query('seek',1);reads=[]
+        def read(*args):
+            name='read' if not reads else 'eof';reads.append(name)
+            return query(name,b'x' if name=='read' else b'')
+        v.api.read=read;operation=lambda:v._read(41,1);expected=['seek','read','eof']
+    else:
+        v._architecture=lambda *args:None;v.path=r'C:\Windows\System32'
+        def modules(process,buffer,size,count,flags):
+            buffer[0]=1;count._obj.value=C.sizeof(crt.P);return query('modules',1)
+        def path(process,module,buffer,size):
+            buffer.value=v.path+r'\vcruntime140.dll';return query('module_path',len(buffer.value))
+        v.modules=modules;v.module_path=path;operation=lambda:v._loaded(41);expected=['modules','module_path']
+    with pytest.raises(crt.CRTRefused):operation()
+    assert calls==expected[:expected.index(expires_at)+1] and v.deadline==1001.

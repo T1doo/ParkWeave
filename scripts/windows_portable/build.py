@@ -298,6 +298,7 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
             and record['compiler_archive_and_binary_verified'] is True
             and record['compatibility_header_sha256']==sha256(git('show',source+':scripts/windows_desktop/EventToken.h')).hexdigest()
             and record['namespace_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/namespace_guard.h')).hexdigest()
+            and record['settings_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/webview_settings.h')).hexdigest()
             and record['bootstrap_files']==file_manifest(files),'DESKTOP_SOURCE_OR_SCOPE')
         for name in sorted(names):
             path=desktop_assets/name

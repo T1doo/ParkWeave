@@ -41,6 +41,43 @@ def test_only_clean_returned_nosignature_can_select_catalog_not_unknown_close():
     assert type(caught.value) is not crt.SignatureRejected and value.unknown and calls==[1,2]
 
 
+@pytest.mark.parametrize('primary_failure,cleanup_failure',[(True,False),(False,True),(True,True)])
+def test_catalog_boundary_preserves_primary_and_close_causes_without_private_output(monkeypatch,primary_failure,cleanup_failure):
+    import json
+    from scripts.windows_portable import native_trial_authority as authority
+    from scripts.windows_portable.controller import ControlFailure,exception_chain
+    from scripts.windows_ci.native_business_entry import _failure_diagnostic
+    from scripts.windows_ci import native_failure_diagnostics  # Driver-loaded data-only renderer.
+    private='PRIVATE_CATALOG_ARGUMENT_MUST_NOT_ESCAPE'
+    primary=crt.CRTTrustFailure('SIGNER_LAYOUT','CHECK',True,True,'RETURNED_SUCCESS')
+    primary.args=(private,)
+    cleanup=OSError(private);events=[]
+    def initialize(self,*args,**kwargs):events.append('INITIALIZED')
+    def verify(self):
+        events.append('VERIFY')
+        if primary_failure:raise primary
+        return ('CONTROLLED_RESULT',)
+    def close(self):
+        events.append('CLOSE')
+        if cleanup_failure:raise cleanup
+    monkeypatch.setattr(catalog.CatalogMemberVerifier,'__init__',initialize)
+    monkeypatch.setattr(catalog.CatalogMemberVerifier,'verify',verify)
+    monkeypatch.setattr(catalog.CatalogMemberVerifier,'close',close)
+    monkeypatch.setattr(authority,'fail_resource',lambda lease:events.append('FAIL_ORIGINAL_LEASE'))
+    trace=SimpleNamespace(lease=object(),failed=False)
+    with pytest.raises(crt.CRTRefused) as caught:catalog.verify_member(trace,41,'CONTROLLED')
+    chain=exception_chain(caught.value)
+    assert (primary in chain)==primary_failure and (cleanup in chain)==cleanup_failure
+    assert trace.failed is cleanup_failure
+    assert events==['INITIALIZED','VERIFY','CLOSE']+(['FAIL_ORIGINAL_LEASE'] if cleanup_failure else [])
+    if primary_failure and cleanup_failure:assert isinstance(caught.value.__cause__,BaseExceptionGroup)
+    report=_failure_diagnostic(ControlFailure('ACQUIRE',caught.value,[]))
+    assert report['control']['outcome']=='UNKNOWN' and private not in json.dumps(report)
+    if primary_failure:
+        facts=next(row['crt_signature'] for row in report['exception_details'] if 'crt_signature' in row)
+        assert facts['stage']=='SIGNER_LAYOUT' and facts['wvt_close']=='RETURNED_SUCCESS'
+
+
 def test_descriptor_unknown_keeps_original_native_output_and_refuses_repeat():
     api=object.__new__(NativeLeaseAPI);readonly=object.__new__(handles.WinAPI);api.readonly=readonly
     storage=C.create_string_buffer(64);closed=[]

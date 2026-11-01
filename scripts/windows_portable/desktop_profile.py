@@ -11,7 +11,7 @@ import time
 
 from parkweave.windows_files import private_acl,DIRECTORY,REPARSE,UNSAFE_ATTRIBUTES
 from parkweave.windows_handles import (PTR,UnicodeString,ObjectAttributes,IOStatus,
-    nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
+    completed_nt_handle,require_nt_create_ready,retain_pending_nt_create,query_call,require_query_ready)
 from .fixed_secret_store import _under_lease
 from .fixed_directories import FixedDirectoryLease
 from .fixed_windows_journal import FixedWindowsFilesystem,NativeFixedLeaseAPI
@@ -91,23 +91,32 @@ class NativeDesktopProfile:
         attrs=ObjectAttributes(C.sizeof(ObjectAttributes),parent,C.pointer(name),0x40,
             C.cast(sd,PTR) if sd is not None else None,None)
         handle,io=PTR(),IOStatus()
-        status=nt_status(self.api.ntcreate(C.byref(handle),0x120081,C.byref(attrs),C.byref(io),None,
-            0x10,3,2 if fresh else 1,0x20|0x200000|1,None,0))
-        if status==0x103:
+        from .native_protected_objects import submit_create
+        status=submit_create(self.api,handle,io,attrs,(name,buffer,sd),access=0x120081,
+            attributes=0x10,share=3,disposition=2 if fresh else 1,options=0x20|0x200000|1)
+        if status==0 and io.Status not in (None,0):
             retain_pending_nt_create(self.api.readonly,handle,io,attrs,name,buffer,sd);need(False)
-        need(completed_nt_handle(status,handle.value))
+        if not completed_nt_handle(status,handle.value):
+            if status>=0 or handle.value not in (None,0):
+                retain_pending_nt_create(self.api.readonly,handle,io,attrs,name,buffer,sd)
+            need(False)
         self.handles.append(handle.value);self.profile=handle.value
         need(status==0 and io.Information==(2 if fresh else 1))
         self.profile_fact=self._inspect(self.profile,self.native_path,profile=True)
         # WebView2 receives a conventional absolute DOS path. Authority remains
         # the retained original HANDLE and volume/file identity, not this text.
-        buffer=C.create_unicode_buffer(4096)
-        count=self.api.getpath(self.profile,buffer,len(buffer),0)
-        need(4<count<len(buffer) and buffer.value.startswith('\\\\?\\')
-             and len(buffer.value)>6 and buffer.value[5:7]==':\\')
-        self.path=buffer.value[4:]
-        self.dos_path=buffer.value
+        count,text=self._dos_path()
+        need(4<count<4096 and text.startswith('\\\\?\\')
+             and len(text)>6 and text[5:7]==':\\')
+        self.path=text[4:]
+        self.dos_path=text
         self._verify()
+
+    def _dos_path(self):
+        buffer=C.create_unicode_buffer(4096)
+        count=query_call(self.api.readonly,'DESKTOP_PROFILE_DOS_PATH',self.api.getpath,
+            (self.profile,buffer,len(buffer),0),(self,buffer))
+        return count,buffer.value
 
     def _verify(self):
         need(not self.failed and not self.close_attempted)
@@ -116,8 +125,7 @@ class NativeDesktopProfile:
         need(self.api.final_path(self.lease.fs.root)==self.root_path
              and self._inspect(self.parent,self.root_path+'\\files',profile=False)==self.parent_fact
              and self._inspect(self.profile,self.native_path,profile=True)==self.profile_fact)
-        buffer=C.create_unicode_buffer(4096);count=self.api.getpath(self.profile,buffer,len(buffer),0)
-        need(0<count<len(buffer) and buffer.value==self.dos_path)
+        count,text=self._dos_path();need(0<count<4096 and text==self.dos_path)
 
     def verify(self):
         try:
@@ -128,6 +136,10 @@ class NativeDesktopProfile:
 
     def close(self):
         need(not self.close_attempted);self.close_attempted=True
+        try:
+            require_nt_create_ready(self.api.readonly);require_query_ready(self.api.readonly)
+        except BaseException:
+            self.failed=True;self.lease.poisoned=True;_unknown.append(self);raise
         errors=[]
         for handle in reversed(self.handles):
             try:self.api.close(handle)

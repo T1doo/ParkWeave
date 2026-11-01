@@ -34,6 +34,7 @@
 #include <set>
 #include "desktop_pins.h"
 #include "namespace_guard.h"
+#include "webview_settings.h"
 
 static HWND window, statusLabel, instanceEdit, portDb, portApi;
 static HWND pass[6], startButton, newButton;
@@ -193,9 +194,7 @@ static void showWeb(const std::wstring& profile){
    controllerPending=false;if(FAILED(hr)||!c){uiUnknown=true;stop();signalBackend(false);return E_FAIL;}controller=c;c->AddRef();ok(c->get_CoreWebView2(&view));
    ok(view->get_BrowserProcessId(&browserPID));browserHandle=OpenProcess(SYNCHRONIZE|PROCESS_QUERY_LIMITED_INFORMATION,FALSE,browserPID);if(browserHandle)remember(browserHandle);need(browserHandle);BOOL inside=FALSE;need(IsProcessInJob(browserHandle,uiJob,&inside)&&inside);wchar_t image[4096];DWORD count=4096;need(QueryFullProcessImageNameW(browserHandle,0,image,&count));need(_wcsicmp(image,(runtimeFolder+L"\\msedgewebview2.exe").c_str())==0);
    if(stopping){closeView();finishUIStop();return S_OK;}
-   ICoreWebView2Settings* settings=nullptr;ok(view->get_Settings(&settings));
-   ok(settings->put_AreHostObjectsAllowed(FALSE));ok(settings->put_IsWebMessageEnabled(FALSE));ok(settings->put_AreDevToolsEnabled(FALSE));ok(settings->put_AreDefaultContextMenusEnabled(FALSE));ok(settings->put_AreDefaultScriptDialogsEnabled(FALSE));settings->Release();
-   ICoreWebView2Settings4* s4=nullptr;ok(view->QueryInterface(interfaceID<ICoreWebView2Settings4>(),(void**)&s4));ok(s4->put_IsPasswordAutosaveEnabled(FALSE));ok(s4->put_IsGeneralAutofillEnabled(FALSE));s4->Release();
+   configureDesktopSettings<ICoreWebView2Settings,ICoreWebView2Settings4>(view,interfaceID<ICoreWebView2Settings4>(),ok);
    EventRegistrationToken token{};
    auto nav=CB(ICoreWebView2NavigationStartingEventHandler,ICoreWebView2*,ICoreWebView2NavigationStartingEventArgs*)([](ICoreWebView2*,ICoreWebView2NavigationStartingEventArgs* a)->HRESULT{LPWSTR u=nullptr;ok(a->get_Uri(&u));bool allowed=!stopping&&sameOrigin(u);CoTaskMemFree(u);if(!allowed)ok(a->put_Cancel(TRUE));return S_OK;});
    ok(view->add_NavigationStarting(nav,&token));ok(view->add_FrameNavigationStarting(nav,&token));nav->Release();

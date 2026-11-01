@@ -196,5 +196,8 @@ def verify_member(trace,member,path,*,signature_deadline=None):
         trace.failed=True
         from .native_trial_authority import fail_resource
         fail_resource(trace.lease)
-    if primary is not None or cleanup is not None:raise CRTRefused() from None
+    if primary is not None and cleanup is not None:
+        raise CRTRefused() from BaseExceptionGroup('CATALOG_VERIFY_AND_CLOSE_FAILED',[primary,cleanup])
+    if primary is not None:raise CRTRefused() from primary
+    if cleanup is not None:raise CRTRefused() from cleanup
     return result
