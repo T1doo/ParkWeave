@@ -165,6 +165,20 @@ def installation_entry(value):
             yield path, None
 
 
+@contextmanager
+def _loopback_listener(port):
+    import socket
+    with socket.socket() as listener:
+        # Reuse this stopped server's TIME_WAIT connections, while still
+        # refusing any live listener. Never use SO_REUSEPORT or take over
+        # another process. Listen before PG starts so this original socket
+        # owns the endpoint throughout startup, even with REUSEADDR.
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(('127.0.0.1', port))
+        listener.listen()
+        yield listener
+
+
 def serve(value, port):
     if not 1024 <= port <= 65535:
         raise Denied('unprivileged loopback port required')
@@ -179,9 +193,7 @@ def serve(value, port):
                 or marker['bootstrap_sha256'] != material.source_binding()['bootstrap_sha256']):
             raise Denied('frozen installation source changed; no repair or migration')
         # Bind before starting any child: occupied addresses are never taken over.
-        import socket
-        with socket.socket() as listener:
-            listener.bind(('127.0.0.1', port))
+        with _loopback_listener(port) as listener:
             with (installation.postgres() if installation else material.postgres(path)):
                 with psycopg.connect(material.dsn(path), row_factory=dict_row) as connection:
                     connection.execute('SET TRANSACTION READ ONLY')

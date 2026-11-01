@@ -18,6 +18,10 @@ python3.12 -m venv .venv
 
 打开 `http://127.0.0.1:8765`。默认只绑定 IPv4 回环；端口已占用时拒绝，不终止占用者。正常停止在前台按 Ctrl+C，再用同一 start 命令重开。密码遗失不自动重置；不要重新 seed 或修改既有会话。
 
+正常重开会复用本程序已关闭连接留下的端口等待状态；活跃监听者仍被拒绝。监听地址在数据库和 worker 启动前即由本次原套接字独占。端口占用时可以关闭自己另开的占用程序，或明确选择另一个未占用端口 `--port 8766` 后重开原 `state_dir`；浏览器中的待核对句柄按地址和端口隔离，换端口不能替代原地址上的 UNKNOWN 核对。源码或权限绑定不匹配、`stop-unconfirmed` 或安装未完成时停止，不自动修复、重装覆盖或接管进程。
+
+停止程序只结束本次自有服务，保留数据库、材料、办理记录、密封身份和日志。此 Linux 版本通过 Git checkout 加本地 Python 环境安装，没有系统服务、自动启动项或系统范围卸载器。卸载应用可在确认已经停止后删除专用于它的虚拟环境和源码副本；若数据在默认 `.runtime/local-product` 下，删除整个 checkout 会一并删除数据。要保留资料就保留原完整安装目录和冻结源码，不能把仅复制文件或搬库称为已验证恢复。删除数据库必须另行明确决定，不作为退出或卸载的默认动作。
+
 工作台左侧固定导航，中间新建入口/事项列表，右侧材料与操作。企业先提交诉求，待本地 worker 建立记录后明确点击“开始准备材料”；补齐“诉求摘要”和“材料目录”，注明合成来源类型/版本。退出并由专员本人登录，选择同一事项，要求补正或填写说明后核对；企业本人再登录并确认。材料和办理记录分别在右侧区域滚动，操作区保留当前角色的审核、确认、重开按钮。刷新后需重新登录；未开始准备的已提交诉求可从“接续已提交的本地诉求”只读选择。
 
 每个角色用独立 scrypt 密钥与 AES-GCM 密文保存随机 bearer；密码和 bearer 不以明文写文件。密文认证本次物理目录与数据库身份，登录仍核对当前数据库身份状态。角色切换清空当前页面私有内容；不是同一操作系统用户之间的隔离沙箱。下载是当前有权读取的资料快照，后续撤权不能追回副本。
@@ -30,7 +34,7 @@ python3.12 -m venv .venv
 
 **持久范围：** 新安装使用独立 `LocalDatabaseCreationEvidence`，绑定新建私有目录、真实 initdb、自有 postmaster、Unix socket 内核对端与实际 CREATE DATABASE。原 `/tmp` fixture 凭据合同保持原样。已经在 `/workspace` 下实际创建并验证 API、worker、PostgreSQL 正常停止/独立进程重开后的原记录精确回读；无需搬迁临时库。重开只读校验实际运行源码字节、库物理身份、schema32 和原权限快照，不再 initdb、迁移、seed 或自动复权。此证据不代表主机重启、平台卷保留、灾难恢复或备份已验证。UNKNOWN 安装不自动重试。
 
-**Windows 源码进度：** 具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口已接线。`NativeRuntimeInstallation` 在原 fresh lease 下持有源文件与父链，按冻结清单排除别名/保留目录，以显式私有描述符和 FILE_CREATE 写入完整运行时；同句柄回读 SHA256 后关闭 writer，再保留同 ID 的只读 pin。重开核验已有完整树，缺失不复制、不修 ACL。源 payload 全树也必须已有合规私有 ACL，普通 ZIP 解压不提供这一保证。
+**Windows 源码进度：** 具体 Security/ClusterPrerequisites、DPAPI reviewer provider、数据库认证前 endpoint witness、原始 initdb 管道写入和工厂/入口已接线。`NativeRuntimeInstallation` 在原 fresh lease 下持有源文件与父链，按冻结清单排除别名/保留目录，以显式私有描述符和 FILE_CREATE 写入完整运行时；确认 writer 刷盘和关闭后，重开同 ID、保护和元数据的只读 pin，再完整读回 SHA256，避免关闭间隙的同长度改写漏检。重开核验已有完整树，缺失不复制、不修 ACL。源 payload 全树也必须已有合规私有 ACL，普通 ZIP 解压不提供这一保证。
 
 Windows 当前正常入口为 `ParkWeave.exe` 独立窗口；无参数 `ParkWeave.cmd` 转交同包 EXE，显式参数仍原样转发到 CLI 私有解释器。窗口与 CLI 都区分新建和重开：已有安装不存在或重开失败不会转新建，重开不接收端口覆盖。新建要求尚不存在目录、两个不同端口及独立密码，并保留 OWNER 暂停；桌面填写的密码只通过本次私有管道，不绕门授予身份。CLI 的回车停止与桌面的已确认浏览器退出/私有停止协议分别保留，桌面 EOF/未知不得冒认正常结束。详见[当前桌面生命周期](../release/DesktopCandidate-20261028.md)。启动中的独占锁与原持久状态仍是权威，实际 Windows 参数、窗口、WebView2 和原生业务尚未验。
 
