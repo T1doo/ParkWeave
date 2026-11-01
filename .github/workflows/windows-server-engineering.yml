@@ -23,11 +23,11 @@ concurrency:
 jobs:
   crt-signature-readonly:
     if: >-
-      false && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
+      github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
       github.event_name == 'push' && github.run_attempt == 1 &&
       github.ref == 'refs/heads/dev/local-product-runtime-20261028' &&
-      github.event.before == 'db62db90abbbecab743cd24e946c8363e8b29f28' &&
-      github.event.head_commit.message == 'ci: read-only CRT state snapshot PW_CRT_RO_20261101_B'
+      github.event.before == 'd21db941e0fbadc81aa0fce3d5e493ee4d6573e0' &&
+      github.event.head_commit.message == 'ci: read-only CRT public metadata PW_CRT_RO_20261101_C'
     name: Read-only System32 CRT signatures / no native business acceptance
     runs-on: windows-2025
     timeout-minutes: 3

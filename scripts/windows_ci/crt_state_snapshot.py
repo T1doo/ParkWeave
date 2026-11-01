@@ -1,4 +1,4 @@
-"""Bounded numeric copies of the ORIGINAL live WinTrust state; no native calls.
+"""Bounded public copies of the ORIGINAL live WinTrust state; no native calls.
 
 Only the read-only diagnostic uses this observer. Nothing here builds a chain,
 retrieves a URL, edits a cache/store/policy, frees a borrowed pointer, or issues
@@ -7,6 +7,7 @@ an acceptance capability. Missing optional evidence is never a good verdict.
 import ctypes as C
 import copy
 from scripts.windows_portable import authenticode_signature as trust
+from scripts.windows_ci.crt_certificate_metadata import observe_certificate, filetime_utc
 
 P=C.c_void_p;D=C.c_uint32;B=C.c_int32
 
@@ -110,6 +111,7 @@ class StateSnapshot:
             result=dict(status='READ_ORIGINAL_STATE',verify_as_of_filetime=((row.time_high<<32)|row.time_low) or None,
                 verify_as_of_semantics='PROVIDER_VERIFICATION_TIME_OR_TIMESTAMP',certificate_count=row.count,
                 signer_error=f'{row.error:08x}',signer_kind=f'{row.type:08x}',chain_context=dict(status='NOT_AVAILABLE'),certificates=[])
+            result['verify_as_of_utc']=filetime_utc(result['verify_as_of_filetime'])
             if row.chain:
                 phase='CHAIN_CONTEXT'
                 chain=self.read(row.chain,ChainContextPrefix)
@@ -124,6 +126,12 @@ class StateSnapshot:
                 item=dict(index=i,error=f'{cert.error:08x}',revocation_reason=f'{cert.revoked:08x}',
                     test=bool(cert.test),cyclic=bool(cert.cyclic),commercial=bool(cert.commercial),
                     self_signed=bool(cert.self_signed),provider_trusted_root=bool(cert.root),element=dict(status='NOT_AVAILABLE'))
+                phase='PUBLIC_CERTIFICATE_METADATA'
+                context=self.read(cert.cert,trust.CertContext,sized=False)
+                item['public_metadata']=dict(status='UNAVAILABLE_CERTIFICATE_DER_BOUNDS')
+                if context.der and 0<context.length<=65536:
+                    self.guard()
+                    item['public_metadata']=observe_certificate(C.string_at(context.der,context.length),self.guard)
                 if cert.element:
                     phase='CHAIN_ELEMENT'
                     element=self.read(cert.element,ChainElement)
@@ -154,6 +162,7 @@ class StateSnapshot:
             next_update_filetime=stamp(times.next_update),validity_decision='NOT_EVALUATED')
 
     def export(self):
-        # Only copied numbers/fixed labels survive CLOSE. No borrowed C pointer,
-        # subject/URL/DER, raw extended-error string or platform grant escapes.
+        # Only copied public facts survive CLOSE. No borrowed C pointer,
+        # DER, raw extended-error string or platform grant escapes. Public CRT
+        # certificate names/URIs are copied bounded observations, never fetched.
         return copy.deepcopy(self.facts)

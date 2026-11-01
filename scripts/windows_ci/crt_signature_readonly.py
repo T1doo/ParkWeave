@@ -17,9 +17,10 @@ if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from scripts.windows_portable import authenticode_signature as trust
 from scripts.windows_ci.crt_state_snapshot import StateSnapshot
+from scripts.windows_ci.crt_certificate_metadata import observe_pe_signing_times, provider_signer_matches
 
-BEFORE='db62db90abbbecab743cd24e946c8363e8b29f28'
-MARKER='ci: read-only CRT state snapshot PW_CRT_RO_20261101_B'
+BEFORE='d21db941e0fbadc81aa0fce3d5e493ee4d6573e0'
+MARKER='ci: read-only CRT public metadata PW_CRT_RO_20261101_C'
 JOB='crt-signature-readonly'
 NATIVE_SYMBOLS=frozenset(('GetSystemDirectoryW','GetCurrentProcess','IsWow64Process2','CreateFileW',
     'GetFileInformationByHandle','ReadFile','CloseHandle','WinVerifyTrust','WTHelperProvDataFromStateData',
@@ -146,12 +147,14 @@ class ReadOnlySignature(trust.SignatureVerification):
         # DELETE, WRITE_DAC, WRITE_OWNER, CREATE, token or registry operations.
         handle=self.call(self.open,path,0x80000000,1,None,3,0x200000,None)
         need(handle not in (None,0,P(-1).value));self.handles.append(handle)
-        before=self.identity(handle);remaining=before[4];digest=sha256()
+        before=self.identity(handle);remaining=before[4];digest=sha256();chunks=[]
         while remaining:
             buffer=C.create_string_buffer(min(1024*1024,remaining));used=D()
             need(self.call(self.read,handle,buffer,len(buffer),C.byref(used),None) and 0<used.value<=len(buffer))
-            digest.update(buffer.raw[:used.value]);remaining-=used.value
+            chunk=buffer.raw[:used.value];digest.update(chunk);chunks.append(chunk);remaining-=used.value
         result=self.result=dict(file=name,bytes=before[4],sha256=digest.hexdigest(),verification='NOT_COMPLETED')
+        result['embedded_signature_times']=observe_pe_signing_times(b''.join(chunks),lambda:self._signature_budget(None,None))
+        del chunks
         try:
             roots=self._signature(handle,path.value,image_name=name)
             result.update(verification='STRICT_SHARED_SIGNATURE_CHECK_PASSED',chain_sha256=list(roots))
@@ -173,6 +176,9 @@ class ReadOnlySignature(trust.SignatureVerification):
         result.update(wintrust_returns=list(self.returns),signer=self.signer_facts,provider_chain=list(self.chain),
             signer_observation=self.signer_observation,chain_observation=self.chain_observation,
             root_policy_reached=self.root_policy_reached,expected_root_matched=root_match,state_snapshot=self.state_snapshot.export())
+        certificates=result['state_snapshot']['signer_chain'].get('certificates',[])
+        result['embedded_times_provider_identity']=provider_signer_matches(result['embedded_signature_times'],
+            certificates[0].get('public_metadata',{}) if certificates else {})
         return result
 
     def close(self):
