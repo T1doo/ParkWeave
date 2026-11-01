@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   candidate-build:
-    if: ${{ github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    if: ${{ false && github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     outputs:
@@ -43,7 +43,7 @@ jobs:
 
   native-business-trial:
     needs: candidate-build
-    if: ${{ github.event_name == 'push' && needs.candidate-build.result == 'success' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    if: ${{ false && github.event_name == 'push' && needs.candidate-build.result == 'success' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
     runs-on: windows-2025
     timeout-minutes: 19
     steps:
