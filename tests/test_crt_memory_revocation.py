@@ -58,7 +58,8 @@ def source(monkeypatch):
 def native(monkeypatch,original):
     monkeypatch.setattr(C,'get_last_error',lambda:0,raising=False)
     s=SimpleNamespace(calls=[],refs=[],signature_fail=0,signature_count=0,revocation_fail=0,revocation_count=0,
-        unknown=False,close_bad=False,revoked=False,expired=False,publisher='Microsoft Corporation')
+        unknown=False,close_bad=False,revoked=False,expired=False,publisher='Microsoft Corporation',
+        source_mode=None,returned=[],output_free_bad=False,expire_on_revocation=False,requested_times=[])
     def blob(data):
         b=C.create_string_buffer(data);s.refs.append(b);return prep.Blob(len(data),C.addressof(b))
     def info(index):
@@ -92,13 +93,35 @@ def native(monkeypatch,original):
         s.calls.append('REVOCATION');s.revocation_count+=1
         assert (encoding,kind,count,flags)==(0x10001,1,1,2)
         para=parameters._obj;assert para.size==C.sizeof(para) and para.crl_store==99 and para.store_count==1
-        assert para.issuer and para.verify_time==para.current_time and not para.url_timeout and not para.crl_info and not para.resync
+        assert para.issuer and para.verify_time==para.current_time and not para.url_timeout and para.crl_info and not para.resync
+        target=C.cast(C.cast(contexts,C.POINTER(m.P))[0],C.POINTER(trust.CertContext)).contents
+        issuer=C.cast(para.issuer,C.POINTER(trust.CertContext)).contents
+        assert C.string_at(target.der,target.length)==original.der[s.revocation_count-1]
+        assert C.string_at(issuer.der,issuer.length)==original.der[s.revocation_count]
+        when=C.cast(para.verify_time,C.POINTER(snap.FileTime)).contents
+        s.requested_times.append((when.high<<32)|when.low)
+        info=C.cast(para.crl_info,C.POINTER(snap.RevocationCRL)).contents
+        assert info.size==C.sizeof(info) and not any((info.base,info.delta,info.entry,info.delta_entry))
         if s.unknown:raise RuntimeError('PRIVATE_NATIVE_ARGUMENT')
+        raw=b'LEAF_CRL' if s.revocation_count==1 else b'CA_CRL'
+        if s.source_mode=='different' or s.source_mode=='second_different' and s.revocation_count==2:raw=b'OTHER_VALID_CRL'
+        if s.source_mode!='missing':
+            buffer=C.create_string_buffer(raw);row=prep.CRLContext();row.der=C.addressof(buffer);row.length=len(raw)
+            s.refs.extend([buffer,row]);s.returned.append(C.addressof(row));info.base=C.addressof(row)
+        if s.source_mode=='bad_size':info.size-=8
+        if s.source_mode=='delta_alias':info.delta=info.base
+        if s.source_mode=='entry':info.entry=1
+        if s.source_mode=='delta_entry':info.delta_entry=1
+        if s.source_mode=='unknown_after_output':raise RuntimeError('PRIVATE_NATIVE_ARGUMENT')
         state._obj.has_freshness=1;state._obj.freshness=3600
         state._obj.error=0x80092013 if s.revocation_count==s.revocation_fail else 0
+        if s.expire_on_revocation:s.verifier.deadline=time.monotonic()-1
         return not state._obj.error
     def free_cert(context):s.calls.append('FREE_CERT');return 1
-    def free_crl(context):s.calls.append('FREE_CRL');return 1
+    def free_crl(context):
+        returned=C.cast(context,m.P).value in s.returned
+        s.calls.append('FREE_RETURNED_CRL' if returned else 'FREE_CRL')
+        return not (returned and s.output_free_bad)
     def closed(store,flags):assert (store,flags)==(99,2);s.calls.append('CLOSE_MEMORY');return not s.close_bad
     functions=dict(CertCreateCertificateContext=create_cert,CertCreateCRLContext=create_crl,CertFreeCertificateContext=free_cert,
         CertFreeCRLContext=free_crl,CryptVerifyCertificateSignatureEx=verify,CertGetNameStringW=cert_name,CertOpenStore=opened,
@@ -112,6 +135,7 @@ def native(monkeypatch,original):
 
 def check(monkeypatch,owner,state):
     now=time.monotonic();value=m.MemoryRevocation(float(now+120),float(now+135))
+    state.verifier=value
     return value,value.check(owner.state_snapshot,b'LEAF_CRL')
 
 
@@ -144,6 +168,14 @@ def test_memory_checks_use_both_fixed_pairs_with_current_revocation_without_gran
     assert s.calls[-6:]==['CLOSE_MEMORY','FREE_CRL','FREE_CRL','FREE_CERT','FREE_CERT','FREE_CERT']
     assert result['status']=='CURRENT_MEMORY_REVOCATION_CONJUNCTION_OBSERVED'
     assert result['production_admission']=='NOT_CONNECTED' and result['equivalent_or_stronger_proven'] is False
+    assert all(x['source_used']=='USED_BASE_DER_EQUALS_EXPECTED_PAIR_CRL' and x['store_origin']=='NOT_OBSERVED'
+        for x in result['native_revocation'])
+    assert [x['used_base_crl_sha256'] for x in result['native_revocation']]==result['crl_sha256']
+    assert len({x['requested_time_filetime'] for x in result['native_revocation']})==1
+    assert s.requested_times[0]==s.requested_times[1]==int(result['native_revocation'][0]['requested_time_filetime'])
+    assert all(type(x['requested_time_filetime']) is str and x['native_time_semantics']=='REQUESTED_NOT_ATTESTED'
+        for x in result['native_revocation'])
+    assert s.calls.count('FREE_RETURNED_CRL')==2
     assert owner.state_snapshot.facts['signer_chain']['certificates'][0]['revocation_reason']=='80092013'
     assert not value.owned and not value.buffers
 
@@ -187,10 +219,9 @@ def test_copies_refuse_mismatched_native_element_or_missing_second_crl(monkeypat
 
 
 def test_certificate_must_be_current_at_return_without_historical_timestamp_exception(monkeypatch):
-    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);original_all=m.all_current;count=[0]
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);original_all=m.all_current
     def all_current(metadata):
-        count[0]+=1
-        if count[0]>=5:raise prep.PreparationRefused('CERTIFICATE_NOT_CURRENT_NO_TIMESTAMP_EXCEPTION')
+        if s.calls and s.calls[-1]=='FREE_CERT':raise prep.PreparationRefused('CERTIFICATE_NOT_CURRENT_NO_TIMESTAMP_EXCEPTION')
         return original_all(metadata)
     monkeypatch.setattr(m,'all_current',all_current)
     with pytest.raises(prep.PreparationRefused) as caught:check(monkeypatch,owner,s)
@@ -206,7 +237,7 @@ def test_unknown_revocation_retains_all_raw_address_targets_after_original_frame
     try:
         try:value.check(owner.state_snapshot,b'LEAF_CRL')
         except prep.PreparationRefused:pass  # Future coordinator converts error, discarding traceback.
-        storage=[x for x in value.buffers if type(x) is tuple and len(x)==5]
+        storage=[x for x in value.buffers if type(x) is tuple and len(x)==6]
         assert len(storage)==1
         refs=[weakref.ref(x) for x in storage[0]];addresses=(C.addressof(storage[0][0]),C.addressof(storage[0][1]))
         del storage;gc.collect()
@@ -230,3 +261,61 @@ def test_second_crl_and_revocation_failure_report_exact_pair_and_public_native_s
             else:
                 assert len(error.revocation_status)==2 and error.revocation_status[1]['returned_good'] is False
                 assert error.revocation_status[1]['error']=='80092013'
+
+
+@pytest.mark.parametrize('mode,reason',[
+    ('missing','REVOCATION_BASE_SOURCE_UNAVAILABLE'),
+    ('bad_size','REVOCATION_BASE_SOURCE_UNAVAILABLE'),
+    ('different','REVOCATION_SOURCE_BYTES_DIFFER'),
+    ('second_different','REVOCATION_SOURCE_BYTES_DIFFER'),
+    ('delta_alias','REVOCATION_DELTA_OR_ENTRY_UNSUPPORTED'),
+    ('entry','REVOCATION_DELTA_OR_ENTRY_UNSUPPORTED'),
+    ('delta_entry','REVOCATION_DELTA_OR_ENTRY_UNSUPPORTED')])
+def test_native_good_without_exact_returned_crl_source_is_never_bound(monkeypatch,mode,reason):
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);s.source_mode=mode
+    with pytest.raises(prep.PreparationRefused) as caught:check(monkeypatch,owner,s)
+    error=caught.value
+    assert error.reason==reason and error.stage=='REVOCATION_SOURCE_BINDING'
+    assert error.index==(1 if mode=='second_different' else 0)
+    assert error.revocation_status[-1]['returned_good'] is True
+    assert error.revocation_status[-1]['source_used']=='MISSING_OR_UNBOUND'
+    assert error.cleanup=='OWNED_CONTEXTS_CLOSED'
+    assert s.calls.count('FREE_RETURNED_CRL')==(0 if mode=='missing' else 2 if mode in ('delta_alias','second_different') else 1)
+
+
+def test_known_failed_revocation_still_owns_returned_context_before_status_check(monkeypatch):
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);s.revocation_fail=1
+    with pytest.raises(prep.PreparationRefused) as caught:check(monkeypatch,owner,s)
+    assert caught.value.reason=='MEMORY_REVOCATION_NOT_GOOD'
+    assert s.calls.count('FREE_RETURNED_CRL')==1 and caught.value.cleanup=='OWNED_CONTEXTS_CLOSED'
+
+
+def test_unknown_call_with_changed_output_retains_graph_without_freeing_it(monkeypatch):
+    import gc
+    from scripts.windows_ci.crt_crl_preparation import _retained_unknown
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);s.source_mode='unknown_after_output'
+    before=len(_retained_unknown);now=time.monotonic();value=m.MemoryRevocation(float(now+120),float(now+135))
+    try:
+        try:value.check(owner.state_snapshot,b'LEAF_CRL')
+        except prep.PreparationRefused:pass
+        gc.collect();storage=next(x for x in value.buffers if type(x) is tuple and len(x)==6)
+        assert value.unknown and value.pending and storage[5].base
+        assert not any(x in ('FREE_RETURNED_CRL','FREE_CRL','FREE_CERT','CLOSE_MEMORY') for x in s.calls)
+    finally:del _retained_unknown[before:]
+
+
+def test_returned_context_free_failure_is_unknown_and_never_retried(monkeypatch):
+    from scripts.windows_ci.crt_crl_preparation import _retained_unknown
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);s.output_free_bad=True;before=len(_retained_unknown)
+    try:
+        with pytest.raises(prep.PreparationRefused) as caught:check(monkeypatch,owner,s)
+        assert caught.value.cleanup=='UNKNOWN' and caught.value.cleanup_kind=='RETURNED_BASE_CRL'
+        assert s.calls.count('FREE_RETURNED_CRL')==1 and 'CLOSE_MEMORY' not in s.calls
+    finally:del _retained_unknown[before:]
+
+
+def test_known_return_registers_outputs_even_when_work_deadline_just_expired(monkeypatch):
+    owner=source(monkeypatch);s=native(monkeypatch,owner.state_snapshot);s.expire_on_revocation=True
+    with pytest.raises(prep.PreparationRefused) as caught:check(monkeypatch,owner,s)
+    assert caught.value.reason=='WORK_DEADLINE' and caught.value.cleanup=='OWNED_CONTEXTS_CLOSED'
+    assert s.calls.count('FREE_RETURNED_CRL')==1 and s.calls.count('CLOSE_MEMORY')==1

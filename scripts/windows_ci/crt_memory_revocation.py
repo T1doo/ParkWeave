@@ -4,13 +4,14 @@ The original shared file check and its REFUSED/UNKNOWN result remain unchanged.
 This diagnostic copies bounded public bytes from the ORIGINAL live WVT graph,
 then uses owned cert/CRL contexts and a MEMORY store. No persistent store, URL
 cache, provider override or original-state mutation is permitted. Native GOOD
-is an additional check, not proof which CRL the revocation handler selected.
+alone is insufficient: each single-context call must return the exact checked
+base CRL bytes through pCrlInfo. This still emits no production capability.
 """
 import ctypes as C
 import time
 from datetime import datetime,timezone
 from hashlib import sha256
-from scripts.windows_ci.crt_crl_preparation import (OwnedCRLValidator,PreparationRefused,need,current_window,
+from scripts.windows_ci.crt_crl_preparation import (OwnedCRLValidator,PreparationRefused,CRLContext,need,current_window,
     LEAF_SHA256,ISSUER_SHA256,CDP,MAX_BYTES)
 from scripts.windows_ci.crt_certificate_metadata import certificate
 from scripts.windows_ci.crt_state_snapshot import (StateSnapshot,ChainElement,RevocationInfo,RevocationCRL,CRLContext as SnapshotCRL)
@@ -139,6 +140,32 @@ class MemoryRevocation(OwnedCRLValidator):
         row=context.contents;need(row.der and row.length==len(data) and C.string_at(row.der,row.length)==data,'OWNED_CONTEXT_BYTES_MISMATCH')
         return context
 
+    def own_revocation_outputs(self,info):
+        # Official wincrypt.h: every updated non-NULL context is caller-owned.
+        # Register BOTH fields immediately after a known return, before any
+        # deadline/profile/status check can fail. Even an equal pointer value
+        # can represent a separate reference; do not deduplicate owned refs.
+        # An unknown call never reaches here; its whole output graph is retained.
+        for field in ('base','delta'):
+            pointer=getattr(info,field)
+            if pointer:
+                context=C.cast(pointer,C.POINTER(CRLContext))
+                self.owned.append((context,lambda value:self.free_owned(self.free_crl,value),
+                    'RETURNED_'+field.upper()+'_CRL'))
+
+    def bind_revocation_source(self,info,expected):
+        self.guard()
+        need(info.size==C.sizeof(info) and info.base,'REVOCATION_BASE_SOURCE_UNAVAILABLE')
+        need(not info.delta and not info.entry and not info.delta_entry,'REVOCATION_DELTA_OR_ENTRY_UNSUPPORTED')
+        row=C.cast(info.base,C.POINTER(CRLContext)).contents
+        need(row.der and 0<row.length<=MAX_BYTES,'REVOCATION_SOURCE_BOUNDS')
+        # Compare the entire DER, not a freshness number, pointer/store identity
+        # or handler success. This also rejects a different valid cached CRL.
+        self.guard();raw=C.string_at(row.der,row.length)
+        need(raw==expected,'REVOCATION_SOURCE_BYTES_DIFFER')
+        self.guard()
+        return sha256(raw).hexdigest()
+
     def check(self,source,leaf_crl):
         need(type(source) is OriginalCopies and source.complete and source.request is None,'CLOSED_ORIGINAL_COPIES_REQUIRED')
         need(original_constraints(source.owner) is source,'ORIGINAL_PROBE_REQUIRED')
@@ -180,26 +207,41 @@ class MemoryRevocation(OwnedCRLValidator):
             for i,crl in enumerate(crls):
                 self.index=i;self.require_native(self.call(self.add_crl,store,crl,1,None),'MEMORY_CRL_INSERT_REFUSED')
             statuses=[]
+            now=all_current(metadata);delta=now-datetime(1601,1,1,tzinfo=timezone.utc)
+            ticks=(delta.days*86400+delta.seconds)*10000000+delta.microseconds*10
+            # One explicit requested time binds both target/issuer pairs.
+            # pftTimeToUse is a request, not an attestation the handler used it;
+            # independently require each already-checked CRL to cover this time.
+            for policy in policies:
+                need(policy['this_update_filetime']<=ticks<=policy['next_update_filetime'],
+                    'CRL_NOT_VALID_AT_COMMON_REQUEST_TIME')
+            when=trust.D*2;value=when(ticks&0xffffffff,ticks>>32)
             for i in range(2):
                 self.stage='CACHE_ONLY_REVOCATION';self.index=i
-                now=all_current(metadata);delta=now-datetime(1601,1,1,tzinfo=timezone.utc)
-                ticks=(delta.days*86400+delta.seconds)*10000000+delta.microseconds*10
-                when=trust.D*2;value=when(ticks&0xffffffff,ticks>>32)
                 stores=(P*1)(store);contexts=(P*1)(C.cast(certs[i],P).value)
                 para=RevocationParameters();para.size=C.sizeof(para);para.issuer=C.cast(certs[i+1],P).value
                 para.store_count=1;para.stores=C.addressof(stores);para.crl_store=store
                 para.verify_time=C.addressof(value);para.current_time=C.addressof(value)
                 state=RevocationStatus();state.size=C.sizeof(state)
+                # Zero all fields for each call: the handler may free non-NULL
+                # incoming contexts. Never feed the previous call's outputs back.
+                info=RevocationCRL();info.size=C.sizeof(info);para.crl_info=C.addressof(info)
                 # para holds raw addresses; C.byref(para) alone does NOT own
                 # stores/value. Retain the whole graph through UNKNOWN calls.
-                self.buffers.append((stores,value,contexts,para,state))
+                self.buffers.append((stores,value,contexts,para,state,info))
                 good=self.call(self.revocation,0x10001,1,1,contexts,0x2,C.byref(para),C.byref(state))
+                self.own_revocation_outputs(info)
                 fact=dict(index=i,returned_good=bool(good),error=f'{state.error:08x}',has_freshness=bool(state.has_freshness),
-                    freshness_seconds=state.freshness if state.has_freshness else None,source_used='NOT_OBSERVED')
+                    freshness_seconds=state.freshness if state.has_freshness else None,source_used='MISSING_OR_UNBOUND',
+                    store_origin='NOT_OBSERVED',
+                    requested_time_filetime=str(ticks),native_time_semantics='REQUESTED_NOT_ATTESTED',
+                    target_certificate_sha256=CERT_PINS[i],issuer_certificate_sha256=CERT_PINS[i+1])
                 self.revocation_facts.append(fact)
                 need(good and state.size==C.sizeof(state) and state.error==0,'MEMORY_REVOCATION_NOT_GOOD')
-                statuses.append(dict(index=i,error=f'{state.error:08x}',has_freshness=bool(state.has_freshness),
-                    freshness_seconds=state.freshness if state.has_freshness else None,source_used='NOT_OBSERVED'))
+                self.stage='REVOCATION_SOURCE_BINDING'
+                digest=self.bind_revocation_source(info,(leaf_crl,source.ca_crl)[i])
+                fact.update(source_used='USED_BASE_DER_EQUALS_EXPECTED_PAIR_CRL',used_base_crl_sha256=digest)
+                statuses.append(dict(fact))
             self.guard();all_current(metadata)
             for policy in policies:current_window(policy['this_update_filetime'],policy['next_update_filetime'])
             result=dict(status='CURRENT_MEMORY_REVOCATION_CONJUNCTION_OBSERVED',crl_sha256=[sha256(x).hexdigest() for x in (leaf_crl,source.ca_crl)],
