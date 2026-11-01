@@ -32,6 +32,14 @@ _unknown = []
 _inflight = {}  # Bounded original call storage, including completed transfers.
 
 
+@dataclass(frozen=True)
+class _CompletedCreate:
+    status: int
+    handle: int | None
+    io_status: int | None
+    information: int
+
+
 def need(value):
     if not value: raise LeaseRefused('NATIVE_PROTECTED_CREATE_REFUSED')
 
@@ -41,7 +49,7 @@ def submit_create(api,handle,io,attrs,buffers,*,access,attributes,share,disposit
     # entering ctypes. An interrupted/exceptional syscall outcome is UNKNOWN,
     # even if the currently readable output looks empty. Never guess/close it.
     need(len(_inflight)<4096)
-    storage=(api,handle,io,attrs,*buffers);key=id(storage);_inflight[key]=storage
+    storage=(api,handle,io,attrs,*buffers);key=id(io);_inflight[key]=storage
     try:
         status=nt_status(api.ntcreate(C.byref(handle),access,C.byref(attrs),C.byref(io),None,
             attributes,share,disposition,options,None,0))
@@ -53,10 +61,33 @@ def submit_create(api,handle,io,attrs,buffers,*,access,attributes,share,disposit
         retain_pending_nt_create(api.readonly,handle,io,attrs,*buffers)
         _unknown.append(storage)
         raise LeaseRefused('NATIVE_CREATE_PENDING_UNKNOWN')
+    _inflight[key]=(*storage,_CompletedCreate(status,handle.value,io.Status,io.Information))
     # Keep the original outputs alive even across an asynchronous interruption
     # between returning status and the caller registering the returned HANDLE.
     # This table never closes/retries a handle; actual ownership is elsewhere.
     return status
+
+
+def transfer_completed_create(api,handle,io,attrs,owned_handles):
+    """Release call storage only after original completed outputs are owned.
+
+    This is bookkeeping, never evidence or authority. Existing callers retain
+    their original storage unless they explicitly perform this handoff.
+    """
+    from parkweave.windows_handles import require_query_ready
+    require_nt_create_ready(api.readonly);require_query_ready(api.readonly)
+    row=_inflight.get(id(io))
+    need(row is not None and all(a is b for a,b in zip(row[:4],(api,handle,io,attrs)))
+         and type(row[-1]) is _CompletedCreate)
+    completed=row[-1]
+    need((handle.value,io.Status,io.Information)==
+         (completed.handle,completed.io_status,completed.information)
+         and completed.status!=0x103
+         and not (completed.status==0 and io.Status not in (None,0)))
+    if completed_nt_handle(completed.status,handle.value):
+        need(type(owned_handles) is list and owned_handles.count(handle.value)==1)
+    else:need(completed.status<0 and handle.value in (None,0))
+    _inflight.pop(id(io))
 
 
 def sid_bytes(text):

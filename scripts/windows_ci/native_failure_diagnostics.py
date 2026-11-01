@@ -32,6 +32,7 @@ _SOURCES=(
     ('scripts.windows_portable.fixed_windows_journal','scripts/windows_portable/fixed_windows_journal.py'),
     ('scripts.windows_portable.windows_directory_handles','scripts/windows_portable/windows_directory_handles.py'),
     ('scripts.windows_portable.native_instance_security','scripts/windows_portable/native_instance_security.py'),
+    ('scripts.windows_portable.pgdata_candidate','scripts/windows_portable/pgdata_candidate.py'),
     ('scripts.windows_portable.native_runtime_staging','scripts/windows_portable/native_runtime_staging.py'),
     ('scripts.windows_portable.native_layout_candidate','scripts/windows_portable/native_layout_candidate.py'),
     ('scripts.windows_portable.native_secret_store_candidate','scripts/windows_portable/native_secret_store_candidate.py'),

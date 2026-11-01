@@ -21,7 +21,8 @@ import weakref
 from parkweave.windows_files import (Ace, Security, DIRECTORY, REPARSE,
     UNSAFE_ATTRIBUTES, PROTECTED, DACL_PRESENT, component, private_acl)
 from parkweave.windows_handles import (UnicodeString, ObjectAttributes, IOStatus, PTR,
-    nt_status,completed_nt_handle,require_nt_create_ready,retain_pending_nt_create)
+    completed_nt_handle,require_nt_create_ready,retain_pending_nt_create,
+    query_call,require_query_ready,retain_query_unknown)
 from .default_dacl_candidate import _sid_buffer
 from .endpoint_plan import _key_held
 from .fixed_directories import FixedDirectoryLease, _exclusive_entry, _exclusive_operation
@@ -142,6 +143,7 @@ class _Binding:
 
 _issued = weakref.WeakKeyDictionary()
 _by_lease = weakref.WeakKeyDictionary()
+_unknown_targets = []  # Retain original pins/buffers after unacknowledged native IO.
 
 
 def native_pgdata():
@@ -287,7 +289,15 @@ class _NewDataTarget:
         return _scan_entry(self.lease, self)
 
     def _time(self):
+        require_nt_create_ready(self.api.readonly)
+        require_query_ready(self.api.readonly)
         _need(time.monotonic() < self.deadline)
+
+    def _query(self,function,*args):
+        self._time()
+        value=function(*args)
+        self._time()
+        return value
 
     def _open(self, parent, name, *, create=False, descriptor=None, anchor=False):
         self._time(); component(name)
@@ -298,83 +308,107 @@ class _NewDataTarget:
         attrs = ObjectAttributes(C.sizeof(ObjectAttributes), parent, C.pointer(unicode),
                                  0x40, C.cast(sd, PTR) if sd is not None else None, None)
         handle, io = PTR(), IOStatus()
-        status = self.api.ntcreate(C.byref(handle), 0x120081, C.byref(attrs), C.byref(io),
-            None, 0x10 if create else 0, 3 if anchor else 7, 2 if create else 1,
-            0x20|0x200000|(1 if create else 0), None, 0)
-        status=nt_status(status)
-        if status==0x103:
+        from .native_protected_objects import submit_create,transfer_completed_create
+        self._time()
+        status=submit_create(self.api,handle,io,attrs,(unicode,text,sd),access=0x120081,
+            attributes=0x10 if create else 0,share=3 if anchor else 7,
+            disposition=2 if create else 1,options=0x20|0x200000|(1 if create else 0))
+        if status==0 and io.Status not in (None,0):
             retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
             _need(False)
         owned=completed_nt_handle(status,handle.value)
+        if not owned and (status>=0 or handle.value not in (None,0)):
+            retain_pending_nt_create(self.api.readonly,handle,io,attrs,unicode,text,sd)
         if owned:self.handles.append(handle.value)
+        transfer_completed_create(self.api,handle,io,attrs,self.handles)
+        self._time()
         _need(status==0 and owned)  # Information-success is owned, but not admitted.
         if create: _need(io.Information == 2)  # FILE_CREATED, never OPEN_IF.
         return handle.value
 
     def _identity(self, handle, *, directory):
-        info = self.api.info(handle)
+        info = self._query(self.api.info,handle)
         return _metadata(info, self.lease.fs.root_id[0], directory=directory)
 
     def _dos_path(self):
         self._time()
         buffer = C.create_unicode_buffer(4096)
-        count = self.api.getpath(self.root, buffer, len(buffer), 0)  # VOLUME_NAME_DOS.
+        count=query_call(self.api.readonly,'PGDATA_DOS_PATH',self.api.getpath,
+            (self.root,buffer,len(buffer),0),(self,buffer))  # VOLUME_NAME_DOS.
+        self._time()
         _need(0 < count < len(buffer))
         return pg_command_path(buffer.value)
 
     def _pin_command_path(self, root_id, guid_path):
         before, drive, parts = self._dos_path()
+        self._time()
         handle = self.api.open_drive(drive)
         self.handles.append(handle)
+        self._time()
         chain = []
         for name in (None, *parts):
             if name is not None: handle = self._open(handle, name, anchor=True)
             identity = self._identity(handle, directory=True)
-            chain.append((handle, identity, self.api.descriptor(handle)))
-        _need(chain[-1][1] == root_id and self.api.final_path(handle) == guid_path and
+            chain.append((handle, identity, self._query(self.api.descriptor,handle)))
+        _need(chain[-1][1] == root_id and self._query(self.api.final_path,handle) == guid_path and
               self._dos_path()[0] == before)
         return before, tuple(chain)  # Held until this target closes, not just path resolution.
 
-    def _create_native(self, key):
-        self.lease._verify()
-        from .native_layout_candidate import _leaf_held
-        _,_,expected_data,expected_sd=_leaf_held(self.lease,self.layout,'data')
-        self.user = self.api.user_sid()
+    def _current_user_sid(self):
+        self._time()
         # Read the actual current TOKEN_USER through existing API; never accept
         # an imported SID or substitute token owner for the user principal.
         token, used, primary, cleanup = PTR(), C.c_uint32(), None, None
-        self.api.need(self.api.opentoken(self.api.process(), 8, C.byref(token)))
-        _need(token.value not in (None, PTR(-1).value))
+        self._user_token=token  # Preserve original output even before ownership classification.
+        opened=query_call(self.api.readonly,'PGDATA_USER_TOKEN',self.api.opentoken,
+            (self.api.process(),8,C.byref(token)),(self,token))
+        valid=type(token.value) is int and 0<token.value<PTR(-1).value-15
+        if (not opened and token.value not in (None,0)) or (opened and not valid):
+            retain_query_unknown(self.api.readonly,'PGDATA_USER_TOKEN_OUTPUT',self,token)
+            _need(False)
+        self.api.need(opened);_need(valid)
+        self.handles.append(token.value)
         try:
+            self._time()
             buffer = C.create_string_buffer(4096)
-            self.api.need(self.api.tokeninfo(token, 1, buffer, len(buffer), C.byref(used)))
+            self.api.need(query_call(self.api.readonly,'PGDATA_USER_SID',self.api.tokeninfo,
+                (token,1,buffer,len(buffer),C.byref(used)),(self,token,buffer,used)))
             from .restricted_token_candidate import _parse
             sid = _parse(buffer, used.value, 1)
             _need(_sid_text(sid) == self.user)
         except BaseException as error:
             primary = error
         finally:
-            try: self.api.close(token.value)
+            try:
+                self._close_one(token.value)
             except BaseException as error:
                 cleanup = error
                 self.cleanup_errors.append(('TOKEN_CLOSE_UNKNOWN', token.value))
         if primary is not None or cleanup is not None:
             raise BaseExceptionGroup('PGDATA_USER_QUERY_UNKNOWN',
                                      [x for x in (primary, cleanup) if x is not None])
+        return sid
+
+    def _create_native(self, key):
+        self.lease._verify()
+        from .native_layout_candidate import _leaf_held
+        _,_,expected_data,expected_sd=_leaf_held(self.lease,self.layout,'data')
+        self.user = self._query(self.api.user_sid)
+        sid=self._current_user_sid()
         self.data = self._open(self.lease.fs.root, 'data', anchor=True)
         data_id = self._identity(self.data, directory=True)
-        private_acl(self.api.security(self.data), self.user)
-        data_sd = self.api.descriptor(self.data)
+        private_acl(self._query(self.api.security,self.data), self.user)
+        data_sd = self._query(self.api.descriptor,self.data)
         _need(data_id==expected_data and data_sd==expected_sd)
-        _need(self.api.final_path(self.data) == self.api.final_path(self.lease.fs.root).rstrip('\\')+'\\data')
+        _need(self._query(self.api.final_path,self.data) == self._query(self.api.final_path,self.lease.fs.root).rstrip('\\')+'\\data')
         self.root = self._open(self.data, 'postgresql', create=True,
                               descriptor=root_descriptor(sid), anchor=True)
         root_id = self._identity(self.root, directory=True)
         _need(len({tuple(self.lease.fs.root_id), data_id, root_id}) == 3)
-        check_security(self.api.security(self.root), self.user, root=True, directory=True)
-        root_sd = self.api.descriptor(self.root)
-        path = self.api.final_path(self.data).rstrip('\\')+'\\postgresql'
-        _need(self.api.final_path(self.root) == path)
+        check_security(self._query(self.api.security,self.root), self.user, root=True, directory=True)
+        root_sd = self._query(self.api.descriptor,self.root)
+        path = self._query(self.api.final_path,self.data).rstrip('\\')+'\\postgresql'
+        _need(self._query(self.api.final_path,self.root) == path)
         check_descriptor(root_sd, sid, root=True, directory=True)
         command_path, chain = self._pin_command_path(root_id, path)
         binding = _Binding(key, self.user, sid, data_id, root_id, data_sd, root_sd, path, command_path, chain)
@@ -390,20 +424,20 @@ class _NewDataTarget:
         binding = _issued.get(self)
         _need(binding is not None and binding.profile == PROFILE and _key_held(self.lease) == binding.key)
         self.lease._verify()
-        _need(self.api is self.lease.fs.api and self.api.user_sid() == binding.user and
+        _need(self.api is self.lease.fs.api and self._query(self.api.user_sid) == binding.user and
               self._identity(self.data, directory=True) == binding.data_id and
               self._identity(self.root, directory=True) == binding.root_id and
-              self.api.descriptor(self.data) == binding.data_sd and
-              self.api.descriptor(self.root) == binding.root_sd and
-              self.api.final_path(self.data) == self.api.final_path(self.lease.fs.root).rstrip('\\')+'\\data' and
-              self.api.final_path(self.root) == binding.path)
-        check_security(self.api.security(self.root), binding.user, root=True, directory=True)
+              self._query(self.api.descriptor,self.data) == binding.data_sd and
+              self._query(self.api.descriptor,self.root) == binding.root_sd and
+              self._query(self.api.final_path,self.data) == self._query(self.api.final_path,self.lease.fs.root).rstrip('\\')+'\\data' and
+              self._query(self.api.final_path,self.root) == binding.path)
+        check_security(self._query(self.api.security,self.root), binding.user, root=True, directory=True)
         if binding.key[-1]==1:
             from .native_layout_candidate import _leaf_held
             _,_,identity,sd=_leaf_held(self.lease,self.layout,'data')
             _need(identity==binding.data_id and sd==binding.data_sd)
         for handle, identity, descriptor in binding.command_chain:
-            _need(self._identity(handle, directory=True) == identity and self.api.descriptor(handle) == descriptor)
+            _need(self._identity(handle, directory=True) == identity and self._query(self.api.descriptor,handle) == descriptor)
         _need(self._dos_path()[0] == binding.command_path)
         self.lease._verify()
         return binding
@@ -413,7 +447,9 @@ class _NewDataTarget:
         for _ in range(4096):
             self._time()
             buffer = C.create_string_buffer(65536)
-            ok = self.query(handle, 11 if restart else 10, buffer, len(buffer))
+            ok=query_call(self.api.readonly,'PGDATA_DIRECTORY_ENTRIES',self.query,
+                (handle,11 if restart else 10,buffer,len(buffer)),(self,handle,buffer))
+            self._time()
             if not ok:
                 _need(C.get_last_error() == 18)  # ERROR_NO_MORE_FILES only.
                 return tuple(sorted(rows))
@@ -427,7 +463,7 @@ class _NewDataTarget:
         binding = self._verify(); result, seen = [], {binding.root_id}
         def visit(parent, parts):
             self._time(); _need(len(parts) <= 64)
-            parent_info, parent_sd = self.api.info(parent), self.api.descriptor(parent)
+            parent_info, parent_sd = self._query(self.api.info,parent), self._query(self.api.descriptor,parent)
             entries = self._entries(parent)
             for name, attrs, identity in entries:
                 _need(len(result) < 100000)
@@ -438,15 +474,15 @@ class _NewDataTarget:
                     ident = self._identity(handle, directory=directory)
                     _need(ident[1] == identity and ident not in seen)
                     seen.add(ident)
-                    security = self.api.security(handle)
+                    security = self._query(self.api.security,handle)
                     check_security(security, binding.user, root=False, directory=directory)
-                    descriptor = self.api.descriptor(handle)
+                    descriptor = self._query(self.api.descriptor,handle)
                     check_descriptor(descriptor, binding.sid, root=False, directory=directory)
-                    _need(self.api.final_path(handle) == binding.path+'\\'+'\\'.join((*parts, name)))
+                    _need(self._query(self.api.final_path,handle) == binding.path+'\\'+'\\'.join((*parts, name)))
                     result.append(((*parts, name), ident, descriptor, directory))
                     if directory: visit(handle, (*parts, name))
                     _need(self._identity(handle, directory=directory) == ident and
-                          self.api.descriptor(handle) == descriptor)
+                          self._query(self.api.descriptor,handle) == descriptor)
                 except BaseException as error:
                     primary = error
                 finally:
@@ -458,12 +494,15 @@ class _NewDataTarget:
                 if cleanup is not None: raise cleanup
             # Any selected structural/ACL drift refuses, never repairs. Sizes
             # and content hashes are deliberately not a whole-database claim.
-            _need(self.api.info(parent) == parent_info and self.api.descriptor(parent) == parent_sd and
+            _need(self._query(self.api.info,parent) == parent_info and self._query(self.api.descriptor,parent) == parent_sd and
                   self._entries(parent) == entries)
         visit(self.root, ())
         return tuple(result)
 
     def _close_one(self, handle):
+        require_nt_create_ready(self.api.readonly);require_query_ready(self.api.readonly)
+        from .native_trial_authority import budget
+        budget(self.lease,cleanup=True)
         # Remove before close: an unknown close is never retried by integer.
         self.handles.remove(handle)
         try: self.api.close(handle)
@@ -475,16 +514,27 @@ class _NewDataTarget:
         _close_entry(self.lease, self)
 
     def _close_native(self):
+        if self.closed:return
+        _need(not getattr(self,'_close_started',False))
+        self._close_started=True
         errors = []
-        for handle in tuple(reversed(self.handles)):
-            try: self._close_one(handle)
-            except BaseException as error: errors.append(error)
-        self.closed = True
-        if errors:
+        try:
+            require_nt_create_ready(self.api.readonly);require_query_ready(self.api.readonly)
+            from .native_trial_authority import budget
+            for handle in tuple(reversed(self.handles)):
+                budget(self.lease,cleanup=True)
+                try: self._close_one(handle)
+                except BaseException as error: errors.append(error)
+        except BaseException as error:
+            self.cleanup_errors.append(('CLOSE_NOT_ACKNOWLEDGED',None));errors.append(error)
+        self.closed = not self.handles and not errors and not self.cleanup_errors
+        if errors or self.cleanup_errors:
             self.failed, self.outcome, self.lease.poisoned = True, 'UNKNOWN', True
-            raise BaseExceptionGroup('PGDATA_CLOSE_UNKNOWN', errors)
+            _unknown_targets.append(self)
+            raise BaseExceptionGroup('PGDATA_CLOSE_UNKNOWN', errors or [DataRefused('PGDATA_CLOSE_UNKNOWN')])
 
     def _fail(self):
         self.failed, self.outcome, self.lease.poisoned = True, 'UNKNOWN', True
+        _unknown_targets.append(self)
         try: self._close_native()
         except BaseException: pass  # Retain primary and cleanup_errors; no delete/repair.

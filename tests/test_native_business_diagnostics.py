@@ -146,6 +146,22 @@ def test_actual_entry_diagnostic_failure_never_replaces_original_exit():
     assert report['result']=='NOT_EXECUTED_OR_UNKNOWN'
 
 
+def test_actual_pgdata_validation_reports_exact_source_without_input_or_native_call():
+    from scripts.windows_portable import pgdata_candidate
+    from scripts.windows_ci.native_failure_diagnostics import SourceSites
+    try:pgdata_candidate.pg_command_path(PRIVATE)
+    except pgdata_candidate.DataRefused as cause:
+        primary=entry._failure_diagnostic(ControlFailure('CLUSTER',cause,[]),SourceSites(ROOT,'a'*40))
+    assert primary['control']['outcome']=='UNKNOWN'
+    reference=primary['cause_details'][0]
+    location=primary['exception_details'][reference]['source_sites']
+    assert location['status']=='MATCHED'
+    assert any(row['module']=='scripts.windows_portable.pgdata_candidate' and
+        row['function']=='pg_command_path' for row in location['frames'])
+    serialized=json.dumps(primary)
+    assert str(ROOT) not in serialized and PRIVATE not in serialized
+
+
 def test_actual_null_entry_refuses_before_native_import_with_redacted_stage():
     process=subprocess.run([sys.executable,'-I','-B','-S',
         str(ROOT/'scripts/windows_ci/native_business_entry.py'),'--execute'],
