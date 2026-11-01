@@ -41,23 +41,28 @@ def catalog_path(info):
 
 
 class CatalogMemberVerifier:
-    def __init__(self,trace,member,path):
+    def __init__(self,trace,member,path,*,signature_deadline=None):
         from .native_mapped_sources import NativeMappedSources
         need(type(trace) is NativeMappedSources)
+        # Establish an empty, safely closable record before any fallible budget
+        # check. The embedded signature's original end also gates path queries.
+        self.trace,self.crt,self.api,self.member,self.path=trace,trace.crt,trace.api,member,path
+        self.resources=[];self.nodes=[];self.unknown=False;self.closed=False;self.wvt_closed=False
+        self.inflight=None;self.buffers=[]
+        self.deadline=min(trace.state.deadline,time.monotonic()+10)
+        if signature_deadline is not None:
+            from .native_mapped_sources import signature_budget
+            self.deadline=min(self.deadline,signature_budget(trace.delegation,self.crt,signature_deadline))
         trace._guard(work=True)
         record=trace.pending
         need(record is not None and record.get('file') is not None
             and any(row is record['file'] for row in trace.files) and record['file']['handle']==member
             and record['file']['owned'] and not record['file']['attempted'])
+        self.guard();_retained.append(self)
         native=native_file_path(trace.api,member).casefold()
         name=PureWindowsPath(native).name
         need(native.rpartition('\\')[0]==trace.system_path
             and path.casefold()==(trace.crt.path.rstrip('\\')+'\\'+name).casefold())
-        self.trace,self.crt,self.api,self.member,self.path=trace,trace.crt,trace.api,member,path
-        self.resources=[];self.nodes=[];self.unknown=False;self.closed=False;self.wvt_closed=False
-        self.inflight=None
-        self.deadline=min(trace.state.deadline,time.monotonic()+10)
-        self.buffers=[];_retained.append(self)
         trust=self.crt.trust;crypto=self.crt.crypto
         self.acquire=bind(trust,'CryptCATAdminAcquireContext2',B,[C.POINTER(P),P,C.c_wchar_p,P,D])
         self.calculate=bind(trust,'CryptCATAdminCalcHashFromFileHandle2',B,[P,P,C.POINTER(D),P,D])
@@ -142,7 +147,7 @@ class CatalogMemberVerifier:
         data.catalog=C.cast(C.pointer(catalog_data),P);data.action=1;data.flags=0x80|0x1000|0x2000
         self.buffers.extend((catalog_data,data))
         self.guard()
-        try:roots=self.crt._verify_trust(data,(self,))
+        try:roots=self.crt._verify_trust(data,(self,),delegation=self.trace.delegation,deadline=self.deadline)
         finally:
             # _verify_trust marks any WVT-close uncertainty before raising.
             self.wvt_closed=not bool(self.crt.unknown)
@@ -175,13 +180,13 @@ class CatalogMemberVerifier:
         if self in _retained:_retained.remove(self)
 
 
-def verify_member(trace,member,path):
+def verify_member(trace,member,path,*,signature_deadline=None):
     verifier=object.__new__(CatalogMemberVerifier)
     if not hasattr(trace,'catalog_verifiers'):trace.catalog_verifiers=[]
     trace.catalog_verifiers.append(verifier)
     primary=cleanup=None;result=None
     try:
-        CatalogMemberVerifier.__init__(verifier,trace,member,path)
+        CatalogMemberVerifier.__init__(verifier,trace,member,path,signature_deadline=signature_deadline)
         result=verifier.verify()
     except BaseException as error:primary=error
     finally:

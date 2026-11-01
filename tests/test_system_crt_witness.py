@@ -113,7 +113,7 @@ def test_cloud_constructor_and_forged_caps_fail_before_native_calls(monkeypatch)
 
 
 def test_wintrust_offline_flags_and_failed_close_retain_original_storage():
-    value=object.__new__(n.NativeSystemCRT);value.unknown=[];value.failed=False;value.handles=[41]
+    value=object.__new__(n.NativeSystemCRT);value.unknown=[];value.failed=False;value.closed=False;value.lease=object();value.deadline=time.monotonic()+30;value.handles=[41]
     value.api=SimpleNamespace(close=Mock())
     calls=[]
     def trust(hwnd,action,data):
@@ -166,7 +166,7 @@ def test_native_abi_and_process_architecture_are_explicitly_x64():
 
 
 def test_wintrust_success_and_microsoft_name_do_not_replace_pinned_root():
-    value=object.__new__(n.NativeSystemCRT);value.unknown=[];value.failed=False
+    value=object.__new__(n.NativeSystemCRT);value.unknown=[];value.failed=False;value.closed=False;value.lease=object();value.deadline=time.monotonic()+30
     calls=[]
     def trust(hwnd,action,data):
         row=C.cast(data,C.POINTER(n.TrustData)).contents;calls.append(row.action)

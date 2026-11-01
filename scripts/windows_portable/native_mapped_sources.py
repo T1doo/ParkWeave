@@ -9,6 +9,7 @@ import ctypes as C
 from dataclasses import dataclass
 from hashlib import sha256
 import os
+import math
 from pathlib import PureWindowsPath
 import queue
 import struct
@@ -54,6 +55,29 @@ class PumpDelegation:
     def __reduce__(self):raise TypeError('debug delegation cannot be serialized')
     def __copy__(self):raise TypeError('debug delegation cannot be copied')
     def __deepcopy__(self,memo):raise TypeError('debug delegation cannot be copied')
+
+
+def signature_budget(delegation,crt,deadline=None,*,cleanup=False):
+    """Only the original registered pump may borrow signature observation.
+
+    No main-thread lease override. This delegates no other operation, does not
+    change either original source end, and never accepts a caller callback.
+    """
+    need(type(delegation) is PumpDelegation and delegation in _delegations)
+    row=_delegations[delegation];trace=row[0]
+    need(type(trace) is NativeMappedSources and row[-2] is crt and row[-1] is crt.lease
+        and trace.delegation is delegation and trace.crt is crt and trace.lease is crt.lease
+        and trace.api is crt.api and trace.installation is crt.installation
+        and trace.security.system_crt is crt and trace.security.lease is trace.lease and not crt.closed)
+    trace._guard(work=not cleanup)  # Exact issued session/PID/thread/context/ends.
+    if cleanup:
+        need(deadline is None);return trace.state.cleanup_end
+    need(not crt.failed and not crt.unknown)
+    now=time.monotonic()
+    if deadline is None:return min(trace.state.deadline,now+30)
+    need(type(deadline) in (int,float) and math.isfinite(deadline)
+        and now<deadline<=trace.state.deadline and deadline-now<=30)
+    return deadline
 
 
 def bind(lib,name,result,args):
@@ -121,7 +145,7 @@ class NativeMappedSources:
         self.expected=MappingProxyType(self.expected)
         self.delegation=PumpDelegation()
         self.thread=threading.Thread(target=self._pump,name='ParkWeave-owned-image-observer',daemon=True)
-        _delegations[self.delegation]=(self,state,os.getpid(),state.key,self.thread,self.expected,self.system_path)
+        _delegations[self.delegation]=(self,state,os.getpid(),state.key,self.thread,self.expected,self.system_path,self.crt,self.lease)
         self.thread.start()
 
     def identifier(self,handle):
@@ -130,7 +154,7 @@ class NativeMappedSources:
 
     def _guard(self,*,work=False):
         from scripts.windows_ci.native_business_window import current_context
-        need(_delegations.get(self.delegation)==(self,self.state,os.getpid(),self.state.key,self.thread,self.expected,self.system_path)
+        need(_delegations.get(self.delegation)==(self,self.state,os.getpid(),self.state.key,self.thread,self.expected,self.system_path,self.crt,self.lease)
             and threading.current_thread() is self.thread and self.thread.native_id==threading.get_native_id()
             and current_context()==self.state.context and not self.state.closed
             and time.time()<self.state.window.expires_utc
@@ -268,13 +292,15 @@ class NativeMappedSources:
             name=PureWindowsPath(path).name
             from .native_system_crt import SignatureRejected
             member_path=self.crt.path+'\\'+name
-            try:chain=('EMBEDDED',self.crt._signature(handle,member_path))
+            signature_end=signature_budget(self.delegation,self.crt)
+            try:chain=('EMBEDDED',self.crt._signature(handle,member_path,
+                delegation=self.delegation,deadline=signature_end))
             except SignatureRejected as error:
                 # Only a KNOWN absent embedded signature with known WVT close
                 # selects a catalog candidate. Bad digest/root/unknown does not.
                 if error.status!=0x800b0100 or self.crt.unknown:raise
                 from .native_catalog_signature import verify_member
-                chain=verify_member(self,handle,member_path)
+                chain=verify_member(self,handle,member_path,signature_deadline=signature_end)
             trust=('ORIGINAL_SYSTEM32_MICROSOFT_SIGNATURE',chain)
         need(self.api.info(handle)==info and self.api.descriptor(handle)==descriptor and self.identifier(handle)==identifier)
         row.update(info=info,descriptor=descriptor,identifier=identifier,path=path,digest=digest,

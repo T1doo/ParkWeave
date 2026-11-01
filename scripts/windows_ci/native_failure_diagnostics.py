@@ -19,7 +19,9 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.native_runtime_staging","RuntimeMetadataChanged",
          "RuntimeMetadataChanged","RUNTIME_METADATA_MISMATCH"),
         ("scripts.windows_portable.native_runtime_staging","RuntimeStagingFailure",
-         "RuntimeStagingFailure","RUNTIME_CONSTRUCTION"))
+         "RuntimeStagingFailure","RUNTIME_CONSTRUCTION"),
+        ("scripts.windows_portable.native_system_crt","CRTTrustFailure",
+         "CRTTrustFailure","CRT_SIGNATURE_INSPECTION"))
 _SOURCES=(
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
@@ -114,6 +116,18 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='CRT_SIGNATURE_INSPECTION':
+        from scripts.windows_portable.native_system_crt import TRUST_PHASES,TRUST_ACTIVITIES,TRUST_CLOSE,CRT_DLLS
+        data=vars(error);stage=data.get('stage');activity=data.get('activity')
+        returned=data.get('verify_returned');ok=data.get('verify_ok');closed=data.get('close_outcome')
+        if (type(stage) is str and stage in TRUST_PHASES and type(activity) is str and activity in TRUST_ACTIVITIES
+                and type(returned) is bool and (type(ok) is bool if returned else ok is None)
+                and type(closed) is str and closed in TRUST_CLOSE):
+            facts=dict(stage=stage,activity=activity,verify_returned=returned,verify_returned_zero=ok,wvt_close=closed)
+            name=data.get('image_name')
+            if type(name) is str and name in CRT_DLLS:facts['image_name']=name
+            result['crt_signature']=facts
+        else:result['crt_signature']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category']=='RUNTIME_METADATA_MISMATCH':
         # Known exact class only; never call arbitrary public()/str()/args.
         data=vars(error);object_kind=data.get('object_kind');fields=data.get('changed_fields')

@@ -1,5 +1,6 @@
 """Catalog ABI and unknown-cleanup protocol only; never a Windows trust result."""
 import ctypes as C
+import time
 from types import SimpleNamespace
 from unittest.mock import Mock
 import pytest
@@ -23,7 +24,7 @@ def test_catalog_union_uses_utf16_fixed_fields_and_distinct_typed_contexts():
 
 
 def trust_stub(status,close_status=0):
-    value=object.__new__(crt.NativeSystemCRT);value.unknown=[];value.failed=False;calls=[]
+    value=object.__new__(crt.NativeSystemCRT);value.unknown=[];value.failed=value.closed=False;value.lease=object();value.deadline=time.monotonic()+30;calls=[]
     def wvt(hwnd,action,data):
         row=C.cast(data,C.POINTER(crt.TrustData)).contents;calls.append(row.action)
         return status if row.action==1 else close_status
