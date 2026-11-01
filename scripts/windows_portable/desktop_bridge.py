@@ -105,7 +105,12 @@ def run(value,channel,*,entry_module=None,profile_factory=None,observe=None):
         finally:
             # Host must close/release WebView2 before sending its stop byte.
             # Profile is retained; neither cookies nor localStorage are erased.
-            profile.close()
+            if channel.confirmed:profile.close()
+            else:
+                # EOF/U or callback failure does not establish browser exit.
+                # Keep original profile/lease/HANDLE graph for UNKNOWN; never
+                # close it as if the host had supplied its positive receipt.
+                _unknown.append(profile)
     # Do not forward ordinary CLI output or private exception text to the host.
     # Fixed maximum output prevents accidental unbounded diagnostics in memory.
     class Discard(io.TextIOBase):

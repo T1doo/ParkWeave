@@ -78,6 +78,7 @@ def test_real_pipe_lifetime_close_confirmation_and_eof_do_not_share_stopped_outc
     sink=Sink()
     channel=d.Channel(source,sink);monitor=threading.Thread(target=channel.monitor);monitor.start()
     events=[]
+    profiles=[];retained_before=len(d._unknown)
     class Profile:
         path='E:\\Software\\instance\\files\\desktop-profile'
         def verify(self):events.append('PROFILE_VERIFIED')
@@ -88,7 +89,7 @@ def test_real_pipe_lifetime_close_confirmation_and_eof_do_not_share_stopped_outc
     workspace=SimpleNamespace(application=app,check=lambda:events.append('ORIGINAL_WORKSPACE_CHECK'))
     def factory(w,inv,fresh):
         assert w is workspace and fresh is False
-        return Profile()
+        profile=Profile();profiles.append(profile);return profile
     class Entry:
         @staticmethod
         def main(args,**kwargs):
@@ -103,8 +104,28 @@ def test_real_pipe_lifetime_close_confirmation_and_eof_do_not_share_stopped_outc
         assert (b'PW1\tSTOPPED\n' in data) is normal
         assert (b'PW1\tUNKNOWN\t' in data) is not normal
         assert result==(0 if normal else 2)
-        assert events[-1]=='PROFILE_RETAINED_CLOSED'
-    finally:source.close()
+        assert ('PROFILE_RETAINED_CLOSED' in events) is normal
+        assert (profiles[0] in d._unknown) is not normal
+    finally:
+        source.close();del d._unknown[retained_before:]
+
+
+def test_profile_verification_failure_before_host_receipt_retains_graph_and_no_stopped():
+    sink=io.BytesIO();channel=d.Channel(io.BytesIO(),sink)
+    profile=SimpleNamespace(path='SYNTHETIC_PROFILE',verify=lambda:(_ for _ in ()).throw(RuntimeError('PRIVATE_VERIFY_FAILURE')),
+                            close=lambda:pytest.fail('unconfirmed browser profile was closed'))
+    workspace=SimpleNamespace(check=lambda:None)
+    class Entry:
+        @staticmethod
+        def main(args,**kwargs):
+            try:kwargs['use_workspace'](workspace,object())
+            except RuntimeError:return 2
+    start=len(d._unknown)
+    try:
+        assert d.run(value(),channel,entry_module=Entry,profile_factory=lambda *args:profile)==2
+        assert d._unknown[-1] is profile
+        assert sink.getvalue()==b'PW1\tUNKNOWN\tORIGINAL_ENTRY_FAILED_OR_STOP_UNKNOWN\n'
+    finally:del d._unknown[start:]
 
 
 def test_desktop_current_source_never_uses_cli_passwords_or_browser_fallback():
