@@ -33,6 +33,7 @@ from parkweave.local_identity import LocalSessionVault, LocalIdentityStorageUnav
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store, Denied
 from parkweave.local_installation import PersistentInstallation, create_database, private_parent, STATE
+from parkweave.local_workspace import full_workspace_page
 from scripts import material_only_demo as material
 
 
@@ -84,7 +85,13 @@ def application(path, marker, port):
 
     @app.get('/workspace', response_class=HTMLResponse)
     def original_workspace():
-        return Path(__file__).parents[1].joinpath('src/parkweave/web.html').read_text()
+        return full_workspace_page(Path(__file__).parents[1]/'src/parkweave',
+            [('enterprise','企业 · 提交资料与确认'),('specialist','专员 · 补正与人工核对')])
+
+    @app.get('/local-workspace-login.js')
+    def workspace_login_client():
+        return Response(Path(__file__).parents[1].joinpath('src/parkweave/local_workspace_login.js').read_text(),
+                        media_type='text/javascript')
 
     @app.get('/local-command-pending.js')
     def pending_client():

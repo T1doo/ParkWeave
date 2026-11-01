@@ -3,6 +3,7 @@ from html import escape
 from pathlib import Path
 import threading
 import time
+import re
 
 from fastapi import HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
@@ -16,6 +17,41 @@ class Login(BaseModel):
     model_config = ConfigDict(extra='forbid')
     role: str
     password: SecretStr
+
+
+def full_workspace_page(root, accounts):
+    """Password entry only; never adds identities, resources or permissions."""
+    page = (root/'web.html').read_text()
+    options = ''.join('<option value="'+escape(name, quote=True)+'">'+escape(label)+'</option>'
+                      for name, label in accounts)
+    panel = ('<section id="local-workspace-session" class="session-panel">'
+        '<h2>进入服务与协同工作台</h2><form id="local-workspace-login">'
+        '<label>已有本地账号<select id="local-workspace-account">'+options+'</select></label>'
+        '<label>密码<input id="local-workspace-password" type="password" '
+        'autocomplete="current-password" required maxlength="512"></label>'
+        '<button id="local-workspace-submit">登录</button></form>'
+        '<p id="local-workspace-status" role="status" aria-live="polite">'
+        '只使用本安装已有的账号与授权；此入口不会增加资源或执行者配置。</p>'
+        '<button id="local-workspace-logout" type="button" hidden>退出账号</button>'
+        '<button id="local-workspace-materials" type="button" class="secondary">返回资料工作台</button>'
+        '</section>')
+    replacements = {
+        '<body class="desktop-shell">': '<body class="desktop-shell" data-local-workspace="locked">',
+        '<section class="session-panel">': '<section class="session-panel" hidden>',
+        '</aside><main id="park-main"': panel+'</aside><main id="park-main"',
+        '</style>': ('body[data-local-workspace="locked"] #park-main,'
+            'body[data-local-workspace="locked"] .workspace-nav{display:none}'
+            '#local-workspace-session h2{font-size:15px}'
+            '#local-workspace-session button{margin-top:8px;width:100%}</style>'),
+    }
+    for marker, value in replacements.items():
+        if page.count(marker) != 1: raise Denied('local workspace page binding unavailable')
+        page = page.replace(marker, value)
+    scripts = ('<script src="/local-command-pending.js"></script>'
+               '<script src="/local-workspace-login.js"></script>')
+    if '</body>' in page: return page.replace('</body>', scripts+'</body>')
+    if '</html>' in page: return page.replace('</html>', scripts+'</html>')
+    return page+scripts
 
 
 def mount_workspace(app, unlock, port, accounts):
@@ -44,14 +80,20 @@ def mount_workspace(app, unlock, port, accounts):
     @app.get('/', response_class=HTMLResponse)
     def index():
         page = (root/'local_preparation_web.html').read_text()
-        start = page.index('<select id="role">') + len('<select id="role">')
+        selectors = list(re.finditer(r'<select\b[^>]*\bid="role"[^>]*>', page))
+        if len(selectors) != 1: raise Denied('local account selector unavailable')
+        start = selectors[0].end()
         end = page.index('</select>', start)
         options = ''.join('<option value="'+escape(name, quote=True)+'">'+escape(label)+'</option>'
                           for name, label in accounts)
         return page[:start] + options + page[end:]
 
     @app.get('/workspace', response_class=HTMLResponse)
-    def original_workspace(): return (root/'web.html').read_text()
+    def original_workspace(): return full_workspace_page(root, accounts)
+
+    @app.get('/local-workspace-login.js')
+    def workspace_login():
+        return Response((root/'local_workspace_login.js').read_text(), media_type='text/javascript')
 
     @app.get('/local-command-pending.js')
     def pending(): return Response((root/'local_command_pending.js').read_text(), media_type='text/javascript')

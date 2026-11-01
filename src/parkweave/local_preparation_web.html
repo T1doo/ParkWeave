@@ -27,7 +27,7 @@ main{margin-left:152px;padding:16px;display:flex;flex-direction:column;height:10
 @media(max-width:650px){aside{width:78px;padding:18px 6px}.brand{font-size:20px;margin:0 3px 18px}.brand em{display:none}aside button{padding:8px 3px;font-size:12px}aside small{margin:auto 2px 0;font-size:11px}main{margin-left:78px;padding:12px}header{flex-wrap:wrap}h1{font-size:20px}.grid{display:flex;flex-direction:column}#workspace{min-height:0}#items{max-height:320px}.editor-scroll{display:flex;flex-direction:column;overflow:visible}#detail{gap:10px}.material-reader{max-height:320px}.form-fields{grid-template-columns:1fr}#detail-card{min-height:700px}.detail-footer{flex-wrap:wrap}}
 </style>
 <aside><div class="brand"><span>园</span>合 <em>ParkWeave</em></div>
-<button id="nav-service" aria-current="page">＋ 开始办理</button><button id="nav-tasks">▤ 我的事项</button><button id="nav-history">◷ 办理记录</button><small>本地合成版<br>资料整理与人工核对</small></aside>
+<button id="nav-service" aria-current="page">＋ 开始办理</button><button id="nav-tasks">▤ 我的事项</button><button id="nav-history">◷ 办理记录</button><button id="nav-workspace">服务、资源与协同</button><small>本地合成版<br>资料整理与人工核对</small></aside>
 <main><header><div><h1 id="page-title">资料工作台</h1><p id="identity">登录后开始办理或处理待核对事项</p></div><div class="row"><span class="pill">合成样例 · 无真实园区接入</span><button id="logout" hidden>退出账号</button></div></header>
 <p id="feedback" role="status" aria-live="polite"></p>
 <section id="login-card" class="card"><h2>进入本地工作台</h2><p class="muted">使用安装时分别设置的企业或专员密码。</p><form id="login"><label>账号<select id="role" aria-label="账号"><option value="enterprise">企业 · 提交资料与确认</option><option value="specialist">专员 · 补正与人工核对</option></select></label><label>密码<input id="password" aria-label="密码" type="password" autocomplete="current-password" required maxlength="512"></label><button class="primary" type="submit">登录工作台</button></form><p class="boundary">身份仅保留在当前页面内存。退出或刷新后需要重新登录。</p></section>
@@ -145,4 +145,5 @@ materialTab.onclick=()=>showPanel('materials');historyTab.onclick=()=>showPanel(
 function showPanel(value){activePanel=value;editor.hidden=value!=='materials';$('history').hidden=value!=='history';materialTab.setAttribute('aria-pressed',String(value==='materials'));historyTab.setAttribute('aria-pressed',String(value==='history'));}
 showPanel('materials');
 renderControls();
+$('nav-workspace').onclick=()=>{try{if(busy)throw Error('原操作尚未结束，请等待。');if(unknown||pendingJournal?.read())throw Error('原请求仍待只读核对，请先在本事项核对；不会重发。');location.assign('/workspace');}catch(error){feedback(error.message);}};
 </script></html>
