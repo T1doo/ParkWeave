@@ -13,7 +13,7 @@ from scripts import fictional_park_browser_once as base
 from scripts import installed_wheel_support as installed
 
 PRIVATE=base.ROOT/'.runtime/installed-approval-browser-once'
-WHEEL_NAME='parkweave-0.1.0-py3-none-any.whl'
+WHEEL_NAME='parkweave-0.1.0rc1-py3-none-any.whl'
 NAMES=frozenset(('01-local-proposed.png','02-local-approved.png','03-local-committed-pending.png',
     '04-local-consumed-recovered.png','05-local-revoked.png','06-local-read-denied.png','07-guide-narrow.png'))
 PUBLIC_FILES=NAMES|{'result.json','installation-redacted.log',WHEEL_NAME}
@@ -129,6 +129,7 @@ def api_call(run,path,body=None,*,actor='enterprise',expected=200,key=None,phase
     require_work(run,30);method='GET' if body is None else 'POST';run.budget.count(method,path,phase)
     headers={'Authorization':'Bearer '+run.tokens[actor]}
     if body is not None:headers['Idempotency-Key']=key or __import__('uuid').uuid4().hex
+    elif key is not None:headers['Idempotency-Key']=key  # Explicit original-key read-only recovery.
     response=run.api.request(method,path,headers=headers,json=body)
     run.report['responses'].append(dict(stage=run.report['stage'],transport='API',method=method,path=path,status=response.status_code))
     assert response.status_code==expected,(method,path,response.status_code)

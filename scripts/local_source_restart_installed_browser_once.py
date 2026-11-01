@@ -171,7 +171,7 @@ def collect(run,complete=True):
         count=4 if role=='api-attestation' else 2;assert len(items)==count
         for n in range(0,count,2):
             assert items[n]['pid']==items[n+1]['pid'] and items[n]['stage'].startswith('BEFORE_') and items[n+1]['stage'].startswith('AFTER_')
-        assert all(x['wheel_sha256']==run.report['installation']['wheel_sha256'] and x['verified_package_files']==191 and x['isolated'] and not x['PYTHONPATH'] for x in items)
+        assert all(x['wheel_sha256']==run.report['installation']['wheel_sha256'] and x['verified_package_files']==len(run.report['installation']['package_files']) and x['isolated'] and not x['PYTHONPATH'] for x in items)
     apis=observations['api-attestation'];assert apis[0]['pid']!=apis[2]['pid']
     generations=run.report['service_generations'];assert len(generations)==2
     assert generations[0]['started']['postgres_pid']!=generations[1]['started']['postgres_pid']
