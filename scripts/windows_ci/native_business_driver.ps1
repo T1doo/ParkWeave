@@ -17,11 +17,12 @@ foreach ($name in $script:ParkWeaveCoordinatorContextNames) {
     if ($name -eq 'PARKWEAVE_TRIAL_START_MONOTONIC') {continue}
     if ([string]::IsNullOrEmpty($coordinatorEnvironment[$name])) {throw 'COORDINATOR_CONTEXT_REQUIRED'}
 }
+$workSeconds=if ($record.job -eq 'pgdata-probe') {360} elseif ($record.job -eq 'native-business-trial') {900} else {throw 'COORDINATOR_PROFILE_REQUIRED'}
 if ([string]::IsNullOrEmpty($coordinatorEnvironment['SystemRoot']) -or
-    $record.work_seconds -ne 900 -or $record.cleanup_seconds -ne 60) {throw 'COORDINATOR_BUDGET_REQUIRED'}
+    $record.work_seconds -ne $workSeconds -or $record.cleanup_seconds -ne 60) {throw 'COORDINATOR_BUDGET_REQUIRED'}
 $started=[Environment]::TickCount64/1000.0
 $coordinatorEnvironment['PARKWEAVE_TRIAL_START_MONOTONIC']=$started.ToString('F9',[Globalization.CultureInfo]::InvariantCulture)
-$cleanupEnd=$started+[Math]::Min(960,($record.expires_utc-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()/1000.0))
+$cleanupEnd=$started+[Math]::Min(($workSeconds+60),($record.expires_utc-[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()/1000.0))
 $cache=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
 $python=@(Get-ChildItem -LiteralPath $cache -Directory | Where-Object {
     $_.Name -match '^3\.12\.\d+$' -and

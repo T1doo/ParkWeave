@@ -99,6 +99,15 @@ def _failure_diagnostic(error,sites=None):
     return result
 
 
+def _probe_summary(scope):
+    try:
+        probe=vars(scope).get('pgdata_probe') if scope is not None else None
+        module=sys.modules.get('scripts.windows_portable.pgdata_probe_boundary')
+        cls=vars(module).get('ConfigurationProbe') if module is not None else None
+        return cls.public(probe) if cls is not None and type(probe) is cls else None
+    except BaseException:return dict(diagnostic='UNAVAILABLE')
+
+
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute',action='store_true')
@@ -169,11 +178,17 @@ def main(argv=None):
             primary=_failure_diagnostic(primary,sites),cleanup=_failure_diagnostic(cleanup,sites),
             crt_preflight=getattr(scope,'crt_preflight',None),
             desktop=scope.desktop.public() if scope is not None and getattr(scope,'desktop',None) is not None else None,
+            pgdata_probe=_probe_summary(scope),
             outer_cleanup=dict(scope=cleanup_scope,
                 returned_without_exception=cleanup_scope!='NOT_ATTEMPTED' and cleanup is None,
                 controller_cleanup='SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED'),
             activation_allowed=False,usable_product=False,native_acceptance='NOT_ACCEPTED')))
         return 2
+    summary=_probe_summary(scope)
+    if summary is not None:
+        result['pgdata_probe']=summary
+        result['outer_cleanup']=dict(scope=cleanup_scope,returned_without_exception=True,
+            persistent_cleanup='NO_DELETION_OR_POST_CLOSE_REOPEN')
     print(json.dumps(result));return 0
 
 

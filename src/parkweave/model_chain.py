@@ -50,9 +50,10 @@ def synthetic_transport(scenario='good'):
     return InternHTTPTransport(httpx.MockTransport(handler))
 
 class ModelChain:
-    def __init__(self,store,*,quota_dsn,account,product='parkweave',transport,token,kind='SYNTHETIC'):
+    def __init__(self,store,*,quota_dsn,account,product='parkweave',transport,token,kind='SYNTHETIC',live_safety=None):
         self.store,self.quota_dsn,self.account,self.product=store,quota_dsn,account,product
         self.transport,self.token,self.kind=transport,token,kind
+        self.live_safety=live_safety  # Caller facts only; never default/mint an authorization.
     def authority(self,claim):
         with self.store.connect() as c:
             p,r,op=self.store.locked_execution(c,claim)
@@ -70,7 +71,8 @@ class ModelChain:
             if row and row['state']=='FAILED':raise ModelBoundaryError(row['outcome'])
             c.execute("INSERT INTO model_steps VALUES(%s,%s,'STARTED',NULL,NULL) ON CONFLICT DO NOTHING",(claim['id'],phase))
         budget=PersistentBudget(self.quota_dsn,account=self.account,product=self.product,work=f"{claim['id']}:{phase}",kind=self.kind)
-        adapter=InternChatAdapter(transport=self.transport,token=self.token,budget=budget,before_dispatch=lambda:self.authority(claim))
+        adapter=InternChatAdapter(transport=self.transport,token=self.token,budget=budget,
+            before_dispatch=lambda:self.authority(claim),live_safety=self.live_safety)
         result=adapter.complete(messages)
         self.authority(claim)
         with self.store.connect() as c:

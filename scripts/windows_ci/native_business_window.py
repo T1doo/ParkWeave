@@ -1,8 +1,8 @@
-"""Fixed source approval for one disposable native BUSINESS trial, not READY.
+"""Fixed source approval for one disposable native trial/probe, not READY.
 
 The record is null by default. No caller path, environment switch, report or
-previous four-file approval is accepted. A future approval commit may change
-only this record and the disabled workflow, after executable source is frozen.
+previous approval is accepted. A future approval commit may change only this
+record and its exact profile's disabled workflow, after source is frozen.
 """
 from dataclasses import dataclass
 from hashlib import sha256
@@ -19,6 +19,9 @@ import weakref
 
 WORKFLOW = '.github/workflows/native-business-trial-once.yml'
 RECORD = 'scripts/windows_ci/native_business_window.json'
+PGDATA_WORKFLOW = '.github/workflows/native-pgdata-probe-once.yml'
+PGDATA_OPERATIONS = frozenset(('NEW_TRIAL_ONLY_OBJECTS','TEMP_CURRENT_USER_DPAPI_IDENTITIES',
+    'PUBLIC_CRL_NATIVE_REDIRECT_CACHE','PGDATA_CONFIGURATION_ONLY'))
 OPERATIONS = frozenset(('NEW_TRIAL_ONLY_OBJECTS', 'OWN_DERIVED_TOKEN_OWNER',
     'OWN_DERIVED_TOKEN_DEFAULT_DACL', 'TEMP_CURRENT_USER_DPAPI_IDENTITIES',
     'PROTECTED_INITDB', 'OWN_PRIVATE_PG_API_WORKER', 'SYNTHETIC_TWO_ROLE_BUSINESS',
@@ -28,6 +31,11 @@ OPERATIONS = frozenset(('NEW_TRIAL_ONLY_OBJECTS', 'OWN_DERIVED_TOKEN_OWNER',
 
 
 class WindowRefused(RuntimeError): pass
+
+
+def configuration_only(window):return frozenset(window.operations)==PGDATA_OPERATIONS
+def workflow_for(window):return PGDATA_WORKFLOW if configuration_only(window) else WORKFLOW
+def windows_minutes(window):return 9 if configuration_only(window) else 19
 
 
 def need(value):
@@ -118,15 +126,16 @@ def _record():
     value['operations'] = tuple(value['operations']); window = FrozenWindow(**value)
     need(window.repository == 'T1doo/ParkWeave' and type(window.ref) is str
          and window.ref == 'refs/heads/dev/local-product-runtime-20261028'
-         and window.job == 'native-business-trial' and type(window.run_number) is int and window.run_number > 0
+         and window.job == ('pgdata-probe' if configuration_only(window) else 'native-business-trial')
+         and type(window.run_number) is int and window.run_number > 0
          and (window.run_id is None or type(window.run_id) is str and re.fullmatch('[1-9][0-9]{0,19}', window.run_id))
          and type(window.expires_utc) is int and 1020 < window.expires_utc-time.time() <= 86400
          and all(type(v) is str and re.fullmatch('[a-f0-9]{64}', v) for v in
             (window.workflow_sha256, window.archive_sha256, window.manifest_sha256))
          and type(window.reviewed_parent) is str and re.fullmatch('[a-f0-9]{40}', window.reviewed_parent)
          and type(window.archive_bytes) is int and 1 <= window.archive_bytes <= 128*1024*1024
-         and frozenset(window.operations) == OPERATIONS
-         and type(window.work_seconds) is int and window.work_seconds == 900
+         and frozenset(window.operations) in (OPERATIONS,PGDATA_OPERATIONS)
+         and type(window.work_seconds) is int and window.work_seconds == (360 if configuration_only(window) else 900)
          and type(window.cleanup_seconds) is int and window.cleanup_seconds == 60)
     return window,raw
 
@@ -137,7 +146,7 @@ def load_source_window():
         NATIVE_PUBLIC='true', GITHUB_REPOSITORY=window.repository, GITHUB_REF=window.ref,
         GITHUB_JOB=window.job, GITHUB_EVENT_NAME='push', GITHUB_RUN_ATTEMPT='1',
         GITHUB_RUN_NUMBER=str(window.run_number), PSYCOPG_IMPL='binary',
-        GITHUB_WORKFLOW_REF=window.repository+'/'+WORKFLOW+'@'+window.ref)
+        GITHUB_WORKFLOW_REF=window.repository+'/'+workflow_for(window)+'@'+window.ref)
     if window.run_id is not None:expected['GITHUB_RUN_ID']=window.run_id
     need(all(os.environ.get(k) == v for k,v in expected.items()) and os.name == 'nt' and sys.maxsize > 2**32
          and sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode and sys.version_info[:2] == (3,12)
@@ -171,6 +180,7 @@ def _verify_archive_inputs(grant, payload, archive):
          and payload!=temp and archive!=temp and payload.is_relative_to(temp) and archive.is_relative_to(temp)
          and not any(part in ('.','..') for part in (*payload.parts,*archive.parts)))
     repo = Path(os.environ['GITHUB_WORKSPACE']).resolve(strict=True)
+    workflow_path=workflow_for(window)
     need(Path(__file__).resolve() == repo/RECORD.replace('.json', '.py'))
     def git(*args):
         need(time.monotonic() < deadline)
@@ -179,12 +189,12 @@ def _verify_archive_inputs(grant, payload, archive):
     need(git('rev-parse', 'HEAD').decode().strip() == approval_commit
          and git('rev-parse', 'HEAD^').decode().strip() == window.reviewed_parent
          and not git('status', '--porcelain=v1')
-         and set(git('diff', '--name-only', 'HEAD^', 'HEAD').decode().splitlines()) <= {RECORD, WORKFLOW}
+         and set(git('diff', '--name-only', 'HEAD^', 'HEAD').decode().splitlines()) <= {RECORD, workflow_path}
          and _read(repo/RECORD,8192) == git('show', 'HEAD:'+RECORD)
          and sha256(git('show','HEAD:'+RECORD)).hexdigest()==record_digest
-         and sha256(_read(repo/WORKFLOW,65536)).hexdigest() == window.workflow_sha256)
-    workflow = (repo/WORKFLOW).read_bytes()
-    need(b'timeout-minutes: 19' in workflow and b'timeout-minutes: 6' in workflow
+         and sha256(_read(repo/workflow_path,65536)).hexdigest() == window.workflow_sha256)
+    workflow = (repo/workflow_path).read_bytes()
+    need(('timeout-minutes: '+str(windows_minutes(window))).encode() in workflow and b'timeout-minutes: 6' in workflow
          and b'persist-credentials: false' in workflow
          and b'contents: read' in workflow and b'runs-on: windows-2025' in workflow)
     archive_raw=_read(archive,window.archive_bytes)

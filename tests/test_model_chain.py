@@ -84,6 +84,24 @@ def test_real_transport_gate_zero_network_without_live_budget(fixture,approved,k
     with pytest.raises(ModelBoundaryError,match='QUOTA_DENIED'):adapter.complete([{'role':'user','content':'synthetic'}])
     with owner.connect() as c:assert c.execute('SELECT calls FROM shared_model_quota.accounts').fetchone()['calls']==0
 
+
+def test_chain_forwards_original_unapproved_safety_without_enabling_network(fixture,monkeypatch):
+    from parkweave import model_chain as module
+    from parkweave.live_safety import LiveSafety
+    store,owner,*_=fixture;provision(owner,approved=False,kind='LIVE');run=submit(fixture)
+    safety=LiveSafety();seen=[];original=module.InternChatAdapter
+    def adapter(**kwargs):
+        seen.append(kwargs['live_safety'])
+        return original(**kwargs)
+    monkeypatch.setattr(module,'InternChatAdapter',adapter)
+    ModelChain(store,quota_dsn=store.dsn,account='synthetic-shared-account',
+        transport=InternHTTPTransport(),token=SecretStr(FAKE_TOKEN),kind='LIVE',live_safety=safety).execute(store.claim('worker'))
+    assert seen==[safety]
+    record,operation,case=rows(owner,run)
+    assert record['state']=='FAILED' and case is None
+    assert operation['receipt']['reason']=='LIVE_SAFETY_BLOCKED'
+    with owner.connect() as c:assert c.execute('SELECT calls FROM shared_model_quota.accounts').fetchone()['calls']==0
+
 def test_unknown_sent_work_survives_restart_no_refund_or_resend(fixture):
     store,owner,*_=fixture;provision(owner,calls=1,tokens=8192)
     b=budget(store);r=b.reserve();b.dispatch(r);b.finish(r,'TIMEOUT_OUTCOME_UNKNOWN')

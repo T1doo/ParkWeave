@@ -19,7 +19,7 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
-from scripts.windows_ci.native_business_window import _record,_read,need,RECORD,WORKFLOW
+from scripts.windows_ci.native_business_window import _record,_read,need,RECORD,workflow_for
 
 
 def source_window():
@@ -27,7 +27,7 @@ def source_window():
     expected=dict(GITHUB_ACTIONS='true',RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux',
         GITHUB_REPOSITORY=window.repository,GITHUB_REF=window.ref,GITHUB_JOB='candidate-build',
         GITHUB_EVENT_NAME='push',GITHUB_RUN_ATTEMPT='1',GITHUB_RUN_NUMBER=str(window.run_number),
-        NATIVE_PUBLIC='true',GITHUB_WORKFLOW_REF=window.repository+'/'+WORKFLOW+'@'+window.ref)
+        NATIVE_PUBLIC='true',GITHUB_WORKFLOW_REF=window.repository+'/'+workflow_for(window)+'@'+window.ref)
     need(all(os.environ.get(k)==v for k,v in expected.items()) and os.name=='posix' and sys.platform=='linux'
         and sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode
         and re.fullmatch('[1-9][0-9]{0,19}',os.environ.get('GITHUB_RUN_ID',''))
@@ -43,9 +43,9 @@ def source_window():
         and git('rev-parse','HEAD').decode().strip()==os.environ['GITHUB_SHA']
         and git('rev-parse','HEAD^').decode().strip()==window.reviewed_parent
         and not git('status','--porcelain=v1')
-        and set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())<={RECORD,WORKFLOW}
+        and set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())<={RECORD,workflow_for(window)}
         and git('show','HEAD:'+RECORD)==raw
-        and sha256(_read(ROOT/WORKFLOW,65536)).hexdigest()==window.workflow_sha256)
+        and sha256(_read(ROOT/workflow_for(window),65536)).hexdigest()==window.workflow_sha256)
     temp=Path(os.environ['RUNNER_TEMP']);need(temp.is_absolute() and not temp.is_symlink())
     return window,temp/('parkweave-candidate-build-'+os.environ['GITHUB_RUN_ID']),deadline
 

@@ -37,7 +37,6 @@ class NativeBusinessScope:
         from .native_acceptance_storage import OwnedNativeObjects
         from scripts.windows_portable.endpoint_plan import PlanMode
         from scripts.windows_portable.entry import native_invocation
-        from scripts.windows_portable.native_business_adapter import NativeBusinessTestAdapter
         from scripts.windows_portable.native_web_login import NativeLoginEnrollment, ACCOUNTS
         runner_temp=dict(value.context[0])['RUNNER_TEMP']
         name = 'parkweave-native-acceptance-'+sha256(json.dumps(value.key).encode()).hexdigest()[:24]
@@ -56,6 +55,13 @@ class NativeBusinessScope:
         second = native_invocation(value.payload,value.manifest,Path(value.root),PlanMode.REOPEN,
             manifest_raw=value.manifest_raw)
         a.bind_compositions(self.cap,first,second,enrollment)
+        if a.configuration_probe(value):
+            from scripts.windows_portable.pgdata_probe_boundary import ConfigurationProbe
+            self.pgdata_probe=ConfigurationProbe(first,value.root)
+            result=self.pgdata_probe.run()
+            result['crt_preflight']=self.crt_preflight
+            return result
+        from scripts.windows_portable.native_business_adapter import NativeBusinessTestAdapter
         a.need('OWN_EXE_WEBVIEW_UI_AND_PIXELS' in value.window.operations)
         from .native_desktop_trial import NativeDesktopTrial
         desktop=NativeDesktopTrial(self.cap,passwords)

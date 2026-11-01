@@ -48,6 +48,8 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
         deadline=budget(lease,time.monotonic()+30);phase='CONFIGURATION'
         try:
             self.inputs,port=self._configuration(lease,credentials,deadline)
+            from .pgdata_probe_boundary import stop_before_initdb
+            stop_before_initdb(self,lease,self.inputs)
             if mode=='NEW':
                 phase='PROTECTED_INITDB'
                 self.prerequisites.initialize_protected(lease,self.inputs,self.initdb,

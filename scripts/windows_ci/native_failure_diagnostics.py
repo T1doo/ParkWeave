@@ -14,6 +14,7 @@ from types import CodeType
 # Only concrete classes already loaded by the original execution path. This
 # is a finite category contract, not permission to accept arbitrary type names.
 _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+        ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
         ("_ctypes","ArgumentError","CTYPES_ARGUMENT_ERROR","FFI_ARGUMENT_CONVERSION"),
@@ -35,6 +36,7 @@ _SOURCES=(
     ('scripts.windows_portable.windows_directory_handles','scripts/windows_portable/windows_directory_handles.py'),
     ('scripts.windows_portable.native_instance_security','scripts/windows_portable/native_instance_security.py'),
     ('scripts.windows_portable.pgdata_candidate','scripts/windows_portable/pgdata_candidate.py'),
+    ('scripts.windows_portable.pgdata_probe_boundary','scripts/windows_portable/pgdata_probe_boundary.py'),
     ('scripts.windows_portable.native_runtime_staging','scripts/windows_portable/native_runtime_staging.py'),
     ('scripts.windows_portable.native_layout_candidate','scripts/windows_portable/native_layout_candidate.py'),
     ('scripts.windows_portable.native_secret_store_candidate','scripts/windows_portable/native_secret_store_candidate.py'),

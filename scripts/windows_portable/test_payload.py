@@ -22,7 +22,7 @@ RUNTIME_MODULES = (
     'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
     'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
     'windows_process_handles.py', 'windows_user_protection.py',
-    'native_composition.py', 'native_cluster.py', 'native_instance_security.py',
+    'native_composition.py', 'native_cluster.py', 'native_instance_security.py', 'pgdata_probe_boundary.py',
     'native_runtime_staging.py', 'native_web_login.py', 'native_system_crt.py', 'authenticode_signature.py', 'crt_pe.py',
     'native_acceptance_contract.py', 'native_acceptance_issuer.py', 'native_protected_objects.py',
     'native_business_adapter.py', 'preparation_business_trial.py', 'loader_inputs.py', 'api_set_map.py',

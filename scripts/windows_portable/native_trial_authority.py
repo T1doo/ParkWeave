@@ -63,6 +63,10 @@ def _lookup(resource):
     except TypeError:return None  # Unbound legacy/fake ports never gain authority.
 
 
+def configuration_probe(value):
+    return value is not None and 'PGDATA_CONFIGURATION_ONLY' in value.window.operations
+
+
 def activate(verified_source):
     from scripts.windows_ci.native_business_window import consume_verified
     window, key, payload, raw, manifest, deadline,context,pins = consume_verified(verified_source)
@@ -143,6 +147,9 @@ def inherit(parent, resource):
     from .processes import PrivateProcessAdapter
     from .native_database_endpoint import NativeOwnedDatabaseEndpoint
     from .restricted_token_candidate import _RestrictedPrimaryCandidate
+    if configuration_probe(value):
+        need(type(resource) not in (PrivateProcessAdapter,_RestrictedInitdbBackend,
+            _RestrictedPrimaryCandidate,NativeOwnedDatabaseEndpoint))
     need(type(resource) in (FixedWindowsFilesystem,FixedDirectoryLease,_RestrictedInitdbBackend,
          PrivateProcessAdapter,NativeOwnedDatabaseEndpoint,_RestrictedPrimaryCandidate,NativeFixedLeaseAPI))
     if type(resource) is FixedWindowsFilesystem:
