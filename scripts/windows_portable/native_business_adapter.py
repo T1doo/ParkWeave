@@ -150,7 +150,7 @@ class NativeBusinessTestAdapter:
         self.started = False
         self._entry_lock = threading.Lock()
 
-    def run(self, *, consume=lambda observation: None):
+    def run(self, *, consume=lambda observation: None,desktop=None):
         from .native_trial_authority import require_owner,bound_state
         require_owner(self.first.controller)  # Source-bound TRIAL_ONLY or original refusal.
         need(self._entry_lock.acquire(blocking=False))
@@ -178,6 +178,7 @@ class NativeBusinessTestAdapter:
                 deadline=self.trial.start_business(source.deadline)
                 workspace.limit_deadline(deadline)
             self.trial.create(workspace)
+            if desktop is not None:desktop.first(workspace,self.first)
             first_snapshot = _snapshot(self.first, min(deadline, time.monotonic() + 20))
         need(time.monotonic() < startup_end)
         self.first.create(self.root, first_use, deadline=deadline)
@@ -194,6 +195,7 @@ class NativeBusinessTestAdapter:
         def reopened_use(workspace):
             nonlocal observed
             self.trial.reopened(workspace)
+            if desktop is not None:desktop.reopened(workspace,self.reopened)
             now = _snapshot(self.reopened, min(deadline, time.monotonic() + 20))
             before = first_snapshot
             need(now.lease is not before.lease and now.installation is not before.installation

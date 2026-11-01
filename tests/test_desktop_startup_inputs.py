@@ -100,3 +100,12 @@ def test_form_validation_is_before_runtime_and_specific_error_handler_does_not_s
 def test_serialized_message_is_wiped_on_bootstrap_exception_before_inner_launch_try(startup_binary):
     result=subprocess.run([str(startup_binary),'12'],capture_output=True,text=True,timeout=5)
     assert result.returncode==0 and result.stdout==''
+
+
+def test_web_login_can_enter_the_hosts_full_256_codepoint_non_bmp_password():
+    # HTML maxlength uses UTF-16 units; native validation uses codepoints.
+    page=Path('src/parkweave/local_preparation_web.html').read_text()
+    password=re.search(r'<input[^>]+id="password"[^>]+>',page).group(0)
+    assert int(re.search(r'maxlength="(\d+)"',password).group(1))==512
+    assert len(native_web_login.password_bytes('😀'*256))==1024
+    with pytest.raises(Exception):native_web_login.password_bytes('😀'*257)

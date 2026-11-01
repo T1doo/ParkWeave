@@ -1,5 +1,6 @@
 """Original ctypes output lifetime only; no Windows creation or identity work."""
 import ctypes as C
+import time
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -16,6 +17,7 @@ def controlled(monkeypatch,create):
     api.readonly._close=Mock(return_value=1)
     api.ntcreate=create;api.final_path=lambda h:r'\Device\SyntheticVolume\instance'
     api.open_relative=lambda *args:21
+    value.operation_end=time.monotonic()+10
     value.api=api;value.handles=[];value.failed=value.close_attempted=False
     value.lease=SimpleNamespace(_verify=lambda:None,record={'phase':'RUNNING'},fs=SimpleNamespace(root=20),poisoned=False)
     monkeypatch.setattr(profile._NativeSecretFiles,'__init__',lambda self,*args:setattr(self,'sid_bytes',protected.sid_bytes('S-1-5-21-100')))

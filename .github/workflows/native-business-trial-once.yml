@@ -36,7 +36,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: native-candidate-${{ github.run_id }}
-          path: ${{ steps.build.outputs.artifact }}/candidate.zip
+          path: |
+            ${{ steps.build.outputs.artifact }}/candidate.zip
+            ${{ steps.build.outputs.artifact }}/trial-ui-driver.exe
           retention-days: 1
           if-no-files-found: error
           compression-level: 0
@@ -71,3 +73,16 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $stage=Join-Path $env:RUNNER_TEMP 'parkweave-candidate-stage'
           & ./scripts/windows_ci/native_business_driver.ps1 -CandidateDirectory (Join-Path $stage 'payload') -CandidateArchive (Join-Path $stage 'candidate.zip') -ExtractApprovedArchive
+      - name: Confirmed synthetic desktop evidence only, same run for one day
+        if: ${{ success() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-desktop-synthetic-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/parkweave-ui-evidence/confirmed-1366x768.png
+            ${{ runner.temp }}/parkweave-ui-evidence/confirmed-1440x900.png
+            ${{ runner.temp }}/parkweave-ui-evidence/reopened-1366x768.png
+            ${{ runner.temp }}/parkweave-ui-evidence/reopened-1440x900.png
+            ${{ runner.temp }}/parkweave-ui-evidence/desktop-summary.json
+          retention-days: 1
+          if-no-files-found: error

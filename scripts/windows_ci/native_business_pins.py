@@ -133,6 +133,25 @@ class NativeBootstrapPins:
         need(sha256(raw).hexdigest()==digest and self._info(h,False)==before)
         return raw
 
+    def pin_ui_driver(self):
+        """Auxiliary executable digest is inside the approved payload manifest.
+
+        The binary stays outside the product payload. Ancestors are already
+        held by _chain(payload); this new file is held without write/delete
+        sharing for its entire lifetime. No caller-supplied digest or path.
+        """
+        import json
+        row=json.loads(self.read('launcher/desktop-build.json')).get('ui_driver')
+        need(type(row) is dict and row.get('native_execution') is False
+             and row.get('scope')=='CI_ONLY_UIA_PRIVATE_PIPE_DRIVER_NOT_A_PRODUCT_ENTRY')
+        name='trial-ui-driver.exe';path=self.payload.parent/name
+        need(name not in self.files and type(row.get('bytes')) is int and 0<row['bytes']<=4*1024*1024
+             and type(row.get('sha256')) is str and len(row['sha256'])==64)
+        h=self._open(path,False);before=self._info(h,False)
+        need(before[2]==row['bytes'] and self._hash(h,before[2])==row['sha256'] and self._info(h,False)==before)
+        self.files[name]=(h,before,row['sha256'])
+        return path
+
     def verify(self):
         self._time()
         for h,directory,info,path in self.rows:

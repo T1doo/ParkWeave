@@ -114,12 +114,12 @@ def build(window,work,deadline):
         for name in stream.namelist():
             need(not Path(name).is_absolute() and '..' not in Path(name).parts)
         stream.extractall(bootstrap)
+    artifact=work/'artifact';artifact.mkdir()
     run('scripts.windows_desktop.build','--zig',compiler/'zig-x86_64-linux-0.15.2/zig',
         '--zig-archive',assets/'zig-x86_64-linux-0.15.2.tar.xz',
         '--sdk',assets/'microsoft.web.webview2.1.0.3537.50.nupkg',
         '--python-asset',assets/'python-3.12.10-embed-amd64.zip',
-        '--bootstrap-root',bootstrap,'--output',work/'desktop')
-    artifact=work/'artifact';artifact.mkdir()
+        '--bootstrap-root',bootstrap,'--output',work/'desktop','--ui-driver-output',artifact/'trial-ui-driver.exe')
     archive=artifact/'candidate.zip'
     run('scripts.windows_portable.build',*base,'--desktop-assets',work/'desktop','--output',archive)
     need(time.monotonic()<deadline and archive.stat().st_size==window.archive_bytes
@@ -127,6 +127,9 @@ def build(window,work,deadline):
     with zipfile.ZipFile(archive) as stream:raw=stream.read('payload-manifest.json')
     need(sha256(raw).hexdigest()==window.manifest_sha256
         and json.loads(raw)['source_commit']==window.reviewed_parent)
+    desktop=json.loads((work/'desktop/desktop-build.json').read_bytes())['ui_driver']
+    driver=(artifact/'trial-ui-driver.exe').read_bytes()
+    need(len(driver)==desktop['bytes'] and sha256(driver).hexdigest()==desktop['sha256'])
     return artifact
 
 

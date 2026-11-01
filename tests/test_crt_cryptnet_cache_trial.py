@@ -47,6 +47,12 @@ def test_default_entry_is_plan_only_before_dll_cache_or_network(monkeypatch,caps
     with pytest.raises(prep.PreparationRefused):n.main(['--inspect-native-cache-once'])
 
 
+@pytest.mark.parametrize('end',[float('nan'),float('inf'),True,'120',-1])
+def test_invalid_embedded_budget_refuses_before_any_probe(monkeypatch,end):
+    monkeypatch.setattr(n,'MemoryFileProbe',lambda *args:pytest.fail('probe before valid original deadline'))
+    with pytest.raises(prep.PreparationRefused):n.collect_once(work_end=end)
+
+
 def test_real_api_argument_protocol_signature_and_applicability_then_known_cleanup(monkeypatch):
     original,s=setup(monkeypatch);result=s.value.acquire(original)
     assert s.get_count==1 and s.calls==['CREATE_CERT','NATIVE_GET','VERIFY_SIGNATURE','FREE_CRL','FREE_CERT']

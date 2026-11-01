@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <memory>
 #include <set>
+#include <sstream>
 #include "desktop_pins.h"
 #include "namespace_guard.h"
 #include "webview_settings.h"
@@ -62,7 +63,13 @@ static std::vector<std::unique_ptr<OwnedHandle>> ownedHandles;
 static OwnedHandle* remember(HANDLE h){need(h&&h!=INVALID_HANDLE_VALUE);auto r=std::make_unique<OwnedHandle>();r->value=h;auto p=r.get();ownedHandles.push_back(std::move(r));return p;}
 static void closeTracked(HANDLE& h){if(!h||h==INVALID_HANDLE_VALUE)return;OwnedHandle* r=nullptr;for(auto i=ownedHandles.rbegin();i!=ownedHandles.rend();++i)if((*i)->value==h&&!(*i)->closed){r=i->get();break;}if(!r)r=remember(h);if(r->attempted){uiUnknown=true;h=nullptr;return;}r->attempted=true;if(CloseHandle(h))r->closed=true;else uiUnknown=true;h=nullptr;}
 static std::thread reader;
+// Explicit CI-only, unprivileged viewer attachment. Native trial capabilities,
+// database, passwords and profile authority stay in the source-bound parent.
+static bool trialView=false,trialAttached=false,trialAck=false,trialEof=false;
+static HANDLE trialInput=nullptr,trialOutput=nullptr,trialParent=nullptr,trialProfile=nullptr;
+static std::string trialNonce;
 static constexpr UINT EVENT_LINE=WM_APP+1, EVENT_EXIT=WM_APP+2;
+static constexpr UINT TRIAL_EOF=WM_APP+3;
 static const wchar_t* accounts[]={L"fixture-a",L"fixture-b",L"fixture-c",L"prep-specialist-fixture-a",L"prep-specialist-fixture-b",L"prep-specialist-fixture-c"};
 static void need(bool b){if(!b)throw std::runtime_error("DESKTOP_REFUSED");}
 static void ok(HRESULT h){need(SUCCEEDED(h));}
@@ -73,7 +80,10 @@ static void clearPasswords(){for(HWND h:pass)SetWindowTextW(h,L"");}
 static void closeView(){if(controller){if(FAILED(controller->Close()))uiUnknown=true;controller->Release();controller=nullptr;}if(view){view->Release();view=nullptr;}running=false;}
 static void signalBackend(bool confirmed){if(stopSent||!childInput)return;stopSent=true;DWORD n=0;const char b=confirmed?'S':'U';if(!WriteFile(childInput,&b,1,&n,nullptr)||n!=1)uiUnknown=true;closeTracked(childInput);}
 static bool uiProcessesExited();
-static void finishUIStop(){if(stopping&&!environmentPending&&!controllerPending&&browserExited&&!uiUnknown&&uiProcessesExited())signalBackend(true);}
+static void finishUIStop(){if(stopping&&!environmentPending&&!controllerPending&&browserExited&&!uiUnknown&&uiProcessesExited()){
+ if(trialView){if(!trialAttached){uiUnknown=true;return;}if(!trialAck){std::string ack="PWUI1\tVIEW_RELEASED\t"+trialNonce+"\n";DWORD used=0;trialAck=WriteFile(trialOutput,ack.data(),DWORD(ack.size()),&used,nullptr)&&used==ack.size();if(!trialAck)uiUnknown=true;}}
+ else signalBackend(true);
+}}
 static void stop(){if(stopping)return;stopping=true;stopStarted=GetTickCount64();closeView();status(L"正在等待本窗口嵌入进程退出，再正常停止后台…");finishUIStop();}
 static bool sameOrigin(const std::wstring& u){return !origin.empty()&&(u==origin||u.rfind(origin+L"/",0)==0);}
 static std::wstring unhex(const std::string& s){need(s.size()<=8192&&s.size()%4==0);std::wstring out;auto nib=[](char c)->int{if(c>='0'&&c<='9')return c-'0';if(c>='a'&&c<='f')return c-'a'+10;throw std::runtime_error("HEX");};for(size_t i=0;i<s.size();i+=4){unsigned lo=nib(s[i])*16+nib(s[i+1]),hi=nib(s[i+2])*16+nib(s[i+3]);need(lo||hi);out.push_back(wchar_t(lo+hi*256));}return out;}
@@ -139,7 +149,7 @@ static bool jobPIDs(HANDLE value,std::set<ULONG_PTR>& result){
  for(DWORD i=0;i<list->NumberOfProcessIdsInList;i++)result.insert(list->ProcessIdList[i]);return true;
 }
 static bool uiProcessesExited(){
- std::set<ULONG_PTR> all,backend;if(!jobPIDs(uiJob,all)||!jobPIDs(job,backend))return false;
+ std::set<ULONG_PTR> all,backend;if(!jobPIDs(uiJob,all)||(!trialView&&!jobPIDs(job,backend)))return false;
  for(auto pid:all)if(pid!=GetCurrentProcessId()&&!backend.count(pid))return false;
  return true; // no remaining UI Job process outside the original backend Job
 }
@@ -219,7 +229,7 @@ static void showWeb(const std::wstring& profile){
     GUID id{};ok(CoCreateGuid(&id));wchar_t guid[40];need(StringFromGUID2(id,guid,40)>0);std::wstring path=dir+L"\\ParkWeave-"+guid+L".txt";need(GetFileAttributesW(path.c_str())==INVALID_FILE_ATTRIBUTES);
     ok(a->put_ResultFilePath(path.c_str()));ok(a->put_Handled(TRUE));ok(a->put_Cancel(FALSE));status((L"材料文本将保存到本实例受保护目录："+path).c_str());return S_OK;
    });ok(v4->add_DownloadStarting(download,&token));download->Release();v4->Release();
-   for(HWND h:startup)ShowWindow(h,SW_HIDE);resize();ok(view->Navigate((origin+L"/").c_str()));running=true;lastAlive=GetTickCount64();status(L"园合 · 本地合成资料工作台　｜　关闭窗口将正常停止本次后台");return S_OK;
+   for(HWND h:startup)ShowWindow(h,SW_HIDE);resize();ok(view->Navigate((origin+L"/").c_str()));running=true;lastAlive=GetTickCount64();status(trialView?L"TRIAL_ONLY · 真实界面试验附件　｜　后台权限仍由原试验持有，未获产品准入":L"园合 · 本地合成资料工作台　｜　关闭窗口将正常停止本次后台");return S_OK;
   });HRESULT result=e->CreateCoreWebView2Controller(window,made);made->Release();if(FAILED(result)){controllerPending=false;uiUnknown=true;stop();signalBackend(false);}return result;
  });HRESULT r=create(runtimeFolder.c_str(),profile.c_str(),nullptr,env);env->Release();if(FAILED(r)){environmentPending=false;uiUnknown=true;stop();signalBackend(false);ok(r);}
 }
@@ -303,6 +313,19 @@ static void launch(const std::wstring& action){
  }
 }
 static void event(const std::string& line){
+ if(trialView){
+  if(line=="PWUI1\tALIVE\t"+trialNonce&&trialAttached){if(!stopping)lastAlive=GetTickCount64();return;}
+  need(!trialAttached&&!stopping&&line.rfind("PWUI1\tSTART\t",0)==0);
+  std::vector<std::string> fields;std::istringstream input(line);std::string field;while(std::getline(input,field,'\t'))fields.push_back(field);need(fields.size()==7);
+  need(fields[2].find_first_not_of("0123456789")==std::string::npos&&!fields[2].empty());unsigned port=std::stoul(fields[2]);need(port&&port<=65535);
+  need(fields[3].find_first_not_of("0123456789")==std::string::npos&&!fields[3].empty());trialProfile=(HANDLE)(ULONG_PTR)std::stoull(fields[3]);remember(trialProfile);
+  need(std::stoul(fields[4])==GetProcessId(trialParent)&&WaitForSingleObject(trialParent,0)==WAIT_TIMEOUT);
+  FILETIME created{},exited{},kernel{},user{};need(GetProcessTimes(trialParent,&created,&exited,&kernel,&user));char birth[17];sprintf(birth,"%08x%08x",created.dwHighDateTime,created.dwLowDateTime);need(fields[5]==birth);
+  need(fields[6].size()==32&&fields[6].find_first_not_of("0123456789abcdef")==std::string::npos);trialNonce=fields[6];
+  BY_HANDLE_FILE_INFORMATION info{};need(GetFileInformationByHandle(trialProfile,&info)&&(info.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)&&!(info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT));
+  wchar_t profile[4096]{};DWORD count=GetFinalPathNameByHandleW(trialProfile,profile,4096,0);need(count>7&&count<4096&&std::wstring(profile).rfind(L"\\\\?\\",0)==0&&profile[5]==L':'&&profile[6]==L'\\');
+  verifyBootstrap();runtime();origin=L"http://127.0.0.1:"+std::to_wstring(port);trialAttached=true;backendReady=true;lastAlive=GetTickCount64();showWeb(std::wstring(profile+4));return;
+ }
  if(line=="PW1\tALIVE"){if(stopping)return;need(backendReady);lastAlive=GetTickCount64();return;}
  if(line=="PW1\tSTOPPED"){need(stopping&&stopSent&&browserExited&&!uiUnknown);terminal=true;status(L"本次后台已正常停止，资料与待核对请求均已保留。");if(closeWhenStopped)PostMessageW(window,WM_CLOSE,0,0);return;}
  if(line=="PW1\tUNKNOWN\tSYSTEM_CRT_REVOCATION_EVIDENCE_UNAVAILABLE"){terminal=true;uiUnknown=true;crtRevocationUnknown=true;stop();signalBackend(false);status(L"无法使用现有离线信息完成证书吊销核验，请由系统维护方检查。本次状态未确认，请保留现场。");return;}
@@ -320,24 +343,32 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
  control(L"STATIC",L"首次新建：六个账号分别设置12–256字符的不同密码；重开无需填写。",0,24,326,1100,24);
  for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
  control(L"STATIC",L"合成样例 · 无真实园区接入。缺运行条件会明确停止，不安装运行库、不改系统安全设置。",0,24,570,1240,48);SetTimer(h,1,500,nullptr);return 0;}
- case WM_COMMAND:if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
+ case WM_COMMAND:if(trialView)return 0;if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
  case EVENT_LINE:{auto p=(std::string*)l;std::string line=*p;delete p;event(line);return 0;}
  case EVENT_EXIT:{if(reader.joinable())reader.join();closeTracked(childOutput);closeTracked(child);if(childInput){closeTracked(childInput);}if(job){closeTracked(job);}if(pythonPin!=INVALID_HANDLE_VALUE){closeTracked(pythonPin);}
   closeView();backendReady=false;if(!terminal||uiUnknown){stopping=true;if(crtRevocationUnknown)status(L"无法完成系统运行库的离线吊销核验。本次状态未确认，保留目录与请求，不自动重开或更改信任设置。");else status(L"本次后台退出未获确认：状态未知，保留目录与请求，不自动重开。");}else if(closeWhenStopped)DestroyWindow(h);else{stopping=true;}return 0;}
- case WM_TIMER:finishUIStop();if(child&&!reader.joinable()&&WaitForSingleObject(child,0)==WAIT_OBJECT_0)PostMessageW(window,EVENT_EXIT,0,0);if(backendReady&&!stopping&&GetTickCount64()-lastAlive>4000)stop();if(stopping&&child&&GetTickCount64()-stopStarted>30000){uiUnknown=true;signalBackend(false);status(L"嵌入进程退出未确认：本次保留UNKNOWN，不重试或认作正常停止。");}return 0;
+ case TRIAL_EOF:trialEof=true;if(reader.joinable())reader.join();if(!trialAck){uiUnknown=true;stop();}if(trialAck&&!uiUnknown){closeTracked(trialInput);closeTracked(trialOutput);closeTracked(trialParent);closeTracked(trialProfile);DestroyWindow(h);}return 0;
+ case WM_TIMER:finishUIStop();if(trialView&&trialParent&&WaitForSingleObject(trialParent,0)!=WAIT_TIMEOUT){uiUnknown=true;stop();}if(child&&!reader.joinable()&&WaitForSingleObject(child,0)==WAIT_OBJECT_0)PostMessageW(window,EVENT_EXIT,0,0);if(backendReady&&!stopping&&GetTickCount64()-lastAlive>4000)stop();if(stopping&&(child||trialView)&&GetTickCount64()-stopStarted>30000){uiUnknown=true;signalBackend(false);status(L"嵌入进程退出未确认：本次保留UNKNOWN，不重试或认作正常停止。");}return 0;
  case WM_SIZE:resize();return 0;
  case WM_GETMINMAXINFO:{auto m=(MINMAXINFO*)l;m->ptMinTrackSize={1040,720};return 0;}
- case WM_CLOSE:if(child){closeWhenStopped=true;stop();return 0;}closeView();DestroyWindow(h);return 0;
+ case WM_CLOSE:if(child||trialView){closeWhenStopped=true;stop();return 0;}closeView();DestroyWindow(h);return 0;
  case WM_DESTROY:KillTimer(h,1);PostQuitMessage(0);return 0;
  }}catch(const DesktopInputError& error){clearPasswords();status(inputHint(error.problem));return 0;}
- catch(...){clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child)stop();}return DefWindowProcW(h,message,w,l);}
-int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,LPWSTR,int show){
+ catch(...){clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child||trialView){uiUnknown=true;stop();}}return DefWindowProcW(h,message,w,l);}
+int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,LPWSTR arguments,int show){
  try{wchar_t path[32768];DWORD n=GetModuleFileNameW(nullptr,path,32768);need(n&&n<32768);base=path;auto p=base.find_last_of(L"\\");need(p!=std::wstring::npos);base.resize(p);SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
   ok(CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED));SetCurrentProcessExplicitAppUserModelID(L"ParkWeave.Desktop");
   uiJob=CreateJobObjectW(nullptr,nullptr);if(uiJob)remember(uiJob);need(uiJob);JOBOBJECT_EXTENDED_LIMIT_INFORMATION lifetime{};lifetime.BasicLimitInformation.LimitFlags=JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;need(SetInformationJobObject(uiJob,JobObjectExtendedLimitInformation,&lifetime,sizeof(lifetime)));need(AssignProcessToJobObject(uiJob,GetCurrentProcess()));
   WNDCLASSEXW cls{sizeof(cls)};cls.lpfnWndProc=procedure;cls.hInstance=instance;cls.hCursor=LoadCursorW(nullptr,IDC_ARROW);cls.hIcon=LoadIconW(nullptr,IDI_APPLICATION);cls.hIconSm=cls.hIcon;cls.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);cls.lpszClassName=L"ParkWeaveDesktop";need(RegisterClassExW(&cls));
   RECT area{};SystemParametersInfoW(SPI_GETWORKAREA,0,&area,0);int width=std::min(1440L,area.right-area.left),height=std::min(900L,area.bottom-area.top);
   HWND h=CreateWindowExW(WS_EX_APPWINDOW,cls.lpszClassName,L"园合 ParkWeave · 资料工作台",WS_OVERLAPPEDWINDOW,area.left+(area.right-area.left-width)/2,area.top+(area.bottom-area.top-height)/2,width,height,nullptr,nullptr,instance,nullptr);need(h);ShowWindow(h,show);UpdateWindow(h);
+  if(arguments&&*arguments){need(std::wstring(arguments)==L"--ci-trial-view");trialView=true;
+   wchar_t value[256]{};need(GetEnvironmentVariableW(L"GITHUB_ACTIONS",value,256)&&std::wstring(value)==L"true");need(GetEnvironmentVariableW(L"GITHUB_JOB",value,256)&&std::wstring(value)==L"native-business-trial");
+   trialInput=GetStdHandle(STD_INPUT_HANDLE);trialOutput=GetStdHandle(STD_OUTPUT_HANDLE);trialParent=GetStdHandle(STD_ERROR_HANDLE);
+   need(GetFileType(trialInput)==FILE_TYPE_PIPE&&GetFileType(trialOutput)==FILE_TYPE_PIPE&&GetProcessId(trialParent));remember(trialInput);remember(trialOutput);remember(trialParent);
+   for(HWND c:startup)ShowWindow(c,SW_HIDE);SetWindowTextW(window,L"园合 ParkWeave · TRIAL_ONLY 界面验收");status(L"TRIAL_ONLY · 等待原试验提供已核工作台；未获生产准入");
+   reader=std::thread([]{std::string line;char c;DWORD used=0;while(ReadFile(trialInput,&c,1,&used,nullptr)&&used){if(c=='\n'){auto p=new std::string(line);if(!PostMessageW(window,EVENT_LINE,0,(LPARAM)p)){delete p;break;}line.clear();}else{line+=c;if(line.size()>1024)break;}}PostMessageW(window,TRIAL_EOF,0,0);});
+  }
   MSG msg;while(GetMessageW(&msg,nullptr,0,0)>0){if(!IsDialogMessageW(h,&msg)){TranslateMessage(&msg);DispatchMessageW(&msg);}}
   if(environment)environment->Release();if(loader&&!FreeLibrary(loader))uiUnknown=true;closeTracked(loaderPin);closeTracked(runtimePin);CoUninitialize();return uiUnknown?2:0;
  }catch(...){MessageBoxW(nullptr,L"桌面宿主未能启动；不会打开浏览器、自动安装或更改系统设置。",L"ParkWeave",MB_OK|MB_ICONERROR);return 2;}

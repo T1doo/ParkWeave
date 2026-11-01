@@ -167,6 +167,8 @@ def main(argv=None):
             cleanup_type=_error_type(cleanup) if cleanup is not None else None,
             failure_stage=failure_stage or cleanup_scope,
             primary=_failure_diagnostic(primary,sites),cleanup=_failure_diagnostic(cleanup,sites),
+            crt_preflight=getattr(scope,'crt_preflight',None),
+            desktop=scope.desktop.public() if scope is not None and getattr(scope,'desktop',None) is not None else None,
             outer_cleanup=dict(scope=cleanup_scope,
                 returned_without_exception=cleanup_scope!='NOT_ATTEMPTED' and cleanup is None,
                 controller_cleanup='SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED'),

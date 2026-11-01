@@ -8,6 +8,7 @@ workflow and specific execution scope are required; env checks issue no grant.
 import ctypes as C
 from hashlib import sha256
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -127,8 +128,13 @@ def plan():
         execution_scope_not_approved_here=True,workflow_enabled=False,usable_product=False)
 
 
-def collect_once():
-    start=time.monotonic();end=start+120;cleanup_end=end+15
+def collect_once(*,work_end=None,cleanup_end=None):
+    need(all(x is None or type(x) in (float,int) and math.isfinite(x)
+        for x in (work_end,cleanup_end)),'CACHE_PREFLIGHT_BUDGET_REQUIRED')
+    start=time.monotonic();end=start+120 if work_end is None else min(start+120,work_end)
+    cleanup_end=end+15 if cleanup_end is None else min(end+15,cleanup_end)
+    need(type(end) in (float,int) and type(cleanup_end) in (float,int)
+        and start<end<cleanup_end<=start+135,'CACHE_PREFLIGHT_BUDGET_REQUIRED')
     probes=[];before=[];after=[];acquired=None;retriever=None;failure=None;cleanup=[];phase='ORIGINAL_BEFORE'
     def inspect(name,rows):
         value=MemoryFileProbe(end,cleanup_end);probes.append(value)

@@ -25,6 +25,7 @@ def main():
     p.add_argument('--python-asset',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--bootstrap-root',type=Path,required=True)
+    p.add_argument('--ui-driver-output',type=Path)
     args=p.parse_args()
     build_script_sha256=sha256(Path(__file__).read_bytes()).hexdigest()
     root=Path(__file__).resolve().parents[2]
@@ -95,6 +96,19 @@ def main():
             'ZIG_LOCAL_CACHE_DIR':str(args.output.parent/'zig-local-cache')}
         subprocess.run(command,check=True,timeout=240,env=environment)
         (args.output/'ParkWeave.exe').write_bytes((work/'ParkWeave.exe').read_bytes())
+        ui_driver=None
+        if args.ui_driver_output is not None:
+            driver_source=Path(__file__).with_name('trial_ui_driver.cpp').read_bytes()
+            (work/'trial_ui_driver.cpp').write_bytes(driver_source)
+            driver_command=[str(args.zig),'c++','-target','x86_64-windows-gnu','-std=c++17','-O2','-g0','-s','-static',
+                str(work/'trial_ui_driver.cpp'),'-o',str(work/'trial-ui-driver.exe'),
+                '-lole32','-loleaut32','-luuid','-luser32','-lgdi32','-lwindowscodecs','-lbcrypt']
+            subprocess.run(driver_command,check=True,timeout=120,env=environment)
+            driver=(work/'trial-ui-driver.exe').read_bytes()
+            args.ui_driver_output.parent.mkdir(parents=True,exist_ok=True)
+            with args.ui_driver_output.open('xb') as stream:stream.write(driver)
+            ui_driver=dict(source_sha256=sha256(driver_source).hexdigest(),bytes=len(driver),sha256=sha256(driver).hexdigest(),
+                native_execution=False,scope='CI_ONLY_UIA_PRIVATE_PIPE_DRIVER_NOT_A_PRODUCT_ENTRY')
     (args.output/'WebView2Loader.dll').write_bytes(loader)
     (args.output/'WebView2-SDK-LICENSE.txt').write_bytes(license)
     notices='ParkWeave desktop compiler/runtime notices; upstream texts retained unchanged.\n'
@@ -111,7 +125,7 @@ def main():
         namespace_policy_sha256=sha256(namespace_header).hexdigest(),
         settings_policy_sha256=sha256(settings_header).hexdigest(),
         sdk='Microsoft.Web.WebView2/1.0.3537.50',sdk_sha256=SDK_SHA,python_sha256=python_exe,
-        native_windows_execution=False,desktop_product_acceptance=False,
+        native_windows_execution=False,desktop_product_acceptance=False,ui_driver=ui_driver,
         files={n:dict(bytes=(args.output/n).stat().st_size,sha256=sha256((args.output/n).read_bytes()).hexdigest())
                for n in ('ParkWeave.exe','WebView2Loader.dll','WebView2-SDK-LICENSE.txt','Desktop-Runtime-NOTICES.txt')})
     (args.output/'desktop-build.json').write_text(json.dumps(record,indent=2)+'\n')

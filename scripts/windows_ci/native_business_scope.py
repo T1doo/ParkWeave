@@ -15,10 +15,24 @@ class NativeBusinessScope:
         self.cap = a.activate(verified_source)
         self.storage = self.adapter = None
         self.started = self.closed = False
+        self.crt_preflight=None
 
     def run(self, *, consume=lambda observation: None):
         value = a.state(self.cap)
         a.need(not self.started); self.started = True
+        # Same source-issued trial, same account and original absolute clock.
+        # This is NOT the standalone diagnostic's job/env gate reused as a grant.
+        a.need('PUBLIC_CRL_NATIVE_REDIRECT_CACHE' in value.window.operations)
+        from .crt_cryptnet_cache_trial import collect_once
+        now=time.monotonic();cache_end=min(now+120,value.deadline)
+        cache_result,code=collect_once(work_end=cache_end,cleanup_end=min(cache_end+15,value.cleanup_end))
+        a.state(self.cap)
+        self.crt_preflight=dict(status=cache_result['status'],seconds=cache_result['seconds'],
+            retrieval=cache_result['retrieval'],failure=cache_result['failure'],
+            original_file_cleanup=cache_result['original_file_cleanup'],
+            rows=[dict(file=row['file'],verification=row['verification'],root_matched=row.get('expected_root_matched'))
+                for row in cache_result['after']])
+        a.need(code==0 and cache_result['status']=='ORIGINAL_STRICT_CHECKS_PASSED_NOT_PRODUCT_ACCEPTANCE')
         # Imports/constructors with real OS actions are below source admission.
         from .native_acceptance_storage import OwnedNativeObjects
         from scripts.windows_portable.endpoint_plan import PlanMode
@@ -35,12 +49,17 @@ class NativeBusinessScope:
         value.root = str(value.parent/'trial-instance')
         # Each role has separate temporary input, never a test dictionary as
         # the session supplier: native provider/DPAPI still creates all tokens.
-        enrollment = NativeLoginEnrollment({account:secrets.token_urlsafe(32) for account in ACCOUNTS})
+        passwords={account:secrets.token_urlsafe(32) for account in ACCOUNTS}
+        enrollment = NativeLoginEnrollment(passwords)
         first = native_invocation(value.payload,value.manifest,Path(value.root),PlanMode.NEW,
             manifest_raw=value.manifest_raw,database_port=55431,api_port=58761,enrollment=enrollment)
         second = native_invocation(value.payload,value.manifest,Path(value.root),PlanMode.REOPEN,
             manifest_raw=value.manifest_raw)
         a.bind_compositions(self.cap,first,second,enrollment)
+        a.need('OWN_EXE_WEBVIEW_UI_AND_PIXELS' in value.window.operations)
+        from .native_desktop_trial import NativeDesktopTrial
+        desktop=NativeDesktopTrial(self.cap,passwords)
+        self.desktop=desktop;passwords=None
         self.adapter = NativeBusinessTestAdapter(first,second,value.root,
             business_seconds=min(180,value.deadline-time.monotonic()))
         observed=()
@@ -51,7 +70,9 @@ class NativeBusinessScope:
             observations=(issuer.observe_business_restart(proof,second,end),)+issuer.collect_trial_facts(second,end)
             observed=issuer.observed_requirements(second,observations,end)
             consume(proof)
-        result=self.adapter.run(consume=collect)
+        result=self.adapter.run(consume=collect,desktop=desktop)
+        result['crt_preflight']=self.crt_preflight
+        result['desktop_trial']=desktop.result()
         from scripts.windows_portable.native_acceptance_contract import coverage
         result.update(observations=list(observed),coverage=coverage(observed))
         return result
@@ -60,6 +81,7 @@ class NativeBusinessScope:
         if self.closed:return
         self.closed=True
         _retained.append(self)  # Before any fallible context/deadline validation.
+        if getattr(self,'desktop',None) is not None:self.desktop.cleanup()
         if failed:
             a.fail(self.cap)
         s=self.storage

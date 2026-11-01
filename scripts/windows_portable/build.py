@@ -300,6 +300,12 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
             and record['namespace_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/namespace_guard.h')).hexdigest()
             and record['settings_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/webview_settings.h')).hexdigest()
             and record['bootstrap_files']==file_manifest(files),'DESKTOP_SOURCE_OR_SCOPE')
+        if record.get('ui_driver') is not None:
+            driver=record['ui_driver']
+            require(type(driver) is dict and driver['source_sha256']==sha256(git('show',source+':scripts/windows_desktop/trial_ui_driver.cpp')).hexdigest()
+                and driver['native_execution'] is False and driver['scope']=='CI_ONLY_UIA_PRIVATE_PIPE_DRIVER_NOT_A_PRODUCT_ENTRY'
+                and type(driver['bytes']) is int and 0<driver['bytes']<=4*1024*1024
+                and re.fullmatch('[a-f0-9]{64}',driver['sha256']) is not None,'UI_DRIVER_SOURCE_OR_SCOPE')
         for name in sorted(names):
             path=desktop_assets/name
             require(path.resolve()==path.absolute() and not path.is_symlink(),'DESKTOP_ASSET_LINK')
