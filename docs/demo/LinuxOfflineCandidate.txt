@@ -1,0 +1,47 @@
+园合 ParkWeave · Linux 合成资料版 · 限制候选
+
+这是源码、27个锁定官方依赖轮包和用户目录安装器，不是 Windows 安装包，
+也不包含 Python、Git 或系统库。需要已有非 root Linux x86_64、glibc≥2.34、
+Python 3.12（含 venv/ensurepip）、Git；不使用 sudo，不自动安装系统组件。
+仅回环地址、无模型、无真实园区接入，真实性、资格、外部受理和履约未判定。
+当前真实浏览器像素与 Windows 独立桌面窗口均未验；不得称正式生产可用。
+
+核对随交付单提供的整包 SHA256。解压到自己新建的目录，在解压目录运行：
+  python3.12 -I -B install.py install --destination "$HOME/ParkWeave"
+目标目录必须不存在、父目录已存在，不覆盖旧版本；建议短路径（PG Unix socket
+总路径长度最多107字节）。依赖只从包内安装并核SHA256，不联网、不激活旧venv，
+不需要用户手工clone、pip安装、改PYTHONPATH或编辑JSON。
+
+安装结束后：
+  "$HOME/ParkWeave/ParkWeave" setup
+在本机终端分别输入企业和专员密码并再次确认，至少12字符且两者不同，输入不回显。
+这是唯一一次明确的新建操作。中断、失败或结果不明保留状态，不再次setup造新库。
+例外：明确显示 INPUT_OR_PREFLIGHT_REFUSED_NO_DATA_CREATED，且 status 回到
+NOT_STARTED 时，已证实原输入在创建数据前被拒绝，可更正输入后手动再次setup；
+不会自动重发。任何输出、已创建目录、中断或无法确认退出均不适用此恢复。
+  "$HOME/ParkWeave/ParkWeave" start
+仅打开输出的 http://127.0.0.1:8765；也可明确选择 start --port 8766。
+先企业登录提交诉求，点击开始准备材料，补充摘要与材料目录及合成来源；
+退出后专员本人登录要求补正，企业修订，专员核对，企业再确认。
+Ctrl+C 正常停止后重开只用相同start，不重新setup；源/身份/权限不匹配或
+stop-unconfirmed 等未知状态停止，不改绑定、修权限、迁移、补权或接管进程。
+占用端口会被拒绝，关闭自己明确拥有的占用者后再启动，不结束其他进程。
+浏览器待核对句柄绑定原地址/端口；换端口不能绕过 UNKNOWN 核对。
+
+  "$HOME/ParkWeave/ParkWeave" status
+状态只描述本次软件安装/初始化记录，不声称服务已就绪或正式验收通过。
+
+卸载保留资料（先正常停止）：
+  "$HOME/ParkWeave/ParkWeave" uninstall
+仅删除此安装器创建且清单未变化的 application 子树（源码和专用venv）。
+保留 data 下数据库、材料、历史和密封身份，保留 media 原始离线软件、入口和记录。
+不删除系统 Python/Git，不改服务、自启动、系统用户或安全设置。
+若应用目录有新增/修改文件，或仍运行/停止未确认，拒绝删除，先保留全部文件。
+不提供 purge/自动删除资料；删除整个 ParkWeave 目录会删除保留数据。
+
+从同版本原始介质恢复软件（不会新建数据库、替换身份）：
+  "$HOME/ParkWeave/ParkWeave" restore
+  "$HOME/ParkWeave/ParkWeave" start
+restore 仅用于本入口已确认卸载状态；异常安装/卸载不能用它盲重试。
+恢复仍须原系统用户、原物理数据目录和原来源绑定。不是搬库或灾难恢复工具。
+不要把合成验收数据/日志/密码作为软件交付；首次使用请自行 setup。
