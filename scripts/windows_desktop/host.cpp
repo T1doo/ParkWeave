@@ -224,15 +224,45 @@ static void showWeb(const std::wstring& profile){
  });HRESULT r=create(runtimeFolder.c_str(),profile.c_str(),nullptr,env);env->Release();if(FAILED(r)){environmentPending=false;uiUnknown=true;stop();signalBackend(false);ok(r);}
 }
 
+enum class DesktopInputProblem{INSTANCE,PORTS,PASSWORD_LENGTH,PASSWORD_DUPLICATE};
+struct DesktopInputError{DesktopInputProblem problem;};
+static const wchar_t* inputHint(DesktopInputProblem problem){switch(problem){
+ case DesktopInputProblem::INSTANCE:return L"请填写安装目录；重开使用已有目录，首次新建使用尚不存在的目录。";
+ case DesktopInputProblem::PORTS:return L"首次新建需要两个不同的回环端口，均须为1–65535的整数。";
+ case DesktopInputProblem::PASSWORD_LENGTH:return L"六个账号的密码均须为12–256个有效字符，请重新填写；尚未开始安装。";
+ case DesktopInputProblem::PASSWORD_DUPLICATE:return L"六个账号须使用互不相同的密码，请重新填写；尚未开始安装。";
+ }return L"请检查启动输入。";}
+static unsigned desktopPort(const std::wstring& value){
+ if(value.empty())throw DesktopInputError{DesktopInputProblem::PORTS};unsigned n=0;
+ for(wchar_t c:value){if(c<L'0'||c>L'9'||n>6553)throw DesktopInputError{DesktopInputProblem::PORTS};n=n*10+unsigned(c-L'0');if(n>65535)throw DesktopInputError{DesktopInputProblem::PORTS};}
+ if(!n)throw DesktopInputError{DesktopInputProblem::PORTS};return n;
+}
+static void desktopPasswordLength(const std::wstring& value){
+ // Python's password_bytes counts Unicode characters, not UTF-16 code units.
+ size_t count=0;for(size_t i=0;i<value.size();i++){unsigned c=unsigned(value[i]);
+  if(c>=0xd800&&c<=0xdbff){if(i+1==value.size()||unsigned(value[i+1])<0xdc00||unsigned(value[i+1])>0xdfff)throw DesktopInputError{DesktopInputProblem::PASSWORD_LENGTH};++i;}
+  else if((c>=0xdc00&&c<=0xdfff)||c>0x10ffff)throw DesktopInputError{DesktopInputProblem::PASSWORD_LENGTH};
+  if(++count>256)throw DesktopInputError{DesktopInputProblem::PASSWORD_LENGTH};}
+ if(count<12)throw DesktopInputError{DesktopInputProblem::PASSWORD_LENGTH};
+}
+struct DesktopInputPasswords{std::wstring values[6];~DesktopInputPasswords(){for(auto& value:values)SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));}};
+struct DesktopMessage{std::string bytes;~DesktopMessage(){SecureZeroMemory(bytes.data(),bytes.size());}};
 static std::string payload(const std::wstring& action){
- std::string body="{\"action\":"+json(action)+",\"instance\":"+json(action==L"status"?L"":text(instanceEdit))+",\"database_port\":";
- auto port=[](HWND h){std::wstring t=text(h);need(!t.empty()&&t.find_first_not_of(L"0123456789")==std::wstring::npos);int n=std::stoi(t);need(n>0&&n<=65535);return std::to_string(n);};
- body+=(action==L"new"?port(portDb):"0");body+=",\"api_port\":"+(action==L"new"?port(portApi):"0");body+=",\"passwords\":{";
- if(action==L"new")for(int i=0;i<6;i++){std::wstring p=text(pass[i]);need(p.size()>=12&&p.size()<=256);if(i)body+=",";body+=json(accounts[i])+":"+json(p);SecureZeroMemory(p.data(),p.size()*sizeof(wchar_t));}
+ std::wstring instance=action==L"status"?L"":text(instanceEdit);if(action!=L"status"&&instance.empty())throw DesktopInputError{DesktopInputProblem::INSTANCE};
+ unsigned db=0,api=0;DesktopInputPasswords passwords;
+ if(action==L"new"){
+  db=desktopPort(text(portDb));api=desktopPort(text(portApi));if(db==api)throw DesktopInputError{DesktopInputProblem::PORTS};
+  for(int i=0;i<6;i++){passwords.values[i]=text(pass[i]);desktopPasswordLength(passwords.values[i]);
+   for(int j=0;j<i;j++)if(passwords.values[i]==passwords.values[j])throw DesktopInputError{DesktopInputProblem::PASSWORD_DUPLICATE};}
+ }
+ // Validate every field before constructing a pipe message or starting native work.
+ std::string body="{\"action\":"+json(action)+",\"instance\":"+json(instance)+",\"database_port\":"+std::to_string(db);
+ body+=",\"api_port\":"+std::to_string(api)+",\"passwords\":{";
+ if(action==L"new")for(int i=0;i<6;i++){if(i)body+=",";body+=json(accounts[i])+":"+json(passwords.values[i]);}
  body+="},\"initialize_profile\":";body+=(action==L"new"||SendMessageW(GetDlgItem(window,3),BM_GETCHECK,0,0)==BST_CHECKED)?"true":"false";return body+"}\n";
 }
 static void launch(const std::wstring& action){
- need(!child&&!stopping);std::string data=payload(action);clearPasswords();
+ need(!child&&!stopping);DesktopMessage message{payload(action)};auto& data=message.bytes;clearPasswords();
  verifyBootstrap();
  try{runtime();}catch(...){SecureZeroMemory(data.data(),data.size());stopping=true;status(L"已安装的官方 x64 WebView2 Runtime 缺失或无法核验。不会安装、修复或启动 Edge 浏览器。");return;}
  HANDLE in=nullptr,out=nullptr,thread=nullptr;bool resumeAttempted=false,attributesReady=false;
@@ -288,7 +318,7 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
  control(L"STATIC",L"首次新建的回环端口（重开使用原保护配置）",0,24,238,800,24);portDb=control(L"EDIT",L"55432",WS_BORDER|ES_NUMBER,24,270,160,30);portApi=control(L"EDIT",L"58761",WS_BORDER|ES_NUMBER,204,270,160,30);
  control(L"BUTTON",L"首次在已有安装使用桌面：独占建立桌面资料目录（不重建数据库）",BS_AUTOCHECKBOX,420,174,830,38,3);
  control(L"STATIC",L"首次新建：六个账号分别设置12–256字符的不同密码；重开无需填写。",0,24,326,1100,24);
- for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,256,0);}
+ for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
  control(L"STATIC",L"合成样例 · 无真实园区接入。缺运行条件会明确停止，不安装运行库、不改系统安全设置。",0,24,570,1240,48);SetTimer(h,1,500,nullptr);return 0;}
  case WM_COMMAND:if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
  case EVENT_LINE:{auto p=(std::string*)l;std::string line=*p;delete p;event(line);return 0;}
@@ -299,7 +329,8 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
  case WM_GETMINMAXINFO:{auto m=(MINMAXINFO*)l;m->ptMinTrackSize={1040,720};return 0;}
  case WM_CLOSE:if(child){closeWhenStopped=true;stop();return 0;}closeView();DestroyWindow(h);return 0;
  case WM_DESTROY:KillTimer(h,1);PostQuitMessage(0);return 0;
- }}catch(...){clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child)stop();}return DefWindowProcW(h,message,w,l);}
+ }}catch(const DesktopInputError& error){clearPasswords();status(inputHint(error.problem));return 0;}
+ catch(...){clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child)stop();}return DefWindowProcW(h,message,w,l);}
 int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,LPWSTR,int show){
  try{wchar_t path[32768];DWORD n=GetModuleFileNameW(nullptr,path,32768);need(n&&n<32768);base=path;auto p=base.find_last_of(L"\\");need(p!=std::wstring::npos);base.resize(p);SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
   ok(CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED));SetCurrentProcessExplicitAppUserModelID(L"ParkWeave.Desktop");
