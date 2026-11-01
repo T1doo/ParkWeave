@@ -1,4 +1,4 @@
-"""Independent worker; trusted local and opt-in synthetic fixture actions, explicit offline planning; live activation remains disabled."""
+"""Independent worker; local by default, explicit synthetic or protected LIVE model configuration."""
 import argparse
 import os
 import sys
@@ -9,16 +9,21 @@ from .gateway import ExecutionGateway, InjectedCrash
 from .lease import LeaseKeeper
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--fault-stage", choices=["after-dispatch", "after-effect"])
     parser.add_argument("--lease-seconds", type=int, default=30)
     parser.add_argument("--mock-model-wait-seconds", type=float, default=0)
-    parser.add_argument("--model-fixture", choices=['good','wrong-model','bad-args','truncated','secret-echo','timeout','feedback-error'])
+    model=parser.add_mutually_exclusive_group()
+    model.add_argument("--model-fixture", choices=['good','wrong-model','bad-args','truncated','secret-echo','timeout','feedback-error'])
+    model.add_argument('--model-live',action='store_true')
+    parser.add_argument('--model-config-fd',type=int,help='POSIX inherited private anonymous pipe; no token in argv')
     parser.add_argument("--readiness-stdio", action="store_true")
     parser.add_argument("--readiness-challenge")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.model_config_fd is not None and not args.model_live:parser.error('model-config-fd requires model-live')
+    if args.model_live and (args.fault_stage or args.mock_model_wait_seconds):parser.error('live model cannot mix with fault/mock modes')
     if bool(args.readiness_challenge) != args.readiness_stdio:
         parser.error("readiness stdio requires its explicit startup challenge")
     if not 0<=args.mock_model_wait_seconds<=10:parser.error("mock wait must be 0..10 seconds")
@@ -31,6 +36,13 @@ def main():
     if args.fault_stage and store.mode != "FAULT_INJECTION":
         parser.error("fault-stage requires explicit FAULT_INJECTION mode")
     gateway = ExecutionGateway(store)
+    live_chain=None
+    if args.model_live:
+        from .live_worker import configured_chain
+        from .intern_adapter import ModelBoundaryError
+        try:live_chain=configured_chain(store,args.model_config_fd)
+        except ModelBoundaryError as error:
+            parser.exit(2,'model startup refused: '+error.code+'\n')
     if args.readiness_stdio:
         from .runtime_readiness import worker_handshake
         worker_handshake(store,args.readiness_challenge)  # Before first claim/consume.
@@ -45,7 +57,10 @@ def main():
                     if keeper.lost.is_set():raise Conflict("lease lost")
                     with store.connect() as c:
                         model_started=c.execute('SELECT 1 FROM model_steps WHERE run_id=%s',(claim['id'],)).fetchone()
-                    if model_started and not args.model_fixture:
+                        operation=c.execute('SELECT action FROM operations WHERE run_id=%s',(claim['id'],)).fetchone()
+                    if live_chain is not None and operation['action']=='case.create':
+                        live_chain.execute(claim)
+                    elif model_started and not args.model_fixture:
                         from .model_chain import fail_model_run
                         with store.connect() as c:
                             known=c.execute("SELECT state FROM operations WHERE run_id=%s",(claim['id'],)).fetchone()

@@ -1,5 +1,6 @@
 """Bounded planning -> currently authorized trusted Case -> actual receipt feedback.
-Only explicit synthetic worker fixture is wired here. Live activation is separate.
+Synthetic fixtures and the explicitly configured normal LIVE worker share this
+chain. Live credentials/approval facts are supplied by live_worker, never minted.
 No generated code, eligibility, external acceptance or fulfillment from model text.
 """
 import json
@@ -50,10 +51,17 @@ def synthetic_transport(scenario='good'):
     return InternHTTPTransport(httpx.MockTransport(handler))
 
 class ModelChain:
-    def __init__(self,store,*,quota_dsn,account,product='parkweave',transport,token,kind='SYNTHETIC',live_safety=None):
+    def __init__(self,store,*,quota_dsn,account,product='parkweave',transport,token,kind='SYNTHETIC',live_safety=None,live_runtime=None):
         self.store,self.quota_dsn,self.account,self.product=store,quota_dsn,account,product
         self.transport,self.token,self.kind=transport,token,kind
         self.live_safety=live_safety  # Caller facts only; never default/mint an authorization.
+        self.live_runtime=live_runtime
+        if live_runtime is not None:
+            from .live_worker import LiveWorkerRuntime
+            if (type(live_runtime) is not LiveWorkerRuntime or kind!='LIVE' or product!='parkweave'
+                or transport is not live_runtime.transport or token is not live_runtime.credentials.token
+                or quota_dsn!=live_runtime.credentials.quota_dsn.get_secret_value()
+                or account!=live_runtime.credentials.account):raise ModelBoundaryError('LIVE_RUNTIME_BINDING_REFUSED')
     def authority(self,claim):
         with self.store.connect() as c:
             p,r,op=self.store.locked_execution(c,claim)
@@ -70,9 +78,11 @@ class ModelChain:
             if row and row['state']=='VALIDATED':return row['result']
             if row and row['state']=='FAILED':raise ModelBoundaryError(row['outcome'])
             c.execute("INSERT INTO model_steps VALUES(%s,%s,'STARTED',NULL,NULL) ON CONFLICT DO NOTHING",(claim['id'],phase))
-        budget=PersistentBudget(self.quota_dsn,account=self.account,product=self.product,work=f"{claim['id']}:{phase}",kind=self.kind)
+        safety=self.live_runtime.safety() if self.live_runtime is not None else self.live_safety
+        budget=PersistentBudget(self.quota_dsn,account=self.account,product=self.product,work=f"{claim['id']}:{phase}",kind=self.kind,
+            coordinator_id=self.live_runtime.credentials.coordinator_id if self.live_runtime is not None else None)
         adapter=InternChatAdapter(transport=self.transport,token=self.token,budget=budget,
-            before_dispatch=lambda:self.authority(claim),live_safety=self.live_safety)
+            before_dispatch=lambda:self.authority(claim),live_safety=safety)
         result=adapter.complete(messages)
         self.authority(claim)
         with self.store.connect() as c:

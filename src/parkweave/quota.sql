@@ -39,6 +39,16 @@ CREATE INDEX IF NOT EXISTS quota_rate_account ON shared_model_quota.reservations
 CREATE TABLE IF NOT EXISTS shared_model_quota.synthetic_clock(account text PRIMARY KEY REFERENCES shared_model_quota.accounts, at timestamptz NOT NULL);
 CREATE TABLE IF NOT EXISTS shared_model_quota.events(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
  reservation_id uuid NOT NULL REFERENCES shared_model_quota.reservations,event text NOT NULL, at timestamptz NOT NULL);
+-- Owner-provisioned live worker facts. No application installer inserts or
+-- approves these rows; absent/expired facts keep the normal worker offline.
+CREATE TABLE IF NOT EXISTS shared_model_quota.live_worker_approvals(
+ product text PRIMARY KEY REFERENCES shared_model_quota.products,
+ account text NOT NULL REFERENCES shared_model_quota.accounts,
+ coordinator_id uuid NOT NULL,
+ approved boolean NOT NULL DEFAULT false,
+ starts timestamptz NOT NULL, ends timestamptz NOT NULL CHECK(ends>starts),
+ approved_by text NOT NULL CHECK(length(approved_by) BETWEEN 1 AND 120),
+ injection_evidence text NOT NULL CHECK(length(injection_evidence) BETWEEN 1 AND 160));
 ALTER TABLE shared_model_quota.events ADD COLUMN IF NOT EXISTS generation integer NOT NULL DEFAULT 1;
 -- Remove old callable signatures: stale unsent handles must not operate a reopened attempt.
 DROP FUNCTION IF EXISTS shared_model_quota.hold_rate(uuid);
@@ -48,10 +58,12 @@ CREATE OR REPLACE FUNCTION shared_model_quota.time_for(a text) RETURNS timestamp
  SELECT CASE WHEN q.kind='SYNTHETIC' THEN coalesce(c.at,clock_timestamp()) ELSE clock_timestamp() END
  FROM shared_model_quota.accounts q LEFT JOIN shared_model_quota.synthetic_clock c ON c.account=q.account WHERE q.account=a
 $$;
-CREATE OR REPLACE FUNCTION shared_model_quota.reserve(p text,a text,w text,n bigint,k text) RETURNS jsonb
- LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+CREATE OR REPLACE FUNCTION shared_model_quota._reserve(p text,a text,w text,n bigint,k text) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
 DECLARE b shared_model_quota.products; q shared_model_quota.accounts; r shared_model_quota.reservations; t timestamptz;
 BEGIN
+ IF current_user<>(SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname='shared_model_quota')
+ THEN RAISE EXCEPTION 'COORDINATOR_OWNER_FUNCTION_REQUIRED'; END IF;
  SELECT * INTO b FROM shared_model_quota.products WHERE product=p AND db_role=session_user;
  IF NOT FOUND OR b.account<>a THEN RAISE EXCEPTION 'QUOTA_BINDING_DENIED'; END IF;
  SELECT * INTO q FROM shared_model_quota.accounts WHERE account=a FOR UPDATE;
@@ -60,7 +72,7 @@ BEGIN
  IF FOUND AND r.account<>a THEN RAISE EXCEPTION 'QUOTA_BINDING_DENIED'; END IF;
  IF FOUND AND r.state<>'RELEASED' THEN RETURN to_jsonb(r); END IF;
  t=shared_model_quota.time_for(a);
- IF n<>8192 OR length(w)>160 OR k NOT IN ('SYNTHETIC','LIVE') OR NOT q.approved OR q.kind<>k
+ IF n<>8192 OR length(w)>160 OR k IS NULL OR k NOT IN ('SYNTHETIC','LIVE') OR NOT q.approved OR q.kind<>k
  OR t<q.starts OR t>=q.ends OR q.calls+1>q.call_limit OR q.tokens+n>q.token_limit
  OR b.calls+1>b.call_limit OR b.tokens+n>b.token_limit OR t<q.last_clock
  OR (q.kind='LIVE' AND (NOT q.rate_verified OR coalesce(length(q.rate_evidence),0)=0))
@@ -77,10 +89,12 @@ BEGIN
  INSERT INTO shared_model_quota.events(reservation_id,event,at,generation) VALUES(r.id,'BUDGET_RESERVED',t,r.generation);
  RETURN to_jsonb(r);
 END $$;
-CREATE OR REPLACE FUNCTION shared_model_quota.hold_rate(i uuid,g integer) RETURNS jsonb
- LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+CREATE OR REPLACE FUNCTION shared_model_quota._hold_rate(i uuid,g integer) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
 DECLARE r shared_model_quota.reservations; q shared_model_quota.accounts; t timestamptz; used bigint; pending boolean; retry timestamptz;
 BEGIN
+ IF current_user<>(SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname='shared_model_quota')
+ THEN RAISE EXCEPTION 'COORDINATOR_OWNER_FUNCTION_REQUIRED'; END IF;
  SELECT x.* INTO r FROM shared_model_quota.reservations x JOIN shared_model_quota.products p ON p.product=x.product
  WHERE x.id=i AND p.db_role=session_user;
  IF NOT FOUND THEN RAISE EXCEPTION 'QUOTA_BINDING_DENIED'; END IF;
@@ -106,10 +120,12 @@ BEGIN
  INSERT INTO shared_model_quota.events(reservation_id,event,at,generation) VALUES(i,'RATE_HELD_NOT_SENT',t,r.generation);
  RETURN jsonb_build_object('admitted',true);
 END $$;
-CREATE OR REPLACE FUNCTION shared_model_quota.transition(i uuid,g integer,s text,o text,u jsonb) RETURNS jsonb
- LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+CREATE OR REPLACE FUNCTION shared_model_quota._transition(i uuid,g integer,s text,o text,u jsonb) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY INVOKER SET search_path=pg_catalog AS $$
 DECLARE b shared_model_quota.products; r shared_model_quota.reservations; q shared_model_quota.accounts; delta bigint; t timestamptz;
 BEGIN
+ IF current_user<>(SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname='shared_model_quota')
+ THEN RAISE EXCEPTION 'COORDINATOR_OWNER_FUNCTION_REQUIRED'; END IF;
  SELECT p.* INTO b FROM shared_model_quota.products p JOIN shared_model_quota.reservations x ON x.product=p.product
  WHERE x.id=i AND p.db_role=session_user;
  IF NOT FOUND THEN RAISE EXCEPTION 'QUOTA_BINDING_DENIED'; END IF;
@@ -151,6 +167,78 @@ BEGIN
  UPDATE shared_model_quota.reservations SET state=s,outcome=o,usage=u WHERE id=i RETURNING * INTO r;
  INSERT INTO shared_model_quota.events(reservation_id,event,at,generation) VALUES(i,s,t,r.generation);
  RETURN to_jsonb(r);
+END $$;
+-- Preserve the public synthetic API and all existing settlement/release paths.
+-- LIVE reserve/send requires the source-bound worker wrappers below. Private
+-- implementations are invoker functions and additionally check current_user;
+-- even an old broad EXECUTE grant does not turn them into an application bypass.
+CREATE OR REPLACE FUNCTION shared_model_quota.reserve(p text,a text,w text,n bigint,k text) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ IF k IS DISTINCT FROM 'SYNTHETIC' THEN RAISE EXCEPTION 'LIVE_WORKER_BINDING_REQUIRED'; END IF;
+ RETURN shared_model_quota._reserve(p,a,w,n,k);
+END $$;
+CREATE OR REPLACE FUNCTION shared_model_quota.hold_rate(i uuid,g integer) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM shared_model_quota.reservations r JOIN shared_model_quota.accounts a ON a.account=r.account
+   WHERE r.id=i AND a.kind='LIVE') THEN RAISE EXCEPTION 'LIVE_WORKER_BINDING_REQUIRED'; END IF;
+ RETURN shared_model_quota._hold_rate(i,g);
+END $$;
+CREATE OR REPLACE FUNCTION shared_model_quota.transition(i uuid,g integer,s text,o text,u jsonb) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ IF s='DISPATCHED' AND EXISTS(SELECT 1 FROM shared_model_quota.reservations r JOIN shared_model_quota.accounts a ON a.account=r.account
+   WHERE r.id=i AND a.kind='LIVE') THEN RAISE EXCEPTION 'LIVE_WORKER_BINDING_REQUIRED'; END IF;
+ RETURN shared_model_quota._transition(i,g,s,o,u);
+END $$;
+CREATE OR REPLACE FUNCTION shared_model_quota.live_worker_status(p text,a text,i uuid) RETURNS jsonb
+ LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog AS $$
+ SELECT jsonb_build_object(
+ 'budget_authorized',coalesce(q.kind='LIVE' AND q.approved AND clock_timestamp()>=q.starts AND clock_timestamp()<q.ends
+   AND coalesce(length(q.authorization_evidence),0)>0 AND coalesce(length(q.approved_by),0)>0
+   AND q.call_limit>0 AND q.token_limit>=8192 AND b.call_limit>0 AND b.token_limit>=8192
+   AND q.calls<=q.call_limit AND q.tokens<=q.token_limit AND b.calls<=b.call_limit AND b.tokens<=b.token_limit,false),
+ 'injection_authorized',coalesce(x.approved AND clock_timestamp()>=x.starts AND clock_timestamp()<x.ends
+   AND length(x.approved_by)>0 AND length(x.injection_evidence)>0,false),
+ 'rate_verified',coalesce(q.rate_verified AND length(q.rate_evidence)>0 AND q.rate_limit BETWEEN 1 AND 30,false),
+ 'shared_binding_verified',coalesce(b.account=a AND x.account=a AND x.coordinator_id=i,false))
+ FROM (SELECT 1) anchor
+ LEFT JOIN shared_model_quota.products b ON b.product=p AND b.db_role=session_user
+ LEFT JOIN shared_model_quota.accounts q ON q.account=b.account AND q.account=a
+ LEFT JOIN shared_model_quota.live_worker_approvals x ON x.product=b.product
+$$;
+CREATE OR REPLACE FUNCTION shared_model_quota.require_live_worker(p text,a text,i uuid) RETURNS void
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE facts jsonb;
+BEGIN
+ -- Keep owner revocation and the following reserve/dispatch in one ordered
+ -- transaction. This does not authorize a request after it was dispatched.
+ PERFORM 1 FROM shared_model_quota.live_worker_approvals WHERE product=p FOR SHARE;
+ facts=shared_model_quota.live_worker_status(p,a,i);
+ IF EXISTS(SELECT 1 FROM jsonb_each(facts) WHERE value<>'true'::jsonb)
+ THEN RAISE EXCEPTION 'LIVE_WORKER_NOT_AUTHORIZED'; END IF;
+END $$;
+CREATE OR REPLACE FUNCTION shared_model_quota.reserve_for_worker(p text,a text,w text,n bigint,i uuid) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+BEGIN
+ PERFORM shared_model_quota.require_live_worker(p,a,i);
+ RETURN shared_model_quota._reserve(p,a,w,n,'LIVE');
+END $$;
+CREATE OR REPLACE FUNCTION shared_model_quota.dispatch_for_worker(i uuid,g integer,binding uuid) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE r shared_model_quota.reservations; held jsonb;
+BEGIN
+ SELECT x.* INTO r FROM shared_model_quota.reservations x
+ JOIN shared_model_quota.products p ON p.product=x.product AND p.db_role=session_user WHERE x.id=i;
+ IF NOT FOUND THEN RAISE EXCEPTION 'QUOTA_BINDING_DENIED'; END IF;
+ PERFORM shared_model_quota.require_live_worker(r.product,r.account,binding);
+ held=shared_model_quota._hold_rate(i,g);
+ IF NOT (held->>'admitted')::boolean THEN
+   PERFORM shared_model_quota._transition(i,g,'RELEASED','NOT_SENT',NULL);
+   RETURN held;
+ END IF;
+ RETURN shared_model_quota._transition(i,g,'DISPATCHED',NULL,NULL);
 END $$;
 REVOKE ALL ON ALL TABLES IN SCHEMA shared_model_quota FROM PUBLIC;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA shared_model_quota FROM PUBLIC;
