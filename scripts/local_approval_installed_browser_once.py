@@ -210,7 +210,7 @@ def current_wheel(run):
 
 def installation(run,wheel):
     run.report['stage']='OFFLINE_INSTALLED_WHEEL'
-    run.python,run.harness,manifest=installed.install(wheel,run.private/'application')
+    run.python,run.harness,manifest=installed.install(wheel,run.private/'application',wheelhouse=getattr(run,'wheelhouse',None))
     run.report['installation']=manifest
     require_work(run,90)
     setup_owned(run)

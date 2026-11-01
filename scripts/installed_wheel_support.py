@@ -66,15 +66,7 @@ def package_manifest(wheel):
     return files
 
 
-def install(wheel,directory):
-    """Fresh venv, dependency files copied from explicit existing distributions."""
-    files=package_manifest(wheel)  # Reject incomplete/unknown packages before venv or pip.
-    directory.mkdir(mode=0o700)
-    env={k:os.environ[k] for k in ('PATH','LANG') if k in os.environ}
-    env.update(PIP_NO_INDEX='1',PIP_CONFIG_FILE='/dev/null',PIP_DISABLE_PIP_VERSION_CHECK='1',PYTHONDONTWRITEBYTECODE='1')
-    target=directory/'venv';venv.EnvBuilder(with_pip=True,system_site_packages=False).create(target)
-    python=target/'bin/python'
-    pure=Path(subprocess.check_output([str(python),'-I','-c','import sysconfig;print(sysconfig.get_path("purelib"))'],env=env,text=True).strip())
+def _copy_pinned_distributions(pure):
     roots={};versions={}
     for line in (ROOT/'requirements-linux-evidence.txt').read_text().splitlines():
         if not line or line.startswith('#'):continue
@@ -103,6 +95,41 @@ def install(wheel,directory):
         assert copied<=256*1024*1024 and count<=15000
         if source.is_dir():shutil.copytree(source,dest,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
         else:shutil.copy2(source,dest)
+    return versions,copied,count
+
+
+def install(wheel,directory,*,wheelhouse=None):
+    """Fresh venv; exact pinned copies or original hash-locked offline wheels."""
+    files=package_manifest(wheel)  # Reject incomplete/unknown packages before venv or pip.
+    directory.mkdir(mode=0o700)
+    env={k:os.environ[k] for k in ('PATH','LANG') if k in os.environ}
+    env.update(PIP_NO_INDEX='1',PIP_CONFIG_FILE='/dev/null',PIP_DISABLE_PIP_VERSION_CHECK='1',PYTHONDONTWRITEBYTECODE='1')
+    target=directory/'venv';venv.EnvBuilder(with_pip=True,system_site_packages=False).create(target)
+    python=target/'bin/python'
+    pure=Path(subprocess.check_output([str(python),'-I','-c','import sysconfig;print(sysconfig.get_path("purelib"))'],env=env,text=True).strip())
+    lock_sha=None
+    if wheelhouse is None:
+        versions,copied,count=_copy_pinned_distributions(pure)
+    else:
+        wheelhouse=Path(wheelhouse).absolute()
+        assert wheelhouse.is_dir() and not wheelhouse.is_symlink() and wheelhouse.resolve()==wheelhouse
+        lock=ROOT/'scripts/linux_local/requirements.lock'
+        raw=lock.read_bytes();assert raw==subprocess.check_output(['git','show','HEAD:scripts/linux_local/requirements.lock'],cwd=ROOT)
+        lock_sha=sha256(raw).hexdigest()
+        # This lock also contains the build backend. The wheel is already
+        # built by the checked80.9.0 builder; do not install its executable
+        # distutils .pth hook into the isolated application runtime.
+        runtime_raw='\n'.join(line for line in raw.decode().splitlines() if not line.startswith('setuptools=='))+'\n'
+        runtime_lock=directory/'runtime-requirements.lock';runtime_lock.write_text(runtime_raw)
+        run([str(python),'-I','-m','pip','install','--no-index','--no-deps','--no-compile',
+            '--only-binary=:all:','--require-hashes','--find-links',str(wheelhouse),'-r',str(runtime_lock)],
+            cwd=directory,env=env,timeout=40,log=directory/'dependencies.log')
+        versions={line.split('==',1)[0]:line.split('==',1)[1].split()[0]
+            for line in runtime_raw.splitlines() if line and not line.startswith('#')}
+        observed=json.loads(subprocess.check_output([str(python),'-I','-c',
+            'import importlib.metadata as m,json;print(json.dumps({d.metadata["Name"].lower().replace("_","-"):d.version for d in m.distributions()}))'],env=env,text=True))
+        assert all(observed.get(name)==version for name,version in versions.items())
+        copied=count=0
     assert not list(pure.glob('*.pth')) and not list(pure.glob('*.egg-link'))
     wheel_input=directory/'wheel-input';wheel_input.mkdir();local_wheel=wheel_input/wheel.name;shutil.copy2(wheel,local_wheel)
     run([str(python),'-I','-m','pip','install','--no-index','--no-deps','--no-compile',str(local_wheel.resolve())],cwd=directory,env=env,timeout=25,log=directory/'install.log')
@@ -119,6 +146,8 @@ def install(wheel,directory):
         package_files=files,python=str(python),prefix=str(target),purelib=str(pure),
         forbidden_roots=[str(ROOT),str(ROOT/'src')],dependency_versions=versions,dependency_copy_bytes=copied,
         dependency_copy_files=count,dependency_downloads=0,system_site_packages=False,
+        dependency_source='HASH_LOCKED_OFFLINE_WHEELS' if lock_sha else 'EXACT_EXISTING_PINNED_DISTRIBUTIONS',
+        dependency_lock_sha256=lock_sha,
         entrypoint_sha256=sha256((harness/'entry.py').read_bytes()).hexdigest(),
         harness_scripts={name:sha256((harness/'scripts'/name).read_bytes()).hexdigest() for name in SCRIPTS})
     (harness/'manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')

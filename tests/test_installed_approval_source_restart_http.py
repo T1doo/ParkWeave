@@ -192,6 +192,8 @@ def test_installed_resource_approval_and_api_source_adoption_survive_full_servic
         scope='INSTALLED_LINUX_ORDINARY_SYNTHETIC_API_NOT_BROWSER_OR_WINDOWS',responses=[],real_model_calls=0,
         direct_owner_SQL_after_setup='READ_ONLY_SNAPSHOTS_ONLY',identity_reset=False,screenshots=[],violations=[])
     run=SimpleNamespace(started=time.monotonic(),report=report,secrets=[],private=directory,public=directory/'public')
+    wheelhouse=os.environ.get('PARKWEAVE_TEST_WHEELHOUSE')
+    if wheelhouse:run.wheelhouse=Path(wheelhouse)
     run.public.mkdir();run.budget=APIBudget(report)
     report['planned_POSTs']=dict(first_business=18,source_and_reapproval=22,second_worker_new_request=1,total=41)
     previous=os.umask(0o077)
