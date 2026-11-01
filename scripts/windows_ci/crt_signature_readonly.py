@@ -16,9 +16,10 @@ import time
 if __package__ in (None,''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from scripts.windows_portable import authenticode_signature as trust
+from scripts.windows_ci.crt_state_snapshot import StateSnapshot
 
-BEFORE='aef35e66c234496ee99b682061570938baab8f08'
-MARKER='ci: read-only system CRT signature PW_CRT_RO_20261101_A'
+BEFORE='db62db90abbbecab743cd24e946c8363e8b29f28'
+MARKER='ci: read-only CRT state snapshot PW_CRT_RO_20261101_B'
 JOB='crt-signature-readonly'
 NATIVE_SYMBOLS=frozenset(('GetSystemDirectoryW','GetCurrentProcess','IsWow64Process2','CreateFileW',
     'GetFileInformationByHandle','ReadFile','CloseHandle','WinVerifyTrust','WTHelperProvDataFromStateData',
@@ -46,6 +47,7 @@ class ReadOnlySignature(trust.SignatureVerification):
         self.result={}
         self.returns=[];self.chain=[];self.signer_facts=None;self.chain_observation='NOT_REACHED'
         self.signer_observation='NOT_REACHED';self.root_policy_reached=False
+        self.state_snapshot=StateSnapshot(self)
         self.k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
         bind=trust.bind
         self.system=bind(self.k,'GetSystemDirectoryW',D,[C.c_wchar_p,D])
@@ -58,7 +60,7 @@ class ReadOnlySignature(trust.SignatureVerification):
         self.trust=C.WinDLL('wintrust.dll',use_last_error=True,winmode=0x800)
         self.crypto=C.WinDLL('crypt32.dll',use_last_error=True,winmode=0x800)
         self.native_wvt=bind(self.trust,'WinVerifyTrust',C.c_int32,[P,P,C.POINTER(trust.TrustData)])
-        self.provider=bind(self.trust,'WTHelperProvDataFromStateData',P,[P])
+        self.native_provider=bind(self.trust,'WTHelperProvDataFromStateData',P,[P])
         self.native_signer=bind(self.trust,'WTHelperGetProvSignerFromChain',C.POINTER(trust.Signer),[P,D,B,D])
         self.native_cert=bind(self.trust,'WTHelperGetProvCertFromChain',C.POINTER(trust.ProviderCert),[C.POINTER(trust.Signer),D])
         self.cert_name=bind(self.crypto,'CertGetNameStringW',D,[C.POINTER(trust.CertContext),D,D,P,C.c_wchar_p,D])
@@ -84,10 +86,18 @@ class ReadOnlySignature(trust.SignatureVerification):
 
     def wvt(self,hwnd,action,data):
         # Observe raw LONGs only; return the exact value to the shared verifier.
-        phase=data._obj.action;status=self.native_wvt(hwnd,action,data)
+        phase=data._obj.action
+        if phase==2:self.state_snapshot.deactivate()
+        status=self.native_wvt(hwnd,action,data)
         need(type(status) is int and -(2**31)<=status<2**31)
         self.returns.append(dict(action='VERIFY' if phase==1 else 'CLOSE',signed=status,hex=f'{status&0xffffffff:08x}'))
+        if phase==1:self.state_snapshot.activate(data._obj,status)
         return status
+
+    def provider(self,state):
+        result=self.native_provider(state)
+        self.state_snapshot.capture_provider(result,state)
+        return result
 
     def signer(self,*args):
         result=self.native_signer(*args)
@@ -97,6 +107,7 @@ class ReadOnlySignature(trust.SignatureVerification):
                 if row.size==C.sizeof(trust.Signer):
                     self.signer_facts.update(count=row.count,error=row.error,kind=row.type)
                     self.signer_observation='BOUNDED_PROVIDER_SUMMARY'
+                    self.state_snapshot.capture_signer(result)
                 else:self.signer_observation='SIZE_MISMATCH'
         except Exception:self.signer_observation='SUMMARY_UNAVAILABLE'
         return result
@@ -161,7 +172,7 @@ class ReadOnlySignature(trust.SignatureVerification):
             root_match=self.chain[-1]['sha256']==trust.ROOT_SHA256
         result.update(wintrust_returns=list(self.returns),signer=self.signer_facts,provider_chain=list(self.chain),
             signer_observation=self.signer_observation,chain_observation=self.chain_observation,
-            root_policy_reached=self.root_policy_reached,expected_root_matched=root_match)
+            root_policy_reached=self.root_policy_reached,expected_root_matched=root_match,state_snapshot=self.state_snapshot.export())
         return result
 
     def close(self):
@@ -218,6 +229,7 @@ def collect():
             if context is not None:
                 row.update(context.result)
                 row.update(wintrust_returns=list(context.returns),signer=context.signer_facts,provider_chain=list(context.chain))
+                row['state_snapshot']=context.state_snapshot.export()
             row['diagnostic_error']='BOUNDED_READONLY_OPERATION_REFUSED_OR_UNKNOWN'
         finally:
             if context is not None:
