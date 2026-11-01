@@ -35,6 +35,27 @@ def need(ok):
     if not ok: raise CandidateRefused('NATIVE_RUNTIME_STAGING_REFUSED')
 
 
+METADATA_FIELDS=('IDENTITY','ATTRIBUTES','SIZE','LINKS','SECURITY','PATH','LAYOUT')
+
+
+class RuntimeMetadataChanged(CandidateRefused):
+    """Only a fixed kind/field set is public; no path, SID or descriptor data."""
+    def __init__(self,directory,fields):
+        need(type(directory) is bool and type(fields) is tuple and fields
+            and all(type(field) is str and field in METADATA_FIELDS for field in fields))
+        self.object_kind='DIRECTORY' if directory else 'FILE'
+        self.changed_fields=fields
+        super().__init__('NATIVE_RUNTIME_METADATA_CHANGED')
+
+
+def metadata_changes(before,after):
+    a,b=before[0],after[0]
+    values=(('IDENTITY',(a.volume,a.identity)!=(b.volume,b.identity)),
+        ('ATTRIBUTES',a.attributes!=b.attributes),('SIZE',a.size!=b.size),('LINKS',a.links!=b.links),
+        ('SECURITY',before[1]!=after[1]),('PATH',before[2]!=after[2]),('LAYOUT',type(a) is not type(b)))
+    return tuple(field for field,changed in values if changed)
+
+
 @dataclass(frozen=True)
 class RuntimeSource:
     root: str
@@ -73,6 +94,7 @@ class NativeRuntimeInstallation:
     def __init__(self, lease, source, runtime, *, create, deadline):
         self.handles = []; self.cleanup_errors = []; self.rows = {}; self.closed = False
         self.identities = set(); self.source_nodes = {}
+        self._completion_pending=create;self._copy_complete=False;self._created_directory_rows={}
         self.lease = lease; self.failed = False
         need(os.name == 'nt' and type(lease) is FixedDirectoryLease and
              type(lease.fs) is FixedWindowsFilesystem and type(lease.fs.api) is NativeFixedLeaseAPI
@@ -135,6 +157,8 @@ class NativeRuntimeInstallation:
                 pin = self._open(self.dest[parent], leaf)
                 need(self._inspect(pin, False) == after)
                 self._record(path, pin, False)
+            self._copy_complete=True
+            self._seal_new_directories()
         else:
             for path in self.directories:
                 parent, _, leaf = path.rpartition('/')
@@ -264,16 +288,21 @@ class NativeRuntimeInstallation:
     def __copy__(self): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
     def __deepcopy__(self, memo): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
 
-    def _gate(self):
+    def _time(self):
         need(not self.failed and not self.closed and time.monotonic() < self.deadline)
+        from .native_trial_authority import budget
+        budget(self.lease,self.deadline)
+
+    def _gate(self):
+        self._time()
         # The original probe verifies this same lease/snapshot/key and current
         # OS identity on EVERY call. Consume that result once, instead of
         # reading the same fixed journal three times inside one gate.
         key=self.probe._gate()
         need(self.probe.lease is self.lease and self.probe.api is self.api
-             and key == self.key and self.api is self.lease.fs.api and
-             self.api.descriptor(self.lease.fs.root) == self.root_sd and
-             self.api.final_path(self.lease.fs.root) == self.root_path)
+             and key == self.key and self.api is self.lease.fs.api)
+        self._time();need(self.api.descriptor(self.lease.fs.root) == self.root_sd)
+        self._time();need(self.api.final_path(self.lease.fs.root) == self.root_path)
 
     def _hold(self, handle):
         self.handles.append(handle); return handle
@@ -283,13 +312,17 @@ class NativeRuntimeInstallation:
         return self._hold(self.api.open_relative(parent, name, True))
 
     def _inspect(self, handle, directory, *, private=True, volume=None):
+        self._time()
         info = self.api.info(handle)
         need(not info.attributes & (REPARSE | UNSAFE_ATTRIBUTES) and
              bool(info.attributes & DIRECTORY) == directory and info.identity > 0 and
              (volume is None or info.volume == volume) and
              (directory or info.links == 1 and 0 <= info.size <= 128*CHUNK))
-        if private: private_acl(self.api.security(handle), self.probe.user)
-        return info, self.api.descriptor(handle), self.api.final_path(handle)
+        if private:
+            self._time();private_acl(self.api.security(handle), self.probe.user)
+        self._time();descriptor=self.api.descriptor(handle)
+        self._time();path=self.api.final_path(handle)
+        return info,descriptor,path
 
     def _source(self, root):
         drive, parts = root_parts(root)
@@ -380,16 +413,59 @@ class NativeRuntimeInstallation:
         identity = (observed[0].volume, observed[0].identity)
         need(identity not in self.identities); self.identities.add(identity)
         self.rows[path] = (handle, directory, observed)
+        if directory and self._completion_pending:
+            self._created_directory_rows[path]=(handle,observed)
+
+    def _seal_new_directories(self):
+        # Only the original NEW constructor, after ALL file flush/hash/reopen
+        # steps. Consume before any observation: a failed completion cannot
+        # be retried to adopt a changed tree, nor used on REOPEN/issued objects.
+        need(self._completion_pending is True and self._copy_complete is True and self not in _issued)
+        self._completion_pending=False
+        self._gate();need(self.lease.record['phase']=='NEW' and self.key[-1]==1)
+        directories=set(self.directories);files={name for name,_,_ in self.files}
+        need(set(self.rows)==directories|files and set(self.dest)==directories|{''}
+            and set(self._created_directory_rows)==directories)
+        completed=dict(self.rows)
+        try:
+            for path,(handle,directory,observed) in self.rows.items():
+                current=self._inspect(handle,directory,volume=self.key[1][0])
+                changes=metadata_changes(observed,current)
+                if directory:
+                    need(self._created_directory_rows[path]==(handle,observed) and self.dest[path]==handle)
+                    # Creating this directory's children may grow its container
+                    # size/link metadata or set ARCHIVE. Its original identity,
+                    # protection and path never change. Other bits stay fixed.
+                    allowed={'SIZE','LINKS'}
+                    if not (observed[0].attributes^current[0].attributes)&~0x20:allowed.add('ATTRIBUTES')
+                    refused=tuple(field for field in changes if field not in allowed)
+                    if refused:raise RuntimeMetadataChanged(True,refused)
+                    need(0<=current[0].size<2**64 and 1<=current[0].links<2**32)
+                    completed[path]=(handle,True,current)
+                elif changes:raise RuntimeMetadataChanged(False,changes)
+            # Validate the entire exact namespace BEFORE committing directory
+            # completion snapshots. Files retain their original observations.
+            self._verify_namespace(completed)
+            for path in directories:self.rows[path]=completed[path]
+        except BaseException:
+            self.failed=True
+            raise
 
     def verify(self):
         self._gate()
         for path, (handle, directory, observed) in self.rows.items():
-            need(self._inspect(handle, directory, volume=self.key[1][0]) == observed)
+            changes=metadata_changes(observed,self._inspect(handle,directory,volume=self.key[1][0]))
+            if changes:raise RuntimeMetadataChanged(directory,changes)
+        self._verify_namespace(self.rows)
+        return self
+
+    def _verify_namespace(self,observations):
         # Exact immutable namespace; dynamic business directories are not walked.
         for path, handle in self.dest.items():
             prefix = path + '/' if path else ''
-            expected = {p[len(prefix):].split('/')[0] for p in self.rows if p.startswith(prefix)}
-            actual = {name for name, _, _ in self._entries(handle)}
+            expected = {p[len(prefix):].split('/')[0] for p in observations if p.startswith(prefix)}
+            entries={name:(attrs,identity) for name,attrs,identity in self._entries(handle)}
+            actual=set(entries)
             if not path:
                 from .native_trial_authority import bound_state
                 control=CONTROL
@@ -398,7 +474,9 @@ class NativeRuntimeInstallation:
                     control=control|{MARKER}
                 need(control <= actual and actual - DYNAMIC - control == expected)
             else: need(actual == expected)
-        return self
+            for name in expected:
+                observed=observations[prefix+name][2][0]
+                need(entries[name]==(observed.attributes,observed.identity))
 
     def _close_handle(self, handle):
         self.handles.remove(handle)  # Never retry uncertain CloseHandle.

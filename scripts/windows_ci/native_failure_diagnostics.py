@@ -15,7 +15,9 @@ from types import CodeType
 # is a finite category contract, not permission to accept arbitrary type names.
 _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("_ctypes","ArgumentError","CTYPES_ARGUMENT_ERROR","FFI_ARGUMENT_CONVERSION"),
-        ("struct","error","STRUCT_ERROR","BINARY_LAYOUT"))
+        ("struct","error","STRUCT_ERROR","BINARY_LAYOUT"),
+        ("scripts.windows_portable.native_runtime_staging","RuntimeMetadataChanged",
+         "RuntimeMetadataChanged","RUNTIME_METADATA_MISMATCH"))
 _SOURCES=(
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
@@ -98,6 +100,16 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='RUNTIME_METADATA_MISMATCH':
+        # Known exact class only; never call arbitrary public()/str()/args.
+        data=vars(error);object_kind=data.get('object_kind');fields=data.get('changed_fields')
+        allowed=('IDENTITY','ATTRIBUTES','SIZE','LINKS','SECURITY','PATH','LAYOUT')
+        if (type(object_kind) is str and object_kind in ('DIRECTORY','FILE')
+                and type(fields) is tuple and 0<len(fields)<=len(allowed)
+                and all(type(field) is str and field in allowed for field in fields)
+                and len(set(fields))==len(fields)):
+            result['runtime_metadata']=dict(object_kind=object_kind,changed_fields=list(fields))
+        else:result['runtime_metadata']=dict(details='UNAVAILABLE')
     if sites is None:
         location=dict(status='SITE_UNAVAILABLE',frames=[],truncated=False)
     elif budget is not None and (budget['nodes']<=0 or budget['frames']<=0):
