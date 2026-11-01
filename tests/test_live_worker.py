@@ -220,11 +220,12 @@ def test_pipe_requires_eof_with_one_absolute_deadline(coordinator):
     finally:os.close(r);os.close(w)
 
 
-def test_missing_source_and_ambient_pg_configuration_refuse_without_fallback(monkeypatch,fixture,coordinator):
+def test_missing_source_and_ambient_pg_configuration_refuse_without_fallback(monkeypatch,fixture,coordinator,capsys):
     monkeypatch.setenv('PARKWEAVE_DSN',fixture[0].dsn)
     monkeypatch.setenv('PARKWEAVE_INTERN_API_TOKEN',FAKE_TOKEN)
     with pytest.raises(SystemExit) as error:worker.main(['--once','--model-live'])
     assert error.value.code==2
+    assert '移除 --model-live 使用本地办理' in capsys.readouterr().err
     monkeypatch.setenv('PGUNKNOWN','not inspected')
     with pytest.raises(SystemExit) as error:start(monkeypatch,fixture,coordinator[3])
     assert error.value.code==2

@@ -42,7 +42,9 @@ def main(argv=None):
         from .intern_adapter import ModelBoundaryError
         try:live_chain=configured_chain(store,args.model_config_fd)
         except ModelBoundaryError as error:
-            parser.exit(2,'model startup refused: '+error.code+'\n')
+            parser.exit(2,'model startup refused: '+error.code+'\n'
+                '模型配置未就绪：请核对已有受保护凭据与协调器批准记录。也可移除 --model-live 使用本地办理；'
+                '已进入模型步骤的任务不会绕过模型或自动重发。未创建账户、追加配额或重置资料。\n')
     if args.readiness_stdio:
         from .runtime_readiness import worker_handshake
         worker_handshake(store,args.readiness_challenge)  # Before first claim/consume.

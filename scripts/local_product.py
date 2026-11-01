@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from parkweave.api import create_app
-from parkweave.local_identity import LocalSessionVault
+from parkweave.local_identity import LocalSessionVault, LocalIdentityStorageUnavailable, password_bytes
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store, Denied
 from parkweave.local_installation import PersistentInstallation, create_database, private_parent, STATE
@@ -42,12 +42,25 @@ class Login(BaseModel):
     password: SecretStr
 
 
+class LocalSetupFailure(Denied):
+    def __init__(self,code,message):
+        self.code,self.message=code,message
+        super().__init__(code)
+
+
 def private_password(prompt):
     # getpass normally falls back to echoing stdin if terminal protection is
     # unavailable. That fallback is not acceptable for installation secrets.
-    with warnings.catch_warnings():
-        warnings.simplefilter('error', getpass.GetPassWarning)
-        return getpass.getpass(prompt)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', getpass.GetPassWarning)
+            return getpass.getpass(prompt)
+    except EOFError:
+        raise LocalSetupFailure('PASSWORD_INPUT_INTERRUPTED',
+            '密码输入已中断，请在交互终端重新运行 install；本次尚未新建安装。') from None
+    except OSError:
+        raise LocalSetupFailure('PRIVATE_TERMINAL_UNAVAILABLE',
+            '无法安全读取终端密码，请检查终端后重新运行 install；本次尚未新建安装。') from None
 
 
 def application(path, marker, port):
@@ -105,6 +118,10 @@ def application(path, marker, port):
                 return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], installation_id=installation_id,
                     actor={name:actor[name] for name in ('id','park_id','org_id','role')},
                     scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
+            except LocalIdentityStorageUnavailable:
+                return JSONResponse(dict(code='LOCAL_IDENTITY_STORAGE_UNAVAILABLE',
+                    detail='本地账户资料暂不可读取。请停止工作台；若已有原安装备份，可恢复原受保护身份文件后重开登录。无原备份时请保留目录交维护方处理，不要新建安装覆盖原资料。',
+                    recovery='RESTORE_ORIGINAL_SEALED_IDENTITIES',automatic_reset=False),status_code=503)
             except Denied:
                 failures.append(now)
                 raise HTTPException(403, '账号不可用或密码不正确') from None
@@ -263,11 +280,28 @@ def main():
         parser.error('--parent is only valid for install')
     try:
         if args.command == 'install':
+            future_parent=Path(args.parent).absolute() if args.parent else material.ROOT/'.runtime/local-product'
+            if len(os.fsencode(future_parent/('pw-'+'0'*32)/'socket/.s.PGSQL.5432'))>107:
+                raise LocalSetupFailure('INSTALL_PARENT_TOO_LONG',
+                    '安装父目录路径过长，请使用更短的本人私有目录；本次尚未读取密码或新建安装。')
+            if args.parent:
+                try:private_parent(args.parent)
+                except (Denied,OSError):
+                    raise LocalSetupFailure('INSTALL_PARENT_UNAVAILABLE',
+                        '请提供已有的本人私有安装父目录，再重新运行 install；本次尚未读取密码或新建安装。') from None
             passwords = {}
             for role, label in [('enterprise', '企业'), ('specialist', '专员')]:
                 passwords[role] = private_password(f'{label}独立密码（至少12字符）: ')
+                try:password_bytes(passwords[role])
+                except Denied:
+                    raise LocalSetupFailure('PASSWORD_LENGTH',
+                        '每个账号的密码须为12–256个字符，请重新运行 install；本次尚未新建安装。') from None
                 if passwords[role] != private_password(f'再次输入{label}密码: '):
-                    raise Denied('password confirmation differs')
+                    raise LocalSetupFailure('PASSWORD_CONFIRMATION',
+                        '两次密码输入不一致，请重新运行 install；本次尚未新建安装。')
+            if passwords['enterprise']==passwords['specialist']:
+                raise LocalSetupFailure('PASSWORD_DISTINCT',
+                    '企业与专员须使用不同的独立密码，请重新运行 install；本次尚未新建安装。')
             provider = LocalSessionVault(passwords)
             passwords.clear()
             path = install(provider, args.parent)
@@ -277,6 +311,12 @@ def main():
             serve(args.state_dir, args.port)
     except KeyboardInterrupt:
         return 0
+    except LocalSetupFailure as error:
+        print('LOCAL_PRODUCT_REFUSED: '+error.code+'; '+error.message,file=sys.stderr)
+        return 1
+    except getpass.GetPassWarning:
+        print('LOCAL_PRODUCT_REFUSED: PRIVATE_TERMINAL_REQUIRED; 请在支持隐藏密码输入的交互终端重新安装，不使用明文参数或重定向输入；本次未新建安装。',file=sys.stderr)
+        return 1
     except Exception as error:
         # No exception values or local frame dumps containing password/session material.
         print('LOCAL_PRODUCT_REFUSED: ' + type(error).__name__ + '; existing state retained', file=sys.stderr)

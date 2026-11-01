@@ -18,6 +18,11 @@ from .store import Denied
 ROLES = ('enterprise', 'specialist')
 
 
+class LocalIdentityStorageUnavailable(Denied):
+    """Original sealed identity storage cannot be read; never a reset grant."""
+    def __init__(self):super().__init__('LOCAL_IDENTITY_STORAGE_UNAVAILABLE')
+
+
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode()
 
@@ -88,8 +93,9 @@ class LocalSessionVault:
     def unlock(cls, path, marker, role, password):
         if role not in ROLES:
             raise Denied('local identity unavailable')
-        fd = os.open(path / cls.filename, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        fd=None
         try:
+            fd = os.open(path / cls.filename, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
             info = os.fstat(fd)
             if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid()
                     or info.st_mode & 0o077 or info.st_nlink != 1 or not 0 < info.st_size <= 16384):
@@ -97,8 +103,12 @@ class LocalSessionVault:
             raw = os.read(fd, 16385)
             if len(raw) != info.st_size:
                 raise Denied('identity ciphertext changed')
+        except (OSError,Denied):
+            raise LocalIdentityStorageUnavailable() from None
         finally:
-            os.close(fd)
+            if fd is not None:
+                try:os.close(fd)
+                except OSError:raise LocalIdentityStorageUnavailable() from None  # No close retry/decrypt.
         try:
             value = json.loads(raw)
             binding = cls.binding(path, marker)
@@ -107,6 +117,9 @@ class LocalSessionVault:
             salt, nonce, cipher = [base64.b64decode(x, validate=True) for x in value['roles'][role]]
             if len(salt) != 16 or len(nonce) != 12 or not 16 < len(cipher) <= 528:
                 raise ValueError()
+        except Exception:
+            raise LocalIdentityStorageUnavailable() from None
+        try:
             bearer = AESGCM(key(password, salt)).decrypt(nonce, cipher,
                 canonical(dict(binding=binding, role=role))).decode('ascii')
             if not 32 <= len(bearer) <= 512:
