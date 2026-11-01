@@ -184,6 +184,8 @@ def execute(args):
             print(json.dumps(dict(software='UNINSTALLED',data_preserved=True,offline_restore_supported=True)));return
         if args.command=='setup':
             need(record['setup']=='NOT_STARTED' and not any((root/'data').iterdir()),'SETUP_ALREADY_ATTEMPTED_NO_RETRY')
+            private(root/'data');info=(root/'data').stat(follow_symlinks=False)
+            original_data=(info.st_dev,info.st_ino)
             record['setup']='PENDING';save(root,'installation.json',record)
             child=subprocess.Popen(cli(root,'install','--parent',str(root/'data')),
                 cwd=root/'application/source',env=environment(),stdout=subprocess.PIPE)
@@ -194,6 +196,15 @@ def execute(args):
                 try:child.wait(timeout=30)
                 except subprocess.TimeoutExpired:raise Refused('SETUP_CHILD_EXIT_UNKNOWN_NO_RETRY') from None
                 raise
+            if child.returncode==1 and output==b'':
+                private(root/'data');info=(root/'data').stat(follow_symlinks=False)
+                need((info.st_dev,info.st_ino)==original_data,'DATA_DIRECTORY_CHANGED_KEEP_PENDING')
+                if not any((root/'data').iterdir()):
+                    # Original CLI validates input before install(). Any real
+                    # creation leaves pw-* and prints setup_state_dir before
+                    # initdb. This is a known pre-create refusal, not UNKNOWN.
+                    record['setup']='NOT_STARTED';save(root,'installation.json',record)
+                    raise Refused('INPUT_OR_PREFLIGHT_REFUSED_NO_DATA_CREATED')
             need(child.returncode==0 and len(output)<=65536,'SETUP_NOT_CONFIRMED_KEEP_STATE')
             receipts=[json.loads(line) for line in output.decode().splitlines() if line.startswith('{')]
             receipt=next((row for row in receipts if row.get('installed')=='LOCAL_SYNTHETIC_MATERIAL_ONLY'),None)

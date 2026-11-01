@@ -63,3 +63,17 @@ def test_interrupted_setup_does_not_kill_child_or_erase_pending_state(tmp_path,m
     with pytest.raises(manage.Refused,match='SETUP_ALREADY_ATTEMPTED_NO_RETRY'):
         manage.execute(SimpleNamespace(command='setup'))
     assert calls==['spawn',('wait',30)]
+
+
+@pytest.mark.parametrize('output,created,code,expected',[(b'',False,1,'NOT_STARTED'),(b'\n',False,1,'PENDING'),(b'',True,1,'PENDING'),(b'',False,0,'PENDING')])
+def test_only_confirmed_empty_precreate_refusal_allows_new_explicit_setup(tmp_path,monkeypatch,output,created,code,expected):
+    root=tmp_path/'owned';root.mkdir(mode=0o700);payload(root/'media');(root/'data').mkdir(mode=0o700)
+    manage.save(root,'installation.json',dict(schema='parkweave-linux-user-installation/1',software='INSTALLED',setup='NOT_STARTED',source_commit='a'*40,state_dir=None))
+    class Child:
+        returncode=code
+        def __init__(self,*args,**kwargs):
+            if created:(root/'data/pw-owned').mkdir()
+        def communicate(self):return output,None
+    monkeypatch.setattr(manage.subprocess,'Popen',Child);monkeypatch.setattr(manage,'__file__',str(root/'ParkWeave.py'))
+    with pytest.raises(manage.Refused):manage.execute(SimpleNamespace(command='setup'))
+    assert manage.state(root)['setup']==expected
