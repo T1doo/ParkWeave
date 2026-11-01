@@ -21,51 +21,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  crt-cryptnet-cache-once:
-    if: >-
-      github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
-      github.event_name == 'push' && github.run_attempt == 1 &&
-      github.ref == 'refs/heads/dev/local-product-runtime-20261028' &&
-      github.event.before == '42cc28f0db58bae87e72380f24061b3235cd9f2c' &&
-      github.event.head_commit.message == 'ci: one native Cryptnet CRT recheck PW_CRT_CRYPTNET_20261101_E'
-    name: Native temporary URL cache then unchanged strict WVT / no business
-    runs-on: windows-2025
-    timeout-minutes: 3
-    steps:
-      - name: Exact source checkout without persisted credentials
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        env:
-          GIT_CONFIG_COUNT: '1'
-          GIT_CONFIG_KEY_0: core.autocrlf
-          GIT_CONFIG_VALUE_0: 'false'
-        with:
-          persist-credentials: false
-          fetch-depth: 2
-      - name: Only reviewed source and explicit native cache scope
-        timeout-minutes: 3
-        shell: pwsh
-        env:
-          PW_CRYPTNET_PUBLIC: ${{ github.event.repository.private == false }}
-          PW_CRYPTNET_SCOPE: REDIRECTS_AND_TEMPORARY_URL_CACHE
-        run: |
-          $ErrorActionPreference='Stop'
-          $reviewedParent='42cc28f0db58bae87e72380f24061b3235cd9f2c'
-          $current=(& git rev-parse HEAD).Trim()
-          if ($LASTEXITCODE -ne 0 -or $current -ne $env:GITHUB_SHA) { throw 'EXACT_CACHE_SOURCE_REQUIRED' }
-          $parent=(& git rev-parse 'HEAD^').Trim()
-          if ($LASTEXITCODE -ne 0 -or $parent -ne $reviewedParent) { throw 'REVIEWED_CACHE_PARENT_REQUIRED' }
-          & git diff --quiet $reviewedParent HEAD -- . ':(exclude).github/workflows/windows-server-engineering.yml'
-          if ($LASTEXITCODE -ne 0) { throw 'NO_OTHER_SOURCE_CHANGES_ALLOWED' }
-          $dirty=@(& git status --porcelain=v1 --untracked-files=all)
-          if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { throw 'CLEAN_CACHE_SOURCE_REQUIRED' }
-          $cached=Join-Path $env:RUNNER_TOOL_CACHE 'Python'
-          $versions=@(Get-ChildItem -LiteralPath $cached -Directory | Where-Object { $_.Name -match '^3\.12\.\d+$' } | Sort-Object { [version]$_.Name } -Descending)
-          if ($versions.Count -eq 0) { throw 'EXISTING_PYTHON_312_UNAVAILABLE_NO_DOWNLOAD' }
-          $python=Join-Path $versions[0].FullName 'x64\python.exe'
-          if (!(Test-Path -LiteralPath $python -PathType Leaf)) { throw 'EXISTING_X64_PYTHON_UNAVAILABLE_NO_DOWNLOAD' }
-          & $python -I -B -S scripts/windows_ci/crt_cryptnet_cache_trial.py --inspect-native-cache-once
-          if ($LASTEXITCODE -ne 0) { throw 'NATIVE_CACHE_OR_STRICT_RECHECK_REFUSED_OR_UNKNOWN_NO_RETRY' }
-
   crt-signature-readonly:
     if: >-
       false && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false &&
