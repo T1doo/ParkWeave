@@ -32,7 +32,7 @@ class Pins:
         events.append('pins-close')
         if scenario=='pins-failure':raise OSError(private)
 window.load_source_window=load;window.verify_bootstrap_and_consume=verify;window.need=need
-window._verified={verified:(types.SimpleNamespace(cleanup_seconds=60,reviewed_parent='a'*40),None,None,None,None,100,None,Pins())}
+window._verified={verified:(types.SimpleNamespace(cleanup_seconds=60,reviewed_parent='a'*40),None,None,None,{'files':{}},100,None,Pins())}
 sys.modules[window.__name__]=window
 imports=types.ModuleType('scripts.windows_ci.pinned_vendor_imports')
 def restrict(*args):

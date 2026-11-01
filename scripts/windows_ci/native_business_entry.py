@@ -140,7 +140,8 @@ def main(argv=None):
         pins=_verified[verified][7]
         pin_cleanup_end=_verified[verified][5]+_verified[verified][0].cleanup_seconds
         # Optional source diagnostics never grant work or change failure into success.
-        try:sites=SourceSites(root,_verified[verified][0].reviewed_parent)
+        try:sites=SourceSites(root,_verified[verified][0].reviewed_parent,
+            runtime_files=_verified[verified][4]['files'])
         except Exception:sites=None
         stage='PINNED_IMPORTS'
         from scripts.windows_ci.pinned_vendor_imports import restrict_bootstrap_imports

@@ -17,7 +17,9 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("_ctypes","ArgumentError","CTYPES_ARGUMENT_ERROR","FFI_ARGUMENT_CONVERSION"),
         ("struct","error","STRUCT_ERROR","BINARY_LAYOUT"),
         ("scripts.windows_portable.native_runtime_staging","RuntimeMetadataChanged",
-         "RuntimeMetadataChanged","RUNTIME_METADATA_MISMATCH"))
+         "RuntimeMetadataChanged","RUNTIME_METADATA_MISMATCH"),
+        ("scripts.windows_portable.native_runtime_staging","RuntimeStagingFailure",
+         "RuntimeStagingFailure","RUNTIME_CONSTRUCTION"))
 _SOURCES=(
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
@@ -54,9 +56,21 @@ class SourceSites:
     checkout trust is the same as the original coordinator, not a same-user
     hostile-code sandbox. No file reads occur while traversing an exception.
     """
-    def __init__(self,root,source_commit):
+    def __init__(self,root,source_commit,*,runtime_files=()):
         if not re.fullmatch('[a-f0-9]{40}',source_commit):raise ValueError('SOURCE_ID_REQUIRED')
         self.source_commit=source_commit;self.modules={}
+        # Only the original verified public software manifest supplies paths.
+        # No installed root, exception args, unknown directory entry or SID.
+        self.runtime_paths=set()
+        if runtime_files:
+            from scripts.windows_portable.payload import safe_name,MANIFEST,MAX_FILES
+            if type(runtime_files) is not dict or len(runtime_files)>MAX_FILES:
+                raise ValueError('RUNTIME_CATALOG_REQUIRED')
+            for relative in (*runtime_files,MANIFEST):
+                safe_name(relative)
+                parts=relative.split('/')
+                self.runtime_paths.update('/'.join(parts[:i]) for i in range(1,len(parts)+1))
+            self.runtime_paths.add('')
         for module,relative in _SOURCES:
             path=Path(root)/relative
             if path.is_symlink() or not path.is_file() or path.stat().st_size>1024*1024:
@@ -110,6 +124,14 @@ def detail(error,public_type,sites=None,budget=None):
                 and len(set(fields))==len(fields)):
             result['runtime_metadata']=dict(object_kind=object_kind,changed_fields=list(fields))
         else:result['runtime_metadata']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category'] in ('RUNTIME_METADATA_MISMATCH','RUNTIME_CONSTRUCTION'):
+        data=vars(error);relative=data.get('relative_path')
+        if sites is not None and type(relative) is str and relative in sites.runtime_paths:
+            result['runtime_relative_path']=relative or '<RUNTIME_ROOT>'
+        if kind['category']=='RUNTIME_CONSTRUCTION':
+            from scripts.windows_portable.native_runtime_staging import STAGING_PHASES
+            stage=data.get('stage')
+            result['runtime_stage']=stage if type(stage) is str and stage in STAGING_PHASES else 'UNAVAILABLE'
     if sites is None:
         location=dict(status='SITE_UNAVAILABLE',frames=[],truncated=False)
     elif budget is not None and (budget['nodes']<=0 or budget['frames']<=0):

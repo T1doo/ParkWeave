@@ -84,3 +84,32 @@ def test_unknown_native_borrower_keeps_crt_and_lease_ancestor_pins(flag):
         with pytest.raises(Exception):readonly.close(41)
         readonly._close.assert_not_called()
     finally:del crt._unknown[before:]
+
+
+@pytest.mark.parametrize('operation',['security-control','security-ace','descriptor-control'])
+def test_security_query_interruption_retains_original_sd_and_outputs_not_free(operation):
+    readonly=object.__new__(handles.WinAPI);sd_storage=C.create_string_buffer(256)
+    acl=C.create_string_buffer(C.sizeof(handles.ACL));header=C.cast(acl,C.POINTER(handles.ACL)).contents
+    header.Size=C.sizeof(acl);header.AceCount=1
+    freed=[]
+    def getsecurity(h,kind,flags,owner,group,dacl,sacl,sd):
+        C.cast(sd,C.POINTER(handles.PTR)).contents.value=C.addressof(sd_storage)
+        C.cast(owner,C.POINTER(handles.PTR)).contents.value=C.addressof(sd_storage)+32
+        C.cast(dacl,C.POINTER(handles.PTR)).contents.value=C.addressof(acl)
+        return 0
+    readonly.getsecurity=getsecurity;readonly.valid_sd=lambda sd:1;readonly.valid_acl=lambda acl:1
+    readonly.sid=lambda p:'S-1-5-21-100';readonly.localfree=lambda p:freed.append(p.value) or None
+    def interrupted(*args):raise KeyboardInterrupt('PRIVATE_SECURITY_ARGUMENT')
+    readonly.control=interrupted if operation!='security-ace' else lambda *args:1
+    readonly.getace=interrupted
+    if operation=='descriptor-control':
+        api=object.__new__(NativeLeaseAPI);api.readonly=readonly;call=api.descriptor
+    else:call=readonly.security
+    with pytest.raises(BaseException):call(41)
+    assert readonly._query_unknown and not freed
+    original=[row for row in handles._UNKNOWN_NATIVE_QUERIES if row[0] is readonly]
+    expected='DESCRIPTOR_CONTROL' if operation=='descriptor-control' else 'SECURITY_ACE' if operation=='security-ace' else 'SECURITY_CONTROL'
+    query=next(row for row in original if row[1]==expected)
+    assert query[2][-1][0]==41 and query[2][-1][3].value==C.addressof(sd_storage)
+    assert original[-1][1].endswith('BORROWED_INPUT')
+    with pytest.raises(Exception):readonly.close(41)

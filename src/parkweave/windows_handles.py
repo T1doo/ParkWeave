@@ -35,6 +35,28 @@ OPEN_REPARSE=0x200000
 _NT_CREATE_PENDING={}
 _UNKNOWN_QUERY_TOKENS=[]
 _UNKNOWN_NATIVE_QUERIES=[]
+_ACTIVE_NATIVE_QUERIES={}
+
+
+def query_call(api,kind,fn,args,storage=()):
+    """Keep original synchronous Win32 outputs through call/acknowledgement.
+
+    Exception or ERROR_IO_PENDING does not prove completion. Retain all
+    pointed storage and borrowed handles, then block further work/close.
+    This helper is NOT for NtCreateFile's zero-success NTSTATUS convention.
+    """
+    require_nt_create_ready(api);require_query_ready(api)
+    row=(api,kind,fn,args,storage);key=id(row)
+    _ACTIVE_NATIVE_QUERIES[key]=row
+    try:
+        result=fn(*args)
+        if not result and C.get_last_error()==997:
+            raise Denied('Windows synchronous operation returned pending; outcome unknown')
+    except BaseException:
+        retain_query_unknown(api,kind,*row[2:])
+        raise
+    _ACTIVE_NATIVE_QUERIES.pop(key)
+    return result
 
 
 def retain_query_unknown(api,kind,*storage):
@@ -104,7 +126,8 @@ class WinAPI:
     def open_drive(self,drive):
         require_nt_create_ready(self)
         # Drive-root path only; no arbitrary complete business path passed to Win32.
-        handle=self.create('\\\\?\\'+drive,READ_CONTROL|READ_ATTRIBUTES,SHARE_READ,None,3,0x02000000|0x00200000,None)
+        handle=query_call(self,'DRIVE_OPEN',self.create,
+            ('\\\\?\\'+drive,READ_CONTROL|READ_ATTRIBUTES,SHARE_READ,None,3,0x02000000|0x00200000,None))
         if handle in (None,C.c_void_p(-1).value):raise Denied('Windows drive open refused')
         return handle
     def open_relative(self,parent,name,read_data):
@@ -134,18 +157,21 @@ class WinAPI:
             raise primary
         return handle.value
     def info(self,handle):
-        if self.gettype(handle)!=1:raise Denied('Windows non-disk handle refused')
-        f=FileInfo();self.need(self.getinfo(handle,C.byref(f)))
+        if query_call(self,'FILE_TYPE',self.gettype,(handle,),(handle,))!=1:raise Denied('Windows non-disk handle refused')
+        f=FileInfo();self.need(query_call(self,'FILE_INFO',self.getinfo,(handle,C.byref(f)),(handle,f)))
         return Info(f.Attributes,(f.SizeHigh<<32)|f.SizeLow,f.Links,f.Volume,(f.IndexHigh<<32)|f.IndexLow)
     def final_path(self,handle):
-        buf=C.create_unicode_buffer(4096);length=self.getpath(handle,buf,len(buf),1)
+        buf=C.create_unicode_buffer(4096)
+        length=query_call(self,'FILE_PATH',self.getpath,(handle,buf,len(buf),1),(handle,buf))
         if not 0<length<len(buf):raise Denied('Windows volume identity unavailable')
         return buf.value
     def filesystem(self,handle):
         buf=C.create_unicode_buffer(32);serial=U32();maxlen=U32();flags=U32()
-        self.need(self.getvolume(handle,None,0,C.byref(serial),C.byref(maxlen),C.byref(flags),buf,len(buf)))
+        self.need(query_call(self,'VOLUME_INFO',self.getvolume,
+            (handle,None,0,C.byref(serial),C.byref(maxlen),C.byref(flags),buf,len(buf)),
+            (handle,serial,maxlen,flags,buf)))
         return buf.value
-    def drive_type(self,guid):return self.getdrive(guid)
+    def drive_type(self,guid):return query_call(self,'DRIVE_TYPE',self.getdrive,(guid,))
     def sid(self,pointer):
         require_query_ready(self)
         self.need(self.valid_sid(pointer));out=PTR()
@@ -198,14 +224,16 @@ class WinAPI:
         primary=None
         try:
             self.need(self.valid_sd(sd));control=U16();revision=U32()
-            self.need(self.control(sd,C.byref(control),C.byref(revision)))
+            self.need(query_call(self,'SECURITY_CONTROL',self.control,
+                (sd,C.byref(control),C.byref(revision)),(handle,owner,dacl,sd,control,revision)))
             user=self.sid(owner)
             if not dacl.value:return Security(user,control.value,None)
             self.need(self.valid_acl(dacl));header=C.cast(dacl,C.POINTER(ACL)).contents
             if header.AceCount>128:raise Denied('Windows ACL exceeds candidate limit')
             aces=[];start=dacl.value;end=start+header.Size
             for i in range(header.AceCount):
-                pointer=PTR();self.need(self.getace(dacl,i,C.byref(pointer)))
+                pointer=PTR();self.need(query_call(self,'SECURITY_ACE',self.getace,
+                    (dacl,i,C.byref(pointer)),(handle,owner,dacl,sd,pointer)))
                 address=pointer.value
                 if address is None or address<start+C.sizeof(ACL) or address+8>end:raise Denied('invalid ACE bounds')
                 head=C.string_at(address,8);kind,flags=head[0],head[1];size=int.from_bytes(head[2:4],'little')
@@ -231,6 +259,8 @@ class WinAPI:
                     raise
     def read(self,handle,limit):
         buf=C.create_string_buffer(limit);length=U32()
-        self.need(self.readfile(handle,buf,limit,C.byref(length),None))
-        if length.value>limit:raise Denied('invalid Windows read length')
+        self.need(query_call(self,'READ_FILE',self.readfile,(handle,buf,limit,C.byref(length),None),(handle,buf,length)))
+        if length.value>limit:
+            retain_query_unknown(self,'READ_LENGTH',handle,buf,length)
+            raise Denied('invalid Windows read length')
         return buf.raw[:length.value]

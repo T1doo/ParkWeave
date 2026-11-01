@@ -59,7 +59,7 @@ class NativeLeaseAPI:
         self.require_directory_durability()
 
     def descriptor(self, handle):
-        from parkweave.windows_handles import U16, U32, PTR,require_query_ready,retain_query_unknown
+        from parkweave.windows_handles import U16, U32, PTR,require_query_ready,retain_query_unknown,query_call
         require_query_ready(self.readonly)
         owner, dacl, sd = PTR(), PTR(), PTR()
         try:status=self.readonly.getsecurity(handle, 1, 1 | 4, C.byref(owner), None, C.byref(dacl), None, C.byref(sd))
@@ -71,7 +71,8 @@ class NativeLeaseAPI:
         primary = None
         try:
             self.need(self.readonly.valid_sd(sd)); control, revision = U16(), U32()
-            self.need(self.readonly.control(sd, C.byref(control), C.byref(revision)))
+            self.need(query_call(self.readonly,'DESCRIPTOR_CONTROL',self.readonly.control,
+                (sd,C.byref(control),C.byref(revision)),(handle,owner,dacl,sd,control,revision)))
             if not dacl.value: raise LeaseRefused('PRIVATE_DACL_REQUIRED')
             self.need(self.readonly.valid_acl(dacl))
             size = C.c_uint16.from_address(dacl.value + 2).value

@@ -183,3 +183,37 @@ def test_gate_checks_expiry_after_identity_probe_before_further_root_queries(mon
     value.probe=SimpleNamespace(lease=value.lease,api=value.api,_gate=probe)
     with pytest.raises(CandidateRefused):value._gate()
     assert calls==[]
+
+
+def test_runtime_locator_only_uses_original_verified_public_manifest_catalogue():
+    root=Path(__file__).resolve().parents[1]
+    sites=diagnostics.SourceSites(root,'b'*40,runtime_files={'app/public/sub/file.py':{}})
+    error=runtime.RuntimeMetadataChanged(False,('SIZE',),relative_path='app/public/sub/file.py')
+    report=diagnostics.detail(error,'RuntimeMetadataChanged',sites)
+    assert report['runtime_relative_path']=='app/public/sub/file.py'
+    stage=runtime.RuntimeStagingFailure('COPY_FILE','app/public')
+    assert diagnostics.detail(stage,'RuntimeStagingFailure',sites)['runtime_stage']=='COPY_FILE'
+    assert diagnostics.detail(stage,'RuntimeStagingFailure',sites)['runtime_relative_path']=='app/public'
+    for path in (r'C:\PRIVATE\secret', '../secret', 'app/private', {'secret':True}, None):
+        error.relative_path=path
+        assert 'runtime_relative_path' not in diagnostics.detail(error,'RuntimeMetadataChanged',sites)
+    error.relative_path='app/public/sub/file.py'
+    assert 'runtime_relative_path' not in diagnostics.detail(error,'RuntimeMetadataChanged')
+
+
+@pytest.mark.parametrize('operation',['open','create'])
+def test_root_path_query_expiry_prevents_following_open_or_create(monkeypatch,operation):
+    clock=[1000.];calls=[]
+    monkeypatch.setattr(runtime,'time',SimpleNamespace(monotonic=lambda:clock[0]))
+    value=object.__new__(runtime.NativeRuntimeInstallation)
+    value.failed=value.closed=False;value.deadline=1001.;value.key=('controlled key',)
+    def final_path(h):clock[0]=1002.;return 'ROOT'
+    value.api=SimpleNamespace(descriptor=lambda h:'SD',final_path=final_path,
+        open_relative=lambda *args:calls.append('forbidden open'),ntcreate=lambda *args:calls.append('forbidden create'))
+    class Lease:pass
+    value.lease=Lease();value.lease.fs=SimpleNamespace(api=value.api,root=1)
+    value.probe=SimpleNamespace(lease=value.lease,api=value.api,_gate=lambda:value.key)
+    value.root_sd='SD';value.root_path='ROOT'
+    with pytest.raises(CandidateRefused):
+        value._open(1,'child') if operation=='open' else value._create(1,'child',False)
+    assert calls==[]
