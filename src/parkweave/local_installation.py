@@ -420,3 +420,12 @@ class PersistentSetupStore(Store):
             connection.close()
             raise
         return connection
+
+    def install_local_sample_storage(self):
+        """Fresh owned installation only, never reopen DDL or fixture issuance."""
+        need(type(self) is PersistentSetupStore and self.installation.fresh
+             and self.installation.record['phase'] == 'INSTALLING')
+        with self.connect() as connection:
+            self._case_fact_fixture_receipt.authorize_migration(connection)
+            connection.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
+            connection.execute(Path(__file__).with_name('local-resource-approval-schema.sql').read_text())

@@ -8,7 +8,7 @@ import io,json,subprocess,tarfile,gzip
 from pathlib import Path
 
 
-def build(root,commit,wheels,output):
+def build(root,commit,wheels,output,*,branch='dev/local-product-runtime-20261028'):
     assert subprocess.check_output(['git','rev-parse',commit+'^{commit}'],cwd=root,text=True).strip()==commit and len(commit)==40
     def source(path):return subprocess.check_output(['git','show',commit+':'+path],cwd=root)
     lock=json.loads(source('scripts/linux_local/wheel-lock.json'))
@@ -20,7 +20,9 @@ def build(root,commit,wheels,output):
     assert not bundle.exists() and not output.exists()
     # Bundle the named branch at the exact reviewed commit, no working-tree or
     # runtime/private files. Explicit --branch also makes offline cloning stable.
-    ref='refs/heads/dev/local-product-runtime-20261028'
+    assert type(branch) is str and branch.startswith('dev/')
+    subprocess.run(['git','check-ref-format','--branch',branch],cwd=root,check=True,stdout=subprocess.DEVNULL)
+    ref='refs/heads/'+branch
     assert subprocess.check_output(['git','rev-parse',ref],cwd=root,text=True).strip()==commit
     subprocess.run(['git','bundle','create',str(bundle),ref],cwd=root,check=True)
     payload['source.bundle']=bundle.read_bytes()
@@ -29,7 +31,7 @@ def build(root,commit,wheels,output):
         assert len(raw)==row['bytes'] and sha256(raw).hexdigest()==row['sha256']
         payload['wheelhouse/'+row['file']]=raw
     manifest=dict(schema='parkweave-linux-offline-candidate/1',source_commit=commit,
-        branch='dev/local-product-runtime-20261028',scope='LINUX_SYNTHETIC_ONLY',usable_product=False,
+        branch=branch,scope='LINUX_SYNTHETIC_ONLY',usable_product=False,
         format='SOURCE_AND_LOCKED_WHEELS_WITH_USER_INSTALLER',external_prerequisites=['Linux x86_64 glibc>=2.34','Python3.12 with venv/ensurepip','Git','non-root user','short writable private user destination'],
         native_windows_executed=False,browser_pixels_verified=False,dependencies='OFFICIAL_PYPI_HASHED_WHEELS_OFFLINE_INSTALL_ONLY',
         files={n:dict(bytes=len(b),sha256=sha256(b).hexdigest()) for n,b in sorted(payload.items())})
@@ -49,7 +51,8 @@ def build(root,commit,wheels,output):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--commit',required=True)
+    p.add_argument('--branch',default='dev/local-product-runtime-20261028')
     p.add_argument('--wheels',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();print(json.dumps(build(Path(__file__).resolve().parents[2],a.commit,a.wheels,a.output),indent=2))
+    a=p.parse_args();print(json.dumps(build(Path(__file__).resolve().parents[2],a.commit,a.wheels,a.output,branch=a.branch),indent=2))
 
 if __name__=='__main__':main()

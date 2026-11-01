@@ -16,6 +16,12 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from .store import Denied
 
 ROLES = ('enterprise', 'specialist')
+SAMPLE_ROLES = ('enterprise', 'specialist', 'executor', 'resource-admin')
+SAMPLE_SCHEMA = 'parkweave-local-collaboration-installation/1'
+
+
+def roles_for(marker):
+    return SAMPLE_ROLES if marker.get('schema') == SAMPLE_SCHEMA else ROLES
 
 
 class LocalIdentityStorageUnavailable(Denied):
@@ -42,20 +48,23 @@ class LocalSessionVault:
     """Exclusive creation and strictly read-only unlock; no reset or grant repair."""
     filename = 'local-identities.sealed'
 
-    def __init__(self, passwords):
-        if type(passwords) is not dict or set(passwords) != set(ROLES):
-            raise Denied('two independently supplied role passwords required')
+    def __init__(self, passwords, *, sample_collaboration=False):
+        if type(sample_collaboration) is not bool:
+            raise Denied('explicit local installation profile required')
+        self.roles = SAMPLE_ROLES if sample_collaboration else ROLES
+        if type(passwords) is not dict or set(passwords) != set(self.roles):
+            raise Denied('independently supplied passwords for the selected profile required')
         for value in passwords.values():
             password_bytes(value)
-        if passwords['enterprise'] == passwords['specialist']:
-            raise Denied('distinct enterprise and specialist passwords required')
+        if len(set(passwords.values())) != len(self.roles):
+            raise Denied('distinct passwords for every selected account required')
         self._passwords = dict(passwords)
         self._tokens = None
 
     def generate(self):
         if self._tokens is not None:
             raise Denied('one identity creation attempt per installation')
-        self._tokens = {role: secrets.token_urlsafe(48) for role in ROLES}
+        self._tokens = {role: secrets.token_urlsafe(48) for role in self.roles}
         return dict(self._tokens)
 
     @staticmethod
@@ -68,9 +77,11 @@ class LocalSessionVault:
         if self._tokens is None or self._passwords is None:
             raise Denied('new private identity material required')
         binding = self.binding(path, marker)
+        if self.roles != roles_for(marker):
+            raise Denied('original identity installation profile required')
         rows = {}
         try:
-            for role in ROLES:
+            for role in self.roles:
                 salt, nonce = secrets.token_bytes(16), secrets.token_bytes(12)
                 aad = canonical(dict(binding=binding, role=role))
                 cipher = AESGCM(key(self._passwords[role], salt)).encrypt(
@@ -91,7 +102,8 @@ class LocalSessionVault:
 
     @classmethod
     def unlock(cls, path, marker, role, password):
-        if role not in ROLES:
+        roles = roles_for(marker)
+        if role not in roles:
             raise Denied('local identity unavailable')
         fd=None
         try:
@@ -112,7 +124,7 @@ class LocalSessionVault:
         try:
             value = json.loads(raw)
             binding = cls.binding(path, marker)
-            if set(value) != {'binding', 'roles'} or value['binding'] != binding or set(value['roles']) != set(ROLES):
+            if set(value) != {'binding', 'roles'} or value['binding'] != binding or set(value['roles']) != set(roles):
                 raise ValueError()
             salt, nonce, cipher = [base64.b64decode(x, validate=True) for x in value['roles'][role]]
             if len(salt) != 16 or len(nonce) != 12 or not 16 < len(cipher) <= 528:

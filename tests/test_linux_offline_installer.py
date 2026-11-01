@@ -77,3 +77,23 @@ def test_only_confirmed_empty_precreate_refusal_allows_new_explicit_setup(tmp_pa
     monkeypatch.setattr(manage.subprocess,'Popen',Child);monkeypatch.setattr(manage,'__file__',str(root/'ParkWeave.py'))
     with pytest.raises(manage.Refused):manage.execute(SimpleNamespace(command='setup'))
     assert manage.state(root)['setup']==expected
+
+
+@pytest.mark.parametrize('matching',[True,False])
+def test_explicit_sample_setup_forwards_profile_and_never_accepts_material_receipt(tmp_path,monkeypatch,matching):
+    root=tmp_path/'owned';root.mkdir(mode=0o700);payload(root/'media');(root/'data').mkdir(mode=0o700)
+    manage.save(root,'installation.json',dict(schema='parkweave-linux-user-installation/1',software='INSTALLED',setup='NOT_STARTED',source_commit='a'*40,state_dir=None))
+    calls=[]
+    class Child:
+        returncode=0
+        def __init__(self,command,**kw):
+            calls.append(command);(root/'data/pw-sample').mkdir(mode=0o700)
+        def communicate(self):
+            return json.dumps(dict(installed='LOCAL_SYNTHETIC_COLLABORATION_ONLY' if matching else 'LOCAL_SYNTHETIC_MATERIAL_ONLY',state_dir=str(root/'data/pw-sample'))).encode()+b'\n',None
+    monkeypatch.setattr(manage.subprocess,'Popen',Child);monkeypatch.setattr(manage,'__file__',str(root/'ParkWeave.py'))
+    if matching:manage.execute(SimpleNamespace(command='setup',sample_collaboration=True))
+    else:
+        with pytest.raises(manage.Refused,match='SETUP_NOT_CONFIRMED_KEEP_STATE'):
+            manage.execute(SimpleNamespace(command='setup',sample_collaboration=True))
+    assert calls[0][-1]=='--sample-collaboration'
+    assert manage.state(root)['setup']==('COMPLETE' if matching else 'PENDING')

@@ -19,7 +19,7 @@
    throw Error('原操作仍在处理或待核对，请留在原入口只读核对后再退出。');
  }
  function erase(){
-  generation++;token.value='';password.value='';journal=null;
+  generation++;token.value='';password.value='';journal=null;document.body.dataset.localRole='';
   // Run oninput and every original registered identity invalidation listener.
   token.dispatchEvent(new Event('input',{bubbles:true}));locked();
  }
@@ -56,7 +56,7 @@
    const credential=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('');
    journal=ParkWeavePending.journal(localStorage,value.installation_id,value.actor,credential,navigator.locks);
    pendingMaterial();token.value=value.bearer;token.dispatchEvent(new Event('input',{bubbles:true}));
-   document.body.dataset.localWorkspace='active';form.hidden=true;logout.hidden=false;
+   document.body.dataset.localRole=value.actor.role;document.body.dataset.localWorkspace='active';form.hidden=true;logout.hidden=false;
    status.textContent='已登录。服务、资源与协同按本安装现有配置和授权开放；不会自动办理。';
   }catch(error){
    if(own===generation){token.value='';locked();status.textContent=error.message;}
@@ -68,8 +68,12 @@
    // A refused login with an existing material UNKNOWN must allow returning
    // to its original recovery page; no business session was activated here.
    if(token.value)canLeave();else if(busy)throw Error('登录请求尚未结束，请等待。');
-   if(token.value)erase();location.assign('/');
+   if(token.value)erase();location.assign(back.dataset?.target||'/');
   }catch(error){status.textContent=error.message;}
  };
- window.addEventListener('pagehide',()=>{generation++;token.value='';password.value='';journal=null;});
+ function restoreLogin(){
+  try{erase();}finally{busy=false;submit.disabled=false;account.disabled=false;locked();}
+ }
+ window.addEventListener('pagehide',restoreLogin);
+ window.addEventListener('pageshow',event=>{if(event.persisted){restoreLogin();status.textContent='页面已恢复，请重新登录；原待核对句柄保留，不会自动重发。';}});
 })();

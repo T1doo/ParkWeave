@@ -1,6 +1,6 @@
 """Persistent Linux local material product, using the original database and APIs.
 
-Explicit installation only, two independently chosen role passwords, no model,
+Explicit installation only, independently chosen profile account passwords, no model,
 real park data, system services, native Windows setters or public listener.
 """
 import argparse
@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from parkweave.api import create_app
-from parkweave.local_identity import LocalSessionVault, LocalIdentityStorageUnavailable, password_bytes
+from parkweave.local_identity import LocalSessionVault, LocalIdentityStorageUnavailable, password_bytes, SAMPLE_SCHEMA, SAMPLE_ROLES
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store, Denied
 from parkweave.local_installation import PersistentInstallation, create_database, private_parent, STATE
@@ -66,7 +66,14 @@ def private_password(prompt):
 
 def application(path, marker, port):
     store = Store(material.dsn(path, application=True))
-    app = create_app(store)
+    sample_mode=marker.get('schema')==SAMPLE_SCHEMA
+    if sample_mode:
+        from parkweave import local_sample
+        app=local_sample.application(store,path,marker)
+        labels=local_sample.LABELS
+    else:
+        app = create_app(store)
+        labels=[('enterprise','企业 · 提交资料与确认'),('specialist','专员 · 补正与人工核对')]
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1'])
     # The focused local page uses the very same original API and permissions.
     app.router.routes[:] = [route for route in app.router.routes if getattr(route, 'path', None) != '/']
@@ -81,12 +88,27 @@ def application(path, marker, port):
 
     @app.get('/', response_class=HTMLResponse)
     def index():
+        if sample_mode:return local_sample.workspace_page(Path(__file__).parents[1]/'src/parkweave',marker)
         return Path(__file__).parents[1].joinpath('src/parkweave/local_preparation_web.html').read_text()
 
     @app.get('/workspace', response_class=HTMLResponse)
     def original_workspace():
-        return full_workspace_page(Path(__file__).parents[1]/'src/parkweave',
-            [('enterprise','企业 · 提交资料与确认'),('specialist','专员 · 补正与人工核对')])
+        if sample_mode:return local_sample.workspace_page(Path(__file__).parents[1]/'src/parkweave',marker)
+        return full_workspace_page(Path(__file__).parents[1]/'src/parkweave',labels)
+
+    @app.get('/materials', response_class=HTMLResponse)
+    def material_workspace():
+        return Path(__file__).parents[1].joinpath('src/parkweave/local_preparation_web.html').read_text()
+
+    if sample_mode:
+        from fastapi import Header
+        @app.get('/api/local-sample/resources')
+        def sample_resources(authorization: str | None=Header(default=None)):
+            if not authorization or not authorization.startswith('Bearer '):raise HTTPException(403,'local identity required')
+            return local_sample.resource_directory(store,authorization[7:])
+        @app.get('/local-sample-resources.js')
+        def sample_resources_client():
+            return Response(Path(__file__).parents[1].joinpath('src/parkweave/local_sample_resources.js').read_text(),media_type='text/javascript')
 
     @app.get('/local-workspace-login.js')
     def workspace_login_client():
@@ -117,14 +139,14 @@ def application(path, marker, port):
                 bearer = LocalSessionVault.unlock(path, marker, data.role, data.password.get_secret_value())
                 with store.connect() as connection:
                     actor = store.auth(connection, bearer, lock=True)
-                    expected = 'enterprise_operator' if data.role == 'enterprise' else 'park_specialist'
+                    expected = local_sample.ROLES.get(data.role) if sample_mode else {'enterprise':'enterprise_operator','specialist':'park_specialist'}.get(data.role)
                     if actor['id'] != marker['ids'][data.role] or actor['role'] != expected:
                         raise Denied('current local identity required')
                 from parkweave.local_identity import canonical
                 installation_id = sha256(canonical(LocalSessionVault.binding(path, marker))).hexdigest()
                 return dict(bearer=bearer, role=actor['role'], actor_id=actor['id'], installation_id=installation_id,
                     actor={name:actor[name] for name in ('id','park_id','org_id','role')},
-                    scope='SYNTHETIC_LOCAL_PREPARATION_ONLY')
+                    scope=local_sample.PROFILE if sample_mode else 'SYNTHETIC_LOCAL_PREPARATION_ONLY')
             except LocalIdentityStorageUnavailable:
                 return JSONResponse(dict(code='LOCAL_IDENTITY_STORAGE_UNAVAILABLE',
                     detail='本地账户资料暂不可读取。请停止工作台；若已有原安装备份，可恢复原受保护身份文件后重开登录。无原备份时请保留目录交维护方处理，不要新建安装覆盖原资料。',
@@ -171,7 +193,21 @@ def install(provider, parent=None):
         lease.initialize()
         with lease.postgres():
             owner = create_database(lease)
-            material.populate(path, owner, session_provider=provider, persistent=True)
+            if provider.roles==SAMPLE_ROLES:
+                from parkweave import local_sample
+                local_sample.initialize(owner,provider)
+                sample=local_sample.create_inputs(path,material.dsn(path,application=True))
+                with owner.connect() as c:
+                    identity=c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
+                    oid=c.execute("SELECT oid::bigint FROM pg_database WHERE datname='parkweave'").fetchone()['oid']
+                    snapshot=material.authority(c)
+                marker=dict(schema=SAMPLE_SCHEMA,**material.source_binding(),system_identifier=identity['system_identifier'],
+                    database_oid=oid,schema_version=32,authority=snapshot,ids=local_sample.IDS,
+                    sql_rights=local_sample.SQL_RIGHTS,session_expiry='NONE_MANUAL_REVOCATION_REQUIRED',sample=sample)
+                provider.publish(path,marker)
+                marker.update(session_storage='PASSWORD_SEALED_SEPARATE_ROLES_V1',runtime_source_sha256=runtime_source_binding())
+                material.dump(path/'state.json',marker)
+            else:material.populate(path, owner, session_provider=provider, persistent=True)
         lease.finish_new()
         return path
 
@@ -211,7 +247,7 @@ def serve(value, port):
             raise Denied('sealed, previously stopped local installation required')
         marker = json.loads((path / 'state.json').read_text())
         if (marker.get('session_storage') != 'PASSWORD_SEALED_SEPARATE_ROLES_V1'
-                or marker['schema'] != ('parkweave-local-material-installation/1' if installation else 'parkweave-material-only-demo/1')
+                or marker['schema'] not in (('parkweave-local-material-installation/1',SAMPLE_SCHEMA) if installation else ('parkweave-material-only-demo/1',))
                 or marker.get('runtime_source_sha256') != runtime_source_binding()
                 or marker['src_tree'] != material.source_binding()['src_tree']
                 or marker['bootstrap_sha256'] != material.source_binding()['bootstrap_sha256']):
@@ -229,6 +265,9 @@ def serve(value, port):
                         raise Denied('retained database or permissions changed; no automatic repair')
                 env = minimal_environment(os.environ, PYTHONPATH=str(material.ROOT / 'src'),
                     PYTHONDONTWRITEBYTECODE='1', PARKWEAVE_DSN=material.dsn(path, application=True), PARKWEAVE_MODE='LOCAL')
+                if marker['schema']==SAMPLE_SCHEMA:
+                    from parkweave.local_sample import environment
+                    env.update(environment(path,marker))
                 with (path / 'logs/worker.log').open('a') as log:
                     worker = subprocess.Popen([sys.executable, '-B', '-m', 'parkweave.worker'],
                         cwd=material.ROOT, env=env, stdout=log, stderr=log)
@@ -251,7 +290,7 @@ def serve(value, port):
                                     monitor.cancel()
                                     await asyncio.gather(monitor, return_exceptions=True)
                         server.config.app.router.lifespan_context = monitored_lifespan
-                        print(json.dumps(dict(url=f'http://127.0.0.1:{port}', scope='SYNTHETIC_LOCAL_PREPARATION_ONLY',
+                        print(json.dumps(dict(url=f'http://127.0.0.1:{port}', scope='LOCAL_SYNTHETIC_COLLABORATION_V1' if marker['schema']==SAMPLE_SCHEMA else 'SYNTHETIC_LOCAL_PREPARATION_ONLY',
                             sessions='PASSWORD_SEALED_SEPARATE_ROLES_V1', data_retained=True)), flush=True)
                         try:
                             server.run(sockets=[listener])
@@ -277,6 +316,7 @@ def main():
     parser.add_argument('command', choices=('install', 'start'))
     parser.add_argument('--state-dir')
     parser.add_argument('--parent', help='existing private installation parent; install only')
+    parser.add_argument('--sample-collaboration',action='store_true',help='install only: explicit 7-day SYNTHETIC services, two resources and four separately sealed accounts')
     parser.add_argument('--port', type=int, default=8765)
     args = parser.parse_args()
     if sys.platform != 'linux' or os.geteuid() == 0:
@@ -285,6 +325,7 @@ def main():
         parser.error('start requires existing --state-dir; install always creates a new private directory')
     if args.parent and args.command != 'install':
         parser.error('--parent is only valid for install')
+    if args.sample_collaboration and args.command!='install':parser.error('--sample-collaboration is only valid for install')
     try:
         if args.command == 'install':
             future_parent=Path(args.parent).absolute() if args.parent else material.ROOT/'.runtime/local-product'
@@ -297,7 +338,8 @@ def main():
                     raise LocalSetupFailure('INSTALL_PARENT_UNAVAILABLE',
                         '请提供已有的本人私有安装父目录，再重新运行 install；本次尚未读取密码或新建安装。') from None
             passwords = {}
-            for role, label in [('enterprise', '企业'), ('specialist', '专员')]:
+            labels=[('enterprise','企业'),('specialist','专员'),('executor','执行者'),('resource-admin','资源管理员')] if args.sample_collaboration else [('enterprise','企业'),('specialist','专员')]
+            for role, label in labels:
                 passwords[role] = private_password(f'{label}独立密码（至少12字符）: ')
                 try:password_bytes(passwords[role])
                 except Denied:
@@ -306,13 +348,13 @@ def main():
                 if passwords[role] != private_password(f'再次输入{label}密码: '):
                     raise LocalSetupFailure('PASSWORD_CONFIRMATION',
                         '两次密码输入不一致，请重新运行 install；本次尚未新建安装。')
-            if passwords['enterprise']==passwords['specialist']:
+            if len(set(passwords.values()))!=len(passwords):
                 raise LocalSetupFailure('PASSWORD_DISTINCT',
-                    '企业与专员须使用不同的独立密码，请重新运行 install；本次尚未新建安装。')
-            provider = LocalSessionVault(passwords)
+                    '每个账号须使用不同的独立密码，请重新运行 install；本次尚未新建安装。')
+            provider = LocalSessionVault(passwords,sample_collaboration=args.sample_collaboration)
             passwords.clear()
             path = install(provider, args.parent)
-            print(json.dumps(dict(state_dir=str(path), installed='LOCAL_SYNTHETIC_MATERIAL_ONLY',
+            print(json.dumps(dict(state_dir=str(path), installed='LOCAL_SYNTHETIC_COLLABORATION_ONLY' if args.sample_collaboration else 'LOCAL_SYNTHETIC_MATERIAL_ONLY',
                 next_command='start --state-dir ' + str(path), passwords_stored=False)), flush=True)
         else:
             serve(args.state_dir, args.port)

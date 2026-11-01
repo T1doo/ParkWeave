@@ -139,6 +139,7 @@ def cli(root,*args):
 
 def execute(args):
     prerequisite()
+    sample_collaboration=getattr(args,'sample_collaboration',False)
     if args.command=='install':
         media=Path(__file__).resolve().parent;value=manifest(media)
         root=Path(args.destination).absolute()
@@ -187,7 +188,9 @@ def execute(args):
             private(root/'data');info=(root/'data').stat(follow_symlinks=False)
             original_data=(info.st_dev,info.st_ino)
             record['setup']='PENDING';save(root,'installation.json',record)
-            child=subprocess.Popen(cli(root,'install','--parent',str(root/'data')),
+            setup_args=['install','--parent',str(root/'data')]
+            if sample_collaboration:setup_args.append('--sample-collaboration')
+            child=subprocess.Popen(cli(root,*setup_args),
                 cwd=root/'application/source',env=environment(),stdout=subprocess.PIPE)
             try:output,_=child.communicate()  # Human password input has no kill timer.
             except KeyboardInterrupt:
@@ -207,10 +210,11 @@ def execute(args):
                     raise Refused('INPUT_OR_PREFLIGHT_REFUSED_NO_DATA_CREATED')
             need(child.returncode==0 and len(output)<=65536,'SETUP_NOT_CONFIRMED_KEEP_STATE')
             receipts=[json.loads(line) for line in output.decode().splitlines() if line.startswith('{')]
-            receipt=next((row for row in receipts if row.get('installed')=='LOCAL_SYNTHETIC_MATERIAL_ONLY'),None)
+            expected='LOCAL_SYNTHETIC_COLLABORATION_ONLY' if sample_collaboration else 'LOCAL_SYNTHETIC_MATERIAL_ONLY'
+            receipt=next((row for row in receipts if row.get('installed')==expected),None)
             need(receipt is not None,'SETUP_NOT_CONFIRMED_KEEP_STATE')
             record['state_dir']=receipt['state_dir'];selection(root,record)
-            record['setup']='COMPLETE';save(root,'installation.json',record)
+            record['setup']='COMPLETE';record['profile']=expected;save(root,'installation.json',record)
             print(json.dumps(dict(setup='COMPLETE_SYNTHETIC',next_command='start',passwords_stored=False)));return
         need(args.command=='start' and record['setup']=='COMPLETE','EXPLICIT_COMPLETE_SETUP_REQUIRED')
         path=selection(root,record)
@@ -226,8 +230,10 @@ def main():
     parser.add_argument('command',choices=('install','setup','start','status','uninstall','restore'))
     parser.add_argument('--destination',help='install only; new user directory, never an existing root')
     parser.add_argument('--port',type=int,default=8765)
+    parser.add_argument('--sample-collaboration',action='store_true',help='setup only: explicit synthetic services/resources and four independent accounts')
     args=parser.parse_args()
     if bool(args.destination)!=(args.command=='install'):parser.error('only install requires --destination')
+    if args.sample_collaboration and args.command!='setup':parser.error('--sample-collaboration is only valid for setup')
     try:execute(args)
     except KeyboardInterrupt:return 130
     except Exception as error:

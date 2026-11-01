@@ -19,8 +19,9 @@ class Login(BaseModel):
     password: SecretStr
 
 
-def full_workspace_page(root, accounts):
+def full_workspace_page(root, accounts, *, materials_path='/'):
     """Password entry only; never adds identities, resources or permissions."""
+    if materials_path not in ('/','/materials'): raise Denied('original material entry required')
     page = (root/'web.html').read_text()
     options = ''.join('<option value="'+escape(name, quote=True)+'">'+escape(label)+'</option>'
                       for name, label in accounts)
@@ -33,7 +34,7 @@ def full_workspace_page(root, accounts):
         '<p id="local-workspace-status" role="status" aria-live="polite">'
         '只使用本安装已有的账号与授权；此入口不会增加资源或执行者配置。</p>'
         '<button id="local-workspace-logout" type="button" hidden>退出账号</button>'
-        '<button id="local-workspace-materials" type="button" class="secondary">返回资料工作台</button>'
+        '<button id="local-workspace-materials" data-target="'+materials_path+'" type="button" class="secondary">返回资料工作台</button>'
         '</section>')
     replacements = {
         '<body class="desktop-shell">': '<body class="desktop-shell" data-local-workspace="locked">',
