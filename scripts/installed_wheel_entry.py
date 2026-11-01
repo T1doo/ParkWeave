@@ -102,9 +102,10 @@ def worker():
     assert len(sys.argv)==3 or continuous,'explicit owned worker mode required'
     sys.argv=['parkweave.worker']+([] if continuous else ['--once'])
     if continuous:signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
-    attest(role,'BEFORE_WORK')
     try:
-        try:main()
+        try:
+            attest(role,'BEFORE_WORK')
+            main()
         except KeyboardInterrupt:
             if not continuous:raise
     finally:attest(role,'AFTER_WORK')

@@ -7,6 +7,7 @@ This tests the existing ordinary demo, not Windows/protected product acceptance.
 """
 from contextlib import contextmanager
 from copy import deepcopy
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -54,6 +55,16 @@ def generation(run,tag):
                 child=subprocess.Popen([str(run.python),'-I','-B',str(run.harness/'entry.py'),
                     'worker',role,'--continuous'],cwd=run.harness,env=env,stdout=log,stderr=log)
                 fact['pid']=child.pid
+                ready=run.harness/(role+'-attestation.json');end=min(run.started+270,time.monotonic()+10)
+                while time.monotonic()<end:
+                    assert child.poll() is None,'continuous worker failed before source attestation'
+                    if ready.exists():
+                        values=json.loads(ready.read_text())
+                        assert len(values)==1 and values[0]['pid']==child.pid and values[0]['stage']=='BEFORE_WORK'
+                        fact['source_attestation_observed']=True
+                        break
+                    time.sleep(.05)
+                else:raise AssertionError('continuous worker source readiness deadline')
                 yield
                 assert child.poll() is None,'normal worker must remain live through generation'
             except BaseException as error:primary=error;raise
@@ -208,7 +219,12 @@ def test_installed_resource_approval_and_api_source_adoption_survive_full_servic
         with generation(run,'restarted'):
             report['stage']='COLD_READ_ONLY_ORIGINAL_RECORDS';posts=run.budget.posts
             assert snapshot(run)==report['before_restart_snapshot']
-            assert call(run,'/plan-approval')==report['before_restart_approval']
+            approval=call(run,'/plan-approval');before=deepcopy(report['before_restart_approval'])
+            before_time=datetime.fromisoformat(before.pop('server_time'))
+            after_time=datetime.fromisoformat(approval.pop('server_time'))
+            assert 0<=(after_time-before_time).total_seconds()<270
+            assert approval==before  # All semantic fields; server clock must advance.
+            report['approval_server_clock_advanced_seconds']=(after_time-before_time).total_seconds()
             assert call(run,'/service-case-plan')==report['before_restart_source_plan']
             assert call(run)==report['before_restart_materials']
             assert call(run,'/opportunities')==report['before_restart_opportunities']
@@ -236,6 +252,9 @@ def test_installed_resource_approval_and_api_source_adoption_survive_full_servic
         assert attest['worker-first-attestation'][0]['pid']!=attest['worker-restarted-attestation'][0]['pid']
         assert [w['exit_code'] for w in report['continuous_workers']]==[0,0]
         report['status']='PASS_INSTALLED_API_SOURCE_APPROVAL_FULL_SERVICE_RESTART'
+    except BaseException as error:
+        report.update(status='FAIL',error_type=type(error).__name__)
+        raise
     finally:
         os.umask(previous)
         report['elapsed_seconds']=round(time.monotonic()-run.started,3)
