@@ -39,7 +39,7 @@ def plan():
     return dict(status='NOT_ENABLED',route='ISOLATED_MEMORY_CRL_CONJUNCTION_CANDIDATE',url=CDP,
         windows_job_minutes=3,work_seconds=120,cleanup_seconds=15,fetch_seconds=15,max_bytes=16777216,
         network_requires_specific_execution_approval=True,workflow_enabled=False,
-        system_user_or_url_stores_written=False,production_connected=False,
+        explicit_persistent_store_write_calls=False,os_internal_disk_side_effects='NOT_AUDITED',production_connected=False,
         equivalent_or_stronger_proven=False,usable_product=False)
 
 
@@ -99,7 +99,8 @@ def collect_once():
         seconds=round(time.monotonic()-start,3),before=[x for p,x in before],after=[x for p,x in after],
         fetched_leaf_crl=fetch_facts,independent_memory_checks=memory,file_comparison=comparison,failure=primary,original_file_cleanup=cleanup,
         original_strict_results='PRESERVED_NOT_REWRITTEN',equivalent_or_stronger_proven=False,
-        production_admission='NOT_CONNECTED',usable_product=False,system_user_or_url_store_writes=False)
+        production_admission='NOT_CONNECTED',usable_product=False,explicit_persistent_store_write_calls=False,
+        os_internal_disk_side_effects='NOT_AUDITED')
     return result,0 if primary is None else 2
 
 
