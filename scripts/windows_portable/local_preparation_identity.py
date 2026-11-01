@@ -8,6 +8,7 @@ and cluster ports while preserving their original activation gates.
 """
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Protocol
 
 from parkweave.store import Store
@@ -17,26 +18,39 @@ from .controller import CandidateRefused, NativeDatabaseOperations
 
 ENTERPRISES = ('fixture-a', 'fixture-b', 'fixture-c')
 REVIEWERS = tuple('prep-specialist-' + name for name in ENTERPRISES)
+EXECUTOR='sample-executor-a'
+RESOURCE_ADMIN='sample-resource-admin-a'
+
+
+class PreparationProfile(Enum):
+    MATERIAL='MATERIAL'
+    SAMPLE='SYNTHETIC_COLLABORATION'
+
+
+def identity_names(profile):
+    if type(profile) is not PreparationProfile:raise CandidateRefused('explicit preparation profile required')
+    return ENTERPRISES+REVIEWERS+((EXECUTOR,RESOURCE_ADMIN) if profile is PreparationProfile.SAMPLE else ())
 
 
 @dataclass(frozen=True, repr=False)
 class PreparationIdentities:
     values: tuple = field(repr=False)
+    profile: PreparationProfile = PreparationProfile.MATERIAL
 
     @classmethod
-    def from_mapping(cls, values):
-        names = ENTERPRISES + REVIEWERS
+    def from_mapping(cls, values, *, profile=PreparationProfile.MATERIAL):
+        names = identity_names(profile)
         if (type(values) is not dict or set(values) != set(names)
                 or any(type(v) is not str or not 1 <= len(v) <= 512
                        or any(ord(c) < 33 or ord(c) > 126 for c in v) for v in values.values())
                 or len(set(values.values())) != len(names)):
-            raise CandidateRefused('six distinct protected synthetic identities required')
-        return cls(tuple((name, values[name]) for name in names))
+            raise CandidateRefused('distinct protected identities for the selected profile required')
+        return cls(tuple((name, values[name]) for name in names),profile)
 
     def mapping(self):
         # Revalidate even manually constructed objects; never trust provider aliases.
         result = dict(self.values)
-        canonical = type(self).from_mapping(result)
+        canonical = type(self).from_mapping(result,profile=self.profile)
         if self.values != canonical.values:
             raise CandidateRefused('canonical private identity material required')
         return result
@@ -54,7 +68,7 @@ class PreparationSessionProvider(Protocol):
 
     All methods use the exact existing lease. NEW is exclusive and uncertainty
     must not be retried. REOPEN only reads; no minting, file repair or grants.
-    verify_binding must bind ALL six hashes, protected storage and enterprise
+    verify_binding must bind every selected profile hash (six or eight), protected storage and enterprise
     SESSION to the same physical installation and inputs. A dict is not proof.
     NativePreparationSessionProvider implements these storage methods using
     actual native handles and DPAPI, separately from runtime acceptance.
@@ -93,7 +107,9 @@ class PreparationSecurity:
     def _remember(self, lease, value):
         if self._identities is not None or type(value) is not PreparationIdentities:
             raise CandidateRefused('one private identity binding per invocation required')
-        self._identities = PreparationIdentities.from_mapping(value.mapping())
+        if value.profile is not getattr(self.provider,'profile',PreparationProfile.MATERIAL):
+            raise CandidateRefused('original protected identity profile required')
+        self._identities = PreparationIdentities.from_mapping(value.mapping(),profile=value.profile)
         self._lease = lease
         return self._identities
 
@@ -174,13 +190,22 @@ def seed_preparation_transaction(connection, identities):
 
 class PreparationDatabaseOperations(NativeDatabaseOperations):
     """Original schema/roles/evidence consumers plus one atomic local seed."""
+    def __init__(self, *, profile=PreparationProfile.MATERIAL):
+        identity_names(profile)
+        self.profile=profile
+
     def seed(self, owner, identities):
         self._owner(owner)  # Same exact native owner/evidence type checks.
         if type(identities) is not PreparationIdentities:
             raise CandidateRefused('explicit preparation identities required')
         identities.mapping()  # Reject before connecting.
+        if identities.profile is not self.profile:raise CandidateRefused('seed profile mismatch')
         # owner.connect() retains the REAL live issuer authorization. No receipt
         # is created/copied here. Both existing seed consumers share its single
         # transaction; failure rolls back rather than repairing/retrying grants.
         with owner.connect() as connection:
+            if self.profile is PreparationProfile.SAMPLE:
+                from .native_sample import seed_sample_transaction
+                return seed_sample_transaction(owner,connection,identities)
             seed_preparation_transaction(connection, identities)
+    profile=PreparationProfile.MATERIAL

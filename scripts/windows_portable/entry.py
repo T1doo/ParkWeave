@@ -24,7 +24,7 @@ def readiness(root):
     return result
 
 
-def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,database_port=None,api_port=None,enrollment=None):
+def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,database_port=None,api_port=None,enrollment=None,sample_collaboration=False):
     """Wire verified payload pins into the concrete runtime, without OS actions.
 
     The held-handle installer rechecks the same raw manifest and every byte.
@@ -33,8 +33,9 @@ def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,databas
     from scripts.windows_portable.native_composition import compose_native_local_preparation
     from scripts.windows_portable.endpoint_plan import PlanMode,EndpointRequest
     from scripts.windows_portable.native_runtime_staging import RuntimeSource
+    from scripts.windows_portable.local_preparation_identity import PreparationProfile
     import secrets
-    require(type(mode) is PlanMode,'EXPLICIT_NATIVE_MODE')
+    require(type(mode) is PlanMode and type(sample_collaboration) is bool,'EXPLICIT_NATIVE_MODE')
     request=EndpointRequest(database_port,api_port) if mode is PlanMode.NEW else None
     pins={}
     for name,relative in (('initdb','runtime/postgresql/bin/initdb.exe'),
@@ -47,6 +48,7 @@ def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,databas
             manifest_sha256=sha256(manifest_raw).hexdigest()),
         payload_source=RuntimeSource(str(payload_root),manifest_raw),
         enrollment=enrollment,
+        profile=PreparationProfile.SAMPLE if sample_collaboration else PreparationProfile.MATERIAL,
         challenge=secrets.token_hex(32),**pins)
 
 
@@ -124,6 +126,7 @@ def main(argv=None, *, read=None, use_workspace=None, enroll=None):
     parser.add_argument('--instance',type=Path)
     parser.add_argument('--database-port',type=int)
     parser.add_argument('--api-port',type=int)
+    parser.add_argument('--sample-collaboration',action='store_true',help='new only selects the four-role sample; reopen reads the original protected mode')
     args=parser.parse_args(argv)
     read = input if read is None else read
     verified = False
@@ -133,6 +136,7 @@ def main(argv=None, *, read=None, use_workspace=None, enroll=None):
         interactive = args.action == 'launch'
         action = choose_action(args,read)
         if action == 'cancel':return 0
+        require(not args.sample_collaboration or action in ('new','reopen'),'EXPLICIT_SAMPLE_NEW_OR_REOPEN_REQUIRED')
         # Only NEW and explicit status query the historical new-setup pause.
         # REOPEN reaches its original fixed-journal and loader gates unchanged.
         if action in ('status','new'):
@@ -156,9 +160,13 @@ def main(argv=None, *, read=None, use_workspace=None, enroll=None):
         from scripts.windows_portable.endpoint_plan import PlanMode
         from scripts.windows_portable.native_web_login import prompt_enrollment
         mode=PlanMode.NEW if action=='new' else PlanMode.REOPEN
-        enrollment=(enroll or prompt_enrollment)() if action=='new' else None
+        if action=='new' and args.sample_collaboration:
+            from scripts.windows_portable.local_preparation_identity import PreparationProfile
+            enrollment=enroll() if enroll is not None else prompt_enrollment(profile=PreparationProfile.SAMPLE)
+        else:enrollment=(enroll or prompt_enrollment)() if action=='new' else None
         invocation=native_invocation(root,manifest,args.instance,mode,manifest_raw=manifest_raw,
-            database_port=args.database_port,api_port=args.api_port,enrollment=enrollment)
+            database_port=args.database_port,api_port=args.api_port,enrollment=enrollment,
+            **({'sample_collaboration':True} if args.sample_collaboration else {}))
         def use(workspace):
             print('工作台已由本次运行校验。请在浏览器打开 http://127.0.0.1:'+str(workspace.application.port),flush=True)
             try:read('按回车正常停止本次私有运行时：')

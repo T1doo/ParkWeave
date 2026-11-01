@@ -106,6 +106,10 @@ def bind_compositions(cap,first,second,enrollment):
     from .native_runtime_staging import RuntimeSource
     from .endpoint_plan import PlanMode
     need(not value.compositions and first is not second and type(enrollment) is NativeLoginEnrollment)
+    # Existing frozen trial scopes cover the original six-identity material
+    # composition only. They cannot silently authorize the new sample seed.
+    from .local_preparation_identity import PreparationProfile
+    need(enrollment.profile is PreparationProfile.MATERIAL)
     resources=[enrollment]
     for invocation,mode in ((first,PlanMode.NEW),(second,PlanMode.REOPEN)):
         need(type(invocation) is LocalPreparationInvocation and type(invocation.transport) is OwnedPreparationRequest

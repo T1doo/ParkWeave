@@ -236,6 +236,7 @@ def test_session_adapter_preserves_cluster_capability_and_requires_persisted_rev
     security.load_existing_credentials.return_value = credential
     provider = Mock()
     provider.load_existing.return_value = identities()
+    provider.profile=identities().profile
     adapted = PreparationSecurity(security, provider)
     assert adapted.load_existing_credentials(lease) is credential
     adapted.verify_database_binding(lease, inputs)
@@ -290,6 +291,7 @@ def test_business_callback_expires_clients_even_when_it_raises():
     processes = SimpleNamespace(application=application, inputs=inputs, lease=lease, failed=False)
     provider = Mock()
     security = PreparationSecurity(Mock(), provider)
+    provider.profile=identities().profile
     security._remember(lease, identities())
     transport = ScriptedRequests([('fixture-a', 'POST', '/api/runs', {'run_id': RUN})])
     controller = Controller(Mock(), security, processes, database=PreparationDatabaseOperations())

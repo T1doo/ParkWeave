@@ -5,6 +5,7 @@ binding anchor, not an approval ledger. Startup only reads them and PostgreSQL.
 No fixture owner, TemplateConsumer, model transport or credentials are accepted.
 """
 from contextlib import contextmanager
+from dataclasses import dataclass
 from copy import deepcopy
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -61,6 +62,47 @@ class DemoPack(Exact):
     resources: dict[contract.ResourceKey, PlanID]
     fields: dict[contract.Slot, contract.FieldMapping]
     services: list[contract.ServiceID] = Field(min_length=1, max_length=3)
+
+
+class MemoryMetadata(Exact):
+    database: DatabaseBinding
+    catalog_sha256: contract.Hash
+    catalog_generation: str = Field(pattern=r'^[0-9]+$')
+    pack_sha256: contract.Hash
+    journal_sha256: contract.Hash
+
+
+@dataclass(frozen=True)
+class NativeDemoInputs:
+    """Immutable public inputs exported by native protected storage.
+
+    This is configuration, never native acceptance or a substitute identity.
+    Runtime still checks every original database/catalog/mapping predicate.
+    """
+    metadata_bytes: bytes
+    pack_bytes: bytes
+    journal_bytes: bytes
+
+    @classmethod
+    def parse(cls, raw):
+        if type(raw) is not str or not 0<len(raw.encode())<=12288:
+            raise Denied('bounded native sample inputs required')
+        x=strict_json(raw)
+        if type(x) is not dict or set(x)!={'schema','metadata','pack','journal'} or x['schema']!='parkweave-native-sample-inputs/1':
+            raise Denied('explicit native sample inputs required')
+        return cls(*(contract.canonical(x[k]).encode() for k in ('metadata','pack','journal')))
+
+    def values(self):
+        if type(self) is not NativeDemoInputs or any(type(b) is not bytes or not 0<len(b)<=12288 for b in (self.metadata_bytes,self.pack_bytes,self.journal_bytes)):
+            raise Denied('immutable native sample bytes required')
+        meta=MemoryMetadata.model_validate(strict_json(self.metadata_bytes.decode()))
+        if sha256(self.pack_bytes).hexdigest()!=meta.pack_sha256 or sha256(self.journal_bytes).hexdigest()!=meta.journal_sha256:
+            raise Denied('native sample input hash mismatch')
+        value=pack(strict_json(self.pack_bytes.decode()));journal=strict_json(self.journal_bytes.decode())
+        expected=dict(schema_version='parkweave-local-synthetic-demo-journal/1',kind='SYNTHETIC',pack_sha256=meta.pack_sha256,
+            database=meta.database.model_dump(),park_id=value['park_id'],org_id=value['org_id'],catalog_sha256=meta.catalog_sha256,catalog_generation=meta.catalog_generation)
+        if journal!=expected:raise Denied('exact native sample input journal binding required')
+        return meta,value,journal
 
 
 def database_binding(c):
@@ -149,17 +191,22 @@ def validated_pairs(snapshot, request, *, now, frozen=None):
 
 class LocalDemoCatalog:
     def __init__(self, store, config):
-        if type(config) is not DemoConfig or store.mode!='LOCAL':
+        if type(config) not in (DemoConfig,NativeDemoInputs) or store.mode!='LOCAL':
             raise Denied('exact local demo configuration required')
-        self.store, self.config = store, config
-        if Path(config.pack_path).resolve() == Path(config.journal_path).resolve():
+        self.store,self.native_inputs=store,config if type(config) is NativeDemoInputs else None
+        self.config=config.values()[0] if self.native_inputs is not None else config
+        if self.native_inputs is None and Path(config.pack_path).resolve() == Path(config.journal_path).resolve():
             raise Denied('distinct existing demo pack and input journal required')
         with store.connect() as c: self.validate(c)
 
     def validate(self, c, parent=None):
         cfg = self.config
-        value = pack(_file(cfg.pack_path,cfg.pack_sha256))
-        journal = _file(cfg.journal_path,cfg.journal_sha256,private=True)
+        if self.native_inputs is not None:
+            actual,value,journal=self.native_inputs.values()
+            if actual!=cfg:raise Denied('native sample metadata changed')
+        else:
+            value = pack(_file(cfg.pack_path,cfg.pack_sha256))
+            journal = _file(cfg.journal_path,cfg.journal_sha256,private=True)
         expected = dict(schema_version='parkweave-local-synthetic-demo-journal/1',
             kind='SYNTHETIC', pack_sha256=cfg.pack_sha256, database=cfg.database.model_dump(),
             park_id=value['park_id'], org_id=value['org_id'],

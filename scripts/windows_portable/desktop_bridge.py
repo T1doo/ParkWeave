@@ -26,8 +26,11 @@ def request(stream):
             result[key]=value
         return result
     value=json.loads(raw,object_pairs_hook=pairs)
-    if type(value) is not dict or set(value)!={'action','instance','database_port','api_port','passwords','initialize_profile'}:
+    required={'action','instance','database_port','api_port','passwords','initialize_profile'}
+    if type(value) is not dict or set(value) not in (required,required|{'sample_collaboration'}):
         raise ValueError('DESKTOP_REQUEST_SHAPE')
+    if 'sample_collaboration' in value and type(value['sample_collaboration']) is not bool:
+        raise ValueError('DESKTOP_SAMPLE_MODE')
     if value['action'] not in ('status','new','reopen'):raise ValueError('DESKTOP_ACTION')
     if type(value['instance']) is not str or len(value['instance'])>2048:raise ValueError('DESKTOP_INSTANCE')
     if any(type(value[k]) is not int or not 0<=value[k]<=65535 for k in ('database_port','api_port')):
@@ -71,11 +74,15 @@ def run(value,channel,*,entry_module=None,profile_factory=None,observe=None):
                 module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module)
                 if file=='entry.py':entry_module=module
     args=['--action',value['action']]
+    if value.get('sample_collaboration',False):
+        if value['action'] not in ('new','reopen'):raise ValueError('DESKTOP_SAMPLE_ACTION')
+        args.append('--sample-collaboration')
     if value['action']!='status':args+=['--instance',value['instance']]
     if value['action']=='new':args+=['--database-port',str(value['database_port']),'--api-port',str(value['api_port'])]
     def enroll():
         from scripts.windows_portable.native_web_login import NativeLoginEnrollment
-        return NativeLoginEnrollment(value['passwords'])
+        from scripts.windows_portable.local_preparation_identity import PreparationProfile
+        return NativeLoginEnrollment(value['passwords'],profile=PreparationProfile.SAMPLE if value.get('sample_collaboration',False) else PreparationProfile.MATERIAL)
     entered=False
     def use(workspace,invocation):
         nonlocal entered

@@ -113,8 +113,14 @@ class InstanceProcesses:
             api_environment=environment
             api_factory='parkweave.api:configured_app'
             if self.session_provider is not None:
-                from .native_web_login import ENVIRONMENT
-                api_environment=environment+((ENVIRONMENT,self.session_provider.web_configuration(lease,inputs)),)
+                from .native_web_login import ENVIRONMENT,parse_config,config_profile
+                from .local_preparation_identity import PreparationProfile
+                web=self.session_provider.web_configuration(lease,inputs)
+                cfg=parse_config(web)
+                if config_profile(cfg) is PreparationProfile.SAMPLE:
+                    from .native_sample import ENVIRONMENT as SAMPLE_ENV
+                    environment=environment+((SAMPLE_ENV,cfg['sample']),)
+                api_environment=environment+((ENVIRONMENT,web),)
                 api_factory='scripts.windows_portable.native_web_login:configured_app'
             def command(arguments, stdio='NONE', *, config=environment):
                 return Command(self.python.relative_executable, self.python.sha256, self.python.size,

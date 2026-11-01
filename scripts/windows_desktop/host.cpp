@@ -38,7 +38,7 @@
 #include "webview_settings.h"
 
 static HWND window, statusLabel, instanceEdit, portDb, portApi;
-static HWND pass[6], startButton, newButton;
+static HWND pass[6], passLabels[6], startButton, newButton;
 static std::vector<HWND> startup;
 static ICoreWebView2Controller* controller=nullptr;
 static ICoreWebView2* view=nullptr;
@@ -71,6 +71,13 @@ static std::string trialNonce;
 static constexpr UINT EVENT_LINE=WM_APP+1, EVENT_EXIT=WM_APP+2;
 static constexpr UINT TRIAL_EOF=WM_APP+3;
 static const wchar_t* accounts[]={L"fixture-a",L"fixture-b",L"fixture-c",L"prep-specialist-fixture-a",L"prep-specialist-fixture-b",L"prep-specialist-fixture-c"};
+static const wchar_t* sampleAccounts[]={L"fixture-a",L"prep-specialist-fixture-a",L"sample-executor-a",L"sample-resource-admin-a"};
+static bool sampleSelected(){return SendMessageW(GetDlgItem(window,4),BM_GETCHECK,0,0)==BST_CHECKED;}
+static void sampleInputs(){
+ bool selected=sampleSelected();const wchar_t* labels[]={L"企业",L"专员",L"执行者",L"资源管理员"};
+ for(int i=0;i<6;i++){SetWindowTextW(pass[i],L"");ShowWindow(pass[i],selected&&i>=4?SW_HIDE:SW_SHOW);ShowWindow(passLabels[i],selected&&i>=4?SW_HIDE:SW_SHOW);
+  std::wstring label=selected&&i<4?std::wstring(labels[i]):(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));SetWindowTextW(passLabels[i],label.c_str());}
+}
 static void need(bool b){if(!b)throw std::runtime_error("DESKTOP_REFUSED");}
 static void ok(HRESULT h){need(SUCCEEDED(h));}
 static void status(const wchar_t* text){SetWindowTextW(statusLabel,text);}
@@ -239,8 +246,8 @@ struct DesktopInputError{DesktopInputProblem problem;};
 static const wchar_t* inputHint(DesktopInputProblem problem){switch(problem){
  case DesktopInputProblem::INSTANCE:return L"请填写安装目录；重开使用已有目录，首次新建使用尚不存在的目录。";
  case DesktopInputProblem::PORTS:return L"首次新建需要两个不同的回环端口，均须为1–65535的整数。";
- case DesktopInputProblem::PASSWORD_LENGTH:return L"六个账号的密码均须为12–256个有效字符，请重新填写；尚未开始安装。";
- case DesktopInputProblem::PASSWORD_DUPLICATE:return L"六个账号须使用互不相同的密码，请重新填写；尚未开始安装。";
+ case DesktopInputProblem::PASSWORD_LENGTH:return L"所选模式每个账号的密码均须为12–256个有效字符；尚未开始安装。";
+ case DesktopInputProblem::PASSWORD_DUPLICATE:return L"所选模式每个账号须使用互不相同的密码；尚未开始安装。";
  }return L"请检查启动输入。";}
 static unsigned desktopPort(const std::wstring& value){
  if(value.empty())throw DesktopInputError{DesktopInputProblem::PORTS};unsigned n=0;
@@ -259,17 +266,18 @@ struct DesktopInputPasswords{std::wstring values[6];~DesktopInputPasswords(){for
 struct DesktopMessage{std::string bytes;~DesktopMessage(){SecureZeroMemory(bytes.data(),bytes.size());}};
 static std::string payload(const std::wstring& action){
  std::wstring instance=action==L"status"?L"":text(instanceEdit);if(action!=L"status"&&instance.empty())throw DesktopInputError{DesktopInputProblem::INSTANCE};
- unsigned db=0,api=0;DesktopInputPasswords passwords;
+ unsigned db=0,api=0;DesktopInputPasswords passwords;bool sample=sampleSelected()&&action!=L"status";int count=sample?4:6;
  if(action==L"new"){
   db=desktopPort(text(portDb));api=desktopPort(text(portApi));if(db==api)throw DesktopInputError{DesktopInputProblem::PORTS};
-  for(int i=0;i<6;i++){passwords.values[i]=text(pass[i]);desktopPasswordLength(passwords.values[i]);
+  for(int i=0;i<count;i++){passwords.values[i]=text(pass[i]);desktopPasswordLength(passwords.values[i]);
    for(int j=0;j<i;j++)if(passwords.values[i]==passwords.values[j])throw DesktopInputError{DesktopInputProblem::PASSWORD_DUPLICATE};}
  }
  // Validate every field before constructing a pipe message or starting native work.
  std::string body="{\"action\":"+json(action)+",\"instance\":"+json(instance)+",\"database_port\":"+std::to_string(db);
  body+=",\"api_port\":"+std::to_string(api)+",\"passwords\":{";
- if(action==L"new")for(int i=0;i<6;i++){if(i)body+=",";body+=json(accounts[i])+":"+json(passwords.values[i]);}
- body+="},\"initialize_profile\":";body+=(action==L"new"||SendMessageW(GetDlgItem(window,3),BM_GETCHECK,0,0)==BST_CHECKED)?"true":"false";return body+"}\n";
+ if(action==L"new")for(int i=0;i<count;i++){if(i)body+=",";body+=json(sample?sampleAccounts[i]:accounts[i])+":"+json(passwords.values[i]);}
+ body+="},\"initialize_profile\":";body+=(action==L"new"||SendMessageW(GetDlgItem(window,3),BM_GETCHECK,0,0)==BST_CHECKED)?"true":"false";
+ if(sample)body+=",\"sample_collaboration\":true";return body+"}\n";
 }
 static void launch(const std::wstring& action){
  need(!child&&!stopping);DesktopMessage message{payload(action)};auto& data=message.bytes;clearPasswords();
@@ -340,10 +348,11 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
  startButton=control(L"BUTTON",L"重开工作台",BS_PUSHBUTTON,24,174,180,38,1);newButton=control(L"BUTTON",L"首次新建安装",BS_PUSHBUTTON,218,174,180,38,2);
  control(L"STATIC",L"首次新建的回环端口（重开使用原保护配置）",0,24,238,800,24);portDb=control(L"EDIT",L"55432",WS_BORDER|ES_NUMBER,24,270,160,30);portApi=control(L"EDIT",L"58761",WS_BORDER|ES_NUMBER,204,270,160,30);
  control(L"BUTTON",L"首次在已有安装使用桌面：独占建立桌面资料目录（不重建数据库）",BS_AUTOCHECKBOX,420,174,830,38,3);
- control(L"STATIC",L"首次新建：六个账号分别设置12–256字符的不同密码；重开无需填写。",0,24,326,1100,24);
- for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
+ control(L"BUTTON",L"首次新建完整合成样例：四角色（重开读取原模式）",BS_AUTOCHECKBOX,400,266,800,38,4);
+ control(L"STATIC",L"首次新建：所选账号分别设置12–256字符的不同密码；重开无需填写。",0,24,326,1100,24);
+ for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;passLabels[i]=control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
  control(L"STATIC",L"合成样例 · 无真实园区接入。缺运行条件会明确停止，不安装运行库、不改系统安全设置。",0,24,570,1240,48);SetTimer(h,1,500,nullptr);return 0;}
- case WM_COMMAND:if(trialView)return 0;if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
+ case WM_COMMAND:if(trialView)return 0;if(LOWORD(w)==4){sampleInputs();return 0;}if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
  case EVENT_LINE:{auto p=(std::string*)l;std::string line=*p;delete p;event(line);return 0;}
  case EVENT_EXIT:{if(reader.joinable())reader.join();closeTracked(childOutput);closeTracked(child);if(childInput){closeTracked(childInput);}if(job){closeTracked(job);}if(pythonPin!=INVALID_HANDLE_VALUE){closeTracked(pythonPin);}
   closeView();backendReady=false;if(!terminal||uiUnknown){stopping=true;if(crtRevocationUnknown)status(L"无法完成系统运行库的离线吊销核验。本次状态未确认，保留目录与请求，不自动重开或更改信任设置。");else status(L"本次后台退出未获确认：状态未知，保留目录与请求，不自动重开。");}else if(closeWhenStopped)DestroyWindow(h);else{stopping=true;}return 0;}

@@ -48,16 +48,19 @@ class Command:
             raise ProcessRefused('FIXED_PRIVATE_COMMAND_REQUIRED')
         if self.environment:
             from .native_web_login import ENVIRONMENT, MAX_CONFIG, parse_config
-            if (type(self.environment) is not tuple or len(self.environment) not in (3,4) or
+            from .native_sample import ENVIRONMENT as SAMPLE_ENV,MAX_CONFIG as SAMPLE_MAX,validate_public
+            if (type(self.environment) is not tuple or len(self.environment) not in (3,4,5) or
                     any(type(row) is not tuple or len(row) != 2 or
                         any(type(value) is not str or not value or
                             any(ord(c) < 32 for c in value) for value in row) or
-                        len(row[0]) > 64 or len(row[1]) > (MAX_CONFIG if row[0] == ENVIRONMENT else 2048)
+                        len(row[0]) > 64 or len(row[1]) > (MAX_CONFIG if row[0] == ENVIRONMENT else SAMPLE_MAX if row[0]==SAMPLE_ENV else 2048)
                         for row in self.environment)):
                 raise ProcessRefused('FIXED_APPLICATION_ENVIRONMENT_REQUIRED')
             values = dict(self.environment)
+            if sum(len(k)+len(v)+2 for k,v in self.environment)+1>32767:
+                raise ProcessRefused('BOUNDED_APPLICATION_ENVIRONMENT_REQUIRED')
             required = {'PARKWEAVE_DSN', 'PARKWEAVE_MODE', 'PARKWEAVE_FILE_ROOT'}
-            if (len(values) != len(self.environment) or set(values) not in (required,required|{ENVIRONMENT}) or
+            if (len(values) != len(self.environment) or set(values) not in (required,required|{ENVIRONMENT},required|{SAMPLE_ENV},required|{ENVIRONMENT,SAMPLE_ENV}) or
                     values['PARKWEAVE_MODE'] != 'LOCAL' or self.model != 'WINDOWS_JOB' or
                     self.stdio_contract not in ('NONE', 'WORKER_READINESS_V1')):
                 raise ProcessRefused('FIXED_APPLICATION_ENVIRONMENT_REQUIRED')
@@ -65,8 +68,21 @@ class Command:
             parsed = _dsn(values['PARKWEAVE_DSN'], 'parkweave')
             if parsed['host'] != '127.0.0.1' or parsed['user'] != 'parkweave_app':
                 raise ProcessRefused('FIXED_APPLICATION_ROLE_REQUIRED')
+            if SAMPLE_ENV in values:
+                public=validate_public(values[SAMPLE_ENV]);metadata,_,_=public.values()
+                if metadata.database.name!='parkweave' or metadata.database.user!='parkweave_app' or metadata.database.address!='127.0.0.1' or metadata.database.port!=int(parsed['port']):
+                    raise ProcessRefused('NATIVE_SAMPLE_DATABASE_BINDING_REQUIRED')
+                if ENVIRONMENT not in values:
+                    if (self.relative_executable!='runtime/python/python.exe' or self.stdio_contract!='WORKER_READINESS_V1'
+                        or len(self.arguments)!=7 or self.arguments[:-1]!=('-I','-B','-m','parkweave.worker','--readiness-stdio','--readiness-challenge')
+                        or re.fullmatch('[0-9a-f]{32,128}',self.arguments[-1]) is None):
+                        raise ProcessRefused('NATIVE_SAMPLE_WORKER_COMMAND_REQUIRED')
             if ENVIRONMENT in values:
                 config = parse_config(values[ENVIRONMENT])
+                from .native_web_login import config_profile
+                from .local_preparation_identity import PreparationProfile
+                if (config_profile(config) is PreparationProfile.SAMPLE)!=(SAMPLE_ENV in values) or SAMPLE_ENV in values and config['sample']!=values[SAMPLE_ENV]:
+                    raise ProcessRefused('NATIVE_SAMPLE_CONFIG_PAIR_REQUIRED')
                 expected = ('-I','-B','-m','uvicorn','scripts.windows_portable.native_web_login:configured_app',
                             '--factory','--host','127.0.0.1','--port',str(config['port']),'--no-access-log')
                 if self.arguments != expected or self.stdio_contract != 'NONE' or self.relative_executable != 'runtime/python/python.exe':

@@ -16,6 +16,8 @@ def startup_binary(tmp_path_factory):
     inputs=host[host.index('enum class DesktopInputProblem'):host.index('static void launch(')]
     actual_json=host[host.index('static std::string json('):host.index('static void clearPasswords(')]
     accounts=next(x for x in host.splitlines() if x.startswith('static const wchar_t* accounts[]'))
+    sample_accounts=next(x for x in host.splitlines() if x.startswith('static const wchar_t* sampleAccounts[]'))
+    sample_selected=next(x for x in host.splitlines() if x.startswith('static bool sampleSelected()'))
     units=int(re.search(r'SendMessageW\(pass\[i\],EM_SETLIMITTEXT,(\d+),0\)',host).group(1))
     root=tmp_path_factory.mktemp('host-startup-inputs');source=root/'inputs.cpp'
     source.write_text(r'''
@@ -28,18 +30,20 @@ def startup_binary(tmp_path_factory):
 using HWND=int;
 HWND instanceEdit=1,portDb=2,portApi=3,pass[6]={10,11,12,13,14,15},window=0;
 std::map<int,std::wstring> values;
-int passwordReads=0;size_t wiped=0;
+int passwordReads=0;size_t wiped=0;bool sampleMode=false;
 void* watched=nullptr;size_t watchedSize=0;bool messageWiped=false;
 std::wstring text(HWND h){if(h>=10)++passwordReads;auto result=values.at(h);if(h>=10&&result.size()>EDIT_UNITS)result.resize(EDIT_UNITS);return result;}
 void* SecureZeroMemory(void* data,size_t size){wiped+=size;std::memset(data,0,size);if(data==watched&&size==watchedSize){messageWiped=true;for(size_t i=0;i<size;i++)if(((char*)data)[i])messageWiped=false;}return data;}
-int GetDlgItem(int,int){return 100;}
+int GetDlgItem(int,int id){return id;}
 constexpr int BM_GETCHECK=0,BST_CHECKED=1;
-int SendMessageW(int,int,int,int){return 0;}
-'''.replace('EDIT_UNITS',str(units))+accounts+'\n'+actual_json+'\n'+inputs+r'''
+int SendMessageW(int id,int,int,int){return id==4&&sampleMode?BST_CHECKED:0;}
+'''.replace('EDIT_UNITS',str(units))+accounts+'\n'+sample_accounts+'\n'+sample_selected+'\n'+actual_json+'\n'+inputs+r'''
 int main(int argc,char** argv){
  int mode=std::atoi(argv[1]);values[1]=L"E:\\Software\\public-synthetic-instance";values[2]=L"55432";values[3]=L"58761";
  for(int i=0;i<6;i++)values[10+i]=L"SYNTHETIC_PASSWORD_"+std::to_wstring(i);
  std::wstring action=L"new";
+ if(mode==13||mode==14)sampleMode=true;
+ if(mode==14)action=L"reopen";
  if(mode==1)values[3]=values[2];
  if(mode==2)values[12]=values[10];
  if(mode==3)values[10]=L"short";
@@ -100,6 +104,20 @@ def test_form_validation_is_before_runtime_and_specific_error_handler_does_not_s
 def test_serialized_message_is_wiped_on_bootstrap_exception_before_inner_launch_try(startup_binary):
     result=subprocess.run([str(startup_binary),'12'],capture_output=True,text=True,timeout=5)
     assert result.returncode==0 and result.stdout==''
+
+
+@pytest.mark.parametrize('mode',[13,14])
+def test_actual_desktop_explicit_sample_serializes_four_accounts_and_reopen_without_passwords(startup_binary,mode):
+    import io
+    from scripts.windows_portable.local_preparation_identity import PreparationProfile
+    result=subprocess.run([str(startup_binary),str(mode)],capture_output=True,text=True,timeout=5)
+    assert result.returncode==0,result.stderr
+    row=desktop_bridge.request(io.BytesIO(result.stdout.encode()))
+    assert row['sample_collaboration'] is True
+    if mode==13:
+        value=native_web_login.NativeLoginEnrollment(row['passwords'],profile=PreparationProfile.SAMPLE)
+        assert value.profile is PreparationProfile.SAMPLE and len(row['passwords'])==4
+    else:assert row['passwords']=={} and row['action']=='reopen'
 
 
 def test_web_login_can_enter_the_hosts_full_256_codepoint_non_bmp_password():

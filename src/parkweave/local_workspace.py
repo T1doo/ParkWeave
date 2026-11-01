@@ -5,7 +5,7 @@ import threading
 import time
 import re
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Header
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, SecretStr
@@ -55,7 +55,26 @@ def full_workspace_page(root, accounts, *, materials_path='/'):
     return page+scripts
 
 
-def mount_workspace(app, unlock, port, accounts):
+def full_sample_workspace_page(root,accounts,valid_until):
+    page=full_workspace_page(root,accounts,materials_path='/materials')
+    panel=('<section id="local-sample-resource-panel" class="card"><h2>样例资源配置与来源</h2>'
+        '<p>资源管理员仅核对合成目录，不读取企业占位或私有事项，不发布或预约。</p>'
+        '<button id="local-sample-resources-read" type="button">读取样例资源与来源</button>'
+        '<p id="local-sample-resources-status" role="status"></p><div id="local-sample-resource-items"></div></section>')
+    marker='<div class="entry-workbench">'
+    if page.count(marker)!=1:raise Denied('original sample workspace entry required')
+    page=page.replace(marker,panel+marker).replace('</style>',
+        'body:not([data-local-role="resource_admin"]) #local-sample-resource-panel{display:none}'
+        'body[data-local-role="resource_admin"] .workspace-nav{display:none}'
+        'body[data-local-role="resource_admin"] #park-main>:not(#local-sample-resource-panel):not(.shell-toolbar){display:none!important}</style>')
+    page=page.replace('合成工程验证 · 未接入真实园区或模型','本地合成样例 · 有效至 '+escape(valid_until)+' · 无真实园区或模型')
+    script='<script src="/local-sample-resources.js"></script>'
+    if '</body>' in page:return page.replace('</body>',script+'</body>')
+    if '</html>' in page:return page.replace('</html>',script+'</html>')
+    return page+script
+
+
+def mount_workspace(app, unlock, port, accounts,*,sample_workspace=None):
     if type(port) is not int or not 1 <= port <= 65535 or not callable(unlock):
         raise Denied('explicit local workspace configuration required')
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1'])
@@ -63,6 +82,9 @@ def mount_workspace(app, unlock, port, accounts):
     original = app.exception_handlers[RequestValidationError]
     failures = []; lock = threading.Lock()
     root = Path(__file__).parent
+    if sample_workspace is not None:
+        from scripts.windows_portable.native_sample import NativeSampleWorkspace
+        if type(sample_workspace) is not NativeSampleWorkspace:raise Denied('concrete native sample workspace required')
 
     @app.exception_handler(RequestValidationError)
     async def private_validation(request, error):
@@ -80,17 +102,31 @@ def mount_workspace(app, unlock, port, accounts):
 
     @app.get('/', response_class=HTMLResponse)
     def index():
+        if sample_workspace is not None:return sample_workspace.page(root)
+        return materials()
+
+    @app.get('/materials', response_class=HTMLResponse)
+    def materials():
         page = (root/'local_preparation_web.html').read_text()
         selectors = list(re.finditer(r'<select\b[^>]*\bid="role"[^>]*>', page))
         if len(selectors) != 1: raise Denied('local account selector unavailable')
         start = selectors[0].end()
         end = page.index('</select>', start)
+        names=sample_workspace.material_accounts if sample_workspace is not None else accounts
         options = ''.join('<option value="'+escape(name, quote=True)+'">'+escape(label)+'</option>'
-                          for name, label in accounts)
+                          for name, label in names)
         return page[:start] + options + page[end:]
 
     @app.get('/workspace', response_class=HTMLResponse)
-    def original_workspace(): return full_workspace_page(root, accounts)
+    def original_workspace(): return sample_workspace.page(root) if sample_workspace is not None else full_workspace_page(root, accounts)
+
+    if sample_workspace is not None:
+        @app.get('/api/local-sample/resources')
+        def sample_resources(authorization: str | None=Header(default=None)):
+            if not authorization or not authorization.startswith('Bearer '):raise HTTPException(403,'local identity required')
+            return sample_workspace.resources(authorization[7:])
+        @app.get('/local-sample-resources.js')
+        def sample_resources_script():return Response((root/'local_sample_resources.js').read_text(),media_type='text/javascript')
 
     @app.get('/local-workspace-login.js')
     def workspace_login():

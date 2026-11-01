@@ -418,6 +418,11 @@ class PreparationWorkspace:
             ('fixture-a', 'park-a', 'org-a', 'enterprise_operator')))
         self.reviewer = PreparationClient(self, ExistingActorProbe(values['prep-specialist-fixture-a'],
             ('prep-specialist-fixture-a', 'park-a', 'org-a', 'park_specialist')))
+        from .local_preparation_identity import PreparationProfile,EXECUTOR,RESOURCE_ADMIN
+        self.profile=identities.profile
+        if identities.profile is PreparationProfile.SAMPLE:
+            self.executor_actor=ExistingActorProbe(values[EXECUTOR],(EXECUTOR,'park-a','org-a','service_executor'))
+            self.resource_admin_actor=ExistingActorProbe(values[RESOURCE_ADMIN],(RESOURCE_ADMIN,'park-a','org-a','resource_admin'))
 
     def check(self):
         if not self._active:

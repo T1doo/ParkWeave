@@ -14,7 +14,7 @@ import weakref
 from . import credential_envelope as e
 from .controller import CandidateRefused, DatabaseInputs
 from .fixed_secret_store import _under_lease
-from .local_preparation_identity import ENTERPRISES, REVIEWERS, PreparationIdentities
+from .local_preparation_identity import ENTERPRISES, REVIEWERS, PreparationIdentities, PreparationProfile, identity_names
 from .native_secret_store_candidate import _NativeFixedSecretStore
 
 _roundtrip_evidence=weakref.WeakKeyDictionary()
@@ -36,11 +36,15 @@ class NativePreparationSessionProvider:
     """Separate protected reviewer storage; original enterprise SESSION unchanged."""
     native_acceptance = False
 
-    def __init__(self, enrollment=None):
+    def __init__(self, enrollment=None, *, profile=PreparationProfile.MATERIAL):
         from .native_web_login import NativeLoginEnrollment
         need(enrollment is None or type(enrollment) is NativeLoginEnrollment)
+        identity_names(profile)
+        need(enrollment is None or enrollment.profile is profile)
+        self.profile=profile
         self.enrollment = enrollment
         self.security = self.lease = self._identities = None
+        self.database=None
         self._created = self._published = False
         self.failed = False
 
@@ -50,11 +54,12 @@ class NativePreparationSessionProvider:
         from .native_instance_security import NativeFixedStoreSecurity
         from .endpoint_plan import PlanMode
         need(not self.failed and self.security is None
-             and type(database) is PreparationDatabaseOperations and type(processes) is InstanceProcesses
+             and type(database) is PreparationDatabaseOperations and database.profile is self.profile and type(processes) is InstanceProcesses
              and type(security) is NativeFixedStoreSecurity and processes.endpoint_source is security
              and processes.session_provider is self
              and (self.enrollment is not None if security.mode is PlanMode.NEW else self.enrollment is None))
         self.security = security
+        self.database=database
 
     def _store(self, lease):
         need(not self.failed and self.security is not None)
@@ -76,8 +81,12 @@ class NativePreparationSessionProvider:
         return _under_lease(lease, held)
 
     def _aad(self, store, kind):
-        return dict(schema='parkweave-native-preparation-identities/1',
+        value=dict(schema='parkweave-native-preparation-identities/1',
                     installation=store.binding.record(), runtime=json.loads(store.runtime), purpose=kind.name)
+        # Same original purpose/installation entropy for one read on REOPEN.
+        # The authenticated identity set and BINDING carry the actual profile;
+        # a UI checkbox must never select a second decryption attempt.
+        return value
 
     def _file(self, store, kind, value=None, *, _audit=None):
         """Hold original parent+file handles through DPAPI, flush and reread."""
@@ -159,7 +168,7 @@ class NativePreparationSessionProvider:
         need(not self._created and type(enterprises) is dict and set(enterprises) == set(ENTERPRISES))
         self._created = True
         identities = PreparationIdentities.from_mapping({**enterprises,
-            **{name: secrets.token_urlsafe(48) for name in REVIEWERS}})
+            **{name: secrets.token_urlsafe(48) for name in identity_names(self.profile) if name not in ENTERPRISES}},profile=self.profile)
         self._operation(lease, lambda store: self._file(store, PreparationFile.IDENTITIES, identities.mapping()))
         self._identities = identities
         return identities
@@ -169,22 +178,30 @@ class NativePreparationSessionProvider:
         def load(store):
             state = getattr(self.security, 'state', None)
             need(state is not None)
-            identities = PreparationIdentities.from_mapping(self._file(store, PreparationFile.IDENTITIES))
+            raw=self._file(store,PreparationFile.IDENTITIES)
+            profile=PreparationProfile.SAMPLE if type(raw) is dict and set(raw)==set(identity_names(PreparationProfile.SAMPLE)) else PreparationProfile.MATERIAL
+            identities = PreparationIdentities.from_mapping(raw,profile=profile)
             need(identities.enterprises() == state.sessions)
+            from .endpoint_plan import PlanMode
+            need(self.security.mode is PlanMode.REOPEN and self.database is not None)
+            self.profile=profile;self.database.profile=profile
             return identities
         self._identities = self._operation(lease, load)
         return self._identities
 
     def _binding(self, store, inputs, identities):
         need(type(inputs) is DatabaseInputs and type(identities) is PreparationIdentities
+             and identities.profile is self.profile
              and self._identities is not None and identities.mapping() == self._identities.mapping()
              and inputs is self.security.inputs)
         state = self.security.state
         need(state is not None and identities.enterprises() == state.sessions)
-        return dict(database=state.config['database'], endpoints=state.config['endpoints'],
+        value=dict(database=state.config['database'], endpoints=state.config['endpoints'],
                     original_files=state.config['files'],
                     identities={name: hashlib.sha256(value.encode('ascii')).hexdigest()
                                 for name, value in identities.mapping().items()})
+        if self.profile is PreparationProfile.SAMPLE:value['profile']=self.profile.value
+        return value
 
     def publish_binding_exclusive(self, lease, inputs, identities):
         from .native_trial_authority import require_owner
@@ -196,7 +213,18 @@ class NativePreparationSessionProvider:
             binding = self._binding(store, inputs, identities)
             self._file(store, PreparationFile.BINDING, binding)
             installation = self._web_installation(store, binding)
-            config = self.enrollment.seal(store, identities, installation, binding['endpoints']['api_port'])
+            sample=None
+            if self.profile is PreparationProfile.SAMPLE:
+                from parkweave.installed_fixture_receipt import _dsn
+                from .native_database_endpoint import NativeOwnedDatabaseEndpoint
+                from .native_sample import public_inputs
+                endpoint=self.security.endpoint
+                need(type(endpoint) is NativeOwnedDatabaseEndpoint)
+                with endpoint.connect(_dsn(inputs.application_dsn,'parkweave'),deadline=store.api.deadline) as connection:
+                    endpoint.verify_connection(connection)
+                    connection.execute('SET TRANSACTION READ ONLY')
+                    sample=public_inputs(connection)
+            config = self.enrollment.seal(store, identities, installation, binding['endpoints']['api_port'],**({'sample':sample} if sample is not None else {}))
             self._file(store, PreparationFile.WEB_LOGIN, config)
             self.enrollment = None
         return self._operation(lease, publish)
@@ -209,9 +237,12 @@ class NativePreparationSessionProvider:
         from .native_web_login import parse_config
         expected = self._binding(store, inputs, identities)
         observed = parse_config(e.canonical(self._file(store,PreparationFile.WEB_LOGIN)).decode('ascii'))
+        from .native_web_login import accounts,config_profile
         need(observed['installation'] == self._web_installation(store,expected) and
+             config_profile(observed) is self.profile and
              observed['port'] == expected['endpoints']['api_port'] and
-             {name:row['token_sha256'] for name,row in observed['accounts'].items()} == expected['identities'])
+             {name:row['token_sha256'] for name,row in observed['accounts'].items()} ==
+             {name:expected['identities'][name] for name in accounts(self.profile)})
         return e.canonical(observed).decode('ascii')
 
     def web_configuration(self, lease, inputs):
