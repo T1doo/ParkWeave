@@ -267,7 +267,7 @@ class LocalDemoSelector:
     def select(self, current):
         oracle = current['selection_oracle']
         if oracle['state'] != 'UNIQUE' or len(oracle['minimal_solutions']) != 1:
-            raise Conflict('local demo requires one proven solution; explicit choice not implemented')
+            raise Conflict('automatic local demo requires one proven solution; use explicit manual_selections for multiple solutions')
         from .service_selection_candidates import binding
         return ss.parse_selection(contract.canonical(dict(schema_version=1,
             binding=binding(current),selections=oracle['minimal_solutions'][0])),binding(current))

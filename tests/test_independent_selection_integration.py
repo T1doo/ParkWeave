@@ -65,7 +65,7 @@ def test_v4_adoption_save_failure_rolls_back_plan_and_event(capability_catalog,m
     assert sc.read(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),candidate_id=v['candidate_id'],catalog=a['catalog'])['can_adopt']
 
 
-def test_actual_adoption_parent_wait_holds_original_source_lease_until_commit(capability_catalog,monkeypatch):
+def test_actual_adoption_parent_wait_holds_original_source_lease_until_commit(capability_catalog,monkeypatch,tmp_path):
     a=capability_catalog;f,p,v,data=generate(a);entered=Event();proceed=Event();original=a['catalog'].source_lease
     @contextmanager
     def held():
@@ -84,7 +84,7 @@ def test_actual_adoption_parent_wait_holds_original_source_lease_until_commit(ca
                 with pytest.raises(sqlite3.OperationalError,match='locked'):probe.execute('BEGIN IMMEDIATE')
             withdraw=pool.submit(second.command,'template-publisher',a['scope'],uuid4().hex,cmd)
             assert not future.done() and not withdraw.done()
-            Path('.runtime/service-capability-selection-20261014/adopt-source-pg-wait.json').write_text(json.dumps(dict(blocker_pid=pid,waiters=waiters,sqlite_source_gate_locked=True,withdrawal_pending=True),indent=2)+'\n')
+            (tmp_path/'adopt-source-pg-wait.json').write_text(json.dumps(dict(blocker_pid=pid,waiters=waiters,sqlite_source_gate_locked=True,withdrawal_pending=True),indent=2)+'\n')
         assert future.result(timeout=5)['candidate_consumption']['verification_basis']['validator_version']==4
         assert withdraw.result(timeout=5)['state']=='WITHDRAWN'
 

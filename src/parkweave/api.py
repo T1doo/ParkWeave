@@ -146,6 +146,8 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/plan-material-package/commands':
             # Bad UTF-8 input must not be echoed by the default error encoder.
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material package request'})
+        if getattr(route,'path',None) in ('/api/preparations/{preparation_id}/service-selections','/api/preparations/{preparation_id}/service-composition-preview'):
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded service selection request'})
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/commands':
             # Bounded file bytes may be present even in a malformed/non-JSON body.
             return JSONResponse(status_code=422,content={'detail':'invalid bounded preparation command'})

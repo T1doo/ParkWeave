@@ -32,6 +32,10 @@ def test_original_html_ids_and_business_javascript_are_preserved():
         current = after.split('<script>')[1].split('// Frontend-day presentation.')[0].strip()
         if name == 'web.html':
             current = current.replace('bundleControls();parkDesignRefresh();}', 'bundleControls();}')
+            # New explicit-owner candidates retain every original seal/binding
+            # assertion while extending only the exact producer/version pairing.
+            current = current.replace('!parkObservationProducerValid(consumption)', "consumption?.verification_basis?.validator_version!=='LOCAL_SYNTHETIC_DEMO_V2'||!localDemoProducerValid(consumption.producer,'LOCAL_SYNTHETIC_DEMO_V2')")
+            current = current.replace('parkSelectionProducerCaption(source.candidate.producer)', "'原候选来自离线合成规划输出；原provider未启用，原采用仍由企业明确确认。'")
         assert original == current, 'business handler or original request contract changed'
 
 
