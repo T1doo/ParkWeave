@@ -343,15 +343,15 @@ static void event(const std::string& line){
 }
 static HWND control(const wchar_t* cls,const wchar_t* label,DWORD style,int x,int y,int w,int h,int id=0){HWND c=CreateWindowExW(0,cls,label,WS_CHILD|WS_VISIBLE|style,x,y,w,h,window,(HMENU)(INT_PTR)id,GetModuleHandleW(nullptr),nullptr);need(c);SendMessageW(c,WM_SETFONT,(WPARAM)GetStockObject(DEFAULT_GUI_FONT),TRUE);startup.push_back(c);return c;}
 static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{switch(message){
- case WM_CREATE:{window=h;statusLabel=control(L"STATIC",L"园合 ParkWeave · 独立桌面工作台",0,20,16,1300,40);startup.clear();
+ case WM_CREATE:{window=h;statusLabel=control(L"STATIC",L"园合 ParkWeave · 独立桌面工作台",0,24,16,960,40);startup.clear();
  control(L"STATIC",L"已有安装目录（重开只读既有绑定；首次安装必须使用新目录）",0,24,92,900,24);instanceEdit=control(L"EDIT",L"",WS_BORDER|ES_AUTOHSCROLL,24,122,920,32);
- startButton=control(L"BUTTON",L"重开工作台",BS_PUSHBUTTON,24,174,180,38,1);newButton=control(L"BUTTON",L"首次新建安装",BS_PUSHBUTTON,218,174,180,38,2);
- control(L"STATIC",L"首次新建的回环端口（重开使用原保护配置）",0,24,238,800,24);portDb=control(L"EDIT",L"55432",WS_BORDER|ES_NUMBER,24,270,160,30);portApi=control(L"EDIT",L"58761",WS_BORDER|ES_NUMBER,204,270,160,30);
- control(L"BUTTON",L"首次在已有安装使用桌面：独占建立桌面资料目录（不重建数据库）",BS_AUTOCHECKBOX,420,174,830,38,3);
- control(L"BUTTON",L"首次新建完整合成样例：四角色（重开读取原模式）",BS_AUTOCHECKBOX,400,266,800,38,4);
- control(L"STATIC",L"首次新建：所选账号分别设置12–256字符的不同密码；重开无需填写。",0,24,326,1100,24);
- for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=365+(i/3)*86;passLabels[i]=control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
- control(L"STATIC",L"合成样例 · 无真实园区接入。缺运行条件会明确停止，不安装运行库、不改系统安全设置。",0,24,570,1240,48);SetTimer(h,1,500,nullptr);return 0;}
+ startButton=control(L"BUTTON",L"重开工作台",BS_PUSHBUTTON,24,174,144,32,1);newButton=control(L"BUTTON",L"首次新建安装",BS_PUSHBUTTON,180,174,144,32,2);
+ control(L"STATIC",L"首次新建的回环端口（重开使用原保护配置）",0,24,266,800,24);portDb=control(L"EDIT",L"55432",WS_BORDER|ES_NUMBER,24,298,160,32);portApi=control(L"EDIT",L"58761",WS_BORDER|ES_NUMBER,204,298,160,32);
+ control(L"BUTTON",L"首次在已有安装使用桌面：独占建立桌面资料目录（不重建数据库）",BS_AUTOCHECKBOX,24,218,960,32,3);
+ control(L"BUTTON",L"首次新建完整合成样例：四角色（重开读取原模式）",BS_AUTOCHECKBOX,400,298,584,32,4);
+ control(L"STATIC",L"首次新建：所选账号分别设置12–256字符的不同密码；重开无需填写。",0,24,358,960,24);
+ for(int i=0;i<6;i++){std::wstring label=(i<3?L"企业 ":L"专员 ")+std::wstring(1,wchar_t(L'A'+i%3));int x=24+(i%3)*310,y=397+(i/3)*86;passLabels[i]=control(L"STATIC",label.c_str(),0,x,y,270,24);pass[i]=control(L"EDIT",L"",WS_BORDER|ES_PASSWORD|ES_AUTOHSCROLL,x,y+28,284,32);SendMessageW(pass[i],EM_SETLIMITTEXT,512,0);}
+ control(L"STATIC",L"合成样例 · 无真实园区接入。缺运行条件会明确停止，不安装运行库、不改系统安全设置。",0,24,602,960,48);SetTimer(h,1,500,nullptr);return 0;}
  case WM_COMMAND:if(trialView)return 0;if(LOWORD(w)==4){sampleInputs();return 0;}if(LOWORD(w)==1)launch(L"reopen");else if(LOWORD(w)==2)launch(L"new");return 0;
  case EVENT_LINE:{auto p=(std::string*)l;std::string line=*p;delete p;event(line);return 0;}
  case EVENT_EXIT:{if(reader.joinable())reader.join();closeTracked(childOutput);closeTracked(child);if(childInput){closeTracked(childInput);}if(job){closeTracked(job);}if(pythonPin!=INVALID_HANDLE_VALUE){closeTracked(pythonPin);}
