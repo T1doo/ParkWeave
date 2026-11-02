@@ -1,0 +1,182 @@
+{
+  "date_utc": "2026-11-02",
+  "status": "PASS_SOURCE_AND_DOM_ONLY",
+  "baseline_commit": "7303f5f26b7af50ac795772ce17be9f39ec31176",
+  "code_sha256": {
+    "src/parkweave/web.html": "1d3f31a18917efdf3dcb6f016d6990a507f0131f34460ece53136ab3673ecb33",
+    "src/parkweave/local_preparation_web.html": "2e3ccfb48989f09bdd44ee8bb99cebad5418f58a0a12c3af7413a3ab71a1840a"
+  },
+  "scope": "Shared presentation code in full and focused HTML; original business script preserved. No new endpoint, permission or persistent private data.",
+  "fixes": [
+    {
+      "id": "U01",
+      "finding": "Wide nonmodal reader becoming modal left focus in the newly inert background.",
+      "change": "Focus reader close only when entering single-reader mode with focus outside.",
+      "coverage": "P12/G04/N06"
+    },
+    {
+      "id": "U02",
+      "finding": "Replacing or emptying material rows could close a focused reader with no return target.",
+      "change": "Return only reader-owned focus to visible source, material filter or empty-list status; keep background editor focus. Clear stale text.",
+      "coverage": "P12/P13/G04"
+    },
+    {
+      "id": "U03",
+      "finding": "Queued invalid focus could run after identity/reset cleared errors.",
+      "change": "Require original error map to remain current and choose a visible eligible field.",
+      "coverage": "P18"
+    },
+    {
+      "id": "U04",
+      "finding": "Confirmation explanation had no accessible-description relationship.",
+      "change": "Associate dialog with its actual explanation using aria-describedby.",
+      "coverage": "G09/N01"
+    },
+    {
+      "id": "U05",
+      "finding": "Closing an already closed confirmation reused its old focus target during identity input.",
+      "change": "Clear return target and continuation immediately; restore focus only for an actually open dialog and eligible target.",
+      "coverage": "G09/N02"
+    },
+    {
+      "id": "U06",
+      "finding": "Coarse-pointer 44px minimum lost CSS specificity to primary 36px and typed fields.",
+      "change": "Priority rule only for coarse pointers; exclude checkbox/radio inputs, retain padded labels.",
+      "coverage": "N01/N08"
+    },
+    {
+      "id": "U07",
+      "finding": "A removed/hidden confirmation target left private copied details and an old continuation in an open dialog.",
+      "change": "Cancel on target invalidation, clear copied title/description and continuation. Original resourceError403 is covered.",
+      "coverage": "P16/G05/G09"
+    }
+  ],
+  "tests": {
+    "new_jsdom": {
+      "file": "tests/frontend_usability_dom.cjs",
+      "baseline_passed": 4,
+      "baseline_failed": 13,
+      "current_passed": 17,
+      "current_failed": 0,
+      "new_network_requests": 0,
+      "result": "usability-dom.json"
+    },
+    "rerun_basic_dom": {
+      "kind": "jsdom-only",
+      "results": [
+        {
+          "page": "web.html",
+          "status": "PASS",
+          "network_requests": 0,
+          "pixel_engine": false
+        },
+        {
+          "page": "local_preparation_web.html",
+          "status": "PASS",
+          "network_requests": 0,
+          "pixel_engine": false
+        },
+        {
+          "page": "whole shipped web.html",
+          "status": "PASS",
+          "original_change_invalidation": true,
+          "original_pending_guard": true,
+          "network_requests": 0,
+          "pixel_engine": false
+        }
+      ]
+    },
+    "rerun_advanced_dom": {
+      "kind": "jsdom-only",
+      "status": "PASS",
+      "scenarios": [
+        "structured material metadata and grouped filters",
+        "single reading pane focus isolation",
+        "per-Case disclosure memory",
+        "verified local step folds source only and preserves original actions",
+        "group edit return and draft preservation",
+        "explicit unsaved discard and original UNKNOWN guard",
+        "UTC calendar unavailable focus and exact end boundary",
+        "resource intentions without reservations",
+        "same-identity permission denial clears copied resource data",
+        "lookup input and submit preserve drafts before discard",
+        "danger confirmation identifies exact original resource record",
+        "keyboard object menu and success/failure clipboard feedback",
+        "goal preserves across original catalog GET and read failure",
+        "error reset and official inline icons"
+      ],
+      "new_network_requests": 0,
+      "original_catalog_GETs_with_synthetic_transport": 2,
+      "pixel_engine": false
+    },
+    "rerun_contract_adapters_dom": {
+      "kind": "jsdom-only",
+      "status": "PASS",
+      "scenarios": [
+        "manual service exact-reference read and explicit original entry",
+        "selection edit during read re-enables check",
+        "same-token stale-epoch 403 service/resource clearing",
+        "different-token rejection isolation",
+        "entire resource conflict with two intentions and stale-result marking",
+        "server parsed material metadata display",
+        "source-file adapter preserves original retry/body, bounded wire and scope cleanup"
+      ],
+      "explicit_preview_requests": 5,
+      "pixel_engine": false
+    },
+    "python": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 4,
+      "seconds": 13.84,
+      "files": [
+        "tests/test_frontend_day_preservation.py",
+        "tests/test_workspace_navigation_feedback.py",
+        "tests/test_local_workspace_entry.py",
+        "tests/test_local_sample_identity.py",
+        "tests/test_owner_selection_actual_dom.py"
+      ],
+      "scope": "Original DOM/business preservation and navigation, entry/four-role assembly, 3 whole-HTML jsdom flows against actual ASGI/PostgreSQL (normal adopt, cold recovery, changed-source historical read)."
+    },
+    "inline_javascript_syntax": "node --check: both whole shipped inline scripts passed"
+  },
+  "independent_review": {
+    "agent": "readonly_frontend_review",
+    "mode": "read-only source review, no browser or network",
+    "status": "PASS",
+    "findings_remaining": 0,
+    "confirmed": [
+      "Normal confirmation remains available while its original target remains visible and connected.",
+      "Closing clears private copied content and continuation; stale confirm cannot replay.",
+      "Protected-operation/UNKNOWN checks, drafts, recovery handles and original role permissions preserved.",
+      "Coarse-pointer priority applies only to coarse pointers; checkbox/radio and fine-pointer desktop unchanged."
+    ]
+  },
+  "contrast_review": {
+    "method": "Static opaque sRGB token calculation only; palette unchanged",
+    "selected_navigation_A": 4.507181710771874,
+    "selected_navigation_B": 5.602160094607885,
+    "not_full_page_WCAG_acceptance": true
+  },
+  "reviewed_without_new_source_defect": [
+    "Long Chinese wrapping and min-width constraints",
+    "Existing narrow layout rules",
+    "Existing reduced-motion media rules",
+    "Empty/error/loading/cancel and recovery boundaries beyond listed concrete fixes"
+  ],
+  "budget": {
+    "historical_native_job_seconds_as_inherited": 1633,
+    "this_pass_CI_runs": 0,
+    "this_pass_security_probe_runs": 0,
+    "new_downloads": 0,
+    "new_permissions": 0,
+    "browser_runs": 0,
+    "windows_runs": 0
+  },
+  "remaining": [
+    "True browser focus/reader semantics and pixels, same-viewport before/after screenshots, 320 CSS px/200%/touch/zoom and Windows DPI/native acceptance.",
+    "Chromium sandbox route previously denied and still unsupported; not retried, no permission/SUID/trust change or alternate renderer.",
+    "Earlier true data gaps remain: unavailable catalog versions, legacy attachment metadata and event times, authoritative source expiry."
+  ]
+}
