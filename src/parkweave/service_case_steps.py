@@ -513,12 +513,13 @@ def _replay(c,p,parent,key,fp):
                     return event
 
 
-def _event(plan,p,key,fp,action,reason,step=None,sources=None):
+def _event(plan,p,key,fp,action,reason,step=None,sources=None,*,created_at=None):
     if len(plan['events'])>=LIMIT:raise Conflict('service plan event limit reached')
     event=dict(id=str(uuid4()),plan_id=plan['id'],revision=plan['revision'],actor_id=p['id'],request_key=key,fingerprint=fp,
                action=action,reason=reason,step_id=step['id'] if step else None,
                source_sha256=cp._hash(sources) if sources is not None else None,
                sources=sources,coordination_only=action!='VERIFY')
+    if created_at is not None:event['created_at']=created_at.isoformat()
     plan['events'].append(event);return event
 
 
@@ -771,7 +772,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             before=prior.get('dependency_manifest')
             for a in affected:_invalidate(prior,int(a[1:]))
             prior['dependency_manifest']=basis;prior['revision']+=1
-            event=_event(prior,p,key,fp,'ADOPT',data.reason)
+            event=_event(prior,p,key,fp,'ADOPT',data.reason,created_at=c.execute('SELECT clock_timestamp() AS now').fetchone()['now'])
             event['dependencies']=basis
             event['local_revision']=dict(request=_adopt_request(data),previous_sha256=before['sha256'] if before else None,
                                         affected=[s['id'] for s in prior['steps'] if s['adapter_id'] in affected],
@@ -796,7 +797,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if partial:plan.update(partial_adoption=True,adoption_request=_adopt_request(data))
         if candidate_proof is not None:plan.update(candidate_consumption=candidate_proof,adoption_request=_adopt_request(data))
         plan['dependency_manifest']=dependencies.manifest(steps,current['dependency_collections'])
-        event=_event(plan,p,key,fp,'ADOPT',data.reason)
+        event=_event(plan,p,key,fp,'ADOPT',data.reason,created_at=c.execute('SELECT clock_timestamp() AS now').fetchone()['now'])
         event['dependencies']=deepcopy(plan['dependency_manifest'])
         _context(store,c,token,id,True)
         if candidate_proof is not None:
@@ -853,7 +854,7 @@ def command(store,token,id,key,data):
         elif data.action=='REPORT_FAILURE':step.update(coordination_state='REPORTED_BLOCKED',invalidated=bool(step.get('verified_sha256')))
         else:step.update(coordination_state='IN_PROGRESS' if data.action=='BEGIN' else 'PENDING')
         if data.action not in ('VERIFY','LOCK','UNLOCK'):_invalidate(plan,int(adapter[1:]))
-        plan['revision']+=1;event=_event(plan,p,key,fp,data.action,data.reason,step,source)
+        plan['revision']+=1;event=_event(plan,p,key,fp,data.action,data.reason,step,source,created_at=c.execute('SELECT clock_timestamp() AS now').fetchone()['now'])
         if data.action=='LOCK':step['manual_lock']=dict(event_id=event['id'],plan_id=plan['id'],step_id=step['id'],actor_id=p['id'],source_sha256=event['source_sha256'])
         _context(store,c,token,id,True)
         _save(c,parent,plan)

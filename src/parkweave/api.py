@@ -146,6 +146,9 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/plan-material-package/commands':
             # Bad UTF-8 input must not be echoed by the default error encoder.
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material package request'})
+        if getattr(route,'path',None)=='/api/preparations/{preparation_id}/commands':
+            # Bounded file bytes may be present even in a malformed/non-JSON body.
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded preparation command'})
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/material-file-candidate':
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material file request'})
         return await request_validation_exception_handler(request,error)
@@ -613,6 +616,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def resource_catalog(authorization: str | None=Header(default=None)):
         return resources.catalog(store,token(authorization))
 
+    @app.post('/api/synthetic-resources/combination-preview')
+    def resource_combination_preview(data: resources.CombinationPreview,authorization: str | None=Header(default=None)):
+        return resources.combination_preview(store,token(authorization),data)
+
     @app.post('/api/synthetic-resources/{resource_id}/preview')
     def resource_preview(resource_id: UUID,data: resources.Preview,authorization: str | None=Header(default=None)):
         return resources.preview(store,token(authorization),resource_id,data)
@@ -733,6 +740,8 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from . import local_demo_selections as selections
         selection_planner=local_synthetic_demo.selector
 
+    from .service_selection_candidates import ManualPreview as ManualServicePreview
+
     def selected_catalog():
         if local_synthetic_demo is not None:return local_synthetic_demo.catalog
         if capability_catalog is None:raise Denied('isolated service capability selection disabled')
@@ -745,6 +754,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             p,parent=selections.bp._context(store,c,token(authorization),preparation_id)
             current=selections.current(store,c,p,parent,catalog)
             return dict(**current,scope='SYNTHETIC_SERVICE_CAPABILITY_SELECTION_PREVIEW',actor_ref=selections.cp._hash(dict(actor_id=p['id'])),read_only=True,automatically_replayed=False)
+
+    @app.post('/api/preparations/{preparation_id}/service-composition-preview')
+    def service_composition_preview(preparation_id: UUID,data: ManualServicePreview,authorization: str | None=Header(default=None)):
+        from .service_selection_candidates import manual_preview
+        return manual_preview(store,token(authorization),preparation_id,data,catalog=selected_catalog(),module=selections)
 
     @app.post('/api/preparations/{preparation_id}/service-selections',status_code=201)
     def service_selection_generate(preparation_id: UUID,data: selections.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):

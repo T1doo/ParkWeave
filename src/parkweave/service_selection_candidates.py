@@ -36,6 +36,43 @@ class Capture(BaseModel):
     expected_capability_catalog_sha256:str=Field(pattern='^[0-9a-f]{64}$')
 
 
+class ManualPreview(Capture):
+    # Exact references are validated against the authenticated current catalog.
+    selections: list[dict]=Field(min_length=1,max_length=16)
+
+
+def manual_preview(store,token,id,data,*,catalog,module):
+    from . import local_demo_selections as local
+    with catalog.read_connection() as c:
+        p,parent=bp._context(store,c,token,id)
+        value=module.current(store,c,p,parent,catalog)
+        _exact(data,parent,value)
+        selection=dict(schema_version=1,binding=binding(value),selections=data.selections)
+        try:parsed=ss.parse_selection(json.dumps(selection),binding(value))
+        except ModelBoundaryError:raise Conflict('exact current service references required') from None
+        snapshot=value['catalog_snapshot'];request=value['selection_request'];now=clock(c)
+        pairs=(local.demo.validated_pairs(snapshot,request,now=now) if module is local else
+               ss._catalog(snapshot['releases'],snapshot['instances'],request,now))
+        chosen=sorted(parsed['selections'],key=ss._identity)
+        selected=[pair for pair in pairs if ss.selection_ref(*pair) in chosen]
+        if len(selected)!=len(chosen):raise Conflict('selected service version or instance no longer current')
+        goals=request['required_goals'];covered=set().union(*(set(r['supported_goals']) for r,i in selected))
+        missing=[goal for goal in goals if goal not in covered]
+        state,unknowns=ss._set_state(selected,request['planning_constraints'],request['mapping_states'])
+        unknowns=sorted(set(unknowns)|set(snapshot['unknowns'])|set(value['source_unknowns']))
+        minimal=chosen in value['selection_oracle']['minimal_solutions']
+        valid=not missing and state=='TRUE' and not unknowns and minimal
+        return dict(contract='parkweave-manual-service-preview/1',preparation_id=str(id),
+            case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
+            source_sha256=value['source_sha256'],capability_catalog_sha256=value['capability_catalog_sha256'],
+            selection=parsed,required_goals=goals,missing_goals=missing,unknowns=unknowns,
+            constraint_state=state,minimal_selection=minimal,state='VERIFIED_STRUCTURE_ONLY' if valid else
+                'UNKNOWN' if unknowns else 'BLOCKED',
+            can_generate_original_candidate=valid and value['selection_oracle']['state']=='UNIQUE',
+            preview_only=True,read_only=True,executed=False,execution_enabled=False,new_grants=False,
+            provider_enabled=False,case_goal_completed=False)
+
+
 def binding(value):return {k:deepcopy(value[k]) for k in KEYS}
 
 

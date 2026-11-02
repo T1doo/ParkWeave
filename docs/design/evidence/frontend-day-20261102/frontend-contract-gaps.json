@@ -1,30 +1,33 @@
 {
-  "scope": "EXISTING_CONTRACT_LIMITS_FRONTEND_DOES_NOT_ADD_BACKEND_CAPABILITIES",
+  "scope": "ORDINARY_BACKEND_ADAPTERS_IMPLEMENTED_WITH_EXISTING_AUTHORIZATION_AND_SOURCE_RULES",
   "items": [
     {
       "id": "SERVICE_MANUAL_COMPOSITION",
-      "source": "src/parkweave/service_selection_candidates.py:Capture",
+      "source": "service_selection_candidates.ManualPreview/manual_preview; local_synthetic_demo.LocalDemoSelector.select; service_selection._rebuild_pairs",
       "actual_request_fields": [
         "expected_preparation_revision",
         "expected_source_sha256",
-        "expected_capability_catalog_sha256"
+        "expected_capability_catalog_sha256",
+        "selections"
       ],
-      "gap": "No submitted manual service-version selections. Existing candidate is generated from saved goals and source hashes.",
-      "frontend": "Light capability directory and original candidate entry remain; page explicitly states arbitrary version composition is not submitted."
+      "gap": "The local demo pack creates one common revision for its registered services. It contains no independently selectable other version sources. Original NO_MODEL selector accepts UNIQUE only and original reconstruction requires a complete inclusion-minimal set. Arbitrary unsupported/redundant versions are not made adoptable. Human choice among multiple legal solutions would need an explicit producer/adoption provenance contract adaptation, not a new role grant; it is not claimed implemented.",
+      "frontend": "Version/instance checkboxes retain choices while filtering; explicit read-only check, current-source binding, missing goals/UNKNOWN and original candidate entry. No external model/service calls.",
+      "implemented": "Explicit hand-selected exact release/version/instance reference preview under original owner/catalog scope. Evaluates all required goals, original mapping/constraints and inclusion minimality. For the current unique solution, routes to the original NO_MODEL candidate generation and explicit adoption."
     },
     {
       "id": "PRE_HOLD_GROUP_FEASIBILITY",
-      "source": "src/parkweave/resource_combinations.py:Member / resource_bundles.py:Bundle",
+      "source": "resource_holds.CombinationPreview/combination_preview",
       "member_fields": [
         "hold_id",
         "expected_revision"
       ],
-      "gap": "Pair/bundle APIs consume existing hold IDs and expected revisions. No pre-hold whole-intention feasibility command exists.",
-      "frontend": "Local resource intention rows and known date boundaries; original per-resource preview/hold and pair/bundle confirmation remain distinct; limitation visible."
+      "gap": "No remaining pre-hold local synthetic capacity-preview endpoint gap. This is an observation, never an atomic reservation, external availability, authorization confirmation or combined hold creation.",
+      "frontend": "Explicit whole-intention feasibility action, old result marked stale on edits, current source revisions, exact request response checking, same-identity permission rejection clears private copies.",
+      "implemented": "One read-only transaction, original READ role/grant scope, deterministic shared resource locks, one evaluation clock, existing active occupancy plus every requested buffered half-open interval counted together. 1–8 requests, including repeated same-resource windows; per-item reasons and whole-group result; no holds or receipts."
     },
     {
       "id": "PERSISTED_FILE_METADATA_AND_EXPIRY",
-      "source": "src/parkweave/preparation.py:latest",
+      "source": "preparation.SourceFile/PreparationCommand/command/read; material_file_import.parse",
       "current_material_fields": [
         "id",
         "slot",
@@ -35,14 +38,16 @@
         "source_sha256",
         "authenticity"
       ],
-      "gap": "No persisted filename, MIME/format, byte count or source validity deadline. Matching material_history provides version created_at, not upstream retrieval/expiry.",
-      "frontend": "Candidate File/parser facts displayed when known; persisted rows explicitly say unavailable metadata and unknown source validity. Filters use actual slot/source_kind/authenticity only."
+      "gap": "Legacy files did not store these facts, so no backfill from editable labels. Edited excerpts are saved without original-file attachment facts. Source expiry is not recorded by any authoritative source; file name/content dates are not proof of expiry.",
+      "frontend": "New unmodified imported versions show server-parsed original facts in full/focused material rows and actual-format filter. Unknown metadata remains explicitly retained by default.",
+      "implemented": "Optional source_file on original ADD_EVIDENCE command. Server reparses actual submitted TXT/MD/CSV/JSON bytes, enforces 8KiB and exact saved candidate text; persists only evidence-bound name/format/bytes/raw hash/candidate hash in original event. Separate material_files read projection keeps established snapshot hash domain unchanged. Frontend omits duplicate text to retain original 16KiB body cap; original UNKNOWN key/body/recovery preserved."
     },
     {
       "id": "STEP_VERIFICATION_TIME",
-      "source": "src/parkweave/service_case_steps.py:_event / read projection",
-      "gap": "Step event does not record a timestamp; actor_id is owner-only and omitted from other role projections.",
-      "frontend": "Verified local record summary reports the actual permitted actor or not provided; never fabricates time or equates verification with fulfillment."
+      "source": "service_case_steps._event/adopt/command/_view",
+      "gap": "Historical events did not record a verification time. No backfill is invented. Existing non-owner projection does not expose private actor/time.",
+      "frontend": "Verified record fold shows stored event time when authorized and supplied, otherwise explicitly unknown. Verification remains separate from fulfillment.",
+      "implemented": "New committed events carry database clock_timestamp().isoformat(), including VERIFY; original replay keeps the original time. Owner can read it; non-owner event projection remains exactly id/revision/action/step_id."
     },
     {
       "id": "REAL_AI_ATTRIBUTION",
@@ -58,6 +63,7 @@
     "high contrast, reduced motion and touch layout",
     "Windows host build and native pixel acceptance"
   ],
-  "new_business_endpoints": 0,
-  "new_permissions": 0
+  "new_business_endpoints": 2,
+  "new_permissions": 0,
+  "schema_migrations": 0
 }
