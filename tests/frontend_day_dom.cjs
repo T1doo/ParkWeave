@@ -9,12 +9,14 @@ async function run(file){
  const requests=[];w.fetch=(...args)=>{requests.push(args);throw Error('Unexpected network request');};
  w.matchMedia=()=>({matches:true,addEventListener(){}});w.HTMLElement.prototype.scrollIntoView=function(){};
  const script=html.slice(html.indexOf('// Frontend-day presentation.'),html.lastIndexOf('</script>'));
- w.eval('var combinationSelection=new Map();function updateCombinationSelection(){parkDesignRefresh();}\n'+script);
+ w.eval('var preparationView=null,current=null,planView=null,servicePlanView=null;var combinationSelection=new Map();function updateCombinationSelection(){parkDesignRefresh();}function resourceCatalogCard(){return document.createElement("article");}\n'+script);
  d.dispatchEvent(new w.Event('DOMContentLoaded'));await tick();
  const get=id=>d.getElementById(id),fire=(node,type)=>node.dispatchEvent(new w.Event(type,{bubbles:true}));
  const full=file==='web.html',list=get(full?'prep-materials':'materials');
  const parent=get(full?'prep-detail':'workspace');parent.hidden=false;
  for(let node=list;node;node=node.parentElement)node.hidden=false;
+ const missing=d.createElement(full?'article':'div');missing.className=full?'':'material';const missingTitle=d.createElement('h3');missingTitle.textContent='材料待补充';missing.append(missingTitle);list.append(missing);await tick();assert.equal(missing.querySelector('.design-preview-trigger'),null,'missing material must not offer an available version preview');list.replaceChildren();await tick();
+ if(!full){const stages=get('steps');for(const [index,name] of ['准备材料','专员核对','企业确认'].entries()){const span=d.createElement('span');span.textContent=name;if(index===1)span.className='current';stages.append(span);}await tick();await tick();assert.equal(stages.previousElementSibling.className,'design-stage-toggle');assert.equal(stages.querySelector('.design-stage-visible').textContent,'专员核对');assert(stages.nextElementSibling.textContent.includes('其他 2 个阶段'));stages.replaceChildren();await tick();assert.equal(stages.previousElementSibling.hidden,true);}
  const initialForm=get(full?'prep-evidence':'evidence-form'),field=get(full?'prep-text':'material-text');
  field.value='保留的中文草稿 🧭';const originalValue=field.value;
  get('park-theme').value='sage';fire(get('park-theme'),'change');
@@ -45,7 +47,7 @@ async function run(file){
   get('service-plan-summary').textContent='新的版本';await tick();assert.equal(plan.querySelector('.design-plan-review').hidden,true);assert.equal(plan.querySelector('.design-plan-review').textContent,'');
  }
  assert.equal(requests.length,0);const persisted=Object.keys(w.localStorage);assert(persisted.every(x=>x.startsWith('parkweave.appearance.')));assert(!Object.values(w.localStorage).join(' ').includes(originalValue));
- dom.window.close();return {page:file,status:'PASS',network_requests:0,pixel_engine:false};
+ await tick();await tick();dom.window.close();return {page:file,status:'PASS',network_requests:0,pixel_engine:false};
 }
 async function shippedHandlers(){
  const html=fs.readFileSync('src/parkweave/web.html','utf8'),dom=new JSDOM(html,{url:'http://127.0.0.1/',runScripts:'outside-only'}),w=dom.window,d=w.document,requests=[];
@@ -59,6 +61,6 @@ async function shippedHandlers(){
  const check=d.querySelector('[data-combination-hold]');check.click();assert.equal(w.testDesign.selection(),1);assert(d.getElementById('park-resource-summary').textContent.includes('合成场地'));
  w.testDesign.seedQuote();d.getElementById('park-resource-summary').querySelector('button').click();assert.equal(w.testDesign.selection(),0);assert.equal(w.testDesign.quote(),null);assert.equal(w.testDesign.approval(),null);
  check.click();w.testDesign.pending({kind:'SYNTHETIC_ACTIVE_ORIGINAL_REQUEST'});d.getElementById('park-resource-summary').querySelector('button').click();assert.equal(w.testDesign.selection(),1,'new action must respect original active request guard');w.testDesign.pending(null);
- assert.equal(requests.length,0);assert.deepEqual(errors,[]);dom.window.close();return {page:'whole shipped web.html',status:'PASS',original_change_invalidation:true,original_pending_guard:true,network_requests:0,pixel_engine:false};
+ assert.equal(requests.length,0);assert.deepEqual(errors,[]);await tick();await tick();dom.window.close();return {page:'whole shipped web.html',status:'PASS',original_change_invalidation:true,original_pending_guard:true,network_requests:0,pixel_engine:false};
 }
 (async()=>{const results=[];for(const page of ['web.html','local_preparation_web.html'])results.push(await run(page));results.push(await shippedHandlers());console.log(JSON.stringify({kind:'jsdom-only',results},null,2));})().catch(e=>{console.error(e);process.exitCode=1;});

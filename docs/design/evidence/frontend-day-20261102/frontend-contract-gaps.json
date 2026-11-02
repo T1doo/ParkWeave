@@ -1,0 +1,63 @@
+{
+  "scope": "EXISTING_CONTRACT_LIMITS_FRONTEND_DOES_NOT_ADD_BACKEND_CAPABILITIES",
+  "items": [
+    {
+      "id": "SERVICE_MANUAL_COMPOSITION",
+      "source": "src/parkweave/service_selection_candidates.py:Capture",
+      "actual_request_fields": [
+        "expected_preparation_revision",
+        "expected_source_sha256",
+        "expected_capability_catalog_sha256"
+      ],
+      "gap": "No submitted manual service-version selections. Existing candidate is generated from saved goals and source hashes.",
+      "frontend": "Light capability directory and original candidate entry remain; page explicitly states arbitrary version composition is not submitted."
+    },
+    {
+      "id": "PRE_HOLD_GROUP_FEASIBILITY",
+      "source": "src/parkweave/resource_combinations.py:Member / resource_bundles.py:Bundle",
+      "member_fields": [
+        "hold_id",
+        "expected_revision"
+      ],
+      "gap": "Pair/bundle APIs consume existing hold IDs and expected revisions. No pre-hold whole-intention feasibility command exists.",
+      "frontend": "Local resource intention rows and known date boundaries; original per-resource preview/hold and pair/bundle confirmation remain distinct; limitation visible."
+    },
+    {
+      "id": "PERSISTED_FILE_METADATA_AND_EXPIRY",
+      "source": "src/parkweave/preparation.py:latest",
+      "current_material_fields": [
+        "id",
+        "slot",
+        "version",
+        "text",
+        "source_kind",
+        "source_label",
+        "source_sha256",
+        "authenticity"
+      ],
+      "gap": "No persisted filename, MIME/format, byte count or source validity deadline. Matching material_history provides version created_at, not upstream retrieval/expiry.",
+      "frontend": "Candidate File/parser facts displayed when known; persisted rows explicitly say unavailable metadata and unknown source validity. Filters use actual slot/source_kind/authenticity only."
+    },
+    {
+      "id": "STEP_VERIFICATION_TIME",
+      "source": "src/parkweave/service_case_steps.py:_event / read projection",
+      "gap": "Step event does not record a timestamp; actor_id is owner-only and omitted from other role projections.",
+      "frontend": "Verified local record summary reports the actual permitted actor or not provided; never fabricates time or equates verification with fulfillment."
+    },
+    {
+      "id": "REAL_AI_ATTRIBUTION",
+      "source": "src/parkweave/web.html:serviceSelectionPreviewValidate / original candidate contract",
+      "gap": "Current model/provider is disabled and candidate validation requires provider_enabled=false.",
+      "frontend": "Retains synthetic-candidate labels and original sources; does not tag these results as live AI or execute models."
+    }
+  ],
+  "remaining_visual_acceptance": [
+    "same viewport before/after at 1366x768 and 1440x900",
+    "browser keyboard, scroll return and screen-reader checks",
+    "100/125/150/200 percent zoom and 320 CSS px reflow",
+    "high contrast, reduced motion and touch layout",
+    "Windows host build and native pixel acceptance"
+  ],
+  "new_business_endpoints": 0,
+  "new_permissions": 0
+}
