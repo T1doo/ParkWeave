@@ -151,6 +151,26 @@ class ControllerChecks(unittest.TestCase):
         self.assertEqual([x for x in self.fake.events if x.startswith('stop_')],['stop_app','stop_cluster'])
         self.assertEqual(self.fake.state,'UNKNOWN')
 
+    def test_security_close_unknown_is_retained_before_final_unknown_and_release(self):
+        self.fake.close_owned_files=lambda lease:self.fake.event('security_close')
+        self.fake.retain_owned_files=lambda lease:self.fake.event('security_retain')
+        self.fake.failures['security_close']=OSError('public controlled close failure')
+        with self.assertRaises(c.ControlFailure):self.create()
+        names=self.fake.events
+        self.assertLess(names.index('stop_cluster'),names.index('security_close'))
+        self.assertLess(names.index('security_retain'),names.index('unknown'))
+        self.assertEqual(names[-1],'release');self.assertEqual(self.fake.state,'UNKNOWN')
+
+    def test_stop_unknown_retention_failure_does_not_skip_journal_or_release(self):
+        self.fake.close_owned_files=lambda lease:self.fail('cannot release files before confirmed exit')
+        self.fake.retain_owned_files=lambda lease:self.fake.event('security_retain')
+        self.fake.failures['security_retain']=OSError('public controlled retention failure')
+        self.fake.exits['stop_cluster']=False
+        with self.assertRaises(c.ControlFailure) as caught:self.create()
+        self.assertEqual([phase for phase,error in caught.exception.cleanup_errors],
+                         ['STOP_OWNED','RETAIN_SECURITY_FILES'])
+        self.assertEqual(self.fake.events[-2:],['unknown','release'])
+
     def test_go_is_after_running_and_failed_running_never_sends_go(self):
         self.create()
         self.assertLess(self.fake.events.index('application_ready'),self.fake.events.index('checkpoint:RUNNING'))
@@ -327,7 +347,8 @@ class NativeConsumerChecks(unittest.TestCase):
             with self.assertRaises(c.CandidateRefused): db.prepare_new()
 
     def test_create_delegates_exact_original_schema_candidate(self):
-        with patch('scripts.windows_portable.initialize.create_fresh_native_schema32') as create:
+        from . import initialize
+        with patch.object(initialize,'create_fresh_native_schema32') as create:
             self.assertIs(c.NativeDatabaseOperations().create_schema32(INPUTS), create.return_value)
             create.assert_called_once_with('fake-maintenance', 'fake-owner', 'fake-app', '/fake/private-data')
 

@@ -54,6 +54,15 @@ class AlternativeTimes(Preview):
             raise ValueError('search window must fit the original duration')
         return self
 
+class Intention(Preview):
+    resource_id: UUID=Field(strict=False)
+    expected_revision: int=Field(ge=1)
+
+class CombinationPreview(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True)
+    items: list[Intention]=Field(min_length=1,max_length=8)
+
+
 class Confirm(BaseModel):
     model_config=ConfigDict(extra="forbid",strict=True)
     expected_revision: int=Field(ge=1)
@@ -159,6 +168,59 @@ def preview(store,token,id,data):
             available=peak+data.quantity<=r['capacity'],preview_only=True,
             resource_name=r['name'],source=r['source'],authority=r['authority'],timezone=r['timezone'],
             external_availability='UNKNOWN',confirmation_required=True)
+
+
+def combination_preview(store,token,data):
+    """One current read of the entire intention; never creates holds or grants.
+
+    Apply the original half-open buffered capacity rule to existing occupancy
+    and ALL requested intervals together. Per-item independent previews cannot
+    detect contention between two intentions for the same resource.
+    """
+    with store.connect() as c:
+        c.execute('SET TRANSACTION READ ONLY')
+        p=_auth(store,c,token)
+        ids=sorted({item.resource_id for item in data.items},key=str)
+        for id in ids:_scope(c,p,id)
+        # Same deterministic lock order as confirmation, shared for this read.
+        for id in ids:_lock(c,id,shared=True)
+        resources={id:_scope(c,p,id) for id in ids};now=_now(c)
+        results=[];groups=defaultdict(list)
+        for index,item in enumerate(data.items):
+            r=resources[item.resource_id];reasons=[];window=None
+            if r['revision']!=item.expected_revision:reasons.append('RESOURCE_REVISION_CHANGED')
+            try:window=_window(r,item,now)
+            except (Conflict,OverflowError):reasons.append('WINDOW_OR_AUTHORITY_UNAVAILABLE')
+            result=dict(index=index,resource_id=item.resource_id,resource_revision=r['revision'],
+                resource_name=r['name'],starts_at=item.starts_at,ends_at=item.ends_at,quantity=item.quantity,
+                capacity=r['capacity'],buffer_seconds=r['buffer_seconds'],source=r['source'],
+                reasons=reasons,available=False)
+            results.append(result)
+            if window is not None:groups[item.resource_id].append((index,item,*window))
+        for id,items in groups.items():
+            r=resources[id];lo=min(v[2] for v in items);hi=max(v[3] for v in items)
+            rows=c.execute("""SELECT starts_at,ends_at,buffer_seconds,quantity FROM synthetic_resource_holds
+                WHERE resource_id=%s AND ((state='HELD' AND expires_at>%s) OR state='CONFIRMED')
+                AND starts_at-make_interval(secs=>buffer_seconds)<%s
+                AND ends_at+make_interval(secs=>buffer_seconds)>%s""",(id,now,hi,lo)).fetchall()
+            existing=[(h['starts_at']-timedelta(seconds=h['buffer_seconds']),
+                       h['ends_at']+timedelta(seconds=h['buffer_seconds']),h['quantity']) for h in rows]
+            requested=[(a,b,item.quantity) for _,item,a,b in items]
+            for index,item,a,b in items:
+                points=defaultdict(int)
+                for start,end,quantity in existing+requested:
+                    start=max(a,start);end=min(b,end)
+                    if start<end:points[start]+=quantity;points[end]-=quantity
+                used=peak=0
+                for at in sorted(points):used+=points[at];peak=max(peak,used)
+                result=results[index];result['combined_peak']=peak
+                if peak>r['capacity']:result['reasons'].append('COMBINED_CAPACITY_CONFLICT')
+                result['available']=not result['reasons']
+        payload=data.model_dump(mode='json')
+        return _boundary(items=results,available=all(x['available'] for x in results),server_time=now,
+            request_sha256=digest(json.dumps(payload,sort_keys=True,separators=(',',':'))),
+            contract='parkweave-resource-intention-preview/1',preview_only=True,read_only=True,
+            confirmation_required=True,external_availability='UNKNOWN',holds_created=0)
 
 
 def alternative_times(store,token,id,data):

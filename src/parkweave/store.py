@@ -193,8 +193,11 @@ class Store:
             if receipt is not None:
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
+                from .local_installation import LocalDatabaseCreationEvidence
                 if type(receipt) is NativeDatabaseCreationEvidence:
                     NativeDatabaseCreationEvidence.authorize_migration(receipt,c)
+                elif type(receipt) is LocalDatabaseCreationEvidence:
+                    LocalDatabaseCreationEvidence.authorize_migration(receipt,c)
                 elif type(receipt) is not FixtureDatabaseEvidence:
                     raise Denied('issued fixture database creation evidence required')
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
@@ -265,7 +268,8 @@ class Store:
                 if receipt is None:raise Denied('isolated database creation receipt required for migration 025')
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) not in (FixtureDatabaseEvidence,NativeDatabaseCreationEvidence):
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) not in (FixtureDatabaseEvidence,NativeDatabaseCreationEvidence,LocalDatabaseCreationEvidence):
                     raise Denied('issued fixture database creation evidence required')
                 receipt.authorize_migration(c)
                 c.execute(Path(__file__).with_name("migration-025.sql").read_text(encoding="utf-8"))
@@ -276,7 +280,8 @@ class Store:
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 # This increment is Linux synthetic only; native issuance is unchanged.
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name("migration-026.sql").read_text(encoding="utf-8"))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -286,7 +291,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-027.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -296,7 +302,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-028.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -306,7 +313,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-029.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -316,7 +324,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-030.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -326,7 +335,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-031.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
@@ -336,7 +346,8 @@ class Store:
                 receipt=getattr(self,'_case_fact_fixture_receipt',None)
                 from .case_fact_clarifications import FixtureDatabaseEvidence
                 from .installed_fixture_receipt import NativeDatabaseCreationEvidence
-                if type(receipt) is FixtureDatabaseEvidence:
+                from .local_installation import LocalDatabaseCreationEvidence
+                if type(receipt) in (FixtureDatabaseEvidence,LocalDatabaseCreationEvidence):
                     receipt.authorize_migration(c)
                     c.execute(Path(__file__).with_name('migration-032.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:

@@ -1,0 +1,605 @@
+"""Held-handle immutable runtime installation; Windows acceptance remains closed.
+
+Only an original fresh lease can create files. Reopen checks the complete
+immutable tree without repair. No ACL setter, path-based copy or overwrite.
+"""
+import ctypes as C
+from dataclasses import dataclass
+from hashlib import sha256
+import os
+import re
+import time
+import weakref
+
+from parkweave.windows_files import component, root_parts, private_acl, DIRECTORY, REPARSE, UNSAFE_ATTRIBUTES
+from parkweave.windows_handles import (PTR, UnicodeString, ObjectAttributes, IOStatus,
+    nt_status, completed_nt_handle, require_nt_create_ready, retain_pending_nt_create,
+    require_query_ready, query_call, retain_query_unknown)
+from . import payload
+from .controller import CandidateRefused
+from .endpoint_plan import _key_held
+from .fixed_directories import FixedDirectoryLease, FIXED_JOURNAL
+from .directories import JOURNAL
+from .fixed_windows_journal import FixedWindowsFilesystem, NativeFixedLeaseAPI
+from .native_secret_store_candidate import _NativeSecretFiles, private_file_descriptor
+from .pgdata_candidate import directory_batch
+
+DYNAMIC = frozenset(('data', 'secrets', 'files', 'logs', 'tmp'))
+CONTROL = frozenset(('.parkweave-entry.lock', FIXED_JOURNAL))
+TOP_DIRECTORIES = frozenset(('runtime', 'vendor', 'app', 'launcher'))
+TOP_FILES = frozenset(('ParkWeave.exe', 'ParkWeave.cmd', 'runtime-assets.json', 'static-dll-audit.json', payload.MANIFEST))
+CHUNK = 1024 * 1024
+_issued = weakref.WeakKeyDictionary()
+_unknown_runtime = []
+
+
+def need(ok):
+    if not ok: raise CandidateRefused('NATIVE_RUNTIME_STAGING_REFUSED')
+
+
+METADATA_FIELDS=('IDENTITY','ATTRIBUTES','SIZE','LINKS','SECURITY','PATH','LAYOUT')
+
+
+class RuntimeMetadataChanged(CandidateRefused):
+    """Only a fixed kind/field set is public; no path, SID or descriptor data."""
+    def __init__(self,directory,fields,*,relative_path=None):
+        need(type(directory) is bool and type(fields) is tuple and fields
+            and all(type(field) is str and field in METADATA_FIELDS for field in fields))
+        self.object_kind='DIRECTORY' if directory else 'FILE'
+        self.changed_fields=fields
+        self.relative_path=relative_path
+        super().__init__('NATIVE_RUNTIME_METADATA_CHANGED')
+
+
+STAGING_PHASES=('SOURCE_TREE','SOURCE_MANIFEST','DESTINATION_EMPTY','CREATE_DIRECTORY',
+    'COPY_FILE','FLUSH_FILE','READBACK_FILE','REOPEN_FILE','SEAL_DIRECTORIES','FINAL_VERIFY',
+    'REOPEN_DIRECTORY','REOPEN_HASH','VERIFY_METADATA','VERIFY_NAMESPACE','SOURCE_NAMESPACE')
+
+
+class RuntimeStagingFailure(CandidateRefused):
+    """Fixed stage and untrusted locator; formatter needs verified manifest."""
+    def __init__(self,stage,relative_path):
+        need(type(stage) is str and stage in STAGING_PHASES)
+        self.stage=stage;self.relative_path=relative_path
+        super().__init__('NATIVE_RUNTIME_CONSTRUCTION_REFUSED')
+
+
+def metadata_changes(before,after):
+    a,b=before[0],after[0]
+    values=(('IDENTITY',(a.volume,a.identity)!=(b.volume,b.identity)),
+        ('ATTRIBUTES',a.attributes!=b.attributes),('SIZE',a.size!=b.size),('LINKS',a.links!=b.links),
+        ('SECURITY',before[1]!=after[1]),('PATH',before[2]!=after[2]),('LAYOUT',type(a) is not type(b)))
+    return tuple(field for field,changed in values if changed)
+
+
+@dataclass(frozen=True)
+class RuntimeSource:
+    root: str
+    manifest: bytes
+
+    def plan(self, runtime):
+        root_parts(self.root)  # Pure syntax check, no OS operation.
+        need(sha256(self.manifest).hexdigest() == runtime['manifest_sha256'])
+        parsed = payload.parse_manifest(self.manifest)
+        need(parsed['source_commit'] == runtime['source_commit'])
+        return installation_plan(self.manifest)
+
+
+def installation_plan(raw):
+    """Resolve all case/ancestor collisions before any destination creation."""
+    rows = dict(payload.parse_manifest(raw)['files'])
+    rows[payload.MANIFEST] = dict(bytes=len(raw), sha256=sha256(raw).hexdigest())
+    nodes = {}
+    for name in rows:
+        parts = name.split('/')
+        need(parts[0].casefold() not in DYNAMIC | CONTROL | {JOURNAL})
+        need(parts[0] in (TOP_DIRECTORIES if len(parts)>1 else TOP_FILES))
+        for i, part in enumerate(parts):
+            component(part)
+            path = '/'.join(parts[:i+1]); kind = i < len(parts)-1
+            prior = nodes.setdefault(path.casefold(), (path, kind))
+            need(prior == (path, kind))
+    need(len(nodes) <= 2 * payload.MAX_FILES and sum(row['bytes'] for row in rows.values()) <= payload.MAX_BYTES)
+    directories = tuple(sorted((p for p, d in nodes.values() if d), key=lambda p: (p.count('/'), p)))
+    return directories, tuple((name, rows[name]['bytes'], rows[name]['sha256']) for name in sorted(rows))
+
+
+class NativeRuntimeInstallation:
+    native_acceptance = False
+
+    def __init__(self, lease, source, runtime, *, create, deadline):
+        self.handles = []; self.cleanup_errors = []; self.rows = {}; self.closed = False
+        self.identities = set(); self.source_nodes = {}
+        self._completion_pending=create;self._copy_complete=False;self._created_directory_rows={}
+        self.lease = lease; self.failed = False
+        need(os.name == 'nt' and type(lease) is FixedDirectoryLease and
+             type(lease.fs) is FixedWindowsFilesystem and type(lease.fs.api) is NativeFixedLeaseAPI
+             and type(source) is RuntimeSource and type(create) is bool)
+        self.api = lease.fs.api; self.deadline = deadline; self.key = _key_held(lease)
+        self.root_sd = self.api.descriptor(lease.fs.root); self.root_path = self.api.final_path(lease.fs.root)
+        self.directories, self.files = source.plan(runtime)
+        self.probe = object.__new__(_NativeSecretFiles)
+        _NativeSecretFiles.__init__(self.probe, lease, deadline)  # Token identity, no files.
+        kernel = self.api.readonly.k
+        self.query = kernel.GetFileInformationByHandleEx
+        self.query.argtypes, self.query.restype = [PTR, C.c_int, PTR, C.c_uint32], C.c_int
+        self.seek = kernel.SetFilePointerEx
+        self.seek.argtypes, self.seek.restype = [PTR, C.c_int64, PTR, C.c_uint32], C.c_int
+        need(lease.record['phase'] == ('NEW' if create else 'READY_STOPPED'))
+        need(not create or self.key[-1] == 1 and lease.record['initialized'] is False)
+        self._construct_tree(source,create=create)
+        _issued[self] = (lease, self.api, self.probe, self.key, self.root_sd, self.root_path,
+                        tuple(sorted(runtime.items())), self.files, self.directories,
+                        tuple(sorted(self.rows.items())), tuple(sorted(self.dest.items())), tuple(self.handles))
+
+    def _construct_tree(self,source,*,create):
+        # One invocation even after cancellation/failure. The native constructor
+        # above alone checks admission and issues _issued after this completes.
+        need(type(create) is bool and not getattr(self,'_construction_started',False)
+             and not self.failed and not self.closed and self not in _issued)
+        self._construction_started=True
+        self._stage='SOURCE_TREE';self._current_path=''
+        try:
+            self.dest = {'': self.lease.fs.root}
+            if create:
+                # Source and all ancestors stay held until invocation cleanup.
+                self._stage='SOURCE_TREE';self._current_path=''
+                source_root = self._source(source.root)
+                self._walk_source(source_root)
+                self._stage='SOURCE_MANIFEST';self._current_path=payload.MANIFEST
+                manifest = self._open(source_root, payload.MANIFEST)
+                need(self._read_all(manifest, len(source.manifest)) == source.manifest)
+                self._stage='DESTINATION_EMPTY';self._current_path=''
+                from .native_trial_authority import bound_state
+                control=CONTROL
+                if bound_state(self.lease) is not None:
+                    from .native_trial_domain import MARKER
+                    control=control|{MARKER}
+                need({name for name, _, _ in self._entries(self.lease.fs.root)} == control)
+                for path in self.directories:
+                    self._stage='CREATE_DIRECTORY';self._current_path=path
+                    parent, _, leaf = path.rpartition('/')
+                    self.dest[path] = self._create(self.dest[parent], leaf, True)
+                    self._record(path, self.dest[path], True)
+                for path, size, digest in self.files:
+                    self._stage='COPY_FILE';self._current_path=path
+                    self._gate()
+                    parent, _, leaf = path.rpartition('/')
+                    original = self._source_file(source_root, path)
+                    before = self._inspect(original, False)
+                    need(before[0].size == size)
+                    target = self._create(self.dest[parent], leaf, False)
+                    expected = self._inspect(target, False)
+                    observed = sha256(); remaining = size
+                    while remaining:
+                        self._gate()
+                        raw = self._read(original, min(CHUNK, remaining))
+                        need(0 < len(raw) <= remaining)
+                        buf, written = C.create_string_buffer(raw), C.c_uint32()
+                        self.api.need(self._query('WRITE_FILE',self.api.writefile,
+                            (target,buf,len(raw),C.byref(written),None),(target,buf,written)))
+                        need(written.value == len(raw))  # Uncertain/partial write is never retried.
+                        observed.update(raw); remaining -= len(raw)
+                    need(self._read(original, 1) == b'' and observed.hexdigest() == digest)
+                    need(self._inspect(original, False) == before)
+                    self._stage='FLUSH_FILE';self._gate()
+                    self.api.need(self._query('FLUSH_FILE',self.api.flushfile,(target,),(target,)))
+                    after = self._inspect(target, False)
+                    need((after[0].volume, after[0].identity, after[1:]) ==
+                         (expected[0].volume, expected[0].identity, expected[1:]))
+                    # Reopen read-only only after confirmed writer close. Keep original ID.
+                    self._stage='REOPEN_FILE';self._gate()
+                    self._close_handle(target)
+                    pin = self._open(self.dest[parent], leaf)
+                    need(self._inspect(pin, False) == after)
+                    self._stage='READBACK_FILE';self._gate()
+                    need(self._hash(pin,size)==digest)
+                    self._record(path, pin, False)
+                self._verify_source()
+                self._stage='SEAL_DIRECTORIES';self._current_path=''
+                self._copy_complete=True
+                self._seal_new_directories()
+            else:
+                for path in self.directories:
+                    self._stage='REOPEN_DIRECTORY';self._current_path=path
+                    parent, _, leaf = path.rpartition('/')
+                    handle = self._open(self.dest[parent], leaf)
+                    self.dest[path] = handle; self._record(path, handle, True)
+                for path, size, digest in self.files:
+                    self._stage='REOPEN_HASH';self._current_path=path
+                    parent, _, leaf = path.rpartition('/')
+                    handle = self._open(self.dest[parent], leaf)
+                    self._record(path, handle, False)
+                    need(self._hash(handle, size) == digest)
+            self._stage='FINAL_VERIFY';self._current_path=''
+            self.verify()
+        except BaseException as cause:
+            self.failed=True
+            raise RuntimeStagingFailure(self._stage,self._current_path) from cause
+
+    def _query(self,kind,fn,args,storage=()):
+        self._time()
+        return query_call(self.api.readonly,kind,fn,args,storage)
+
+    def _read(self,handle,limit):
+        self._time()
+        return self.api.read(handle,limit)
+
+    def _seek_start(self,handle):
+        self.api.need(self._query('SEEK_FILE',self.seek,(handle,0,None,0),(handle,)))
+
+    def _issued_binding(self, lease, runtime):
+        # Exact constructor issuance, not a caller-supplied dictionary or clone.
+        binding = _issued.get(self)
+        need(binding is not None and type(self) is NativeRuntimeInstallation and lease is self.lease
+             and not self.closed and not self.failed and not self.cleanup_errors and not self.probe.unknown
+             and binding == (lease, self.api, self.probe, self.key, self.root_sd, self.root_path,
+                 tuple(sorted(runtime.items())), self.files, self.directories,
+                 tuple(sorted(self.rows.items())), tuple(sorted(self.dest.items())), tuple(self.handles)))
+
+    def inspect_pg_static(self, lease, runtime, deadline):
+        return self._inspect_pg_snapshot(lease,runtime,deadline)
+
+    def system_crt_requirements(self,lease,runtime,deadline):
+        return self._inspect_pg_snapshot(lease,runtime,deadline,requirements_only=True)
+
+    def all_crt_imports_held(self,lease,runtime,deadline):
+        """Actual complete held native-image scope, never linker-version inference.
+
+        Caller already holds this original lease operation. No migration or
+        external file/path/JSON can supply a replacement import-symbol set.
+        """
+        from .crt_pe import Image
+        from .native_acceptance_issuer import _deadline
+        from .native_trial_authority import budget
+        _deadline(deadline);deadline=budget(lease,deadline)
+        self._issued_binding(lease,runtime);need(_key_held(lease)==self.key)
+        self.deadline=self.probe.deadline=deadline
+        symbols={};scope=[];images={};data={};by_path={name.casefold():name for name,_,_ in self.files}
+        registrations={row[0] for row in payload.WHEEL_DLL_PROFILES}
+        for name,size,digest in self.files:
+            native=name.lower().endswith(('.exe','.dll','.pyd'))
+            if not native and name not in registrations:continue
+            self._gate();h,directory,before=self.rows[name]
+            need(not directory and self._inspect(h,False)==before)
+            need(0<size<=128*CHUNK);self._seek_start(h)
+            chunks=[];remaining=size
+            while remaining:
+                self._gate();part=self._read(h,min(CHUNK,remaining))
+                need(0<len(part)<=remaining);chunks.append(part);remaining-=len(part)
+            need(self._read(h,1)==b'');raw=b''.join(chunks)
+            need(sha256(raw).hexdigest()==digest and self._inspect(h,False)==before)
+            data[name]=raw
+            if native:
+                images[name]=raw;scope.append((name,digest))
+        modeled={(row['file'],row['dependency']):row['target']
+            for row in payload.dll_closure(data)['modeled_wheel_dependencies']}
+        from pathlib import PurePosixPath
+        for name,raw in images.items():
+            domain='runtime/postgresql/bin' if name.startswith('runtime/postgresql/') else 'runtime/python'
+            for dll,names in Image(raw).symbol_imports().items():
+                if not re.fullmatch(r'(?:msvcp|vcruntime|concrt)140(?:_[a-z0-9_]+)?[.]dll',dll):continue
+                choices=(str(PurePosixPath(name).parent/dll),domain+'/'+dll)
+                target=next((by_path[p.casefold()] for p in choices if p.casefold() in by_path),None)
+                target=target or modeled.get((name,dll)) or 'SYSTEM32/'+dll
+                symbols.setdefault(target,set()).update(names)
+        need(scope and symbols and all(symbols.values()))
+        private={target:images[target] for target in symbols if not target.startswith('SYSTEM32/')}
+        return tuple(sorted(scope)),{name:tuple(sorted(values)) for name,values in sorted(symbols.items())},private
+
+    def _inspect_pg_snapshot(self, lease, runtime, deadline, *, requirements_only=False):
+        """Read the original installed pins, never reopen paths or mutable data."""
+        from .fixed_secret_store import _under_lease
+        from .runtime_payload import PG, REQUIRED, static_report
+        import math
+        self._issued_binding(lease, runtime)
+        need(type(deadline) in (int,float) and math.isfinite(deadline)
+             and 0 < deadline-time.monotonic() <= 30)
+        from .native_trial_authority import budget
+        deadline=budget(lease,deadline)
+        def inspect():
+            try:
+                self._issued_binding(lease, runtime)
+                phases=('NEW','READY_STOPPED','CLUSTER') if requirements_only else ('CLUSTER',)
+                need(lease.record['phase'] in phases)
+                self.deadline = deadline; self.probe.deadline = deadline
+                self.verify()
+                def read(path, size, digest):
+                    handle, directory, original = self.rows[path]
+                    need(not directory and self._inspect(handle, False) == original and original[0].size == size)
+                    self._seek_start(handle)
+                    chunks = []; remaining = size; observed = sha256()
+                    while remaining:
+                        self._gate(); raw = self._read(handle, min(CHUNK, remaining))
+                        need(0 < len(raw) <= remaining)
+                        chunks.append(raw); observed.update(raw); remaining -= len(raw)
+                    need(self._read(handle, 1) == b'' and observed.hexdigest() == digest
+                         and self._inspect(handle, False) == original)
+                    return b''.join(chunks)
+                manifest_row = next(row for row in self.files if row[0] == payload.MANIFEST)
+                manifest = payload.parse_manifest(read(*manifest_row))
+                need(manifest.get('source_commit') == runtime['source_commit']
+                     and manifest_row[2] == runtime['manifest_sha256']
+                     and manifest.get('usable_product') is False
+                     and manifest.get('native_initialization') == 'OWNER_MUTATION_PAUSED')
+                rows = tuple(row for row in self.files if row[0].startswith(PG))
+                need(REQUIRED <= {row[0] for row in rows})
+                data={name:read(name,size,digest) for name,size,digest in rows}
+                if requirements_only:
+                    from .crt_pe import requirements
+                    report=requirements(data)
+                else:report=static_report(data,runtime)
+                # Keep all original pins held through PE and BKI parsing and a
+                # second complete immutable namespace check. No native loading.
+                self.verify(); self._issued_binding(lease,runtime)
+                return report
+            except BaseException:
+                self.failed = True
+                raise
+        return _under_lease(lease, inspect)
+
+    def __reduce__(self): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
+    def __copy__(self): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
+    def __deepcopy__(self, memo): raise TypeError('NATIVE_RUNTIME_NOT_TRANSFERABLE')
+
+    def _time(self):
+        need(not self.failed and not self.closed and time.monotonic() < self.deadline)
+        from .native_trial_authority import budget
+        budget(self.lease,self.deadline)
+
+    def _gate(self):
+        self._time()
+        # The original probe verifies this same lease/snapshot/key and current
+        # OS identity on EVERY call. Consume that result once, instead of
+        # reading the same fixed journal three times inside one gate.
+        key=self.probe._gate()
+        need(self.probe.lease is self.lease and self.probe.api is self.api
+             and key == self.key and self.api is self.lease.fs.api)
+        self._time();need(self.api.descriptor(self.lease.fs.root) == self.root_sd)
+        self._time();need(self.api.final_path(self.lease.fs.root) == self.root_path)
+        self._time()
+
+    def _hold(self, handle):
+        self.handles.append(handle); return handle
+
+    def _open(self, parent, name):
+        self._gate()
+        self._time()
+        return self._hold(self.api.open_relative(parent, name, True))
+
+    def _inspect(self, handle, directory, *, private=True, volume=None):
+        self._time()
+        info = self.api.info(handle)
+        refused=tuple(field for field,invalid in (
+            ('ATTRIBUTES',bool(info.attributes&(REPARSE|UNSAFE_ATTRIBUTES))),
+            ('LAYOUT',bool(info.attributes&DIRECTORY)!=directory),
+            ('IDENTITY',info.identity<=0 or volume is not None and info.volume!=volume),
+            ('LINKS',not directory and info.links!=1),
+            ('SIZE',not directory and not 0<=info.size<=128*CHUNK)) if invalid)
+        if refused:raise RuntimeMetadataChanged(directory,refused,relative_path=getattr(self,'_current_path',None))
+        if private:
+            self._time();private_acl(self.api.security(handle), self.probe.user)
+        self._time();descriptor=self.api.descriptor(handle)
+        self._time();path=self.api.final_path(handle)
+        return info,descriptor,path
+
+    def _source(self, root):
+        drive, parts = root_parts(root)
+        self._gate()
+        handle = self._hold(self.api.open_drive(drive))
+        self._time();guid = self.api.final_path(handle)
+        self._time();volume = self.api.info(handle).volume
+        need(re.fullmatch(r'\\\\\?\\Volume\{[0-9a-fA-F-]{36}\}\\', guid))
+        self._time();need(self.api.filesystem(handle)=='NTFS')
+        self._time();need(self.api.drive_type(guid)==3)
+        self._inspect(handle, True, private=False, volume=volume)
+        for part in parts:
+            handle = self._open(handle, part)
+            self._inspect(handle, True, private=False, volume=volume)
+        self._inspect(handle, True)
+        self._time();need((volume, self.api.info(handle).identity) != tuple(self.lease.fs.root_id))
+        self.source_volume = volume
+        return handle
+
+    def _source_file(self, root, path):
+        handle = self.source_nodes[path]
+        self._inspect(handle, False, volume=self.source_volume)
+        self._seek_start(handle)
+        return handle
+
+    def _entries(self, handle):
+        rows = []; seen = set()
+        for index in range(4096):
+            self._gate(); buf = C.create_string_buffer(65536)
+            if not self._query('ENUM_DIRECTORY',self.query,
+                    (handle,11 if index==0 else 10,buf,len(buf)),(handle,buf)):
+                need(C.get_last_error() == 18); return tuple(rows)
+            for row in directory_batch(buf.raw):
+                need(row[0].casefold() not in seen and len(rows) < 2 * payload.MAX_FILES)
+                need(not row[1] & (REPARSE | UNSAFE_ATTRIBUTES))
+                seen.add(row[0].casefold()); rows.append(row)
+        need(False)
+
+    def _walk_source(self, root):
+        self._source_root=root;self._source_observations={'':(root,True,self._inspect(root,True))}
+        expected = set(self.directories) | {row[0] for row in self.files}
+        seen = set()
+        def visit(parent, prefix):
+            for name, attrs, identity in self._entries(parent):
+                path = prefix + name
+                need(path in expected and path not in seen); seen.add(path)
+                self._current_path=path
+                handle = self._open(parent, name)
+                self.source_nodes[path] = handle
+                observation=self._inspect(handle,bool(attrs&DIRECTORY),volume=self.source_volume)
+                self._source_observations[path]=(handle,bool(attrs&DIRECTORY),observation)
+                info=observation[0]
+                need(info.identity == identity and info.attributes == attrs)
+                if attrs & DIRECTORY: visit(handle, path + '/')
+        visit(root, '')
+        need(seen == expected)
+
+    def _verify_source(self):
+        # Original held source pins. No replacement root or namespace is adopted.
+        self._stage='SOURCE_TREE'
+        for path,(handle,directory,original) in self._source_observations.items():
+            self._current_path=path
+            changes=metadata_changes(original,self._inspect(handle,directory,volume=self.source_volume))
+            if changes:raise RuntimeMetadataChanged(directory,changes,relative_path=path)
+        directories={path:row[0] for path,row in self._source_observations.items() if row[1]}
+        self._verify_namespace({p:r for p,r in self._source_observations.items() if p},
+            directories=directories,control_root=False)
+
+    def _create(self, parent, leaf, directory):
+        self._gate(); component(leaf); require_nt_create_ready(self.api.readonly)
+        raw = leaf.encode('utf-16-le'); buf = C.create_string_buffer(raw + b'\0\0')
+        name = UnicodeString(len(raw), len(raw)+2, C.cast(buf, PTR))
+        sd = C.create_string_buffer(private_file_descriptor(self.probe.sid_bytes))
+        attrs = ObjectAttributes(C.sizeof(ObjectAttributes), parent, C.pointer(name), 0x40, C.cast(sd, PTR), None)
+        handle, io = PTR(), IOStatus()
+        from .native_protected_objects import submit_create
+        self._time()
+        status=submit_create(self.api,handle,io,attrs,(name,buf,sd),
+            access=0x120081|(0 if directory else 0x40000000),attributes=0x10 if directory else 0x80,
+            share=1,disposition=2,options=0x20|0x200000|(1 if directory else 0x40))
+        if status==0 and io.Status not in (None,0):
+            retain_pending_nt_create(self.api.readonly,handle,io,attrs,name,buf,sd)
+            need(False)  # Inconsistent completion outputs cannot establish ownership.
+        if not completed_nt_handle(status,handle.value):
+            if status>=0 or handle.value not in (None,0):
+                retain_pending_nt_create(self.api.readonly,handle,io,attrs,name,buf,sd)
+            need(False)
+        owned = self._hold(handle.value)  # Retain before any subsequent assertion.
+        need(status == 0 and io.Information == 2)
+        info, descriptor, path = self._inspect(owned, directory, volume=self.key[1][0])
+        need(path == self.api.final_path(parent).rstrip('\\') + '\\' + leaf)
+        need(descriptor[0] == self.probe.user and descriptor[1] & ~1 in (0x1004, 0x9004) and
+             descriptor[2] == private_file_descriptor(self.probe.sid_bytes)[20+len(self.probe.sid_bytes):])
+        return owned
+
+    def _read_all(self, handle, size):
+        need(size <= 4*CHUNK and self.api.info(handle).size == size)
+        self._seek_start(handle)
+        raw = self._read(handle, size+1); need(len(raw) == size); return raw
+
+    def _hash(self, handle, size):
+        before = self._inspect(handle, False); need(before[0].size == size)
+        self._seek_start(handle); digest = sha256(); remaining = size
+        while remaining:
+            self._gate(); raw = self._read(handle, min(CHUNK, remaining))
+            need(0 < len(raw) <= remaining); digest.update(raw); remaining -= len(raw)
+        need(self._read(handle, 1) == b'' and self._inspect(handle, False) == before)
+        return digest.hexdigest()
+
+    def _record(self, path, handle, directory):
+        observed = self._inspect(handle, directory, volume=self.key[1][0])
+        need(observed[2] == self.root_path.rstrip('\\') + '\\' + path.replace('/', '\\'))
+        identity = (observed[0].volume, observed[0].identity)
+        need(identity not in self.identities); self.identities.add(identity)
+        self.rows[path] = (handle, directory, observed)
+        if directory and self._completion_pending:
+            self._created_directory_rows[path]=(handle,observed)
+
+    def _seal_new_directories(self):
+        # Only the original NEW constructor, after ALL file flush/hash/reopen
+        # steps. Consume before any observation: a failed completion cannot
+        # be retried to adopt a changed tree, nor used on REOPEN/issued objects.
+        need(self._completion_pending is True and self._copy_complete is True and self not in _issued)
+        self._completion_pending=False
+        self._gate();need(self.lease.record['phase']=='NEW' and self.key[-1]==1)
+        directories=set(self.directories);files={name for name,_,_ in self.files}
+        need(set(self.rows)==directories|files and set(self.dest)==directories|{''}
+            and set(self._created_directory_rows)==directories)
+        completed=dict(self.rows)
+        try:
+            for path,(handle,directory,observed) in self.rows.items():
+                self._current_path=path
+                current=self._inspect(handle,directory,volume=self.key[1][0])
+                changes=metadata_changes(observed,current)
+                if directory:
+                    need(self._created_directory_rows[path]==(handle,observed) and self.dest[path]==handle)
+                    # Creating this directory's children may grow its container
+                    # size/link metadata or set ARCHIVE. Its original identity,
+                    # protection and path never change. Other bits stay fixed.
+                    allowed={'SIZE','LINKS'}
+                    if not (observed[0].attributes^current[0].attributes)&~0x20:allowed.add('ATTRIBUTES')
+                    refused=tuple(field for field in changes if field not in allowed)
+                    if refused:raise RuntimeMetadataChanged(True,refused,relative_path=path)
+                    need(0<=current[0].size<2**64 and 1<=current[0].links<2**32)
+                    completed[path]=(handle,True,current)
+                elif changes:raise RuntimeMetadataChanged(False,changes,relative_path=path)
+            # Validate the entire exact namespace BEFORE committing directory
+            # completion snapshots. Files retain their original observations.
+            self._verify_namespace(completed)
+            for path in directories:self.rows[path]=completed[path]
+        except BaseException:
+            self.failed=True
+            raise
+
+    def verify(self):
+        self._gate()
+        for path, (handle, directory, observed) in self.rows.items():
+            self._stage='VERIFY_METADATA';self._current_path=path
+            changes=metadata_changes(observed,self._inspect(handle,directory,volume=self.key[1][0]))
+            if changes:raise RuntimeMetadataChanged(directory,changes,relative_path=path)
+        self._verify_namespace(self.rows)
+        return self
+
+    def _verify_namespace(self,observations,*,directories=None,control_root=True):
+        # Exact immutable namespace; dynamic business directories are not walked.
+        for path, handle in (self.dest if directories is None else directories).items():
+            self._stage='VERIFY_NAMESPACE' if control_root else 'SOURCE_NAMESPACE';self._current_path=path
+            prefix = path + '/' if path else ''
+            expected = {p[len(prefix):].split('/')[0] for p in observations if p.startswith(prefix)}
+            entries={name:(attrs,identity) for name,attrs,identity in self._entries(handle)}
+            actual=set(entries)
+            if not path and control_root:
+                from .native_trial_authority import bound_state
+                control=CONTROL
+                if bound_state(self.lease) is not None:
+                    from .native_trial_domain import MARKER
+                    control=control|{MARKER}
+                need(control <= actual and actual - DYNAMIC - control == expected)
+            else: need(actual == expected)
+            for name in expected:
+                observed=observations[prefix+name][2][0]
+                need(entries[name]==(observed.attributes,observed.identity))
+
+    def _close_handle(self, handle):
+        # Unacknowledged native work may still borrow ANY of this API's pins.
+        # Refuse before removal and keep the entire original graph alive.
+        try:
+            require_nt_create_ready(self.api.readonly);require_query_ready(self.api.readonly)
+        except BaseException:
+            _unknown_runtime.append(self);raise
+        self.handles.remove(handle)  # Never retry uncertain CloseHandle.
+        self.close_attempts=getattr(self,'close_attempts',[])
+        self.close_attempts.append(handle)
+        try:self.api.close(handle)
+        except BaseException:
+            self.cleanup_errors.append(('RUNTIME_CLOSE_UNKNOWN',handle))
+            _unknown_runtime.append(self);raise
+
+    def close(self):
+        if self.closed:return  # Confirmed completion is idempotent; no syscall.
+        need(not getattr(self,'_close_started',False))
+        self._close_started=True
+        errors=[]
+        try:
+            require_nt_create_ready(self.api.readonly);require_query_ready(self.api.readonly)
+            from .native_trial_authority import budget
+            for handle in reversed(tuple(self.handles)):
+                # The source's original cleanup_end, never work_deadline or a
+                # fresh per-handle 60 seconds. Stop without touching later pins.
+                budget(self.lease,cleanup=True)
+                try:self._close_handle(handle)
+                except BaseException as error:errors.append(error)
+            if getattr(getattr(self,'probe',None),'unknown',None):
+                self.cleanup_errors.append(('RUNTIME_IDENTITY_CLOSE_UNKNOWN',None))
+                errors.append(CandidateRefused('RUNTIME_IDENTITY_CLOSE_UNKNOWN'))
+        except BaseException as error:errors.append(error)
+        self.closed=not self.handles and not errors and not self.cleanup_errors
+        if errors or self.cleanup_errors:
+            self.failed=True;self.lease.poisoned=True
+            _unknown_runtime.append(self)
+            raise BaseExceptionGroup('NATIVE_RUNTIME_CLOSE_UNKNOWN',errors or [CandidateRefused('RUNTIME_CLOSE_UNKNOWN')])

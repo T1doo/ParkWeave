@@ -33,6 +33,39 @@ OPEN_REPARSE=0x200000
 # Pending output storage must outlive the native operation. There is no
 # automatic completion/recovery path and no handle ownership inferred here.
 _NT_CREATE_PENDING={}
+_UNKNOWN_QUERY_TOKENS=[]
+_UNKNOWN_NATIVE_QUERIES=[]
+_ACTIVE_NATIVE_QUERIES={}
+
+
+def query_call(api,kind,fn,args,storage=()):
+    """Keep original synchronous Win32 outputs through call/acknowledgement.
+
+    Exception or ERROR_IO_PENDING does not prove completion. Retain all
+    pointed storage and borrowed handles, then block further work/close.
+    This helper is NOT for NtCreateFile's zero-success NTSTATUS convention.
+    """
+    require_nt_create_ready(api);require_query_ready(api)
+    row=(api,kind,fn,args,storage);key=id(row)
+    _ACTIVE_NATIVE_QUERIES[key]=row
+    try:
+        result=fn(*args)
+        if not result and C.get_last_error()==997:
+            raise Denied('Windows synchronous operation returned pending; outcome unknown')
+    except BaseException:
+        retain_query_unknown(api,kind,*row[2:])
+        raise
+    _ACTIVE_NATIVE_QUERIES.pop(key)
+    return result
+
+
+def retain_query_unknown(api,kind,*storage):
+    api._query_unknown=True
+    _UNKNOWN_NATIVE_QUERIES.append((api,kind,storage))
+
+
+def require_query_ready(api):
+    if getattr(api,'_query_unknown',False):raise Denied('Windows query cleanup unknown; no retry')
 
 def nt_status(value):
     if type(value) is not int or not -(2**31)<=value<2**32:raise Denied('invalid NTSTATUS')
@@ -80,14 +113,21 @@ class WinAPI:
         self.process=bind(self.k,'GetCurrentProcess',PTR,[])
         self.opentoken=bind(self.a,'OpenProcessToken',I32,[PTR,U32,C.POINTER(PTR)])
         self.tokeninfo=bind(self.a,'GetTokenInformation',I32,[PTR,U32,PTR,U32,C.POINTER(U32)])
+        self._query_tokens=[]
         self._sid=self._user_sid()
     def need(self,result):
         if not result:raise Denied('Windows handle operation refused; error='+str(C.get_last_error()))
-    def close(self,handle):self.need(self._close(handle))
+    def close(self,handle):
+        # An unresolved original call may still borrow this API's directory or
+        # query input. Keep all its pins until process disposal; never infer
+        # that a different cleanup layer owns safe completion.
+        require_nt_create_ready(self);require_query_ready(self)
+        self.need(self._close(handle))
     def open_drive(self,drive):
         require_nt_create_ready(self)
         # Drive-root path only; no arbitrary complete business path passed to Win32.
-        handle=self.create('\\\\?\\'+drive,READ_CONTROL|READ_ATTRIBUTES,SHARE_READ,None,3,0x02000000|0x00200000,None)
+        handle=query_call(self,'DRIVE_OPEN',self.create,
+            ('\\\\?\\'+drive,READ_CONTROL|READ_ATTRIBUTES,SHARE_READ,None,3,0x02000000|0x00200000,None))
         if handle in (None,C.c_void_p(-1).value):raise Denied('Windows drive open refused')
         return handle
     def open_relative(self,parent,name,read_data):
@@ -98,13 +138,18 @@ class WinAPI:
         oa=ObjectAttributes(C.sizeof(ObjectAttributes),parent,C.pointer(u),0x40,None,None)
         handle=PTR();io=IOStatus()
         access=READ_CONTROL|READ_ATTRIBUTES|SYNCHRONIZE|(FILE_READ_DATA if read_data else 0)
-        status=self.ntcreate(C.byref(handle),access,C.byref(oa),C.byref(io),None,0,SHARE_READ,FILE_OPEN,SYNC_NONALERT|OPEN_REPARSE,None,0)
+        try:status=self.ntcreate(C.byref(handle),access,C.byref(oa),C.byref(io),None,0,SHARE_READ,FILE_OPEN,SYNC_NONALERT|OPEN_REPARSE,None,0)
+        except BaseException:
+            retain_pending_nt_create(self,handle,io,oa,u,buf)
+            raise
         status=nt_status(status)
         if status==0x103:
             retain_pending_nt_create(self,handle,io,oa,u,buf)
             raise Denied('Windows relative open pending; outcome unknown')
         owned=completed_nt_handle(status,handle.value)
         if status!=0 or not owned:
+            if not owned and handle.value not in (None,0,PTR(-1).value):
+                retain_pending_nt_create(self,handle,io,oa,u,buf)
             primary=Denied('Windows relative open refused; status='+hex(status&0xffffffff))
             if owned:
                 try:self.close(handle.value)
@@ -112,21 +157,29 @@ class WinAPI:
             raise primary
         return handle.value
     def info(self,handle):
-        if self.gettype(handle)!=1:raise Denied('Windows non-disk handle refused')
-        f=FileInfo();self.need(self.getinfo(handle,C.byref(f)))
+        if query_call(self,'FILE_TYPE',self.gettype,(handle,),(handle,))!=1:raise Denied('Windows non-disk handle refused')
+        f=FileInfo();self.need(query_call(self,'FILE_INFO',self.getinfo,(handle,C.byref(f)),(handle,f)))
         return Info(f.Attributes,(f.SizeHigh<<32)|f.SizeLow,f.Links,f.Volume,(f.IndexHigh<<32)|f.IndexLow)
     def final_path(self,handle):
-        buf=C.create_unicode_buffer(4096);length=self.getpath(handle,buf,len(buf),1)
+        buf=C.create_unicode_buffer(4096)
+        length=query_call(self,'FILE_PATH',self.getpath,(handle,buf,len(buf),1),(handle,buf))
         if not 0<length<len(buf):raise Denied('Windows volume identity unavailable')
         return buf.value
     def filesystem(self,handle):
         buf=C.create_unicode_buffer(32);serial=U32();maxlen=U32();flags=U32()
-        self.need(self.getvolume(handle,None,0,C.byref(serial),C.byref(maxlen),C.byref(flags),buf,len(buf)))
+        self.need(query_call(self,'VOLUME_INFO',self.getvolume,
+            (handle,None,0,C.byref(serial),C.byref(maxlen),C.byref(flags),buf,len(buf)),
+            (handle,serial,maxlen,flags,buf)))
         return buf.value
-    def drive_type(self,guid):return self.getdrive(guid)
+    def drive_type(self,guid):return query_call(self,'DRIVE_TYPE',self.getdrive,(guid,))
     def sid(self,pointer):
+        require_query_ready(self)
         self.need(self.valid_sid(pointer));out=PTR()
-        self.need(self.sidstring(pointer,C.byref(out)))
+        try:ok=self.sidstring(pointer,C.byref(out))
+        except BaseException:
+            retain_query_unknown(self,'SID_CALL',pointer,out);raise
+        if not ok and out.value:retain_query_unknown(self,'SID_FAILED_OUTPUT',pointer,out)
+        self.need(ok)
         primary=None
         try:return C.wstring_at(out)
         except BaseException as error:
@@ -136,32 +189,51 @@ class WinAPI:
                 try:
                     if self.localfree(out):raise Denied('Windows SID allocation close unknown')
                 except BaseException as cleanup:
+                    retain_query_unknown(self,'SID_FREE',pointer,out)
                     if primary is not None:raise BaseExceptionGroup('WINDOWS_SID_AND_FREE_UNKNOWN',[primary,cleanup])
                     raise
     def _user_sid(self):
-        token=PTR();self.need(self.opentoken(self.process(),8,C.byref(token)))
+        token=PTR();entry=dict(output=token,owned=False,close_attempted=False,closed=False)
+        if not hasattr(self,'_query_tokens'):self._query_tokens=[]
+        self._query_tokens.append(entry)
+        ok=self.opentoken(self.process(),8,C.byref(token))
+        if not ok and token.value or ok and token.value in (None,PTR(-1).value):
+            if self not in _UNKNOWN_QUERY_TOKENS:_UNKNOWN_QUERY_TOKENS.append(self)
+        self.need(ok);self.need(token.value not in (None,PTR(-1).value));entry['owned']=True
         try:
             needed=U32();self.tokeninfo(token,1,None,0,C.byref(needed))
             if not 0<needed.value<=4096:raise Denied('Windows user token unavailable')
             buf=C.create_string_buffer(needed.value);self.need(self.tokeninfo(token,1,buf,len(buf),C.byref(needed)))
             return self.sid(C.cast(buf,C.POINTER(PTR))[0])
-        finally:self.close(token)
+        finally:
+            entry['close_attempted']=True
+            try:self.close(token);entry['closed']=True
+            except BaseException:
+                if self not in _UNKNOWN_QUERY_TOKENS:_UNKNOWN_QUERY_TOKENS.append(self)
+                raise
     def user_sid(self):return self._sid
     def security(self,handle):
+        require_query_ready(self)
         owner=PTR();dacl=PTR();sd=PTR()
-        status=self.getsecurity(handle,1,1|4,C.byref(owner),None,C.byref(dacl),None,C.byref(sd))
-        if status!=0:raise Denied('Windows security read refused')
+        try:status=self.getsecurity(handle,1,1|4,C.byref(owner),None,C.byref(dacl),None,C.byref(sd))
+        except BaseException:
+            retain_query_unknown(self,'SECURITY_CALL',handle,owner,dacl,sd);raise
+        if status!=0:
+            if sd.value or owner.value or dacl.value:retain_query_unknown(self,'SECURITY_FAILED_OUTPUT',handle,owner,dacl,sd)
+            raise Denied('Windows security read refused')
         primary=None
         try:
             self.need(self.valid_sd(sd));control=U16();revision=U32()
-            self.need(self.control(sd,C.byref(control),C.byref(revision)))
+            self.need(query_call(self,'SECURITY_CONTROL',self.control,
+                (sd,C.byref(control),C.byref(revision)),(handle,owner,dacl,sd,control,revision)))
             user=self.sid(owner)
             if not dacl.value:return Security(user,control.value,None)
             self.need(self.valid_acl(dacl));header=C.cast(dacl,C.POINTER(ACL)).contents
             if header.AceCount>128:raise Denied('Windows ACL exceeds candidate limit')
             aces=[];start=dacl.value;end=start+header.Size
             for i in range(header.AceCount):
-                pointer=PTR();self.need(self.getace(dacl,i,C.byref(pointer)))
+                pointer=PTR();self.need(query_call(self,'SECURITY_ACE',self.getace,
+                    (dacl,i,C.byref(pointer)),(handle,owner,dacl,sd,pointer)))
                 address=pointer.value
                 if address is None or address<start+C.sizeof(ACL) or address+8>end:raise Denied('invalid ACE bounds')
                 head=C.string_at(address,8);kind,flags=head[0],head[1];size=int.from_bytes(head[2:4],'little')
@@ -176,13 +248,19 @@ class WinAPI:
             primary=error;raise
         finally:
             if sd.value:
+                if getattr(self,'_query_unknown',False):
+                    retain_query_unknown(self,'SECURITY_BORROWED_INPUT',handle,owner,dacl,sd)
+                    raise Denied('Windows security query outcome unknown')
                 try:
                     if self.localfree(sd):raise Denied('Windows security allocation close unknown')
                 except BaseException as cleanup:
+                    retain_query_unknown(self,'SECURITY_FREE',handle,owner,dacl,sd)
                     if primary is not None:raise BaseExceptionGroup('WINDOWS_SECURITY_AND_FREE_UNKNOWN',[primary,cleanup])
                     raise
     def read(self,handle,limit):
         buf=C.create_string_buffer(limit);length=U32()
-        self.need(self.readfile(handle,buf,limit,C.byref(length),None))
-        if length.value>limit:raise Denied('invalid Windows read length')
+        self.need(query_call(self,'READ_FILE',self.readfile,(handle,buf,limit,C.byref(length),None),(handle,buf,length)))
+        if length.value>limit:
+            retain_query_unknown(self,'READ_LENGTH',handle,buf,length)
+            raise Denied('invalid Windows read length')
         return buf.raw[:length.value]

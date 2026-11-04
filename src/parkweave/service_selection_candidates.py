@@ -9,7 +9,7 @@ import hashlib
 import json
 from itertools import combinations
 from uuid import UUID, uuid4
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from psycopg.types.json import Jsonb
 from . import bounded_planning as bp, controlled_plans as cp, preparation as prep
 from . import service_plan_candidates as old, service_selection as ss
@@ -34,6 +34,55 @@ class Capture(BaseModel):
     expected_preparation_revision:int=Field(ge=1,le=64)
     expected_source_sha256:str=Field(pattern='^[0-9a-f]{64}$')
     expected_capability_catalog_sha256:str=Field(pattern='^[0-9a-f]{64}$')
+    manual_selections:list[dict]|None=Field(default=None,min_length=1,max_length=16)
+    @field_validator('manual_selections')
+    @classmethod
+    def exact_manual_refs(cls,value):
+        if value is not None:
+            try:ss.parse_selection(json.dumps(dict(schema_version=1,binding={},selections=value)),{})
+            except (ModelBoundaryError,ValueError,TypeError):raise ValueError('bounded exact service references required') from None
+        return value
+
+
+
+class ManualPreview(Capture):
+    manual_selections:None=None
+    # Exact references are validated against the authenticated current catalog.
+    selections: list[dict]=Field(min_length=1,max_length=16)
+
+
+def manual_preview(store,token,id,data,*,catalog,module):
+    from . import local_demo_selections as local
+    with catalog.read_connection() as c:
+        p,parent=bp._context(store,c,token,id)
+        value=module.current(store,c,p,parent,catalog)
+        _exact(data,parent,value)
+        selection=dict(schema_version=1,binding=binding(value),selections=data.selections)
+        try:parsed=ss.parse_selection(json.dumps(selection),binding(value))
+        except ModelBoundaryError:raise Conflict('exact current service references required') from None
+        snapshot=value['catalog_snapshot'];request=value['selection_request'];now=clock(c)
+        pairs=(local.demo.validated_pairs(snapshot,request,now=now) if module is local else
+               ss._catalog(snapshot['releases'],snapshot['instances'],request,now))
+        chosen=sorted(parsed['selections'],key=ss._identity)
+        selected=[pair for pair in pairs if ss.selection_ref(*pair) in chosen]
+        if len(selected)!=len(chosen):raise Conflict('selected service version or instance no longer current')
+        goals=request['required_goals'];covered=set().union(*(set(r['supported_goals']) for r,i in selected))
+        missing=[goal for goal in goals if goal not in covered]
+        state,unknowns=ss._set_state(selected,request['planning_constraints'],request['mapping_states'])
+        unknowns=sorted(set(unknowns)|set(snapshot['unknowns'])|set(value['source_unknowns']))
+        minimal=chosen in value['selection_oracle']['minimal_solutions']
+        valid=not missing and state=='TRUE' and not unknowns and minimal
+        cp._write_flag(store,c,p)
+        writable=p.get('_plan_write') is True and not prep.case_write_blocked(c,parent)
+        return dict(contract='parkweave-manual-service-preview/1',preparation_id=str(id),
+            case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
+            source_sha256=value['source_sha256'],capability_catalog_sha256=value['capability_catalog_sha256'],
+            selection=parsed,required_goals=goals,missing_goals=missing,unknowns=unknowns,
+            constraint_state=state,minimal_selection=minimal,state='VERIFIED_STRUCTURE_ONLY' if valid else
+                'UNKNOWN' if unknowns else 'BLOCKED',
+            can_generate_original_candidate=valid and writable,
+            preview_only=True,read_only=True,executed=False,execution_enabled=False,new_grants=False,
+            provider_enabled=False,case_goal_completed=False)
 
 
 def binding(value):return {k:deepcopy(value[k]) for k in KEYS}
@@ -87,13 +136,45 @@ def current(store,c,p,parent,catalog,selection=None):
     return base
 
 
-def _fingerprint(id,data):return cp._hash(dict(preparation_id=str(id),kind=SCOPE,producer_version=4,**data.model_dump()))
+MANUAL_ORIGIN='OWNER_EXPLICIT_SERVICE_SELECTION_V1'
+
+
+def capture_request(data):
+    # Preserve exact fingerprints and frozen requests of every old V4/demo record.
+    return data.model_dump(exclude={'manual_selections'} if data.manual_selections is None else set())
+
+
+def owner_producer(record):
+    return dict(version=5,origin=MANUAL_ORIGIN,mode='OWNER_EXPLICIT_NO_MODEL',model=None,
+        provider_enabled=False,real_model_calls=0,executed=False,
+        actor_ref=cp._hash(dict(actor_id=record['actor_id'])),
+        selection_sha256=cp._hash(record['selection']),
+        candidate_request_sha256=cp._hash(record['candidate_request']),
+        attempt_sha256=cp._hash({k:record[k] for k in ('id','actor_id','request_key','fingerprint','validity')}))
+
+
+def manual_record(record):
+    return record.get('candidate_request',{}).get('manual_selections') is not None
+
+
+def _fingerprint(id,data):return cp._hash(dict(preparation_id=str(id),kind=SCOPE,producer_version=5 if data.manual_selections is not None else 4,**capture_request(data)))
 
 
 def _records(parent):return [h for h in parent.get('planning_previews') or [] if h.get('profile')==PROFILE]
 
 
 def _producer(record):
+    if manual_record(record):
+        data=Capture.model_validate(record['candidate_request'])
+        expected=dict(schema_version=1,binding=binding(record['document']),selections=data.manual_selections)
+        parsed=ss.parse_selection(json.dumps(expected),binding(record['document']))
+        if (cp._hash(record['producer'])!=cp._hash(owner_producer(record)) or
+            record['planner_attempt']!=dict(version=5,state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(record['producer'])) or
+            cp._hash(record['document'].get('candidate_producer'))!=cp._hash(record['producer']) or
+            parsed!=record['selection'] or ss.parse_selection(record['selection_raw'],binding(record['document']))!=parsed or
+            any(key in record for key in ('response_raw','budget_record'))):
+            raise ValueError('explicit owner selection proof invalid')
+        return record['producer']
     from .service_selection_planner import ORIGIN as producer_origin
     p=record['producer'];budget=record['budget_record'];attempt=record['planner_attempt']
     expected={'version','origin','model','returned_model','call_id','usage','mode','provider_enabled','executed','selection_sha256','response_sha256','attempt_sha256','budget_sha256'}
@@ -120,7 +201,7 @@ def _attempt(parent,record):
         UUID(record['id']);data=Capture.model_validate(record['candidate_request']);a=record['planner_attempt'];window=old._window(record)
         if (record.get('profile')!=PROFILE or record['document'].get('profile')!=PROFILE or record['actor_id']!=parent['owner_id'] or record['document']['preparation_id']!=str(parent['id']) or record['fingerprint']!=_fingerprint(parent['id'],data) or window is None or
             data.expected_preparation_revision!=record['document']['preparation_revision'] or data.expected_source_sha256!=record['document']['source_sha256'] or data.expected_capability_catalog_sha256!=record['document']['capability_catalog_sha256'] or
-            type(a) is not dict or set(a)!=({'version','state','outcome','producer_sha256'} if a.get('state')=='COMMITTED' else {'version','state','outcome'}) or type(a['version']) is not int or a['version']!=4 or not valid_attempt_outcome(a['state'],a['outcome']) or ('candidate' in record)!=(a['state']=='COMMITTED')):raise ValueError()
+            type(a) is not dict or set(a)!=({'version','state','outcome','producer_sha256'} if a.get('state')=='COMMITTED' else {'version','state','outcome'}) or type(a['version']) is not int or a['version']!=(5 if data.manual_selections is not None else 4) or not valid_attempt_outcome(a['state'],a['outcome']) or ('candidate' in record)!=(a['state']=='COMMITTED')):raise ValueError()
         if a['state']=='COMMITTED':_proof(parent,record)
     except (KeyError,TypeError,ValueError,AttributeError,ModelBoundaryError):raise Conflict('selection original attempt proof invalid') from None
     return dict(attempt_id=record['id'],status='PENDING' if a['state']=='STARTED' else a['state'],outcome=a['outcome'],validity=deepcopy(window),automatically_replayed=False,read_only=True,can_adopt=False,provider_enabled=False,execution_enabled=False,new_grants=False)
@@ -216,7 +297,7 @@ def verify(parent,record,current,*,now=None,historical=False):
     window=record['validity']
     if now<old._time(window['created_at']):state='CLOCK_UNCERTAIN'
     elif now>=old._time(window['expires_at']):state='EXPIRED'
-    basis=dict(validator_version=4,validated_contract_sha256=cp._hash({k:expected[k] for k in expected if k!='binding'}),candidate_id=record['id'],candidate_sha256=record['candidate_sha256'],current_source_sha256=current['source_sha256'],state=state,**{k:current[k] for k in KEYS if k not in ('source_sha256',)},validity=deepcopy(window),producer_sha256=cp._hash(record['producer']))
+    basis=dict(validator_version=5 if manual_record(record) else 4,validated_contract_sha256=cp._hash({k:expected[k] for k in expected if k!='binding'}),candidate_id=record['id'],candidate_sha256=record['candidate_sha256'],current_source_sha256=current['source_sha256'],state=state,**{k:current[k] for k in KEYS if k not in ('source_sha256',)},validity=deepcopy(window),producer_sha256=cp._hash(record['producer']))
     return dict(**basis,scope=SCOPE,profile=PROFILE,origin=ORIGIN,verification_sha256=cp._hash(basis),can_adopt=state=='VERIFIED_STRUCTURE_ONLY' and full,can_adopt_partial=False,producer=deepcopy(record['producer']),required_goals=current['required_goals'],goal_coverage=current['goal_coverage'],steps=current['steps'],constraint_evaluation=current.get('constraint_evaluation'),source_unknowns=current['source_unknowns'],selection=deepcopy(doc['selection']),selection_oracle=deepcopy(current['selection_oracle']),provider_enabled=False,read_only=True,execution_enabled=False,new_grants=False,case_goal_completed=False)
 
 
@@ -248,6 +329,7 @@ def _exact(data,parent,value):
 
 
 def generate(store,token,id,key,data,*,catalog,planner):
+    if data.manual_selections is not None:return generate_manual(store,token,id,key,data,catalog=catalog)
     from .service_selection_planner import OfflineSelectionPlanner
     if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
     planner.require();fp=_fingerprint(id,data)
@@ -262,7 +344,7 @@ def generate(store,token,id,key,data,*,catalog,planner):
         if len(history)>=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
         now=clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
         saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
-        record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+        record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=capture_request(data),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
         history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
     def authority():
         with catalog.connection() as c:
@@ -294,8 +376,58 @@ def generate(store,token,id,key,data,*,catalog,planner):
         _failure(store,token,id,key,fp,record['id'],'AUTHORIZATION_CHANGED' if isinstance(e,Denied) else 'SOURCE_OR_ATTEMPT_CHANGED' if isinstance(e,Conflict) else 'PLANNER_OUTCOME_UNKNOWN',catalog);raise
 
 
+def generate_manual(store,token,id,key,data,*,catalog):
+    """Atomic explicit selection, using the original source lease and write scope.
+
+    No model dispatch, automatic choice, business adoption or new authorization.
+    Original key recovery reads the exact saved candidate after a lost response.
+    """
+    fp=_fingerprint(id,data)
+    with catalog.connection() as c:
+        p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key)
+        prior=_prior(c,p,parent,key,fp)
+        if prior is not None:return _availability_view(store,c,p,parent,catalog,prior)
+        base=current(store,c,p,parent,catalog);_exact(data,parent,base)
+        try:
+            selection=ss.parse_selection(json.dumps(dict(schema_version=1,binding=binding(base),selections=data.manual_selections)),binding(base))
+            value=current(store,c,p,parent,catalog,selection)
+        except ModelBoundaryError:raise Conflict('current complete minimal owner selection required') from None
+        _exact(data,parent,value)
+        history=deepcopy(parent.get('planning_previews') or [])
+        if len(history)>=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):
+            raise Conflict('bounded original history requires GET recovery')
+        now=clock(c).astimezone(timezone.utc)
+        window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+        record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,
+            fingerprint=fp,candidate_request=capture_request(data),validity=window,selection=selection,
+            selection_raw=json.dumps(selection,sort_keys=True,separators=(',',':')),
+            frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+        record['producer']=owner_producer(record)
+        record['planner_attempt']=dict(version=5,state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(record['producer']))
+        value.update(candidate_validity=deepcopy(window),candidate_producer=deepcopy(record['producer']))
+        record.update(document=value,candidate=document(value));record['candidate_sha256']=cp._hash(record['candidate'])
+        view=verify(parent,record,value,now=clock(c))
+        if not view['can_adopt']:raise Conflict('current owner selection is not adoptable')
+        history.append(record);bp._context(store,c,token,id,True)
+        c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        return view
+
+
+def current_write_availability(store,c,p,parent,record,view):
+    if not manual_record(record) or not view['can_adopt']:return view
+    cp._write_flag(store,c,p);reasons=[]
+    if not p.get('_plan_write'):reasons.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
+    if prep.case_write_blocked(c,parent):reasons.append('CASE_WRITE_BLOCKED')
+    if reasons:
+        view.update(state='BLOCKED',can_adopt=False,current_write_blockers=reasons)
+        fields=('validator_version','validated_contract_sha256','candidate_id','candidate_sha256',
+            'current_source_sha256','state',*[k for k in KEYS if k!='source_sha256'],'validity','producer_sha256')
+        view['verification_sha256']=cp._hash({key:view[key] for key in fields})
+    return view
+
+
 def _availability_view(store,c,p,parent,catalog,record):
-    try:return verify(parent,record,current(store,c,p,parent,catalog,record['selection']),now=clock(c))
+    try:return current_write_availability(store,c,p,parent,record,verify(parent,record,current(store,c,p,parent,catalog,record['selection']),now=clock(c)))
     except (Conflict,Denied,ModelBoundaryError):
         # Integrity failure of the saved record still raises; only current
         # availability becomes a read-only refusal with the same locator.
@@ -344,7 +476,7 @@ def consume(parent,current,data,*,now=None,historical=False):
 def consumption_proof(parent,plan,request):
     proof=plan.get('candidate_consumption')
     try:
-        if proof['verification_basis']['validator_version']!=4 or type(proof['verification_basis']['validator_version']) is not int or request.candidate_id is None:raise ValueError()
+        if proof['verification_basis']['validator_version'] not in (4,5) or type(proof['verification_basis']['validator_version']) is not int or request.candidate_id is None:raise ValueError()
         if request.expected_preparation_revision!=plan['adoption_preparation_revision'] or request.expected_request_revision!=plan['binding']['request_intent']['revision'] or request.expected_source_sha256!=plan['adoption_preview']['source_sha256'] or request.required_goals!=plan['required_goals']:raise ValueError()
         actual=[{k:s[k] for k in ('adapter_id','adapter','adapter_revision','depends_on','contract')} for s in plan['steps']]
         expected=[dict(adapter_id=s['id'],adapter=s['adapter'],adapter_revision=s['revision'],depends_on=s['depends_on'],contract=s) for s in plan['adoption_preview']['steps']]

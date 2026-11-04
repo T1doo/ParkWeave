@@ -31,7 +31,7 @@ def source_adopt(f,p,page_directory=None):
     return stored(f,p)['events'][-1]
 
 
-def staged(f,directory,goals=None,inputs=None):
+def staged(f,directory,goals=None,inputs=None,*,manual=False):
     from test_request_intents import save
     from ordinary_case_step_support import worker_once
     goals=GOALS if goals is None else goals
@@ -44,16 +44,21 @@ def staged(f,directory,goals=None,inputs=None):
     p=add(f,p,text=inputs['need_summary']).json();p=add(f,p,'material_outline',inputs['material_outline']).json()
     p=materials(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC 原专员独立审核').json()
     p=materials(f,p,'CONFIRM',reason='SYNTHETIC 本人确认').json()
-    current,_,response=generate(f,p);assert response.status_code==201,response.text;candidate=response.json()
-    assert candidate['producer']['mode']=='NO_MODEL' and candidate['producer']['real_model_calls']==0
+    if manual:
+        path='/api/preparations/'+p['preparation_id']
+        response=f[3].get(path+'/service-capabilities',headers=headers(f[2]));assert response.status_code==200,response.text;current=response.json()
+        response=f[3].post(path+'/service-selections',headers=headers(f[2],key=uuid4().hex),json=dict(expected_preparation_revision=p['revision'],expected_source_sha256=current['source_sha256'],expected_capability_catalog_sha256=current['capability_catalog_sha256'],manual_selections=current['selection_oracle']['minimal_solutions'][0]))
+    else:current,_,response=generate(f,p)
+    assert response.status_code==201,response.text;candidate=response.json()
+    assert candidate['producer']['mode']==('OWNER_EXPLICIT_NO_MODEL' if manual else 'NO_MODEL') and candidate['producer']['real_model_calls']==0
     body=dict(expected_preparation_revision=p['revision'],expected_request_revision=current['request_revision'],expected_plan_revision=0,
         expected_source_sha256=current['source_sha256'],required_goals=goals,reason='SYNTHETIC 明确采纳完整NO_MODEL候选',
         candidate_id=candidate['candidate_id'],expected_candidate_sha256=candidate['candidate_sha256'],expected_verification_sha256=candidate['verification_sha256'])
     return p,body,candidate
 
 
-def first(f,directory):
-    p,body,candidate=staged(f,directory);response=adopt(f,p,body);assert response.status_code==201,response.text
+def first(f,directory,*,manual=False):
+    p,body,candidate=staged(f,directory,manual=manual);response=adopt(f,p,body);assert response.status_code==201,response.text
     plan=stored(f,p);assert [s['adapter_id'] for s in plan['steps']]==['P1','P2','P3','P4']
     assert set(plan['adoption_preview'][observation.FIELD]['sources'])=={'P1','P2','P3','P4'}
     assert all(s['coordination_state']=='PENDING' and s['verified_sources'] is None and s['verified_sha256'] is None for s in plan['steps'])

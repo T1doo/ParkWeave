@@ -44,7 +44,7 @@ def _row(result):
     return runtime.validate_database(decoded,'LOCAL')
 
 
-def probe(inputs,deadline):
+def probe(inputs,deadline,*,endpoint=None):
     from psycopg import pq
     from psycopg.conninfo import make_conninfo
     from parkweave.installed_fixture_receipt import _dsn,refuse_inherited_configuration
@@ -55,17 +55,24 @@ def probe(inputs,deadline):
     options={**parsed,'hostaddr':'127.0.0.1','password':parsed.get('password',''),'passfile':os.devnull,
              'sslmode':'disable','gssencmode':'disable','require_auth':'none,password,md5,scram-sha-256',
              'options':'-c default_transaction_read_only=on','connect_timeout':'2'}
-    connection=None;primary=None;result=None
+    connection=owned=None;primary=None;result=None
     try:
         _remaining(deadline)
-        connection=pq.PGconn.connect_start(make_conninfo(**options).encode('utf-8'))
-        while True:
-            _remaining(deadline)
-            status=connection.connect_poll()
-            if status==pq.PollingStatus.OK:break
-            if status==pq.PollingStatus.READING:_wait(connection,selectors.EVENT_READ,deadline)
-            elif status==pq.PollingStatus.WRITING:_wait(connection,selectors.EVENT_WRITE,deadline)
-            else:raise DatabaseProbeFailure('CONNECT')
+        if endpoint is not None:
+            from .native_database_endpoint import NativeOwnedDatabaseEndpoint
+            if type(endpoint) is not NativeOwnedDatabaseEndpoint:raise DatabaseProbeFailure('ORIGINAL_ENDPOINT_REQUIRED')
+            owned=endpoint.connect(parsed,autocommit=True,deadline=deadline)
+            endpoint.verify_connection(owned)
+            connection=owned.pgconn
+        else:
+            connection=pq.PGconn.connect_start(make_conninfo(**options).encode('utf-8'))
+            while True:
+                _remaining(deadline)
+                status=connection.connect_poll()
+                if status==pq.PollingStatus.OK:break
+                if status==pq.PollingStatus.READING:_wait(connection,selectors.EVENT_READ,deadline)
+                elif status==pq.PollingStatus.WRITING:_wait(connection,selectors.EVENT_WRITE,deadline)
+                else:raise DatabaseProbeFailure('CONNECT')
         connection.nonblocking=1
         # A single SELECT; default_transaction_read_only was set at connection.
         # No transaction manager, cancellation roundtrip or COMMIT can extend it.
@@ -93,7 +100,8 @@ def probe(inputs,deadline):
     finally:
         if connection is not None:
             try:
-                connection.finish()  # Close our nonblocking socket, no server acknowledgement.
+                if owned is not None:owned.close()
+                else:connection.finish()  # Close our socket; no server acknowledgement.
                 if connection.status!=pq.ConnStatus.BAD:raise DatabaseProbeFailure('FINISH_UNKNOWN')
             except BaseException as cleanup:
                 failure=DatabaseProbeFailure('FINISH_UNKNOWN')

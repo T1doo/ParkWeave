@@ -97,8 +97,17 @@ def api():
 
 def worker():
     from parkweave.worker import main
-    role=sys.argv[2];sys.argv=['parkweave.worker','--once'];attest(role,'BEFORE_WORK')
-    try:main()
+    role=sys.argv[2]
+    continuous=len(sys.argv)==4 and sys.argv[3]=='--continuous'
+    assert len(sys.argv)==3 or continuous,'explicit owned worker mode required'
+    sys.argv=['parkweave.worker']+([] if continuous else ['--once'])
+    if continuous:signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
+    try:
+        try:
+            attest(role,'BEFORE_WORK')
+            main()
+        except KeyboardInterrupt:
+            if not continuous:raise
     finally:attest(role,'AFTER_WORK')
 
 

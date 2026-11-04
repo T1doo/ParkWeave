@@ -908,6 +908,15 @@ def local_demo_pair(service,store,demo):
 
 def from_environment(store,environment):
     mode=environment.get('PARKWEAVE_CASE_STEP_MODE')
+    native_sample=environment.get('PARKWEAVE_NATIVE_SAMPLE')
+    if native_sample is not None:
+        import os
+        if os.name!='nt' or mode is not None or any(environment.get(k) is not None for k in (
+                'PARKWEAVE_SERVICE_PROFILE','PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG','PARKWEAVE_RUNTIME_READ_CONFIG',
+                'PARKWEAVE_RUNTIME_WRITE_CONFIG','PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG')):
+            raise Denied('explicit unmixed native sample application required')
+        from scripts.windows_portable.native_sample import dependencies
+        return dependencies(store,native_sample)
     if mode is None:return None
     if mode==LOCAL_DEMO_MODE:
         if any(environment.get(k) is not None for k in (

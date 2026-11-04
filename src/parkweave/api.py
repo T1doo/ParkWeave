@@ -146,6 +146,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/plan-material-package/commands':
             # Bad UTF-8 input must not be echoed by the default error encoder.
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material package request'})
+        if getattr(route,'path',None) in ('/api/preparations/{preparation_id}/service-selections','/api/preparations/{preparation_id}/service-composition-preview'):
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded service selection request'})
+        if getattr(route,'path',None)=='/api/preparations/{preparation_id}/commands':
+            # Bounded file bytes may be present even in a malformed/non-JSON body.
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded preparation command'})
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/material-file-candidate':
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material file request'})
         return await request_validation_exception_handler(request,error)
@@ -452,8 +457,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return preparation.personal_tasks(store,token(authorization),limit=limit,before=before)
 
     @app.get('/api/preparations')
-    def preparations(authorization: str | None=Header(default=None)):
-        return preparation.list_items(store,token(authorization))
+    def preparations(authorization: str | None=Header(default=None),
+                     limit:int=Query(default=100,ge=1,le=100),before:UUID|None=Query(default=None),
+                     run_id:UUID|None=Query(default=None)):
+        return preparation.list_items(store,token(authorization),limit=limit,before=before,run_id=run_id)
 
     @app.post('/api/preparations',status_code=201)
     def create_preparation(data: preparation.CreatePreparation,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
@@ -551,6 +558,16 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):raise HTTPException(422,'invalid recovery handle')
         return preparation.recover_evidence_command(store,token(authorization),preparation_id,idempotency_key)
 
+    @app.get('/api/local-request-recovery')
+    def local_request_recovery(operation: Literal['CREATE_RUN','CREATE_PREPARATION','REQUEST_CHANGES','REVIEW','CONFIRM','REOPEN'],
+            preparation_id: UUID | None=None,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):
+            raise HTTPException(422,'invalid recovery handle')
+        from .local_request_recovery import read
+        try:return read(store,token(authorization),operation,idempotency_key,preparation_id)
+        except Denied:raise HTTPException(403,'original local request unavailable or authorization denied') from None
+        # A read-only recovery refusal must not enter the denial-audit writer.
+
     @app.post('/api/preparations/{preparation_id}/commands')
     def preparation_command(preparation_id: UUID,data: preparation.PreparationCommand,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
@@ -600,6 +617,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/synthetic-resources')
     def resource_catalog(authorization: str | None=Header(default=None)):
         return resources.catalog(store,token(authorization))
+
+    @app.post('/api/synthetic-resources/combination-preview')
+    def resource_combination_preview(data: resources.CombinationPreview,authorization: str | None=Header(default=None)):
+        return resources.combination_preview(store,token(authorization),data)
 
     @app.post('/api/synthetic-resources/{resource_id}/preview')
     def resource_preview(resource_id: UUID,data: resources.Preview,authorization: str | None=Header(default=None)):
@@ -721,6 +742,8 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from . import local_demo_selections as selections
         selection_planner=local_synthetic_demo.selector
 
+    from .service_selection_candidates import ManualPreview as ManualServicePreview
+
     def selected_catalog():
         if local_synthetic_demo is not None:return local_synthetic_demo.catalog
         if capability_catalog is None:raise Denied('isolated service capability selection disabled')
@@ -733,6 +756,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             p,parent=selections.bp._context(store,c,token(authorization),preparation_id)
             current=selections.current(store,c,p,parent,catalog)
             return dict(**current,scope='SYNTHETIC_SERVICE_CAPABILITY_SELECTION_PREVIEW',actor_ref=selections.cp._hash(dict(actor_id=p['id'])),read_only=True,automatically_replayed=False)
+
+    @app.post('/api/preparations/{preparation_id}/service-composition-preview')
+    def service_composition_preview(preparation_id: UUID,data: ManualServicePreview,authorization: str | None=Header(default=None)):
+        from .service_selection_candidates import manual_preview
+        return manual_preview(store,token(authorization),preparation_id,data,catalog=selected_catalog(),module=selections)
 
     @app.post('/api/preparations/{preparation_id}/service-selections',status_code=201)
     def service_selection_generate(preparation_id: UUID,data: selections.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):

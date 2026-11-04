@@ -24,7 +24,7 @@ def _definition(plan):
 def _pairs(parent,plan,checker):
     from . import service_selection_candidates as selection,service_selection as refs
     try:
-        if (plan.get('candidate_consumption') or {}).get('verification_basis',{}).get('validator_version')!=4:
+        if (plan.get('candidate_consumption') or {}).get('verification_basis',{}).get('validator_version') not in (4,5):
             raise ValueError()
         record=selection.find(parent,plan['candidate_consumption']['candidate_id'])
         snapshot=record['document']['catalog_snapshot'];pairs=[]

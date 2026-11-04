@@ -160,6 +160,7 @@ class NativeSecretSourceChecks(unittest.TestCase):
         store=object.__new__(n._NativeFixedSecretStore);store.lease=lease;store.failed=False
         target=object.__new__(p._NewDataTarget)
         target.lease=lease;target.handles=[];target.cleanup_errors=[];target.failed=target.closed=False
+        target.api=SimpleNamespace(readonly=SimpleNamespace())
         def refuse():raise s.StoreRefused('SYNTHETIC_CURRENT_USER_DRIFT')
         store._native_check=refuse
         token=n.RecoveredInstance()

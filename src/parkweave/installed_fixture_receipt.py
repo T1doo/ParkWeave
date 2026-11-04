@@ -73,10 +73,15 @@ def refuse_inherited_configuration():
         raise Denied('installed receipt inherited PostgreSQL configuration refused')
 
 
-def _connect(parsed, *, autocommit):
+def _connect(parsed, *, autocommit, endpoint=None):
     # No reliance on empty kwargs suppressing libpq environment defaults.
     # Inherited PG* configuration was refused before any connection.
     refuse_inherited_configuration()
+    if endpoint is not None:
+        from scripts.windows_portable.native_database_endpoint import NativeOwnedDatabaseEndpoint
+        if type(endpoint) is not NativeOwnedDatabaseEndpoint:
+            raise Denied('exact owned native database endpoint required')
+        return endpoint.connect(parsed,autocommit=autocommit)
     options = dict(parsed)
     options.update(hostaddr=parsed['host'], password=parsed.get('password', ''),
                    passfile=os.devnull,
@@ -85,6 +90,14 @@ def _connect(parsed, *, autocommit):
                    sslmode=parsed['sslmode'], gssencmode='disable',
                    require_auth='none,password,md5,scram-sha-256')
     return psycopg.connect(**options, autocommit=autocommit, row_factory=dict_row)
+
+
+def _connect_bound(parsed,*,autocommit,endpoint):
+    # Preserve the original standalone connector when no owned-runtime port is
+    # supplied. The native product factory always supplies the exact port.
+    if endpoint is None:
+        return _connect(parsed,autocommit=autocommit)
+    return _connect(parsed,autocommit=autocommit,endpoint=endpoint)
 
 
 def _identity(connection):
@@ -148,7 +161,7 @@ class NativeDatabaseCreationEvidence:
 
 
 def create_installed_synthetic_database_receipt(
-        maintenance_dsn, target_owner_dsn, expected_data_directory, *, application_dsn=None):
+        maintenance_dsn, target_owner_dsn, expected_data_directory, *, application_dsn=None, endpoint=None):
     """Explicit new parkweave CREATE only; no repair/retry/drop or default hook.
 
     BOTH DSNs are validated before any connection. Caller must already have
@@ -163,6 +176,11 @@ def create_installed_synthetic_database_receipt(
     application = _dsn(application_dsn, 'parkweave') if application_dsn is not None else None
     directory = _directory(expected_data_directory)
     refuse_inherited_configuration()
+    if endpoint is not None:
+        from scripts.windows_portable.native_database_endpoint import NativeOwnedDatabaseEndpoint
+        if type(endpoint) is not NativeOwnedDatabaseEndpoint:
+            raise Denied('exact owned native database endpoint required before CREATE')
+        endpoint.verify()
     if psycopg.pq.version() < 170000:
         raise Denied('installed receipt explicit authentication policy unsupported')
     if any(maintenance[key] != target[key] for key in ('host', 'port', 'user')):
@@ -172,7 +190,7 @@ def create_installed_synthetic_database_receipt(
             any(application[key] != target[key] for key in ('host', 'port'))):
         raise Denied('installed receipt application connection pair refused')
     try:
-        with _connect(maintenance, autocommit=True) as connection:
+        with _connect_bound(maintenance, autocommit=True, endpoint=endpoint) as connection:
             before = _identity(connection)
             if (before['database_name'] != 'postgres' or
                     before['data_directory'] != directory or
@@ -213,7 +231,7 @@ def create_installed_synthetic_database_receipt(
             if (not created or type(created['oid']) is not int or created['oid'] <= 0 or
                     not _same_cluster(before, _identity(connection))):
                 raise ValueError
-        with _connect(target, autocommit=False) as connection:
+        with _connect_bound(target, autocommit=False, endpoint=endpoint) as connection:
             after = _identity(connection)
             if (not _same_cluster(before, after) or
                     after['database_name'] != 'parkweave' or
@@ -243,14 +261,15 @@ class _InstalledSyntheticSetupStore(Store):
     The application connector is used only for Setup's read-only role check.
     """
 
-    def __init__(self, owner_dsn, application_dsn, receipt):
+    def __init__(self, owner_dsn, application_dsn, receipt, endpoint=None):
         super().__init__(owner_dsn)
         self._owner_connection = _dsn(owner_dsn, 'parkweave')
         self._application_connection = _dsn(application_dsn, 'parkweave')
         self._case_fact_fixture_receipt = receipt
+        self._owned_database_endpoint = endpoint
 
     def connect(self):
-        connection = _connect(self._owner_connection, autocommit=False)
+        connection = _connect_bound(self._owner_connection, autocommit=False, endpoint=self._owned_database_endpoint)
         try:
             NativeDatabaseCreationEvidence.authorize_migration(self._case_fact_fixture_receipt, connection)
         except BaseException:
@@ -259,10 +278,10 @@ class _InstalledSyntheticSetupStore(Store):
         return connection
 
     def connect_application(self):
-        return _connect(self._application_connection, autocommit=False)
+        return _connect_bound(self._application_connection, autocommit=False, endpoint=self._owned_database_endpoint)
 
 
-def create_installed_synthetic_store(maintenance_dsn, owner_dsn, application_dsn, expected_data_directory):
+def create_installed_synthetic_store(maintenance_dsn, owner_dsn, application_dsn, expected_data_directory, *, endpoint=None):
     """One confirmed CREATE, receipt and Store in this process; no adoption path.
 
     All three DSNs and the application role are checked before CREATE. Failed or
@@ -277,5 +296,6 @@ def create_installed_synthetic_store(maintenance_dsn, owner_dsn, application_dsn
     if any(info['host'] != '127.0.0.1' for info in parsed):
         raise Denied('installed Setup host refused before creation')
     receipt = create_installed_synthetic_database_receipt(
-        maintenance_dsn, owner_dsn, expected_data_directory, application_dsn=application_dsn)
-    return _InstalledSyntheticSetupStore(owner_dsn, application_dsn, receipt)
+        maintenance_dsn, owner_dsn, expected_data_directory, application_dsn=application_dsn,
+        **({'endpoint':endpoint} if endpoint is not None else {}))
+    return _InstalledSyntheticSetupStore(owner_dsn, application_dsn, receipt, endpoint)

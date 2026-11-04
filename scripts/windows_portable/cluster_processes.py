@@ -79,8 +79,9 @@ class FixedClusterProcesses:
         from parkweave.installed_fixture_receipt import _dsn
         self._time(deadline)
         inputs = self.prerequisites.configuration(lease, credentials, deadline)
-        if type(inputs) is not DatabaseInputs or inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
+        if type(inputs) is not DatabaseInputs:
             raise CandidateRefused('original held cluster inputs required')
+        self._require_data_directory(lease,inputs)
         maintenance = _dsn(inputs.maintenance_dsn, 'postgres')
         owner = _dsn(inputs.owner_dsn, 'parkweave')
         application = _dsn(inputs.application_dsn, 'parkweave')
@@ -89,6 +90,10 @@ class FixedClusterProcesses:
                 owner['user'] != 'postgres' or application['user'] != 'parkweave_app'):
             raise CandidateRefused('fixed local cluster roles and endpoint required')
         return inputs, maintenance['port']
+
+    def _require_data_directory(self,lease,inputs):
+        if inputs.data_directory != str(private_root(lease) / 'data' / 'postgresql'):
+            raise CandidateRefused('original held cluster inputs required')
 
     def _record(self, register):
         def record(token):

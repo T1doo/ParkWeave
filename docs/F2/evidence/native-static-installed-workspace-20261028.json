@@ -1,0 +1,71 @@
+{
+  "schema": "parkweave-native-static-and-installed-workspace/1",
+  "source_commit": "eaceac7138df31f56b1a98e6f92153e9a94eadae",
+  "ui_commit": "ccc450c009ec7749ed098db74013eacb828e442b",
+  "authorized_public_baseline": "681fbc729e3886eabe0675893f67eeb5dc38864d",
+  "new_commits": "local only; remote authorized baseline has different metadata with identical source tree",
+  "changes": [
+    "constructor-issued native runtime cap frozen to original lease/target pins/manifest/runtime",
+    "Windows PG snapshot uses actual held target file read/EOF/SHA256/metadata and before/after namespace inspection",
+    "shared PE/static import and BKI dynamic-module validation with original POSIX implementation",
+    "NEW initdb and NEW/REOPEN pre-server both retain same final loading refusal"
+  ],
+  "gate_classification": {
+    "OWNER": {
+      "function": "scripts.windows.lifecycle.setup_readiness",
+      "status": "intentional hard-coded new-setup pause; concrete factory exists; not lifted"
+    },
+    "fixed_journal": {
+      "function": "fixed_windows_journal.require_fixed_native_acceptance",
+      "status": "native slot file IO implemented; Windows platform acceptance missing; not lifted"
+    },
+    "native_loader": {
+      "function": "runtime_payload.RuntimePayloadPrerequisite.require_for_cluster",
+      "status": "Windows held-file static inspection implementation now connected; actual Windows API/loader validation remains unexecuted; terminal refusal retained for NEW and REOPEN"
+    }
+  },
+  "tests": [
+    {
+      "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_local_product_runtime.py::test_sealed_install_http_review_correction_confirmation_and_process_reopen --basetemp=/tmp/pw-final-native-installed-workspace",
+      "source_commit": "eaceac7138df31f56b1a98e6f92153e9a94eadae",
+      "exit_code": 0,
+      "result": "1 passed in 4.72s",
+      "actual": "installed Linux HTTP root + sealed role login + worker/PG + evidence/review/changes/confirm/reopen/readback"
+    },
+    {
+      "command": "/workspace/parkweave-venv/bin/python -m pytest -q scripts/windows_portable/test_runtime_payload.py tests/test_native_local_runtime_source.py::test_runtime_package_contains_native_factory_dependency_files --basetemp=/tmp/pw-native-static-snapshot",
+      "exit_code": 0,
+      "result": "10 passed in 0.53s",
+      "source": "initial new static branch worktree"
+    },
+    {
+      "command": "/workspace/parkweave-venv/bin/python -m pytest -q scripts/windows_portable/test_runtime_payload.py tests/test_native_local_runtime_source.py::test_runtime_package_contains_native_factory_dependency_files tests/test_native_local_runtime_source.py::test_concrete_factory_is_pure_and_new_retains_original_gate --basetemp=/tmp/pw-native-static-final",
+      "exit_code": 1,
+      "result": "11 passed, 1 failed in 0.51s",
+      "failure": "new test accidentally contained previous test final two statements; NameError; test placement corrected; no production guard relaxed"
+    },
+    {
+      "command": "/workspace/parkweave-venv/bin/python -m pytest -q scripts/windows_portable/test_runtime_payload.py::RuntimePayloadFileChecks::test_native_capability_cannot_be_forged_or_replace_posix_pin_policy scripts/windows_portable/test_runtime_payload.py::RuntimePayloadFileChecks::test_external_manifest_and_source_scope_pins_cannot_be_self_repaired --basetemp=/tmp/pw-native-static-correction",
+      "exit_code": 0,
+      "result": "2 passed in 0.19s"
+    }
+  ],
+  "prior_ui_three_cases": {
+    "command": "/workspace/parkweave-venv/bin/python -m pytest -q tests/test_local_product_client.py tests/test_native_workspace_bridge.py::test_password_context_is_separate_and_native_constructor_refuses_cloud tests/test_local_product_runtime.py --basetemp=/tmp/pw-workspace-layout",
+    "result": "3 passed in 7.63s",
+    "clarification": "one pytest invocation, three collected cases; not three separate commands"
+  },
+  "independent_review": {
+    "agent": "/root/review_local_product",
+    "basis": "ccc450c plus exact five-file source diff committed in this revision",
+    "result": "no new P1/P2; original lease locking, deadline and cleanup checked; no repeated test/native execution by reviewer"
+  },
+  "limits": {
+    "windows_native_inspect": "NOT_RUN; adversarial source tests are not Windows execution",
+    "windows_installer": "NOT_ACCEPTED; source payload must already satisfy private ACL",
+    "browser_pixels": "NOT_RUN; prior Chromium SUID sandbox refusal respected; neither viewport visually accepted",
+    "user_pc": "NOT_USED",
+    "security_setters": "NOT_EXECUTED",
+    "public_upload_and_pr5_metadata": "NOT_ATTEMPTED"
+  }
+}

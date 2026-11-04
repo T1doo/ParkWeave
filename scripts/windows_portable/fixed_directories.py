@@ -158,6 +158,9 @@ class FixedDirectoryLease(DirectoryLease):
         # Read/identity failures poison as well as writes. Restoring old bytes
         # cannot silently re-enable this already uncertain invocation.
         try:
+            from .native_trial_authority import budget
+            cleanup=(update.get('phase') in ('READY_STOPPED','UNKNOWN') or update.get('handoff')=='RELEASE_PENDING')
+            budget(self,cleanup=cleanup)  # BEFORE any fixed-slot write/flush.
             self._verify()
             value = {**self.record, **update, 'sequence': self.record['sequence'] + 1}
             raw = journal.encode(value); journal.decode(raw, format=self._journal_format)
@@ -166,6 +169,8 @@ class FixedDirectoryLease(DirectoryLease):
             self.poisoned = True
             raise
         self.record, self.snapshot = value, snapshot
+        from .native_trial_facts import journal_write
+        journal_write(self)
 
 
 class FixedPrivateDirectories(PrivateDirectories):
@@ -180,13 +185,16 @@ class FixedPrivateDirectories(PrivateDirectories):
         if os.name == 'posix': return FixedPosixFilesystem(self.base, format=self.journal_format)
         if os.name == 'nt':
             from .fixed_windows_journal import FixedWindowsFilesystem
-            return FixedWindowsFilesystem(self.base, format=self.journal_format)
+            fs=FixedWindowsFilesystem(self.base, format=self.journal_format)
+            from .native_trial_authority import inherit
+            inherit(self,fs)
+            return fs
         raise LeaseRefused('UNSUPPORTED_DIRECTORY_BACKEND')
 
     def _acquire(self, root, *, fresh):
         if fresh and os.name == 'nt':
-            from scripts.windows.lifecycle import require_setup_readiness
-            require_setup_readiness()
+            from .native_trial_authority import require_owner
+            require_owner(self)
         # Reuse the original exact path/device validation before any filesystem
         # acquisition without changing the old v1 format or its default route.
         root = os.fspath(root); path, base = Path(root), Path(self.base)
@@ -203,6 +211,8 @@ class FixedPrivateDirectories(PrivateDirectories):
             if journal.require_format(fs.journal_format) is not selected:
                 raise LeaseRefused('FIXED_ACQUISITION_FORMAT_MISMATCH')
             fs.acquire(path.name, fresh=fresh)
+            from .native_trial_authority import budget
+            budget(self)
             if fresh:
                 record = dict(schema=journal.schema(selected), root=fs.root_id, lock=fs.lock_id, journal=fs.identity(),
                               generation=1, sequence=2, phase='NEW', initialized=False, runtime='STOPPED', handoff='OWNED')
@@ -218,7 +228,14 @@ class FixedPrivateDirectories(PrivateDirectories):
                 snapshot = fs.replace(journal.encode(record), snapshot)
             if fs.journal_format is not selected or self.journal_format is not selected:
                 raise LeaseRefused('FIXED_ACQUISITION_FORMAT_CHANGED')
-            return FixedDirectoryLease(fs, record, snapshot)
+            lease=FixedDirectoryLease(fs,record,snapshot)
+            from .native_trial_authority import inherit,bound_state,need
+            inherit(fs,lease)
+            trial=bound_state(lease)
+            if trial is not None:
+                need(len(trial.generations)==(0 if fresh else 1))
+                trial.generations.append(lease)
+            return lease
         except BaseException as primary:
             try: fs.close()
             except BaseException as cleanup:

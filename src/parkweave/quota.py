@@ -13,17 +13,23 @@ class AccountRateLimited(ModelBoundaryError):
 
 class PersistentBudget:
     reserve_per_call=8192
-    def __init__(self,dsn,*,account,product,work,kind='SYNTHETIC'):
+    def __init__(self,dsn,*,account,product,work,kind='SYNTHETIC',coordinator_id=None):
         if kind not in ('SYNTHETIC','LIVE'):raise ModelBoundaryError('QUOTA_KIND_REQUIRED')
         self.dsn,self.account,self.product,self.work,self.kind=dsn,account,product,work,kind
+        self.coordinator_id=coordinator_id
     def invoke(self,sql,args):
         try:
             with psycopg.connect(self.dsn,connect_timeout=2) as c:
                 return c.execute(sql,args).fetchone()[0]
         except psycopg.Error:raise ModelBoundaryError('QUOTA_DENIED') from None
     def reserve(self):
-        record=self.invoke('SELECT shared_model_quota.reserve(%s,%s,%s,%s,%s)',
-                           (self.product,self.account,self.work,self.reserve_per_call,self.kind))
+        if self.coordinator_id is not None:
+            if self.kind!='LIVE':raise ModelBoundaryError('LIVE_COORDINATOR_KIND_REQUIRED')
+            record=self.invoke('SELECT shared_model_quota.reserve_for_worker(%s,%s,%s,%s,%s)',
+                (self.product,self.account,self.work,self.reserve_per_call,self.coordinator_id))
+        else:
+            record=self.invoke('SELECT shared_model_quota.reserve(%s,%s,%s,%s,%s)',
+                               (self.product,self.account,self.work,self.reserve_per_call,self.kind))
         if record['state']!='RESERVED':raise ModelBoundaryError('PREVIOUS_ATTEMPT_NO_RESEND')
         return record
     def hold_rate(self,record):
@@ -32,8 +38,14 @@ class PersistentBudget:
             self.release(record)  # Still RESERVED: send authorization never occurred.
             raise AccountRateLimited(result.get('retry_at'),result.get('retry_after_seconds'),result.get('denials',1))
     def dispatch(self,record):
-        self.hold_rate(record)
-        self.invoke('SELECT shared_model_quota.transition(%s,%s,%s,%s,%s)',(record['id'],record['generation'],'DISPATCHED',None,None))
+        if self.coordinator_id is not None:
+            result=self.invoke('SELECT shared_model_quota.dispatch_for_worker(%s,%s,%s)',
+                (record['id'],record['generation'],self.coordinator_id))
+            if result.get('admitted') is False:
+                raise AccountRateLimited(result.get('retry_at'),result.get('retry_after_seconds'),result.get('denials',1))
+        else:
+            self.hold_rate(record)
+            self.invoke('SELECT shared_model_quota.transition(%s,%s,%s,%s,%s)',(record['id'],record['generation'],'DISPATCHED',None,None))
     def release(self,record):
         self.invoke('SELECT shared_model_quota.transition(%s,%s,%s,%s,%s)',(record['id'],record['generation'],'RELEASED','NOT_SENT',None))
     def finish(self,record,outcome,usage=None):

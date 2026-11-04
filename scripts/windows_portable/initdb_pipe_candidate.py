@@ -192,6 +192,7 @@ class _OwnedInitdbPipe:
         self._handle = self._sd = self._name = self._key = None
         self._claimed_group = None
         self._pending_connection = None
+        self._pending_write = None
         self._client_attempted = False
         self._ready = self._closed = self._sd_release_attempted = self.failed = False
         self.phase, self.winerror, self.cleanup_errors = 'NEW', None, []
@@ -264,7 +265,7 @@ class _OwnedInitdbPipe:
         with self._lock:
             if self._closed:
                 return
-            pending = self._pending_connection
+            pending = self._pending_connection or self._pending_write
             if pending is not None:
                 self.failed = True
                 # Keep original pipe HANDLE and strong OVERLAPPED/event record.

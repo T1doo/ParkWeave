@@ -4,6 +4,7 @@ No instance root opened until fixed-file prerequisites and acceptance pass.
 No rename, volume flush, ACL setter or automatic missing-name repair.
 """
 import ctypes as C
+from parkweave.windows_handles import query_call
 
 from .directories import LeaseRefused
 from .fixed_directories import FIXED_JOURNAL
@@ -19,13 +20,25 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     @property
     def journal_format(self): return self._journal_format
 
+    def _create_root(self, parent, name):
+        from .native_protected_objects import create
+        return create(self.api, parent, name, directory=True)
+
+    def _require_domain(self, *, fresh):
+        from .native_trial_domain import require_domain
+        require_domain(self,fresh=fresh)
+
     def acquire(self, name, *, fresh):
+        self._trial_fresh=fresh
         if fresh:
-            from scripts.windows.lifecycle import require_setup_readiness
-            require_setup_readiness()
+            from .native_trial_authority import require_owner
+            require_owner(self)
         if self.api is None: self.api = NativeFixedLeaseAPI()
+        from .native_trial_authority import inherit
+        inherit(self,self.api)
         self.api.require_fixed_file_prerequisites(self.base)
-        require_fixed_native_acceptance()  # Independent closed gate, not a flag.
+        from .native_trial_authority import require_fixed
+        require_fixed(self)  # Production gate unchanged; trial is a separate domain.
         self._acquire_handles(name, fresh=fresh)
         self.journal = self.hold(self.api.relative_file(self.root, FIXED_JOURNAL,
                                    fresh=fresh, write=True, exclusive=True))
@@ -47,7 +60,9 @@ class FixedWindowsFilesystem(WindowsFilesystem):
 
     def signature(self):
         from parkweave.windows_handles import FileInfo
-        info = FileInfo(); self.api.need(self.api.getinfo(self.journal, C.byref(info)))
+        info = FileInfo()
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_SIGNATURE',self.api.getinfo,
+            (self.journal,C.byref(info)),(self,info)))
         # Access time may change from our own read; write/identity fields may not.
         return (info.Attributes, info.Creation.Low, info.Creation.High, info.Write.Low, info.Write.High,
                 info.Volume, info.SizeHigh, info.SizeLow, info.Links, info.IndexHigh, info.IndexLow)
@@ -57,7 +72,8 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     def _seek(self, offset):
         seek = self.api.readonly.k.SetFilePointerEx
         seek.argtypes, seek.restype = [C.c_void_p, C.c_int64, C.c_void_p, C.c_uint32], C.c_int32
-        self.api.need(seek(self.journal, offset, None, 0))
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_SEEK',seek,
+            (self.journal,offset,None,0),(self,)))
 
     def read_at(self, offset, count):
         self._seek(offset)
@@ -66,7 +82,8 @@ class FixedWindowsFilesystem(WindowsFilesystem):
     def write_at(self, offset, raw):
         self._seek(offset)
         buffer, count = C.create_string_buffer(raw), C.c_uint32()
-        self.api.need(self.api.writefile(self.journal, buffer, len(raw), C.byref(count), None))
+        self.api.need(query_call(self.api.readonly,'FIXED_JOURNAL_WRITE',self.api.writefile,
+            (self.journal,buffer,len(raw),C.byref(count),None),(self,buffer,count)))
         if count.value > len(raw): raise LeaseRefused('FIXED_NATIVE_WRITE_COUNT')
         return count.value
 
@@ -79,10 +96,17 @@ def require_fixed_native_acceptance():
     # No environment/boolean/mock result can issue acceptance. A future source
     # change requires independent actual Windows validation and review. This is
     # separate from legacy rename durability and from OWNER permission.
-    raise LeaseRefused('WINDOWS_FIXED_FILE_NATIVE_ACCEPTANCE_NOT_ESTABLISHED')
+    from .native_acceptance_contract import Area,requirement
+    raise LeaseRefused(requirement(Area.FIXED_JOURNAL).reason)
 
 
 class NativeFixedLeaseAPI(NativeLeaseAPI):
+    def relative_file(self, parent, name, *, fresh=False, write=False, exclusive=False, rename=False):
+        if fresh:
+            from .native_protected_objects import create
+            return create(self, parent, name, directory=False, write=write, exclusive=exclusive, rename=rename)
+        return super().relative_file(parent, name, fresh=False, write=write, exclusive=exclusive, rename=rename)
+
     def require_fixed_file_prerequisites(self, base):
         import os
         import re

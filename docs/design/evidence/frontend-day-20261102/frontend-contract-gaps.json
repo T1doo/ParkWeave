@@ -1,0 +1,69 @@
+{
+  "scope": "ORDINARY_BACKEND_ADAPTERS_IMPLEMENTED_WITH_EXISTING_AUTHORIZATION_AND_SOURCE_RULES",
+  "items": [
+    {
+      "id": "SERVICE_MANUAL_COMPOSITION",
+      "source": "service_selection_candidates.Capture/generate_manual/_producer/_proof/consume; local_demo_selections; original service_case_steps.adopt",
+      "actual_request_fields": [
+        "expected_preparation_revision",
+        "expected_source_sha256",
+        "expected_capability_catalog_sha256",
+        "manual_selections (candidate save) / selections (read-only preview)"
+      ],
+      "gap": "No remaining multiple-solution manual choice/adoption implementation gap. Only actual authorized catalog releases/instances can be selected; absent versions require actual source data. Unsupported, redundant, stale, expired or unauthorized choices remain rejected rather than made adoptable.",
+      "frontend": "Choose exact current version/instance; explicit read-only whole-goal check; separately save owner-selected candidate; original confirmation and adoption. UNKNOWN only GET-recovers the original opaque key after close/reopen. Filtering preserves choices; invalidation and disabled original entry clear transient selections. Source trace identifies owner selection instead of model output.",
+      "implemented": "Multiple legal inclusion-minimal solutions may be explicitly selected using exact current release/version/instance refs. Original candidate POST accepts optional manual_selections and saves a bounded atomic OWNER_EXPLICIT_NO_MODEL record under the original owner/EXECUTE/key/source lease. New producer binds actor, request, selection and attempt. Original explicit adoption consumes that exact verified candidate. Historical recovery and source trace retain the choice. V4 manual validator 5 and local MANUAL_V3 are strictly paired; automatic old producer contracts and fingerprints remain unchanged."
+    },
+    {
+      "id": "PRE_HOLD_GROUP_FEASIBILITY",
+      "source": "resource_holds.CombinationPreview/combination_preview",
+      "member_fields": [
+        "hold_id",
+        "expected_revision"
+      ],
+      "gap": "No remaining pre-hold local synthetic capacity-preview endpoint gap. This is an observation, never an atomic reservation, external availability, authorization confirmation or combined hold creation.",
+      "frontend": "Explicit whole-intention feasibility action, old result marked stale on edits, current source revisions, exact request response checking, same-identity permission rejection clears private copies.",
+      "implemented": "One read-only transaction, original READ role/grant scope, deterministic shared resource locks, one evaluation clock, existing active occupancy plus every requested buffered half-open interval counted together. 1–8 requests, including repeated same-resource windows; per-item reasons and whole-group result; no holds or receipts."
+    },
+    {
+      "id": "PERSISTED_FILE_METADATA_AND_EXPIRY",
+      "source": "preparation.SourceFile/PreparationCommand/command/read; material_file_import.parse",
+      "current_material_fields": [
+        "id",
+        "slot",
+        "version",
+        "text",
+        "source_kind",
+        "source_label",
+        "source_sha256",
+        "authenticity"
+      ],
+      "gap": "Legacy files did not store these facts, so no backfill from editable labels. Edited excerpts are saved without original-file attachment facts. Source expiry is not recorded by any authoritative source; file name/content dates are not proof of expiry.",
+      "frontend": "New unmodified imported versions show server-parsed original facts in full/focused material rows and actual-format filter. Unknown metadata remains explicitly retained by default.",
+      "implemented": "Optional source_file on original ADD_EVIDENCE command. Server reparses actual submitted TXT/MD/CSV/JSON bytes, enforces 8KiB and exact saved candidate text; persists only evidence-bound name/format/bytes/raw hash/candidate hash in original event. Separate material_files read projection keeps established snapshot hash domain unchanged. Frontend omits duplicate text to retain original 16KiB body cap; original UNKNOWN key/body/recovery preserved."
+    },
+    {
+      "id": "STEP_VERIFICATION_TIME",
+      "source": "service_case_steps._event/adopt/command/_view",
+      "gap": "Historical events did not record a verification time. No backfill is invented. Existing non-owner projection does not expose private actor/time.",
+      "frontend": "Verified record fold shows stored event time when authorized and supplied, otherwise explicitly unknown. Verification remains separate from fulfillment.",
+      "implemented": "New committed events carry database clock_timestamp().isoformat(), including VERIFY; original replay keeps the original time. Owner can read it; non-owner event projection remains exactly id/revision/action/step_id."
+    },
+    {
+      "id": "REAL_AI_ATTRIBUTION",
+      "source": "src/parkweave/web.html:serviceSelectionPreviewValidate / original candidate contract",
+      "gap": "Current model/provider is disabled and candidate validation requires provider_enabled=false.",
+      "frontend": "Retains synthetic-candidate labels and original sources; does not tag these results as live AI or execute models."
+    }
+  ],
+  "remaining_visual_acceptance": [
+    "same viewport before/after at 1366x768 and 1440x900",
+    "browser keyboard, scroll return and screen-reader checks",
+    "100/125/150/200 percent zoom and 320 CSS px reflow",
+    "high contrast, reduced motion and touch layout",
+    "Windows host build and native pixel acceptance"
+  ],
+  "new_business_endpoints": 2,
+  "new_permissions": 0,
+  "schema_migrations": 0
+}

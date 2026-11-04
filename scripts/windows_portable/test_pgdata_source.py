@@ -39,7 +39,7 @@ class PGDataSourceChecks(unittest.TestCase):
         target._entries = lambda handle: (('file', 0x80, 101),)
         target._open = lambda *args: 101
         def close(handle): raise OSError('INJECTED_CLOSE_FAILURE')
-        target.api = SimpleNamespace(info=lambda h: Info(0x10 if h == 100 else 0x80, 0, 1, 5, h),
+        target.api = SimpleNamespace(readonly=SimpleNamespace(), info=lambda h: Info(0x10 if h == 100 else 0x80, 0, 1, 5, h),
             descriptor=lambda h: (), security=lambda h: replace(security(), owner='S-1-1-0'), close=close)
         with self.assertRaises(BaseExceptionGroup) as caught: target._walk()
         self.assertEqual([type(x) for x in caught.exception.exceptions], [n.DataRefused, OSError])
@@ -57,14 +57,14 @@ class PGDataSourceChecks(unittest.TestCase):
         def close(handle):
             closed.append(handle)
             if handle == 11: raise OSError('INJECTED_CLOSE_FAILURE')
-        target.api = SimpleNamespace(close=close)
+        target.api = SimpleNamespace(readonly=SimpleNamespace(), close=close)
         target._walk = lambda: (_ for _ in ()).throw(n.DataRefused('ORIGINAL_DRIFT'))
         n._by_lease[lease] = target
         with self.assertRaisesRegex(n.DataRefused, 'ORIGINAL_DRIFT'): n._scan_entry(lease, target)
-        self.assertTrue(lease.poisoned and target.failed and target.closed)
+        self.assertTrue(lease.poisoned and target.failed and not target.closed)
         self.assertEqual(target.outcome, 'UNKNOWN')
         self.assertEqual(closed, [11, 10])
-        target.close()  # Already attempted unknown integer must never be retried.
+        with self.assertRaises(n.DataRefused):target.close()
         self.assertEqual(closed, [11, 10])
         self.assertIs(n._by_lease[lease], target)  # No deleting/adopting a failed attempt.
 
@@ -129,10 +129,11 @@ class PGDataSourceChecks(unittest.TestCase):
         tree = ast.parse(Path(n.__file__).read_text())
         methods = {x.name:x for x in ast.walk(tree) if isinstance(x, ast.FunctionDef)}
         call = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Call) and
-                    isinstance(x.func, ast.Attribute) and x.func.attr == 'ntcreate')
-        self.assertEqual(ast.unparse(call.args[7]), '2 if create else 1')
-        self.assertEqual(ast.unparse(call.args[6]), '3 if anchor else 7')
-        self.assertEqual(ast.unparse(call.args[8]), '32 | 2097152 | (1 if create else 0)')
+                    isinstance(x.func, ast.Name) and x.func.id == 'submit_create')
+        arguments={x.arg:ast.unparse(x.value) for x in call.keywords}
+        self.assertEqual(arguments['disposition'], '2 if create else 1')
+        self.assertEqual(arguments['share'], '3 if anchor else 7')
+        self.assertEqual(arguments['options'], '32 | 2097152 | (1 if create else 0)')
         append = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Call) and
                       isinstance(x.func, ast.Attribute) and x.func.attr == 'append')
         status = next(x for x in ast.walk(methods['_open']) if isinstance(x, ast.Call) and

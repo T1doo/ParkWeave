@@ -1,7 +1,7 @@
 """Lease-bound, read-only PG payload snapshot. Never runtime activation proof.
 
-Reuses original manifest/PE parsing and held-file pinning. Native Windows
-directory enumeration and loader acceptance remain closed; no path fallback.
+Reuses original manifest/PE parsing and held-file pinning. Windows reads the
+original issued installer's target pins; loader acceptance remains closed.
 Only immutable PG payload names are read, never data/files/secrets contents.
 """
 import hashlib
@@ -37,7 +37,7 @@ class RuntimePayloadPrerequisite:
     Python closure, native loading, symbols/forwarders or initdb's internal
     bootstrap/standalone backend and pipe-command execution.
     """
-    def __init__(self, lease, *, manifest_sha256, source_commit):
+    def __init__(self, lease, *, manifest_sha256, source_commit, native_installation=None):
         require(type(lease) is FixedDirectoryLease, 'EXACT_FIXED_LEASE_REQUIRED')
         require(type(manifest_sha256) is str and re.fullmatch('[0-9a-f]{64}', manifest_sha256), 'EXTERNAL_MANIFEST_PIN_REQUIRED')
         require(type(source_commit) is str and re.fullmatch('[0-9a-f]{40}', source_commit), 'EXACT_SOURCE_PIN_REQUIRED')
@@ -45,6 +45,11 @@ class RuntimePayloadPrerequisite:
         self.lease, self.manifest_sha256, self.source_commit = lease, manifest_sha256, source_commit
         self.binding = self._binding()
         self.failed = False
+        self.native_installation = native_installation
+        if native_installation is not None:
+            from .native_runtime_staging import NativeRuntimeInstallation
+            require(type(native_installation) is NativeRuntimeInstallation,'ORIGINAL_NATIVE_INSTALLATION_REQUIRED')
+            native_installation._issued_binding(lease,dict(manifest_sha256=manifest_sha256,source_commit=source_commit))
 
     def _binding(self):
         return (bytes(self.lease.snapshot[0]), tuple(self.lease.snapshot[1]),
@@ -61,8 +66,13 @@ class RuntimePayloadPrerequisite:
         held, primary, result = [], None, None
         try:
             self._check(lease, deadline)
-            # Do not enumerate/reopen a Windows directory by pathname. A native
-            # held-directory enumerator has not been implemented or accepted.
+            if os.name == 'nt':
+                require(self.native_installation is not None,'NATIVE_PAYLOAD_ENUMERATION_NOT_ACCEPTED')
+                result = self.native_installation.inspect_pg_static(lease,
+                    dict(source_commit=self.source_commit,manifest_sha256=self.manifest_sha256),deadline)
+                self._check(lease,deadline)
+                return result
+            # Native Windows uses the original issued installer pins above.
             require(os.name == 'posix' and os.scandir in os.supports_fd, 'NATIVE_PAYLOAD_ENUMERATION_NOT_ACCEPTED')
             def pin(name, row):
                 self._check(lease, deadline)
@@ -116,15 +126,7 @@ class RuntimePayloadPrerequisite:
                 data[name] = item.read_bytes()
             # Same frozen bootstrap subset used by the existing builder. Do not
             # claim support for every optional extension merely present in share.
-            dynamic = set()
-            for name, raw in data.items():
-                tail = name[len(PG + 'share/'):] if name.startswith(PG + 'share/') else None
-                if tail is not None and ('/' not in tail and tail.endswith(('.bki', '.sql')) or
-                        tail == 'extension/plpgsql.control' or tail.startswith('extension/plpgsql--') and tail.endswith('.sql')):
-                    dynamic.update(PG + 'lib/' + m.decode('ascii') + '.dll' for m in re.findall(rb'\$libdir/([a-zA-Z0-9_-]+)', raw))
-            require(PG + 'lib/plpgsql.dll' in dynamic and dynamic <= set(data), 'PG_DYNAMIC_BOOTSTRAP_MISSING')
-            closure = payload.dll_closure(data)
-            require(closure['status'] == 'PRIVATE_IMPORTS_PRESENT_OS_LOADING_UNVERIFIED', 'PG_STATIC_IMPORT_UNRESOLVED')
+            report = static_report(data,dict(source_commit=self.source_commit,manifest_sha256=self.manifest_sha256))
             for item in pins:
                 self._check(lease, deadline); item.verify()
             # Repeat actual name enumeration while original file/ancestor pins
@@ -132,10 +134,7 @@ class RuntimePayloadPrerequisite:
             actual.clear(); seen.clear(); directories.clear(); scan(pg_root, PG.rstrip('/'))
             require(actual == set(expected) and directories == expected_dirs - {PG.rstrip('/')}, 'PG_RUNTIME_SET_CHANGED')
             self._check(lease, deadline)
-            result = dict(scope='LEASE_BOUND_PG_STATIC_SNAPSHOT', source_commit=self.source_commit,
-                          manifest_sha256=self.manifest_sha256, runtime_files=len(data), runtime_bytes=sum(map(len, data.values())),
-                          bootstrap_modules=sorted(dynamic), static_loading=closure['status'],
-                          native_loading='NOT_ACCEPTED', activation_allowed=False)
+            result = report
         except BaseException as error:
             primary = error
             self.failed = True
@@ -151,5 +150,41 @@ class RuntimePayloadPrerequisite:
 
     def require_for_cluster(self, lease, deadline):
         self.inspect(lease, deadline)
+        from .native_trial_authority import allow_loader
+        if allow_loader(self,lease,deadline):return None
         # No env/boolean override or claimed synthetic receipt can open this.
-        raise RuntimePayloadRefused('NATIVE_RUNTIME_LOADING_NOT_ACCEPTED')
+        from .native_acceptance_contract import Area,requirement
+        raise RuntimePayloadRefused(requirement(Area.LOADER).reason)
+
+
+def static_report(data, runtime):
+    """Identical bounded PE/BKI policy for held POSIX and Windows snapshots."""
+    require(REQUIRED <= set(data), 'PG_BOOTSTRAP_PAYLOAD_MISSING')
+    dynamic = set()
+    for name, raw in data.items():
+        tail = name[len(PG + 'share/'):] if name.startswith(PG + 'share/') else None
+        if tail is not None and ('/' not in tail and tail.endswith(('.bki', '.sql')) or
+                tail == 'extension/plpgsql.control' or tail.startswith('extension/plpgsql--') and tail.endswith('.sql')):
+            dynamic.update(PG + 'lib/' + m.decode('ascii') + '.dll' for m in re.findall(rb'\$libdir/([a-zA-Z0-9_-]+)', raw))
+    require(PG + 'lib/plpgsql.dll' in dynamic and dynamic <= set(data), 'PG_DYNAMIC_BOOTSTRAP_MISSING')
+    closure = payload.dll_closure(data)
+    # Platform prerequisites remain unresolved observations, not missing private
+    # payload bytes. The caller still refuses native loading unconditionally.
+    # In particular, do not add CRT/API-set names to OS_DLLS to make this pass.
+    platform_reasons = frozenset(('API_SET_REQUIRES_TARGET_SCHEMA',
+        'EXISTING_SIGNED_SYSTEM_CRT_WITNESS_REQUIRED', 'SYSTEM_DLL_REQUIRES_TARGET_OBSERVATION'))
+    require(not closure['missing_private_dependencies'] and
+            all(row['reason'] in platform_reasons for row in closure['unresolved']),
+            'PG_STATIC_IMPORT_UNRESOLVED')
+    from .loader_inputs import symbol_requirements
+    symbols = symbol_requirements(data)
+    require(not symbols['missing_private_symbols'] and not symbols['private_forwarders'],
+            'PG_PRIVATE_SYMBOL_OR_FORWARDER_UNRESOLVED')
+    loading = ('STATIC_PLATFORM_REQUIREMENTS_UNVERIFIED' if closure['unresolved'] else closure['status'])
+    return dict(scope='LEASE_BOUND_PG_STATIC_SNAPSHOT', **runtime, runtime_files=len(data),
+                runtime_bytes=sum(map(len,data.values())),bootstrap_modules=sorted(dynamic),
+                static_loading=loading,unresolved=closure['unresolved'],
+                platform_requirements=closure['platform_requirements'],
+                missing_private_dependencies=closure['missing_private_dependencies'],
+                symbol_requirements=symbols,
+                native_loading='NOT_ACCEPTED',activation_allowed=False)

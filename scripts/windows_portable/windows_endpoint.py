@@ -26,6 +26,11 @@ def require_native_support():
 
 
 def unique_owner(raw, size, client, server, pid):
+    if connected_owner(raw,size,client,server)!=pid:
+        raise ProcessRefused('EXACT_ESTABLISHED_API_OWNER_REQUIRED')
+
+
+def connected_owner(raw, size, client, server):
     if not Table.rows.offset<=size<=min(len(raw),LIMIT): raise ProcessRefused('ENDPOINT_TABLE_BOUNDS')
     count=C.c_uint32.from_buffer_copy(raw[:4]).value
     if count>(size-Table.rows.offset)//C.sizeof(Row): raise ProcessRefused('ENDPOINT_TABLE_COUNT')
@@ -36,10 +41,17 @@ def unique_owner(raw, size, client, server, pid):
         local=(socket.inet_ntoa(row.local_address.to_bytes(4,'little')),socket.ntohs(row.local_port & 0xffff))
         remote=(socket.inet_ntoa(row.remote_address.to_bytes(4,'little')),socket.ntohs(row.remote_port & 0xffff))
         if local==server and remote==client: matches.append((row.state,row.pid))
-    if matches!=[(5,pid)]: raise ProcessRefused('EXACT_ESTABLISHED_API_OWNER_REQUIRED')
+    if len(matches)!=1 or matches[0][0]!=5 or matches[0][1]<=0:
+        raise ProcessRefused('EXACT_ESTABLISHED_API_OWNER_REQUIRED')
+    return matches[0][1]
 
 
 def verify_connection(connection, pid):
+    if connection_owner(connection)!=pid:
+        raise ProcessRefused('EXACT_ESTABLISHED_API_OWNER_REQUIRED')
+
+
+def connection_owner(connection):
     require_native_support()
     if (type(connection) is not socket.socket or connection.family!=socket.AF_INET
             or connection.type!=socket.SOCK_STREAM or connection.getpeername()[0]!='127.0.0.1'
@@ -55,6 +67,7 @@ def verify_connection(connection, pid):
     buffer=C.create_string_buffer(size.value)
     if get(buffer,C.byref(size),False,2,5,0)!=0:
         raise ProcessRefused('ENDPOINT_TABLE_READ_REFUSED')  # No alternate route or retry.
-    unique_owner(buffer.raw,size.value,client,server,pid)
+    pid=connected_owner(buffer.raw,size.value,client,server)
     if connection.getsockname()!=client or connection.getpeername()!=server:
         raise ProcessRefused('API_CONNECTION_CHANGED')
+    return pid

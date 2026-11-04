@@ -1,0 +1,186 @@
+{
+  "date_utc": "2026-11-03",
+  "status": "ONE_PROVEN_KEYBOARD_OMISSION_FIXED_NO_CURRENT_SCREEN_ACCEPTANCE",
+  "baseline_commit": "8ca0eefe53c6ce7aefd4414f792446b9da83165f",
+  "branch": "dev/frontend-day-20261102",
+  "initial_worktree_clean": true,
+  "initial_remote_dev_equals_HEAD": true,
+  "initial_unpushed_changes": 0,
+  "ancestry": {
+    "remote_main_commit": "b8a2fc75a22f2a3527c83f2ac389411381f15c6e",
+    "remote_main_is_ancestor": false,
+    "merge_base": "0827dd52834531b7a9a54cea7c5f62812c8f900e",
+    "product_baseline_ancestor": "fbb27a59dbbeb01b8af80e5706e42b3d185a5459",
+    "reason": "DOCX was committed separately to main and cherry-picked into development; product history is not merged into main."
+  },
+  "code_sha256": {
+    "src/parkweave/web.html": "f534b4d9e1694a704c051a30692dc87ba7dd3f794ed546b6b693a69a749df533",
+    "src/parkweave/local_preparation_web.html": "0a96a2b5b47ce6f6cc3285806fa6399e1a39a28154c8f57f043608edcbdcb073"
+  },
+  "code_git_blob_sha1": {
+    "src/parkweave/web.html": "6c160bd5f9984e65891c65ac047e1128385f8d7f",
+    "src/parkweave/local_preparation_web.html": "5e4b06beefb3f72eef85ebfe5e293941352d7b57"
+  },
+  "test_sha256": "ca44504b5dffaeedbb94d1744670ec3340bff4c2507cbf1c3b48ae5617fec827",
+  "document": {
+    "library_id": "libfile_e64360143000819189c20fd9e838533f",
+    "version": 1,
+    "sha256": "42427f1bfe800332533cdfacf5f9df42a7e3cf2a250043c87b7561394b0a9775",
+    "pages": [
+      24,
+      31,
+      38
+    ],
+    "items": [
+      "P04",
+      "G11",
+      "N08"
+    ],
+    "specific_requirement": "p38: Escape closes the current closable layer, with existing input preserved and original trigger focus restored. p24/p31: resource date keyboard semantics.",
+    "image_viewed": "word/media/image25.png, p31 original target details; local file matches embedded bytes.",
+    "image_is_product_screenshot": false
+  },
+  "finding": {
+    "user_path": "Resources -> open start/end date selector -> Tab to previous-month, next-month or close heading button -> Escape.",
+    "source_chain": "heading contains prev/monthTitle/next/close; heading and grid are siblings under calendar. Keyboard listener was on grid, so heading Escape had no handler.",
+    "change": "Listen on the common calendar section. Handle Escape before looking for a data-day cell, prevent default/propagation and invoke the original close.click(). Non-day navigation keys still return; original date-grid navigation body remains.",
+    "original_close": "Only hides calendar and focuses its original trigger with preventScroll. Button is type=button. No form submission, date mutation, hold/release/confirmation or new request.",
+    "focused_entry_scope": "Full resource workspace has the date selector. Focused materials HTML carries the same shared function, which returns early because it has no resource-form; no new date UI is introduced there.",
+    "CSS_or_layout_changes": false
+  },
+  "tests": {
+    "callback_harness_file": "tests/frontend_calendar_escape_callback.cjs",
+    "current": {
+      "kind": "shipped-callback-vm-with-test-doubles",
+      "results": [
+        "web.html: Escape from previous-month closes and returns to original trigger",
+        "web.html: Escape from next-month closes and returns to original trigger",
+        "web.html: Escape from close-button closes and returns to original trigger",
+        "web.html: date-cell Escape preserves the original close action",
+        "web.html: heading navigation keys do not become calendar selection commands",
+        "web.html: date-cell arrows, week boundaries and month delegation remain available",
+        "local_preparation_web.html: Escape from previous-month closes and returns to original trigger",
+        "local_preparation_web.html: Escape from next-month closes and returns to original trigger",
+        "local_preparation_web.html: Escape from close-button closes and returns to original trigger",
+        "local_preparation_web.html: date-cell Escape preserves the original close action",
+        "local_preparation_web.html: heading navigation keys do not become calendar selection commands",
+        "local_preparation_web.html: date-cell arrows, week boundaries and month delegation remain available"
+      ],
+      "failures": [],
+      "dom_engine": false,
+      "browser_runs": 0,
+      "pixel_engine": false
+    },
+    "baseline": {
+      "kind": "shipped-callback-vm-with-test-doubles",
+      "results": [
+        "web.html: date-cell Escape preserves the original close action",
+        "web.html: heading navigation keys do not become calendar selection commands",
+        "web.html: date-cell arrows, week boundaries and month delegation remain available",
+        "local_preparation_web.html: date-cell Escape preserves the original close action",
+        "local_preparation_web.html: heading navigation keys do not become calendar selection commands",
+        "local_preparation_web.html: date-cell arrows, week boundaries and month delegation remain available"
+      ],
+      "failures": [
+        {
+          "name": "web.html: Escape from previous-month closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "web.html: Escape from next-month closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "web.html: Escape from close-button closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "local_preparation_web.html: Escape from previous-month closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "local_preparation_web.html: Escape from next-month closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        },
+        {
+          "name": "local_preparation_web.html: Escape from close-button closes and returns to original trigger",
+          "error": "Expected values to be strictly equal:\n\nfalse !== true\n"
+        }
+      ],
+      "dom_engine": false,
+      "browser_runs": 0,
+      "pixel_engine": false
+    },
+    "execution": "Node core vm executes actual shipped keyboard registration and original close callback, with explicit event/ancestor/focus/date-render test doubles. Not a DOM/event-propagation engine or end-to-end product run.",
+    "preservation": "Actual original test_original_html_ids_and_business_javascript_are_preserved from tests/test_frontend_day_preservation.py executed via stdlib AST-selected runner; both pages pass exact original ID/business-script preservation with the existing three allowlisted normalization points. No four-role assembly claim.",
+    "complete_inline_script_syntax": "Both scripts pass node --check.",
+    "CSS_unchanged_from_baseline": true,
+    "not_rerun": [
+      "50 historical DOM scenarios",
+      "16 historical Python/actual ASGI-PostgreSQL tests",
+      "four-role assembly",
+      "real browser or Windows"
+    ],
+    "dependency_gap": "Restarted environment lost /tmp/parkweave-dom and /tmp/parkweave-frontenv; jsdom/pytest/psycopg not available at prior locations. No reinstall or new download attempted.",
+    "historical_validation_commit": "8ca0eefe53c6ce7aefd4414f792446b9da83165f"
+  },
+  "independent_review": {
+    "agent": "readonly_frontend_review",
+    "scope": "This two-line fix only; read-only source trace",
+    "status": "PASS",
+    "notes": "Original close/return, grid navigation, input, UNKNOWN, permissions, requests and cleanup unchanged. No browser, network, tests or writes performed by reviewer."
+  },
+  "screen_evidence": {
+    "current_product_screenshot_version": null,
+    "new_screenshots": [],
+    "local_images": "Saved DOCX references/target figures and contact sheets; no current SHA-bound product screenshot available.",
+    "latest_source_version_before_patch": "8ca0eefe53c6ce7aefd4414f792446b9da83165f",
+    "layout_unchanged_by_patch": true
+  },
+  "blocked": [
+    {
+      "action": "Sandboxed Chromium render, current-page keyboard/visual verification and same-viewport before/after capture",
+      "target": "ParkWeave full web.html and focused local_preparation_web.html at the eventual committed source",
+      "state": "Inherited denial remains unresolved; not retried. No new denied/uncertain browser launch this pass.",
+      "current_read_only_evidence": {
+        "helper": "/usr/lib/chromium/chrome-sandbox",
+        "owner_uid": 65534,
+        "owner_gid": 65534,
+        "mode": "4755",
+        "root_mount": "ro,nosuid,nodev",
+        "NoNewPrivs": 1,
+        "CapEff": "0000000000000000",
+        "uid_map": "1000 0 1",
+        "managed_capabilities": []
+      },
+      "minimum_recovery": "Platform must provide a supported sandbox with materially current recovery evidence in the authorized environment. Changing one helper mode/owner is insufficient here; no SUID/trust/namespace/mount/security change or alternate browser route was attempted."
+    },
+    {
+      "action": "Existing whole-page jsdom and PostgreSQL/Python regression suites",
+      "target": "Previously installed temporary test dependencies",
+      "state": "Unavailable after environment restart; no download or installation attempted.",
+      "minimum_recovery": "Previously authorized dependencies must become readable again, or dependency installation must be separately allowed; current work uses only existing Node/Python core."
+    }
+  ],
+  "still_unverified": [
+    "Actual current browser keyboard propagation and focus on heading/date controls",
+    "1366x768 and1440x900 same-source screenshots",
+    "320 CSS px/200%/long Chinese/large fonts/touch/reader/high-contrast/reduced-motion visual behavior",
+    "Windows native/DPI journeys",
+    "Earlier true source-data gaps: unavailable catalog versions, legacy file/event metadata, authoritative expiry"
+  ],
+  "execution_budget": {
+    "CI_runs": 0,
+    "browser_runs": 0,
+    "windows_runs": 0,
+    "security_probes": 0,
+    "new_downloads": 0,
+    "new_permissions": 0,
+    "new_fees": 0,
+    "historical_native_CI_seconds_as_inherited_record": 1633,
+    "no_budget_reset_or_parent_probe_consumption": true
+  },
+  "main_changed": false,
+  "deployed": false,
+  "release_published": false
+}

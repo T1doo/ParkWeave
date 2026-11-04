@@ -170,7 +170,8 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
         def observe():
             try:values.append(adapter.worker_ready_frame(app.worker,time.monotonic()+2))
             except BaseException as error:errors.append(error)
-        with patch('scripts.windows_portable.isolated_pipe.operation',side_effect=read),patch.object(adapter.backend,'stop',create=True) as stop:
+        from . import isolated_pipe
+        with patch.object(isolated_pipe,'operation',side_effect=read),patch.object(adapter.backend,'stop',create=True) as stop:
             thread=threading.Thread(target=observe);thread.start()
             try:
                 self.assertTrue(entered.wait(2))

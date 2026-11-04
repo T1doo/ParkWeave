@@ -1,0 +1,44 @@
+{
+  "schema": "parkweave-native-platform-source-provenance/1",
+  "scope": "Source parser/trust provenance only; no observed machine or native acceptance",
+  "trial_namespace_profile": {
+    "nt_version_class": [10, 0, 26100, 3],
+    "architecture": "AMD64 native; runtime IsWow64Process2 required",
+    "peb_api_set_offset": 104,
+    "namespace_version": 6,
+    "ubr": "NOT_PINNED; no claim of validation across updates",
+    "header": "https://raw.githubusercontent.com/winsiderss/phnt/53fbbdc5b5d2b08761db1c7b26bfa8c820924356/ntpebteb.h",
+    "header_sha256": "9869d45323706a6bf7cb3ed168b4ca6560aef194f1c6a4d37aaad74a356ad248",
+    "runner_description": "https://raw.githubusercontent.com/actions/runner-images/c87f6f636fffa43205bc05328efe9958af0f984f/images/windows/Windows2025-Readme.md",
+    "runner_description_sha256": "dc996f367d036912a1a8b23d3b62289f69422603e3429152cb3ebfc7b1df76fc",
+    "runtime_required": "Actual version, original target architecture, namespace bytes/structure/hash, IAT and memory-export/forwarder equality. Unknown flags/alias or unresolved delay import issue no observation.",
+    "formal_policy": "UNSET; no Windows11 or production acceptance"
+  },
+  "existing_root_pin": {
+    "subject": "Microsoft Root Certificate Authority 2011",
+    "certificate": "https://www.microsoft.com/pki/certs/MicRooCerAut2011_2011_03_22.crt",
+    "der_bytes": 1521,
+    "der_sha256": "847df6a78497943f27fc72eb93f9a637320a02b561d0a91b09e87a7807ed7c61",
+    "repository": "https://www.microsoft.com/pkiops/docs/repository.htm",
+    "trust_rule": "Existing exact root pin and Microsoft Corporation publisher preserved; actual cache-only WinTrust chain/member verification still required. No new roots or certificate-store installation."
+  },
+  "minimum_crt_policy": {
+    "status": "UPSTREAM_FOUR_PART_MINIMUM_NOT_ESTABLISHED",
+    "rule_source": "https://learn.microsoft.com/en-us/cpp/porting/binary-compat-2015-2017",
+    "static_candidate_source": "bcd46ec8b52695a23f46007fbe6a1b44803a626e",
+    "postgres_producer_string": "compiled by msvc-19.44.35229, 64-bit",
+    "python_producer_string": "MSC v.1943",
+    "bundled_python_vcruntime_file_version": [14, 42, 34438, 0],
+    "limitations": "Compiler/linker strings and bundled DLL file versions do not prove a complete four-part minimum for every native component. Never substitute installed versions or this metadata for accepted compatibility evidence."
+  },
+  "hosted_image_environment": {
+    "known_unrelated_postgresql_keys": ["PGBIN", "PGDATA", "PGROOT"],
+    "preparation": "Known image declarations are not an allowlist. After source-record admission, construct an OS/context-only child environment; no ambient PG* names or values inherited. Parent Process/User/Machine environment and services remain unchanged. Original RUNNER_TRACKING_ID is retained only in coordinator for best-effort runner cleanup, never printed or generated.",
+    "clock": "One Environment.TickCount64 start across source check/extraction/execution; Python3.12 monotonic GetTickCount64 checked before admission. Original work900+cleanup60 upper bound, never refreshed per stage.",
+    "clock_sources": [
+      "https://raw.githubusercontent.com/python/cpython/v3.12.10/Python/pytime.c",
+      "https://raw.githubusercontent.com/dotnet/runtime/v10.0.0/src/libraries/System.Private.CoreLib/src/System/Environment.Windows.cs"
+    ],
+    "runner_cleanup_source": "https://raw.githubusercontent.com/actions/runner/v2.338.0/src/Runner.Worker/JobExtension.cs"
+  }
+}

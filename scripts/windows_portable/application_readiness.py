@@ -30,6 +30,7 @@ class RegisteredApplication:
     worker: object
     port: int
     challenge: str
+    database_endpoint: object = field(default=None,repr=False)
 
 
 class ReadyApplication:
@@ -105,7 +106,11 @@ def require_application_ready(lease, inputs, application, probe, registered):
     lease._verify()
     identities=tuple(application.adapter.live_identity(token) for token in (application.api,application.worker))
     application.adapter.require_endpoint_support(application.api)  # Missing witness: no DB probe or HTTP call.
-    expected_db=_database(inputs,deadline)  # Real app-role read; physical binding was independently verified by Security.
+    if application.database_endpoint is None:
+        expected_db=_database(inputs,deadline)
+    else:
+        from .polling_database import probe as database_probe
+        expected_db=database_probe(inputs,deadline,endpoint=application.database_endpoint)
     frame=runtime.validate_frame(application.adapter.worker_ready_frame(application.worker,deadline),'worker')
     expected_worker=dict(schema='parkweave-worker-ready/1',challenge=nonce,pid=identities[1][0],
                          database=expected_db,mode='LOCAL',state='WAITING_GO',business_started=False)

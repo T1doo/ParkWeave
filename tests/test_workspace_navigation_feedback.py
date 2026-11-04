@@ -1,5 +1,4 @@
 """Original request handoff and navigation, synthetic DOM/transport; no browser."""
-import ast
 from copy import deepcopy
 from html.parser import HTMLParser
 import json
@@ -134,15 +133,9 @@ def initial_workspace():
 
 
 def driver_workspace_contract():
-    """Load only the actual pure oracle and JS observation, no browser imports."""
-    source = (Path(__file__).resolve().parents[1] / 'scripts/workspace_visual_browser_once.py').read_text()
-    tree = ast.parse(source)
-    script = next(ast.literal_eval(n.value) for n in tree.body if isinstance(n, ast.Assign)
-                  and any(isinstance(t, ast.Name) and t.id == 'NAVIGATION_WORKSPACE_SCRIPT' for t in n.targets))
-    function = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'assert_navigation_workspace')
-    namespace = {}
-    exec(compile(ast.Module(body=[function], type_ignores=[]), '<actual-driver-workspace-contract>', 'exec'), namespace)
-    return script, namespace['assert_navigation_workspace']
+    """Load the stable pure oracle, independent of archived visual scenarios."""
+    from scripts.workspace_navigation_contract import NAVIGATION_WORKSPACE_SCRIPT, assert_navigation_workspace
+    return NAVIGATION_WORKSPACE_SCRIPT, assert_navigation_workspace
 
 
 RETURN_LINK_PROBE = r"""
@@ -229,8 +222,11 @@ def probe_return_links():
     assert [link['href'] for link in parsed.links] == ['#existing-preparation-entry', '#formal-preparation-entry']
     assert all(parsed.targets[link['href'][1:]]['tabindex'] == '-1' for link in parsed.links)
     assert not re.search(r'hashchange|popstate|location\.hash|history\.(?:pushState|replaceState)', page)
-    captures = re.findall(r"document\.addEventListener\('click',(?:event|e)=>\{.*?\},true\);", page, re.S)
-    assert len(captures) == 3 and page.count("document.addEventListener('click',") == 4
+    # Exercise the four original request/return captures. The separate
+    # presentation layer adds menu dismissal; it is not an original guard.
+    original_handlers = page.split('// Frontend-day presentation.', 1)[0]
+    captures = re.findall(r"document\.addEventListener\('click',(?:event|e)=>\{.*?\},true\);", original_handlers, re.S)
+    assert len(captures) == 3 and original_handlers.count("document.addEventListener('click',") == 4
     source = '\n'.join(captures)
     start = page.index('function entryReadAllowed(')
     end = page.index("document.addEventListener('submit',blockIndependentEntryUI,true);", start)

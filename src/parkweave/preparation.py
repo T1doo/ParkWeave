@@ -16,6 +16,13 @@ class CreatePreparation(BaseModel):
     service_version: int=Field(ge=1)
     reviewer_id: str=Field(min_length=1,max_length=100)
 
+class SourceFile(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True)
+    file_name: str=Field(min_length=1,max_length=100)
+    content_base64: str=Field(min_length=1,max_length=10924)
+    data_classification: Literal['SYNTHETIC_SAMPLE']
+
+
 class PreparationCommand(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
     action: Literal['ADD_EVIDENCE','REQUEST_CHANGES','REVIEW','CONFIRM','REOPEN']
@@ -24,10 +31,17 @@ class PreparationCommand(BaseModel):
     text: str|None=Field(default=None,min_length=1,max_length=4000)
     source_kind: Literal['USER_STATEMENT','DOCUMENT_EXCERPT']|None=None
     source_label: str|None=Field(default=None,min_length=1,max_length=200)
+    source_file: SourceFile|None=None
     reason: str|None=Field(default=None,min_length=1,max_length=1000)
     correction_slots: list[Literal['need_summary','material_outline']]|None=Field(default=None,min_length=1,max_length=2)
     @model_validator(mode='after')
     def shape(self):
+        if self.source_file is not None:
+            if self.action!='ADD_EVIDENCE' or self.source_kind!='DOCUMENT_EXCERPT':raise ValueError('source file applies only to document evidence')
+            from .material_file_import import parse
+            parsed=parse(self.source_file.file_name,self.source_file.content_base64)
+            if self.text is None:self.text=parsed['candidate_text']
+            if self.text!=parsed['candidate_text']:raise ValueError('source file must match the saved candidate text; edited excerpts save separately')
         evidence=(self.slot,self.text,self.source_kind,self.source_label)
         if 'correction_slots' in self.model_fields_set and self.action!='REQUEST_CHANGES':raise ValueError('correction slots apply only to REQUEST_CHANGES')
         if self.correction_slots is not None and len(set(self.correction_slots))!=len(self.correction_slots):raise ValueError('distinct correction slots required')
@@ -115,17 +129,21 @@ def recover_evidence_command(store,token,id,key):
     Absence is an observation, never proof that a delayed request cannot arrive.
     """
     with store.connect() as c:
+        c.execute('SET TRANSACTION READ ONLY')
         c.execute("SET LOCAL lock_timeout='3s'")
         p=store.auth(c,token,lock=True)
         if p['role']!='enterprise_operator':raise Denied('original enterprise owner required')
         key_lock(c,p,key)
-        row=scoped(store,c,p,id)
-        record=c.execute('SELECT preparation_id,action,payload FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        row=scoped(store,c,p,id,read_only=True)
+        record=c.execute('SELECT preparation_id,action,payload,fingerprint FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if record and (record['preparation_id']!=id or record['action']!='ADD_EVIDENCE'):
             raise Conflict('original evidence recovery scope mismatch')
         return dict(preparation_id=str(id),status='COMMITTED' if record else 'NOT_OBSERVED',
                     event=record['payload'] if record else None,current_revision=row['revision'],
                     historical_only=True,automatically_replayed=False,
+                    recovery_contract='parkweave-evidence-recovery/1',
+                    request_binding=dict(request_key=key,fingerprint=record['fingerprint'] if record else None,
+                        actor={name:p[name] for name in ('id','park_id','org_id','role')}),
                     qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
 
 def create(store,token,key,data):
@@ -194,7 +212,7 @@ def _insert_evidence(c,p,row,slot,text,source_kind,source_label):
 
 def command(store,token,id,key,data):
     # Keep fingerprints of commands created before slot correction support.
-    body=data.model_dump(mode='json',exclude={'correction_slots'} if data.correction_slots is None else set())
+    body=data.model_dump(mode='json',exclude=({'correction_slots'} if data.correction_slots is None else set())|({'source_file'} if data.source_file is None else set()))
     fp=digest(canonical({'preparation_id':str(id),**body}))
     with store.connect() as c:
         p=store.auth(c,token,lock=True);key_lock(c,p,key);row=scoped(store,c,p,id,write=True,business_write=True)
@@ -240,6 +258,13 @@ def command(store,token,id,key,data):
         from .controlled_plans import invalidate
         invalidate(c,id,1)
         extra={'delivery_review_source':review_source} if review_source is not None else {}
+        if data.source_file is not None:
+            from .material_file_import import parse
+            parsed=parse(data.source_file.file_name,data.source_file.content_base64)
+            extra['file_metadata']=dict(evidence_id=str(added['id']),slot=added['slot'],version=added['version'],
+                **{k:parsed[k] for k in ('file_name','file_bytes','format','raw_file_sha256','candidate_sha256')},
+                provenance='SERVER_PARSED_SUBMITTED_BYTES',authenticity='UNVERIFIED',source_expires_at=None)
+
         return event(c,p,updated,key,fp,data.action,snapshot_sha256=current_hash,reason=data.reason,**extra)
 
 def read(store,token,id):
@@ -281,16 +306,36 @@ def read(store,token,id):
                 'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
         from .material_preparation_drafts import decorate_materials
         decorate_materials(c,row,items,history,facts)
+        metadata={(r['payload']['file_metadata']['slot'],r['payload']['file_metadata']['version']):r['payload']['file_metadata']
+            for r in history if r['action']=='ADD_EVIDENCE' and r['payload'].get('file_metadata')}
+        result['material_files']=[file for item in result['material_history']
+            if (file:=metadata.get((item['slot'],item['version']))) and file['candidate_sha256']==item['source_sha256']]
         if facts is not None:result['fact_clarification']=facts
         return result
 
-def list_items(store,token):
+def list_items(store,token,*,limit=100,before=None,run_id=None):
+    if type(limit) is not int or not 1<=limit<=100:raise ValueError('bounded preparation page required')
+    if before is not None and type(before) is not UUID:raise ValueError('preparation cursor UUID required')
+    if run_id is not None and type(run_id) is not UUID:raise ValueError('preparation Run UUID required')
     with store.connect() as c:
         p=store.auth(c,token,lock=True)
         capability='PREPARE' if p['role']=='enterprise_operator' else 'REVIEW_ASSIGNED';grant(store,c,p,capability)
         column='owner_id' if capability=='PREPARE' else 'reviewer_id'
-        rows=c.execute(f'SELECT id,case_id,goal,state,revision FROM preparations WHERE {column}=%s AND park_id=%s AND org_id=%s ORDER BY created_at DESC LIMIT 100',(p['id'],p['park_id'],p['org_id'])).fetchall()
-        return {'items':rows,'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
+        anchor=None
+        if before is not None:
+            anchor=c.execute(f'SELECT created_at,id FROM preparations WHERE id=%s AND {column}=%s AND park_id=%s AND org_id=%s',
+                (before,p['id'],p['park_id'],p['org_id'])).fetchone()
+            if not anchor:raise Denied('current assigned preparation cursor required')
+        rows=c.execute(f'''SELECT id,run_id,case_id,goal,state,revision FROM preparations
+            WHERE {column}=%s AND park_id=%s AND org_id=%s
+            AND (%s::uuid IS NULL OR run_id=%s)
+            AND (%s::uuid IS NULL OR (created_at,id)<(%s,%s::uuid))
+            ORDER BY created_at DESC,id DESC LIMIT %s''',
+            (p['id'],p['park_id'],p['org_id'],run_id,run_id,before,
+             anchor['created_at'] if anchor else None,before,limit+1)).fetchall()
+        return {'items':rows[:limit],'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY',
+                'next_before':str(rows[limit-1]['id']) if len(rows)>limit else None,
+                'has_older_records':len(rows)>limit,'read_only':True}
 
 def entry_context(store,c,p,id):
     row=scoped(store,c,p,id,read_only=True)

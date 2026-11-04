@@ -22,6 +22,7 @@ SCOPE = 'LOCAL_SYNTHETIC_DEMO_SELECTION_CANDIDATE'
 ORIGIN = demo.ORIGIN
 VALIDATOR = 'LOCAL_SYNTHETIC_DEMO_V1'
 OBSERVATION_VALIDATOR = 'LOCAL_SYNTHETIC_DEMO_V2'
+MANUAL_VALIDATOR = 'LOCAL_SYNTHETIC_DEMO_MANUAL_V3'
 Capture, clock, binding = v4.Capture, v4.clock, v4.binding
 KEYS = v4.KEYS
 BASIS = ('validator_version','validated_contract_sha256','candidate_id','candidate_sha256',
@@ -80,10 +81,11 @@ def current(store,c,p,parent,catalog,selection=None):
 
 
 def _fingerprint(id,data):
-    return cp._hash(dict(preparation_id=str(id),kind=SCOPE,**data.model_dump()))
+    return cp._hash(dict(preparation_id=str(id),kind=SCOPE,**v4.capture_request(data)))
 
 
 def _producer(record):
+    if v4.manual_record(record):return v4.owner_producer(record)
     base = record['base_document']; snapshot = base['catalog_snapshot']
     version=observation.version(base)
     return dict(schema_version='local-synthetic-demo-producer/'+str(version),origin=ORIGIN,mode='NO_MODEL',
@@ -117,8 +119,8 @@ def _proof(parent,record):
         at = old._time(record['validity']['created_at'])
         pairs = demo.validated_pairs(base['catalog_snapshot'],base['selection_request'],now=at,frozen=frozen)
         if (base['catalog_snapshot']['unknowns'] or base['selection_oracle'] != ss._enumerate_pairs(pairs,base['selection_request'])
-                or base['selection_oracle']['state'] != 'UNIQUE'
-                or record['selection']['selections'] != base['selection_oracle']['minimal_solutions'][0]):
+                or (base['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE') if data.manual_selections is not None else base['selection_oracle']['state']!='UNIQUE')
+                or (record['selection']['selections']!=data.manual_selections if data.manual_selections is not None else record['selection']['selections']!=base['selection_oracle']['minimal_solutions'][0])):
             raise ValueError()
         expected = _apply(base,record['selection'],now=at,frozen=frozen)
         observation.validate(expected,expected['steps'])
@@ -138,13 +140,13 @@ def find(parent,id):
 def verify(parent,record,value,*,now,historical=False):
     _proof(parent,record)
     expected = document(value)
-    full = value['state']=='COVERED_PREVIEW_ONLY' and not value['source_unknowns'] and value['selection_oracle']['state']=='UNIQUE'
+    full = value['state']=='COVERED_PREVIEW_ONLY' and not value['source_unknowns'] and (value['selection_oracle']['state'] in ('UNIQUE','MULTIPLE') if v4.manual_record(record) else value['selection_oracle']['state']=='UNIQUE')
     state = ('STALE' if record['candidate']['binding']!=expected['binding'] else
         'REJECTED' if record['candidate']!=expected else 'VERIFIED_STRUCTURE_ONLY' if full else 'BLOCKED')
     window = record['validity']
     if now < old._time(window['created_at']): state='CLOCK_UNCERTAIN'
     elif now >= old._time(window['expires_at']): state='EXPIRED'
-    basis = dict(validator_version=OBSERVATION_VALIDATOR if observation.version(record['base_document'])==2 else VALIDATOR,validated_contract_sha256=cp._hash({k:v for k,v in expected.items() if k!='binding'}),
+    basis = dict(validator_version=MANUAL_VALIDATOR if v4.manual_record(record) else OBSERVATION_VALIDATOR if observation.version(record['base_document'])==2 else VALIDATOR,validated_contract_sha256=cp._hash({k:v for k,v in expected.items() if k!='binding'}),
         candidate_id=record['id'],candidate_sha256=record['candidate_sha256'],current_source_sha256=value['source_sha256'],
         state=state,**{k:value[k] for k in KEYS if k!='source_sha256'},validity=deepcopy(window),producer_sha256=cp._hash(record['producer']))
     return dict(**basis,verification_sha256=cp._hash(basis),scope=SCOPE,profile=PROFILE,origin=ORIGIN,
@@ -167,7 +169,7 @@ def _prior(c,p,parent,key,fp):
 
 
 def _availability(store,c,p,parent,catalog,record):
-    try: return verify(parent,record,current(store,c,p,parent,catalog,record['selection']),now=clock(c))
+    try: return v4.current_write_availability(store,c,p,parent,record,verify(parent,record,current(store,c,p,parent,catalog,record['selection']),now=clock(c)))
     except (Denied,Conflict,ValueError,ModelBoundaryError):
         view=verify(parent,record,record['document'],now=clock(c),historical=True)
         view.update(state='CURRENT_SOURCE_UNAVAILABLE',can_adopt=False)
@@ -186,15 +188,17 @@ def generate(store,token,id,key,data,*,catalog,planner):
         history=deepcopy(parent.get('planning_previews') or [])
         if len(history)>=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):
             raise Conflict('bounded original history requires GET recovery')
-        selection=planner.select(value)
+        try:selection=(ss.parse_selection(demo.contract.canonical(dict(schema_version=1,binding=binding(value),selections=data.manual_selections)),binding(value)) if data.manual_selections is not None else planner.select(value))
+        except ModelBoundaryError:raise Conflict('exact current owner selections required') from None
         now=clock(c).astimezone(timezone.utc)
         window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
         record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,
-            fingerprint=fp,candidate_request=data.model_dump(),validity=window,base_document=deepcopy(value),selection=selection,
+            fingerprint=fp,candidate_request=v4.capture_request(data),validity=window,base_document=deepcopy(value),selection=selection,
             frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
         record['difference_observation_record_version']=2
         record['producer']=_producer(record)
-        saved=_apply(value,selection,now=now)
+        try:saved=_apply(value,selection,now=now)
+        except ModelBoundaryError:raise Conflict('complete minimal owner selection required') from None
         saved.update(candidate_validity=window,candidate_producer=record['producer'])
         record.update(document=saved,candidate=document(saved)); record['candidate_sha256']=cp._hash(record['candidate'])
         view=verify(parent,record,saved,now=clock(c))
