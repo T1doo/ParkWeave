@@ -8,7 +8,10 @@ import re
 import time
 
 MARKER = 'SYNTHETIC_VIEW_REPLAY_NO_AUTHORITY'
-STATIC = {'/web.html': ('web.html', 'text/html; charset=utf-8'),
+STATIC = {'/workspace-design.css': ('workspace-design.css', 'text/css; charset=utf-8'),
+          '/workspace-design.js': ('workspace-design.js', 'text/javascript; charset=utf-8'),
+          '/parkweave-mark.png': ('parkweave-mark.png', 'image/png'),
+          '/web.html': ('web.html', 'text/html; charset=utf-8'),
           '/local_preparation_web.html': ('local_preparation_web.html', 'text/html; charset=utf-8'),
           '/local-command-pending.js': ('local-command-pending.js', 'text/javascript; charset=utf-8')}
 API = frozenset(('/api/synthetic-resources', '/api/resource-bundles',

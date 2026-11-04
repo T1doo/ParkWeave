@@ -8,7 +8,8 @@ async function run(file){
  const dom=new JSDOM(html,{url:'http://127.0.0.1/',runScripts:'outside-only'}),w=dom.window,d=w.document;
  const requests=[];w.fetch=(...args)=>{requests.push(args);throw Error('Unexpected network request');};
  w.matchMedia=()=>({matches:true,addEventListener(){}});w.HTMLElement.prototype.scrollIntoView=function(){};
- const script=html.slice(html.indexOf('// Frontend-day presentation.'),html.lastIndexOf('</script>'));
+ const start=html.indexOf('// Frontend-day presentation.');
+ const script=html.slice(start,html.indexOf('</script>',start));
  w.eval('var preparationView=null,current=null,planView=null,servicePlanView=null;var combinationSelection=new Map();function updateCombinationSelection(){parkDesignRefresh();}function resourceCatalogCard(){return document.createElement("article");}\n'+script);
  d.dispatchEvent(new w.Event('DOMContentLoaded'));await tick();
  const get=id=>d.getElementById(id),fire=(node,type)=>node.dispatchEvent(new w.Event(type,{bubbles:true}));

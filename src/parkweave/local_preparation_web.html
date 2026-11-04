@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>园合 · 本地资料工作台</title>
+<title>园合 · 本地资料工作台</title><link rel="icon" type="image/png" href="/parkweave-mark.png">
 <style>
 /* Approved frontend baseline: original controls and authorization remain authoritative. */
 :root{color-scheme:light;--wash:#FAF9F5;--paper:#fff;--ink:#141413;--muted:#61574E;--line:#DEDAD2;--edge:#91877D;--green:#AD5338;--green-dark:#91422C;--pressed:#783724;--selected:#F7EEE8;--focus:#306275;--red:#A52F24;--error-bg:#FFF3EF;--amber:#765014;--warning-bg:#FFF7E6;--success:#285C3E;--success-bg:#EFF6EF;--info:#325C73;--info-bg:#F0F6FA;--row:44px;--space:16px;--radius:0;--shadow:none}
@@ -124,7 +124,7 @@ body:not(.desktop-shell)>main{margin-left:176px;padding:16px 24px;display:flex;f
 @media(min-width:1101px){body:not(.desktop-shell){height:100dvh;overflow:hidden}}
 @media(max-width:1100px){body:not(.desktop-shell)>main{height:auto;min-height:100dvh}.grid{grid-template-columns:240px minmax(0,1fr)}#workspace{min-height:800px}.editor-scroll{display:block;overflow:visible}.material-reader{max-height:400px;border-right:0;border-bottom:1px solid var(--line);padding-right:0;margin-bottom:16px}.form-scroll{overflow:visible}#evidence-form{min-height:320px}#decision-form{grid-template-columns:1fr}#new-case{max-height:none}#items{max-height:480px}}
 @media(max-width:768px){body:not(.desktop-shell)>aside:not(.design-resource-summary){position:static;width:auto;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);padding:12px 16px}body:not(.desktop-shell)>aside .brand{width:100%;margin:0}.brand em,body:not(.desktop-shell)>aside small{display:none}body:not(.desktop-shell)>aside button{border-left:0;border-bottom:2px solid transparent}body:not(.desktop-shell)>aside button[aria-current=page]{border-left:0;border-bottom-color:var(--green)}body:not(.desktop-shell)>main{margin-left:0;padding:16px;min-height:0}.grid{display:flex;flex-direction:column;gap:24px}#workspace{min-height:0}.editor-scroll{display:flex;flex-direction:column;overflow:visible}.form-fields{grid-template-columns:1fr}#detail-card{min-height:0}.material-reader{max-height:none}#task-card{max-height:560px}.design-preview{inset:0;width:100%;margin:0}#decision-form{display:block}#decision-form .row{margin-top:12px}}
-</style>
+</style><link rel="stylesheet" href="/workspace-design.css">
 <aside><div class="brand"><span>园</span>合 <em>ParkWeave</em></div>
 <button id="nav-service" aria-current="page">＋ 开始办理</button><button id="nav-tasks">▤ 我的事项</button><button id="nav-history">◷ 办理记录</button><button id="nav-workspace">服务、资源与协同</button><small>本地合成版<br>资料整理与人工核对</small></aside>
 <main><header><div><h1 id="page-title">资料工作台</h1><p id="identity">登录后开始办理或处理待核对事项</p></div><div class="row"><span class="pill">合成样例 · 无真实园区接入</span><button id="logout" hidden>退出账号</button></div></header>
@@ -260,6 +260,7 @@ function installParkDesign(){
  function stopMotion(){for(const animation of document.getAnimations?.()||[])animation.cancel();for(const steps of document.querySelectorAll('.design-stage-reveal'))steps.classList.remove('design-stage-reveal');}
  motion.addEventListener('change',()=>{if(motion.matches)stopMotion();});document.addEventListener('visibilitychange',()=>{if(document.hidden)stopMotion();});
  const compact=!!get('workspace'),main=get('park-main')||document.querySelector('main');
+ let ambientMotion=true;try{ambientMotion=localStorage.getItem('parkweave.appearance.ambient')!=='off';}catch{}const syncBackground=()=>{body.dataset.backgroundPaused=String(document.hidden||!ambientMotion);};document.addEventListener('visibilitychange',syncBackground);syncBackground();
  const currentSpace=()=>compact?'materials':body.dataset.workspace||'service';
  const readPreference=key=>{try{return localStorage.getItem('parkweave.appearance.'+key);}catch{return null;}};
  const writePreference=(key,value)=>{try{localStorage.setItem('parkweave.appearance.'+key,value);}catch{}};
@@ -269,11 +270,13 @@ function installParkDesign(){
  const menu=make('details','','appearance-menu'),menuTitle=make('summary','外观与密度');
  const appearance=make('div','','appearance-panel');menu.append(menuTitle,appearance);
  const themeLabel=make('label','主题'),theme=make('select');theme.id='park-theme';themeLabel.htmlFor=theme.id;
- for(const [value,label] of [['terracotta','陶橙'],['sage','米白鼠尾草']]){const o=make('option',label);o.value=value;theme.append(o);}
+ for(const [value,label] of [['ink','冰蓝玻璃'],['terracotta','陶橙'],['sage','米白鼠尾草']]){const o=make('option',label);o.value=value;theme.append(o);}
  const densityLabel=make('label','当前工作区密度'),density=make('select');density.id='park-density';densityLabel.htmlFor=density.id;
  for(const [value,label] of [['comfortable','舒适'],['compact','紧凑']]){const o=make('option',label);o.value=value;density.append(o);}
  appearance.append(themeLabel,theme,densityLabel,density,make('p','仅记住外观偏好；不改变事项、授权或办理状态。'));toolbar.append(menu);
- function applyTheme(value){root.dataset.theme=value==='sage'?'sage':'terracotta';theme.value=root.dataset.theme;}
+ const ambientLabel=make('label','背景效果'),ambient=make('select');ambient.setAttribute('aria-label','背景效果');for(const [value,text] of [['on','柔和流动'],['off','静态背景']]){const option=make('option',text);option.value=value;ambient.append(option);}ambient.value=ambientMotion?'on':'off';ambientLabel.append(ambient);appearance.append(ambientLabel);ambient.addEventListener('change',()=>{ambientMotion=ambient.value==='on';writePreference('ambient',ambient.value);syncBackground();});
+
+ function applyTheme(value){root.dataset.theme=['ink','sage','terracotta'].includes(value)?value:'ink';theme.value=root.dataset.theme;}
  function syncDensity(){const value=readPreference('density.'+currentSpace());body.dataset.density=value==='compact'||(!value&&currentSpace()==='collaboration')?'compact':'comfortable';density.value=body.dataset.density;}
  applyTheme(readPreference('theme'));syncDensity();
  theme.addEventListener('change',()=>{applyTheme(theme.value);writePreference('theme',root.dataset.theme);});

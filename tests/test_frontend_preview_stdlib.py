@@ -33,7 +33,10 @@ class FrontendPreview(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        files = {'web.html': (ROOT / 'src/parkweave/web.html').read_bytes(),
+        files = {'workspace-design.css': (ROOT / 'src/parkweave/workspace_design.css').read_bytes(),
+                 'workspace-design.js': (ROOT / 'src/parkweave/workspace_design.js').read_bytes(),
+                 'parkweave-mark.png': (ROOT / 'src/parkweave/assets/parkweave-mark-128.png').read_bytes(),
+                 'web.html': (ROOT / 'src/parkweave/web.html').read_bytes(),
                  'local_preparation_web.html': (ROOT / 'src/parkweave/local_preparation_web.html').read_bytes(),
                  'local-command-pending.js': (ROOT / 'src/parkweave/local_command_pending.js').read_bytes(),
                  'serve.py': (ROOT / 'scripts/frontend_preview_server.py').read_bytes(),

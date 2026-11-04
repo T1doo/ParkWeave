@@ -238,6 +238,18 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
 
+    @app.get('/workspace-design.css')
+    def workspace_styles():
+        return Response(Path(__file__).with_name('workspace_design.css').read_bytes(), media_type='text/css')
+
+    @app.get('/workspace-design.js')
+    def workspace_presentation():
+        return Response(Path(__file__).with_name('workspace_design.js').read_bytes(), media_type='text/javascript')
+
+    @app.get('/parkweave-mark.png')
+    def brand_asset():
+        return Response((Path(__file__).parent / 'assets/parkweave-mark-128.png').read_bytes(), media_type='image/png')
+
     @app.exception_handler(Denied)
     async def denied(request, exc):
         authorization=request.headers.get('authorization','')
