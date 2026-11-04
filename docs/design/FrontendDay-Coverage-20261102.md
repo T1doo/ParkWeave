@@ -164,3 +164,11 @@
 当前环境重启后，原 `/tmp/parkweave-dom` 与 `/tmp/parkweave-frontenv` 不存在，未重装或下载。浏览器前提只读核实仍为helper uid/gid65534、4755，根挂载ro/nosuid、NoNewPrivs1、无有效caps；平台没有提供新的受支持能力，**没有再次启动浏览器**。本环境只有已保存方案／参考图，没有当前源码绑定的产品截图。准确证据、源码SHA256／Git blob和阻塞见 `evidence/frontend-night-20261103/calendar-escape.json`。
 
 停止点：真实日期头部与格子的键盘传播／回焦，1366／1440同视口、320 CSS px／200%、长中文／大字／触摸／读屏／高对比／减弱动效及Windows仍待验。恢复须先由平台提供当前环境受支持的sandbox及实质恢复证据，单改helper权限不能解决；完整旧回归另需原依赖可读或单独允许安装。本轮CI、浏览器、Windows、安全探针、下载、费用和权限新增均0，不借用或重置父预算，不称全部前端完成。
+
+## 11月4日最小前端交接候选
+
+完整Windows运行载荷与最小前端回放分开：新增 `scripts/frontend_preview_server.py`，只依赖已有Python标准库，按包内清单核对原HTML／JS，绑定127.0.0.1。外层页面常驻标明“合成只读前端验收”，iframe接收的原页面字节没有注入或替换；资源入口的原GET处理器读取仓库既有公开历史合成ROW和原status形状，所有业务写请求405、未知读取404，授权／批准均disabled，不加载API factory、数据库、模型或Windows宿主。
+
+最小范围为完整工作台冷页面、主题／密度、长中文资源目录、目录空／错／拒绝、日期面板；精简页只到登录外壳，不模拟登录、四角色、材料事务或恢复。运行说明为 `FrontendPreview-README.txt`。新增stdlib unittest 5项通过，实际本地HTTP逐字验证两HTML及pending JS、公开GET形状、拒绝写／未知路由、目录状态和坏哈希拒绝；不调用原浏览器驱动、CI或任何单次探针。未取得新实屏截图，不能以HTTP测试代签浏览器或原生验收。
+
+唯一Windows协调任务已提供cua清单读取恢复证据，但不是本云容器sandbox恢复；本任务不再把“无Windows UI通道”当总阻塞，也不在这里重试Chromium。候选只交协调者或经成功的正式附件交接后由用户下载，旧正式传输helper未恢复时不自动跨机复制。候选源SHA、逐文件清单、大小和哈希以从已提交Git对象一次导出的manifest及交付记录为准；不能把仅源码ZIP或旧运行包称为此候选。
