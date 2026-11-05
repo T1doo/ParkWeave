@@ -205,6 +205,46 @@ def test_listener_retries_only_connect_timeout_after_closing_probe(monkeypatch,w
                    'verify_endpoint',('connect',2),'verify_witness','close_witness',('close_socket',2)]
 
 
+@pytest.mark.parametrize('socket_pid,in_job,child_ticks,accepted',[
+    (19,True,200,True), (20,True,200,True), (21,True,200,False),
+    (19,False,200,False), (19,True,99,False),
+])
+def test_authenticated_backend_retains_job_and_postmaster_socket_binding(monkeypatch,socket_pid,in_job,child_ticks,accepted):
+    closed=[]
+    endpoint=object.__new__(native_database_endpoint.NativeOwnedDatabaseEndpoint)
+    endpoint.verify=lambda:None
+    endpoint.birth=(19,(19,100),'original-command')
+    endpoint.job,endpoint.image,endpoint.crt_witness=31,'pinned-postgres-image',None
+
+    def image(handle,flags,buffer,length):
+        buffer.value=endpoint.image
+        length._obj.value=len(endpoint.image)
+        return True
+
+    def is_in_job(handle,job,out):
+        assert job==endpoint.job
+        out._obj.value=int(in_job)
+        return True
+
+    endpoint.backend=SimpleNamespace(birth=lambda handle:(20,child_ticks),image=image)
+    kernel=SimpleNamespace(OpenProcess=lambda access,inherit,pid:pid+50,
+                           CloseHandle=lambda handle:closed.append(handle) or True,
+                           WaitForSingleObject=lambda handle,milliseconds:258,IsProcessInJob=is_in_job)
+    connection=SimpleNamespace(fileno=lambda:27,getsockname=lambda:('127.0.0.1',50001),
+                               getpeername=lambda:('127.0.0.1',55431),detach=lambda:None)
+    monkeypatch.setattr(native_database_endpoint.C,'WinDLL',lambda *args,**kwargs:kernel,raising=False)
+    monkeypatch.setattr(native_database_endpoint,'connection_owner',lambda connection:socket_pid)
+    monkeypatch.setattr(native_database_endpoint.socket,'socket',lambda **kwargs:connection)
+    if accepted:
+        witness=native_database_endpoint._BackendWitness(endpoint,connection,time.monotonic()+1,authenticated_pid=20)
+        assert (witness.socket_pid,witness.pid,witness.birth)==(socket_pid,20,(20,child_ticks))
+        witness.close()
+    else:
+        with pytest.raises(CandidateRefused):
+            native_database_endpoint._BackendWitness(endpoint,connection,time.monotonic()+1,authenticated_pid=20)
+    assert closed==([] if socket_pid==21 else [70])
+
+
 def test_native_instance_checks_same_cluster_security_and_inputs(bound,monkeypatch):
     b=bound
     def opened(lease,credentials,register):
