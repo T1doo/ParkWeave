@@ -25,15 +25,16 @@
   form.append(location,passwordFields,advanced,notice,submit);
   dialog.append(title,intro,modes,form,make('p','本地合成工作台 · 创建并不代表真实园区受理或履约。','boundary-note'));
   let mode='reopen',pending=false;
-  function select(next){if(pending)return;mode=next;const isNew=mode==='new';passwordFields.hidden=!isNew;passwordFields.disabled=!isNew;ports.hidden=!isNew;profileLabel.hidden=isNew;submit.textContent=isNew?'创建工作台':'打开工作台';open.setAttribute('aria-pressed',String(!isNew));create.setAttribute('aria-pressed',String(isNew));open.classList.toggle('primary',!isNew);create.classList.toggle('primary',isNew);for(const [,input] of passwords)input.value='';notice.textContent='';}
+  function select(next){if(pending)return;mode=next;const isNew=mode==='new';passwordFields.hidden=!isNew;passwordFields.disabled=!isNew;ports.hidden=!isNew;for(const input of [db,api]){input.disabled=!isNew;input.required=isNew;}profileLabel.hidden=isNew;submit.textContent=isNew?'创建工作台':'打开工作台';open.setAttribute('aria-pressed',String(!isNew));create.setAttribute('aria-pressed',String(isNew));open.classList.toggle('primary',!isNew);create.classList.toggle('primary',isNew);for(const [,input] of passwords)input.value='';notice.textContent='';}
   open.onclick=()=>select('reopen');create.onclick=()=>select('new');
+  form.addEventListener('invalid',event=>{if(advanced.contains(event.target))advanced.open=true;},true);
   form.onsubmit=event=>{
     event.preventDefault();if(pending||!form.reportValidity())return;
     const data={action:mode,instance:path.value.trim(),database_port:0,api_port:0,passwords:{},initialize_profile:mode==='new'||profile.checked,sample_collaboration:true};
     if(!data.instance){notice.textContent='请选择或填写数据目录。';path.focus();return;}
     if(mode==='new'){
       data.database_port=Number(db.value);data.api_port=Number(api.value);
-      if(![data.database_port,data.api_port].every(n=>Number.isInteger(n)&&n>0&&n<=65535)||data.database_port===data.api_port){notice.textContent='两个端口须为不同的 1–65535 整数。';return;}
+      if(![data.database_port,data.api_port].every(n=>Number.isInteger(n)&&n>0&&n<=65535)||data.database_port===data.api_port){notice.textContent='两个端口须为不同的 1–65535 整数。';advanced.open=true;api.focus();return;}
       const values=passwords.map(([,input])=>input.value);
       if(values.some(v=>[...v].length<12||[...v].length>256)||new Set(values).size!==values.length){notice.textContent='各角色密码须不同，长度为 12–256 个字符。';return;}
       passwords.forEach(([key,input])=>{data.passwords[key]=input.value;});
