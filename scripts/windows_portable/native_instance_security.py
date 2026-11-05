@@ -175,12 +175,12 @@ class NativeFixedStoreSecurity:
             return self.inputs
         return self._run(lease,configure,deadline=deadline)
 
-    def require_inputs(self,lease,inputs):
+    def require_inputs(self,lease,inputs,*,deadline=None):
         def check(_):
             need(type(inputs) is DatabaseInputs and inputs is self.inputs)
             need(inputs.data_directory==_path_held(lease,self.target))
             return ep._record_held(lease,self.plan,mode=self.mode)
-        return self._run(lease,check)
+        return self._run(lease,check,deadline=deadline)
 
     def _cache(self,state):
         need(e.canonical(state.config['runtime'])==e.canonical(self.runtime))
@@ -325,6 +325,11 @@ class NativeClusterPrerequisites:
 
     def initialize_protected(self,lease,inputs,specification,register,deadline):
         from .native_protected_bootstrap import initialize
+        # Configuration's final input check has a short observation window.
+        # Revalidate under this explicit initdb caller deadline before reusing
+        # its held resources. Do not retain that earlier window as a lifetime
+        # or start a new timeout here; _run clamps to the original trial end.
+        self.security.require_inputs(lease,inputs,deadline=deadline)
         return initialize(self.security,lease,inputs,specification,register,deadline)
 
     def require_system_crt(self,lease,deadline):
