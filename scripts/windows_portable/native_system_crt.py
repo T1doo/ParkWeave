@@ -207,13 +207,21 @@ class NativeSystemCRT(SignatureVerification):
         try:
             check();self._verify_files();first=self._loaded(process)
             required=set(required)
-            while wait_for_modules and not required.issubset(first['crt']):
-                self._time()
-                time.sleep(min(0.02,max(0,self.deadline-time.monotonic())))
-                self._time();check()
-                first=self._loaded(process)
-            need(required.issubset(first['crt']));check()
-            need(self._loaded(process)==first);self._verify_files();check();self._binding()
+            if wait_for_modules:
+                while True:
+                    self._time()
+                    time.sleep(min(0.02,max(0,self.deadline-time.monotonic())))
+                    self._time();check()
+                    second=self._loaded(process)
+                    if second==first and required.issubset(first['crt']):break
+                    # Startup may add modules, but an observed mapping must
+                    # not disappear or change its address/path binding.
+                    need(set(first['modules']).issubset(second['modules']))
+                    first=second
+            else:
+                need(required.issubset(first['crt']));check()
+                need(self._loaded(process)==first)
+            self._verify_files();check();self._binding()
         except BaseException:
             self.failed=True;raise CRTRefused() from None
         return dict(scope='ORIGINAL_PROCESS_SYSTEM_CRT_SNAPSHOT',native_acceptance=False,
