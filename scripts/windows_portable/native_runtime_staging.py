@@ -294,8 +294,9 @@ class NativeRuntimeInstallation:
         from .runtime_payload import PG, REQUIRED, static_report
         import math
         self._issued_binding(lease, runtime)
+        now=time.monotonic()
         need(type(deadline) in (int,float) and math.isfinite(deadline)
-             and 0 < deadline-time.monotonic() <= 30)
+             and now < deadline <= now + 30)
         from .native_trial_authority import budget
         deadline=budget(lease,deadline)
         def inspect():

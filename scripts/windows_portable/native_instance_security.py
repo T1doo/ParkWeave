@@ -84,7 +84,8 @@ class NativeFixedStoreSecurity:
                 end=time.monotonic()+10 if deadline is None else deadline
                 from .native_trial_authority import budget
                 end=budget(self,end)
-                need(0<end-time.monotonic()<=30)
+                now=time.monotonic()
+                need(now<end<=now+30)
                 if self.store is not None:self.store.api.deadline=end
                 if self.target is not None:self.target.deadline=end
                 if self.layout is not None:

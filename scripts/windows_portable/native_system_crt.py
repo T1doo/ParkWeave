@@ -95,8 +95,9 @@ class NativeSystemCRT(SignatureVerification):
     def __deepcopy__(self,memo):raise TypeError('SYSTEM_CRT_WITNESS_NOT_TRANSFERABLE')
 
     def _time(self):
+        now=time.monotonic()
         need(not self.failed and not self.closed and type(self.deadline) in (int,float)
-             and math.isfinite(self.deadline) and 0<self.deadline-time.monotonic()<=30)
+             and math.isfinite(self.deadline) and now<self.deadline<=now+30)
         from .native_trial_authority import budget
         self.deadline=budget(self.lease,self.deadline)
 
@@ -202,7 +203,8 @@ class NativeSystemCRT(SignatureVerification):
         finally:self.lock.release()
 
     def _observe_locked(self,process,check,required,deadline,*,wait_for_modules=False):
-        self._binding();need(type(deadline) in (int,float) and math.isfinite(deadline) and 0<deadline-time.monotonic()<=30)
+        self._binding();now=time.monotonic()
+        need(type(deadline) in (int,float) and math.isfinite(deadline) and now<deadline<=now+30)
         self.deadline=deadline
         try:
             check();self._verify_files();first=self._loaded(process)

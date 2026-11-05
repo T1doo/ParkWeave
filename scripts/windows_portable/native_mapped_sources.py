@@ -76,7 +76,7 @@ def signature_budget(delegation,crt,deadline=None,*,cleanup=False):
     now=time.monotonic()
     if deadline is None:return min(trace.state.deadline,now+30)
     need(type(deadline) in (int,float) and math.isfinite(deadline)
-        and now<deadline<=trace.state.deadline and deadline-now<=30)
+        and now<deadline<=min(trace.state.deadline,now+30))
     return deadline
 
 

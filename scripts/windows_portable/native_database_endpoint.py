@@ -33,9 +33,9 @@ def need(value):
 
 def remaining(deadline):
     need(type(deadline) in (int,float) and math.isfinite(deadline))
-    left=deadline-time.monotonic()
-    need(0<left<=30)
-    return left
+    now=time.monotonic()
+    need(now<deadline<=now+30)
+    return min(30,deadline-now)
 
 
 def _wait(raw,events,deadline):

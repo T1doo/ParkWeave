@@ -64,8 +64,9 @@ class RuntimePayloadPrerequisite:
 
     def _check(self, lease, deadline):
         require(not self.failed and lease is self.lease, 'SAME_PAYLOAD_LEASE_REQUIRED')
+        now = time.monotonic()
         require(type(deadline) in (int, float) and math.isfinite(deadline) and
-                0 < deadline - time.monotonic() <= 30, 'PAYLOAD_DEADLINE')
+                now < deadline <= now + 30, 'PAYLOAD_DEADLINE')
         lease._verify()
         require(self._binding() == self.binding and lease.status() == 'CLUSTER', 'PAYLOAD_LEASE_STATE_CHANGED')
 

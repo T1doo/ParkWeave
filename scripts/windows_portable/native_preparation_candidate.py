@@ -130,7 +130,8 @@ class _NativePreparationController:
         if self.spec.mode is ep.PlanMode.NEW:
             from scripts.windows.lifecycle import require_setup_readiness
             require_setup_readiness()  # Original OWNER gate, before all ports/IO.
-        need(type(deadline) in (int,float) and math.isfinite(deadline) and 0<deadline-time.monotonic()<=30)
+        now=time.monotonic()
+        need(type(deadline) in (int,float) and math.isfinite(deadline) and now<deadline<=now+30)
         need(type(lease) is FixedDirectoryLease)
         need(self._lock.acquire(blocking=False))
         try:

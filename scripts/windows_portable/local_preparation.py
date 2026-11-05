@@ -132,7 +132,7 @@ class PreparationClient:
         if deadline is None:
             deadline = now + 30
         elif (type(deadline) not in (int, float) or not math.isfinite(deadline)
-                or not 0 < deadline - now <= 30):
+                or not now < deadline <= now + 30):
             raise CandidateRefused('bounded original request deadline required')
         if self.workspace.deadline is not None:
             deadline = min(deadline, self.workspace.deadline)
