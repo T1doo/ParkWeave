@@ -344,3 +344,11 @@ G2–G5 未完成，PR0 不作通过结论。
 - 真实执行服务选择响应边界 44 项通过（开发 pytest 工具路径），只使用离线响应，无数据库、无真实模型。首次默认 Python 缺 pytest；使用已有开发工具目录后运行通过，没有安装或修改用户系统环境。
 - 本轮未追加云端运行。run 26 的 initdb 0xC000000D 仍是实际后端未完成的最近证据；删除过时“等待批准”作为当前阻塞的表述，保留历史正文。
 - 证据：AT当前源码核对_20261106.md、at-current-source-20261106.json、selection-planner-20261106.xml、../demo-delivery-20261106/standalone-release-no-server/verification.json。
+
+## 2026-11-06 Run 27：启动路径修复后的新位置
+
+- 只读版本查询复现 GUID image 退出 0xC000000D、DOS image 成功，工作目录两种形式均不改变结果。原始结果 initdb-path-version-probe-20261106.json；用户可见错误框来自诊断探针，未初始化业务数据库，后续不在用户桌面重复失败启动。
+- 受限 initdb 启动采用既有 PGDATA 持有链绑定的 DOS 根，并与原文件句柄查询路径一致；原 GUID/NT 身份、哈希、ACL、令牌、Job 及管道检查保留。32 项普通 Windows 定向检查通过，源码冻结 456bbea0，r13 候选 acf5947f…。
+- 持续授权 run 27（42085195491）完成 failure，云端精确重建/包验证成功；原生失败转移到 server adapter launch 的 WindowsJobProcess.create:206 / backend.resume，OwnedJobError。源码调用顺序说明 initialize_protected 已返回，但没有独立成功回执，不能签收完整初始化。
+- ResumeThread 数值返回与当时进程状态缺失，新根因待定位。无桌面、无真实业务、无冷恢复通过。工作流恢复禁用、记录 null；未盲目重试。
+- AT 补充达到 35 条工程入口及 AT-36 人工路线；新 11 selectors 收集 22 个 nodeid，无数据库执行。正式状态不变。

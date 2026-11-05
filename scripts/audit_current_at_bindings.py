@@ -61,6 +61,35 @@ def main():
             'tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections',
         ],
     }
+    reviewed.update({
+        'AT-12': [
+            'tests/test_service_dispatches.py::test_counterparty_and_unassigned_actions_denied',
+            'tests/test_service_dispatches.py::test_resource_admin_no_dispatch_role_even_with_run_read_assignment',
+            'tests/test_executor_receipts.py::test_full_append_correction_acknowledge_reopen_history_persistence',
+        ],
+        'AT-14': ['tests/test_dispatch_execution_preview.py::test_original_dispatch_events_receipt_and_complete_enqueue_shadow_closure'],
+        'AT-15': [
+            'tests/test_case_lifecycle.py::test_missing_evidence_and_legacy_receipt_cannot_close',
+            'tests/test_case_lifecycle.py::test_local_close_reopen_explicit_new_cycle_recheck_without_fulfillment',
+            'tests/test_executor_receipts.py::test_full_append_correction_acknowledge_reopen_history_persistence',
+        ],
+        'AT-24': [
+            'tests/test_case_opportunities.py::test_complete_import_refresh_ignore_withdraw_new_generation_and_restart',
+            'tests/test_case_opportunities.py::test_same_key_replay_different_key_duplicate_and_cross_case_key',
+            'tests/test_case_opportunities.py::test_other_enterprise_park_and_role_get_post_recovery_disclose_nothing',
+        ],
+        'AT-33': ['tests/test_service_selection_full_chain.py::test_three_capability_selection_second_park_original_local_outputs'],
+        'AT-35': ['tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections'],
+    })
+    gaps = {
+        'AT-12': 'Backend role/tenant denial and receipt minimization subsets; actual four-role EXE journey and all-entry review still required.',
+        'AT-14': 'Synthetic PG temp-schema preview and unchanged formal snapshots only; actual Windows execution still required.',
+        'AT-15': 'Local acknowledgement and record reopen are covered by source; real fulfillment evidence is explicitly absent.',
+        'AT-24': 'Bounded imported opportunity records and deduplication; no continuously online service or outbound delivery claim.',
+        'AT-33': 'Synthetic second park and original API outputs; model response is mocked, migration labor/code accounting and Windows run still missing.',
+        'AT-35': 'Original handlers via owned ASGI and Node bridge; actual Windows four-role browser chain with two inputs remains required.',
+        'AT-36': 'Manual recipient/PDF/QR/upload-receipt acceptance; no final PDF or submission receipt has been supplied or produced.',
+    }
     rows = []
     for number in range(1, 37):
         ident = f'AT-{number:02d}'
@@ -76,11 +105,15 @@ def main():
         rows.append(dict(id=ident, scenario=requirement['scenario'], requirement=requirement,
                          formal_status=requirement['status'], audit_whole_status=original['whole_status'],
                          source_bindings=entries, source_review_only=bool(reviewed.get(ident)),
+                         remaining_acceptance=gaps.get(ident, 'Full original requirement remains to be executed and evidenced.'),
                          source_missing=any(not b['exists'] or b.get('ast_selector_found') is False for b in entries),
                          source_drift=any(b.get('previous_source_matches') is False for b in entries),
                          supplemental_scope=supplement.get('scope'),
                          actual_windows_business_execution='NOT_COMPLETED',
-                         demo_evidence_is_acceptance=False))
+                         demo_evidence_is_acceptance=False,
+                         manual_binding=(dict(file='docs/product-closure-20261105/AT36_提交验收路线.md',
+                                              sha256=sha(DOCS / 'AT36_提交验收路线.md'), executed=False)
+                                         if ident == 'AT-36' else None)))
     xml = DOCS / 'selection-planner-20261106.xml'
     suites = ET.parse(xml).getroot()
     tests = suites.findall('.//testcase')
