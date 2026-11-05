@@ -1,4 +1,4 @@
-"""Real POSIX child pipes + desktop protocol seams; never Windows evidence."""
+"""Real child pipes and desktop protocol seams; no native WebView evidence."""
 import ctypes as C
 import queue
 import subprocess
@@ -46,7 +46,7 @@ def dispose(session):
 
 
 def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys,time;sys.stdin.readline();print('UI1\\tUNKNOWN\\tSET\\t80004005',flush=True);time.sleep(30)")
+    session,close=child_session(monkeypatch,"import sys,time;sys.stdin.readline();sys.stdout.buffer.write(b'UI1\\tUNKNOWN\\tSET\\t80004005\\n');sys.stdout.buffer.flush();time.sleep(30)")
     try:
         with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('SET',ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT'))
         assert session.unknown and session.abort_attempted and session.proc.poll() is not None
@@ -58,7 +58,7 @@ def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch)
 
 
 def test_real_child_close_ack_exit_eof_then_profile_close_once(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys;assert sys.stdin.readline()=='CLOSE\\n';print('UI1\\tOK\\tCLOSED_ORIGINAL_HOST_AND_UI_JOB_ZERO',flush=True)")
+    session,close=child_session(monkeypatch,"import sys;assert sys.stdin.readline()=='CLOSE\\n';sys.stdout.buffer.write(b'UI1\\tOK\\tCLOSED_ORIGINAL_HOST_AND_UI_JOB_ZERO\\n');sys.stdout.buffer.flush()")
     try:
         session.finish()
         assert session.closed and not session.unknown and session.duplicate.value is None
@@ -110,3 +110,24 @@ def test_ui_command_sequence_waits_exact_revision_and_only_client_read_verifies(
     assert 'if(trialView)return 0' in host and 'TRIAL_ONLY' in host
     import json
     assert json.loads(Path('scripts/windows_ci/native_business_window.json').read_text()) is None
+
+
+@pytest.mark.parametrize('specialist,account,label', [
+    (False,'fixture-a','企业 A'), (True,'prep-specialist-fixture-a','专员 A'),
+])
+def test_trial_selects_the_exact_native_material_account_rendered_at_root(specialist,account,label):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from parkweave.local_workspace import mount_workspace
+    from scripts.windows_portable.native_web_login import MATERIAL_LABELS
+
+    app=mount_workspace(FastAPI(),Mock(),12345,MATERIAL_LABELS)
+    result=TestClient(app,base_url='http://127.0.0.1:12345').get('/')
+    assert result.status_code==200
+    assert f'<option value="{account}">{label}</option>' in result.text
+    assert '<select id="role" aria-label="账号">' in result.text
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.passwords={account:'SYNTHETIC_INPUT'}
+    session=Mock()
+    trial.login(session,specialist)
+    assert session.call.call_args_list[0].args==('SELECT',ui.encoded('账号'),ui.encoded(label))

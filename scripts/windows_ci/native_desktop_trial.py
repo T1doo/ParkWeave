@@ -20,6 +20,7 @@ from uuid import uuid4
 from scripts.windows_portable import native_trial_authority as a
 from scripts.windows_portable.desktop_profile import NativeDesktopProfile
 from scripts.windows_portable.local_preparation import PreparationReference
+from scripts.windows_portable.native_web_login import MATERIAL_LABELS
 
 _retained=[]
 BUTTON=50000;TEXT=50020
@@ -79,7 +80,8 @@ class Session:
             a.need(answer is not None)
             parts=answer.decode('ascii').rstrip('\n').split('\t')
             if (len(parts)==4 and parts[:2]==['UI1','UNKNOWN'] and parts[2] in
-                ('OPEN','SET','CLICK','ITEM','SELECT','REFERENCE','WAIT','CAPTURE','CLOSE')
+                ('OPEN','SET','CLICK','ITEM','SELECT','SELECT_CONTROL','SELECT_EXPAND',
+                 'SELECT_OPTIONS','SELECT_ITEM','SELECT_CONFIRM','REFERENCE','WAIT','CAPTURE','CLOSE')
                 and (parts[3]=='NOT_RECORDED' or re.fullmatch('[a-f0-9]{8}',parts[3]))):
                 self.failure_details=dict(operation=parts[2],hresult=parts[3])
             a.need(parts[:2]==['UI1','OK']);return parts[2:]
@@ -162,8 +164,9 @@ class NativeDesktopTrial:
 
     def login(self,session,specialist=False):
         self.phase='LOGIN'
-        session.call('SELECT',encoded('账号'),encoded('专员 · 补正与人工核对' if specialist else '企业 · 提交资料与确认'))
-        password=self.passwords['prep-specialist-fixture-a' if specialist else 'fixture-a']
+        account='prep-specialist-fixture-a' if specialist else 'fixture-a'
+        session.call('SELECT',encoded('账号'),encoded(dict(MATERIAL_LABELS)[account]))
+        password=self.passwords[account]
         session.call('SET',encoded('密码'),encoded(password));session.call('CLICK',encoded('登录工作台'))
         session.call('WAIT',encoded('我的事项'),str(TEXT))
 

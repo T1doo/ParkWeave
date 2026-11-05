@@ -82,10 +82,17 @@ static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type
 static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
 static void click(const std::wstring& selector,bool prefix){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix);Ref<IUIAutomationInvokePattern> p;ok(e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put()));ok(p->Invoke());}
 static void select(const std::wstring& selector,const std::wstring& option){
- Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId);Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
+ phase="SELECT_CONTROL";
+ Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId);
+ phase="SELECT_EXPAND";
+ Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
+ phase="SELECT_OPTIONS";
  Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> items;ok(e->FindAll(TreeScope_Descendants,condition.p,items.put()));int count=0;ok(items->get_Length(&count));need(count>0&&count<32);Ref<IUIAutomationElement> chosen;
  for(int i=0;i<count;i++){Ref<IUIAutomationElement> item;ok(items->GetElement(i,item.put()));if(name(item.p)==option){need(!chosen.p);chosen.p=item.p;chosen.p->AddRef();}}
- need(chosen.p);Ref<IUIAutomationSelectionItemPattern> pattern;ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));ok(pattern->Select());BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));need(selected);ok(expand->Collapse());
+ phase="SELECT_ITEM";
+ need(chosen.p);Ref<IUIAutomationSelectionItemPattern> pattern;ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));ok(pattern->Select());
+ phase="SELECT_CONFIRM";
+ BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));need(selected);ok(expand->Collapse());
 }
 static std::wstring referenceAt(unsigned revision){
  need(revision>=1&&revision<=64);auto end=std::min(deadline,GetTickCount64()+15000);std::wstring suffix=L" · 版本 "+std::to_wstring(revision);
