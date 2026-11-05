@@ -342,7 +342,7 @@
       "resource-binding-error"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -354,9 +354,64 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "在授权独立 Windows 环境核对占位、冲突、释放、确认及关闭重开。",
+    "reviewed_scope": {
+      "catalog": {
+        "entry": "#resource-catalog",
+        "route": "GET /api/synthetic-resources",
+        "guards": "当前企业身份及 READ 授权，按园区和企业资源授权过滤。资源管理身份使用独立维护路径。"
+      },
+      "preview": {
+        "entries": [
+          "#resource-preview",
+          "#resource-alternatives"
+        ],
+        "routes": [
+          "POST /api/synthetic-resources/{resource_id}/preview",
+          "POST /api/synthetic-resources/{resource_id}/alternative-times"
+        ],
+        "boundary": "预检、建议与填写候选时段均不生成占位。资源、时段、数量或当前身份改变后旧结果不可操作。"
+      },
+      "hold": {
+        "entry": "#resource-hold",
+        "route": "POST /api/synthetic-resources/{resource_id}/holds",
+        "guards": "企业 EXECUTE 与当前 HOLD 授权，资源规则版本、时段、容量、期限及原请求键。确认或释放各有原动作。"
+      },
+      "group": {
+        "entries": [
+          "#combination-confirm",
+          "#bundle-confirm"
+        ],
+        "routes": [
+          "POST /api/resource-combinations",
+          "POST /api/resource-bundles"
+        ],
+        "guards": "锁定本人当前有效占位，重验每个成员规则和容量后才原子提交。单项、组合及材料资源包分开记录。"
+      },
+      "unknown": {
+        "entry": "#bundle-recover",
+        "route": "GET /api/resource-bundles/recovery/{request_key}",
+        "rule": "按原请求只读核对，不自动再次确认。合成占位和确认的回执不代表现实预约或履约。"
+      },
+      "evidence": {
+        "scope": "21 项 Node VM 用例使用 DOM 和传输替代件。仅核对建议、输入变化、拒绝和未知结果边界。",
+        "result": "resource-journey-guards-r19.xml",
+        "real_executors": [
+          "tests/test_resource_bundles_browser.py::test_actual_confirm_read_cancel_and_three_widths",
+          "tests/test_resource_bundles_browser.py::test_owned_api_process_restart_reads_committed_bundle_without_post",
+          "tests/test_resource_response_binding_browser.py::test_invalid_resource_binding_retains_original_key_until_explicit_retry"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/resource_holds.py": "f819ab66e660851e567e80fa0250da0af3921df3aba5bba9fd4eff3233c083f1",
+        "src/parkweave/resource_combinations.py": "c50c253551469215ef31837f0b13af34efc9bb3afc2f129b56b762f40518322b",
+        "src/parkweave/resource_bundles.py": "0a9264dd79ae04fa102684cefe8fc014eea0b7e14933667cb18ff382b9677862"
+      }
+    }
   },
   {
     "journey": "派单与接单",
@@ -750,7 +805,7 @@
     "journey": "精简端与宿主",
     "current_html_ids": [],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_AUTHORIZED_TRIAL_SCOPE",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -762,8 +817,24 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "AUTHORIZED_TRIAL_EXECUTOR_SOURCE_ONLY",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "原生运行成功后逐项核对 UIA、实际截图、独立后端停止与重开证据，再单独验证普通产品入口及完整四角色。",
+    "reviewed_scope": {
+      "executor": "scripts/windows_ci/native_desktop_trial.py::NativeDesktopTrial",
+      "source_window": "scripts/windows_ci/native_business_scope.py::NativeBusinessScope.run",
+      "roles": [
+        "enterprise_operator",
+        "park_specialist"
+      ],
+      "expected": "窗口 UIA 驱动提交、材料两版本、补正、核对、确认、显式重开与再次确认。仅用 GET 验证版本 10 和动作序列。关闭原窗口，重开真实后端和新窗口，核对同一事项持久读回。",
+      "actual_product_entry": "TRIAL_VIEWER_ATTACHMENT_ONLY",
+      "remaining": "普通 EXE 新建及重开入口、执行者和资源管理员的完整旅程仍需验收。",
+      "sha256": {
+        "scripts/windows_ci/native_desktop_trial.py": "1d6063012c1b34895eee0f3a7632640ad1697b9d9501ad41bdab4e6b9fcf1ffd",
+        "scripts/windows_ci/native_business_scope.py": "d8ccd94985851cc7b10ade4991438240758747c466b9dc9dca21a8a5d2535e8a",
+        "scripts/windows_portable/native_business_adapter.py": "eb4efeb789bbadd8a42d6869f0303de5f4f61fb4d98af4a3e2cc7b8d560b5fb8"
+      }
+    }
   }
 ]
