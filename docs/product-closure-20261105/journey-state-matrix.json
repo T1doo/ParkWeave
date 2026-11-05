@@ -222,7 +222,7 @@
       "material-package-merge"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -234,9 +234,61 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_PARSER_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "用独立 Windows 的当前企业与获派专员验证导入、明确保存、补正、审核、确认、编辑失效和重开。",
+    "reviewed_scope": {
+      "candidate": {
+        "entry": "#material-file-use",
+        "route": "POST /api/preparations/{preparation_id}/material-file-candidate",
+        "boundary": "仅用户选择的合成 UTF-8 文件。TXT、Markdown、CSV、JSON，上限 8192 字节，候选正文上限 4000 UTF-16 单元。解析候选不写入材料，不推断事实或真实性。"
+      },
+      "owner": {
+        "entries": [
+          "#prep-evidence",
+          "#prep-confirm",
+          "#prep-reopen"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/commands",
+        "actions": [
+          "ADD_EVIDENCE",
+          "CONFIRM",
+          "REOPEN"
+        ],
+        "guards": "当前身份、授权、事项版本、Case 可写及当前核对摘要。追加材料产生版本，清除旧审核有效性。"
+      },
+      "reviewer": {
+        "entries": [
+          "#prep-correction",
+          "#prep-review"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/commands",
+        "actions": [
+          "REQUEST_CHANGES",
+          "REVIEW"
+        ],
+        "guards": "当前获派专员，必需材料槽和已完成的纠正，现有来源及事实门。"
+      },
+      "unknown": {
+        "entry": "#prep-recovery-read",
+        "rule": "按原证据请求标识核对结果，原历史回读不等于当前审核。"
+      },
+      "evidence": {
+        "scope": "实际本地文件解析代码，未运行数据库或 API 用例。",
+        "result": "material-parser-guards-r18.xml",
+        "real_executors": [
+          "tests/test_material_file_import.py::test_candidate_fills_original_command_then_review_confirmation_and_key_recovery",
+          "tests/test_material_corrections.py::test_two_fresh_enterprises_correct_real_sources_without_copying_cases_or_grants",
+          "tests/test_preparation.py::test_api_full_manual_preparation_confirm_and_reopen"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/preparation.py": "1317787fb36f3f7be79cfb9189ec7e882003253e95e6d88eeb1c9320f9783ce9",
+        "src/parkweave/material_file_import.py": "ed1d65cbcc9548896fad83375e7ed25ae25faf06fb233c3cf3fb451322397d22"
+      }
+    }
   },
   {
     "journey": "资源与组合",
@@ -421,7 +473,7 @@
       "receipt-history-result"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -433,9 +485,66 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "在独立 Windows 实际链路复验提交、待企业核对、纠正、确认、重开和冷恢复。",
+    "reviewed_scope": {
+      "read": {
+        "entries": [
+          "#receipt-list",
+          "#receipt-refresh"
+        ],
+        "routes": [
+          "GET /api/executor-receipts",
+          "GET /api/executor-receipts/{step_id}"
+        ],
+        "current_object": "当前回执步骤、资料事项、Case、Run、执行者、步骤及资料版本。依赖已变、历史代次和取消核对保持只读。"
+      },
+      "executor": {
+        "entry": "#receipt-submit",
+        "route": "POST /api/executor-receipts/{step_id}/commands",
+        "action": "SUBMIT",
+        "from": [
+          "AWAITING_RECEIPT",
+          "CHANGES_REQUESTED"
+        ],
+        "to": "RECEIPT_RECORDED",
+        "guard": "仅当前获派执行者，当前步骤和版本，Case 可写，来源及内容非空。须由适配器生成的步骤不允许人工替代。"
+      },
+      "owner": {
+        "entries": [
+          "#receipt-ack",
+          "#receipt-correct",
+          "#receipt-reopen"
+        ],
+        "route": "POST /api/executor-receipts/{step_id}/commands",
+        "guard": "本人企业、EXECUTE 授权、当前资料依赖、步骤版本及当前回执 SHA。",
+        "transitions": {
+          "ACKNOWLEDGE": "RECEIPT_RECORDED -> LOCAL_ACKNOWLEDGED",
+          "REQUEST_CHANGES": "RECEIPT_RECORDED -> CHANGES_REQUESTED",
+          "REOPEN": "RECEIPT_RECORDED 或 LOCAL_ACKNOWLEDGED -> AWAITING_RECEIPT"
+        }
+      },
+      "unknown": {
+        "entry": "#receipt-submit-recover",
+        "route": "GET /api/executor-receipts/{step_id}/submit-recovery",
+        "rule": "只保留原提交坐标，身份或步骤变化使旧响应失效。未知结果按原键只读核对，不自动再次提交。"
+      },
+      "evidence": {
+        "scope": "48 个 Node VM 断言用例使用 DOM、传输和存储替代件。仅核对前端协议。",
+        "result": "receipt-journey-guards-r18-fixed.xml",
+        "real_executors": [
+          "tests/test_executor_receipts.py::test_full_append_correction_acknowledge_reopen_history_persistence",
+          "tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/executor_receipts.py": "1aab01dd611ce4a7abb0960e9ecb7cefc7a9ff514109997b63d380c0a170b85f",
+        "tests/pending_receipt_handoff_offline.js": "32e060abeac8f3e9fd87cc6a693a294c3d70173c0cc95c679c781cdc468f38e3"
+      }
+    }
   },
   {
     "journey": "概览与进度",
