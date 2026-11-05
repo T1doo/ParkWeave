@@ -1,4 +1,4 @@
-"""Startup observations share one deadline; native acceptance remains closed."""
+"""Bound startup observations and the subsequent one-shot worker activation."""
 from contextlib import contextmanager
 from dataclasses import dataclass,field
 import socket
@@ -119,7 +119,8 @@ def require_application_ready(lease, inputs, application, probe, registered):
             or type(probe) is not ExistingActorProbe):
         raise CandidateRefused('exact registered API and worker required')
     nonce=runtime.challenge(application.challenge);expected_actor=probe.expected()
-    deadline=time.monotonic()+5
+    from .native_trial_authority import budget
+    deadline=budget(lease,time.monotonic()+5)
     lease._verify()
     identities=tuple(application.adapter.live_identity(token) for token in (application.api,application.worker))
     application.adapter.require_endpoint_support(application.api)  # Missing witness: no DB probe or HTTP call.
@@ -140,26 +141,33 @@ def require_application_ready(lease, inputs, application, probe, registered):
         raise CandidateRefused('application creation identity changed')
     lease._verify()
     if time.monotonic()>=deadline: raise CandidateRefused('application readiness deadline')
-    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,deadline)
+    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,deadline,None)
     return receipt  # Worker is still blocked before its first claim.
 
 
 def check_before_running(receipt):
     if type(receipt) is not ReadyApplication or receipt not in _issued:
         raise CandidateRefused('current readiness required before RUNNING')
-    application,lease,identities,deadline=_issued[receipt]
-    if time.monotonic()>=deadline or lease.status()!='APPLICATION':
+    application,lease,identities,deadline,activation_end=_issued[receipt]
+    if activation_end is not None or time.monotonic()>=deadline or lease.status()!='APPLICATION':
         raise CandidateRefused('application readiness deadline or phase changed')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
+    now=time.monotonic()
+    if now>=deadline:raise CandidateRefused('application readiness deadline')
+    from .native_trial_authority import budget
+    # Arm once, while the observations are fresh. The durable RUNNING write
+    # and the GO helper share this phase budget under the original source end.
+    activation_end=budget(lease,now+5)
+    _issued[receipt]=(application,lease,identities,deadline,activation_end)
 
 
 def activate_application(receipt):
     if type(receipt) is not ReadyApplication or receipt not in _issued:
         raise CandidateRefused('current unconsumed readiness required')
-    application,lease,identities,deadline=_issued.pop(receipt)  # Never replay unknown GO.
-    if time.monotonic()>=deadline or lease.status()!='RUNNING':
-        raise CandidateRefused('durable RUNNING within readiness clock required')
+    application,lease,identities,_,deadline=_issued.pop(receipt)  # Never replay unknown GO.
+    if deadline is None or time.monotonic()>=deadline or lease.status()!='RUNNING':
+        raise CandidateRefused('durable RUNNING within armed activation clock required')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
     application.adapter.worker_go(application.worker,application.challenge,deadline)

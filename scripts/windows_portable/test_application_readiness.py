@@ -204,11 +204,43 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
              patch.object(adapter,'worker_ready_frame',return_value=worker),patch.object(a,'_get',return_value=api), \
              patch.object(adapter,'worker_go') as go:
             receipt=a.require_application_ready(lease,None,app,probe,tokens)
-            a.check_before_running(receipt);go.assert_not_called();deadline=a._issued[receipt][3]
+            a.check_before_running(receipt);go.assert_not_called();deadline=a._issued[receipt][4]
             lease.status=lambda:'RUNNING';a.activate_application(receipt);go.assert_called_once_with(app.worker,NONCE,deadline)
             with self.assertRaises(a.CandidateRefused):a.activate_application(receipt)
             lease.status=lambda:'APPLICATION';api['actor']={**ACTOR,'id':'different-owner'}
             with self.assertRaises(a.CandidateRefused):a.require_application_ready(lease,None,app,probe,tokens)
+
+    def test_go_uses_a_single_source_capped_budget_armed_before_running(self):
+        lease,adapter,app,_,tokens=self.fixture()
+        from . import native_trial_authority
+        identities=tuple(adapter.live_identity(token) for token in tokens)
+        now=[14.6]
+        receipt=a.ReadyApplication()
+        a._issued[receipt]=(app,lease,identities,15.,None)
+        with patch.object(a.time,'monotonic',side_effect=lambda:now[0]), \
+             patch.object(native_trial_authority,'budget',side_effect=lambda _,end:min(end,17.)), \
+             patch.object(adapter,'worker_go') as go:
+            a.check_before_running(receipt)
+            self.assertEqual(a._issued[receipt][4],17.)
+            now[0]=14.9
+            with self.assertRaises(a.CandidateRefused):a.check_before_running(receipt)
+            self.assertEqual(a._issued[receipt][4],17.)
+            now[0]=15.1
+            lease.status=lambda:'RUNNING'
+            a.activate_application(receipt)
+            go.assert_called_once_with(app.worker,NONCE,17.)
+
+    def test_go_requires_an_unexpired_armed_window(self):
+        lease,adapter,app,_,tokens=self.fixture()
+        identities=tuple(adapter.live_identity(token) for token in tokens)
+        lease.status=lambda:'RUNNING'
+        with patch.object(a.time,'monotonic',return_value=17.),patch.object(adapter,'worker_go') as go:
+            for end in (None,17.):
+                receipt=a.ReadyApplication()
+                a._issued[receipt]=(app,lease,identities,15.,end)
+                with self.assertRaises(a.CandidateRefused):a.activate_application(receipt)
+                self.assertNotIn(receipt,a._issued)
+            go.assert_not_called()
 
     def test_private_pipe_read_keeps_same_cap_stop_from_closing_descriptors(self):
         _,adapter,app,_,_=self.fixture();read_fd,write_fd=os.pipe()
