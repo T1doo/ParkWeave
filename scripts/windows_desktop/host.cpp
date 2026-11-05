@@ -78,6 +78,8 @@ static std::thread reader;
 static bool trialView=false,trialAttached=false,trialAck=false,trialEof=false;
 static HANDLE trialInput=nullptr,trialOutput=nullptr,trialParent=nullptr,trialProfile=nullptr;
 static std::string trialNonce;
+static bool trialStartupReported=false;
+static unsigned trialStage=1; // START frame and profile validation
 static constexpr UINT EVENT_LINE=WM_APP+1, EVENT_EXIT=WM_APP+2;
 static constexpr UINT TRIAL_EOF=WM_APP+3;
 static const wchar_t* accounts[]={L"fixture-a",L"fixture-b",L"fixture-c",L"prep-specialist-fixture-a",L"prep-specialist-fixture-b",L"prep-specialist-fixture-c"};
@@ -90,6 +92,14 @@ static void sampleInputs(){
 }
 static void need(bool b){if(!b)throw std::runtime_error("DESKTOP_REFUSED");}
 static void ok(HRESULT h){need(SUCCEEDED(h));}
+static void reportTrialStartup(bool ready){
+ if(!trialView||trialStartupReported||trialNonce.empty())return;
+ trialStartupReported=true;
+ std::string line=ready?"PWUI1\tVIEW_READY\t":"PWUI1\tVIEW_FAILED\t";line+=trialNonce;
+ if(!ready){char code[9];sprintf(code,"%08x",trialStage);line+="\t";line+=code;}
+ line+="\n";DWORD used=0;
+ if(!WriteFile(trialOutput,line.data(),DWORD(line.size()),&used,nullptr)||used!=line.size())uiUnknown=true;
+}
 static void reportStartupProbe(const wchar_t* result){
  if(!startupProbe||probeReported)return;probeReported=true;std::wstring value=result?result:L"null";if(value.size()>2048)value=L"null";
  int count=WideCharToMultiByte(CP_UTF8,0,value.c_str(),int(value.size()),nullptr,0,nullptr,nullptr);std::string data(count,'\0');WideCharToMultiByte(CP_UTF8,0,value.c_str(),int(value.size()),data.data(),count,nullptr,nullptr);data="{\"event\":\"STARTUP_PROBE\",\"result\":"+data+"}\n";DWORD written=0;WriteFile(GetStdHandle(STD_OUTPUT_HANDLE),data.data(),DWORD(data.size()),&written,nullptr);PostMessageW(window,WM_CLOSE,0,0);
@@ -202,23 +212,23 @@ static void trustedRuntimeFile(HANDLE h){
 static bool registryPresent(HKEY root,const wchar_t* path){HKEY k=nullptr;LONG r=RegOpenKeyExW(root,path,0,KEY_READ,&k);if(r==ERROR_FILE_NOT_FOUND||r==ERROR_PATH_NOT_FOUND)return false;need(r==ERROR_SUCCESS);RegCloseKey(k);return true;}
 static void runtime(){
  // Reject overrides, rather than alter system settings or silently use Edge.
- startupPhase=L"WebView2 环境设置";
+ startupPhase=L"WebView2 环境设置";trialStage=3;
  LPWCH block=GetEnvironmentStringsW();need(block);for(LPWCH p=block;*p;p+=wcslen(p)+1){std::wstring row=p;for(auto& c:row)c=towupper(c);if(row.rfind(L"WEBVIEW2_",0)==0||row.rfind(L"COREWEBVIEW2_",0)==0){FreeEnvironmentStringsW(block);need(false);}}FreeEnvironmentStringsW(block);
  for(HKEY k:{HKEY_LOCAL_MACHINE,HKEY_CURRENT_USER}){
   need(!registryPresent(k,L"Software\\Policies\\Microsoft\\Edge\\WebView2"));
   need(!registryPresent(k,L"Software\\Microsoft\\Edge\\WebView2"));
  }
- startupPhase=L"WebView2 安装登记";
+ startupPhase=L"WebView2 安装登记";trialStage=4;
  HKEY key=nullptr;ok(HRESULT_FROM_WIN32(RegOpenKeyExW(HKEY_LOCAL_MACHINE,L"SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",0,KEY_READ|KEY_WOW64_32KEY,&key)));
  wchar_t version[128]{};DWORD bytes=sizeof(version),type=0;LONG r=RegQueryValueExW(key,L"pv",nullptr,&type,(BYTE*)version,&bytes);RegCloseKey(key);need(r==ERROR_SUCCESS&&type==REG_SZ&&bytes>=4&&bytes<=sizeof(version)&&version[(bytes/2)-1]==0);
  std::wstring v=version;need(v!=L"0.0.0.0"&&!v.empty()&&v.find_first_not_of(L"0123456789.")==std::wstring::npos);
  wchar_t program[2048]{};ok(SHGetFolderPathW(nullptr,CSIDL_PROGRAM_FILESX86,nullptr,SHGFP_TYPE_CURRENT,program));
  runtimeFolder=std::wstring(program)+L"\\Microsoft\\EdgeWebView\\Application\\"+v;
- startupPhase=L"WebView2 目录身份";
+ startupPhase=L"WebView2 目录身份";trialStage=5;
  std::wstring current=program;std::wstring ancestor=current;while(ancestor.size()>3){trustedDirectory(ancestor,true);auto pos=ancestor.find_last_of(L'\\');need(pos!=std::wstring::npos);ancestor.resize(pos);}
  std::vector<std::wstring> parts={L"Microsoft",L"EdgeWebView",L"Application",v};for(const auto& part:parts){current+=L"\\"+part;trustedDirectory(current,false);}
- std::wstring exe=runtimeFolder+L"\\msedgewebview2.exe";startupPhase=L"WebView2 程序文件身份";runtimePin=pin(exe,nullptr,true);trustedRuntimeFile(runtimePin);startupPhase=L"WebView2 微软签名与吊销信息";signedMicrosoft(runtimePin,exe);
- startupPhase=L"WebView2 Loader 文件校验";
+ std::wstring exe=runtimeFolder+L"\\msedgewebview2.exe";startupPhase=L"WebView2 程序文件身份";trialStage=6;runtimePin=pin(exe,nullptr,true);trustedRuntimeFile(runtimePin);startupPhase=L"WebView2 微软签名与吊销信息";trialStage=7;signedMicrosoft(runtimePin,exe);
+ startupPhase=L"WebView2 Loader 文件校验";trialStage=8;
  loaderPin=pin(base+L"\\launcher\\WebView2Loader.dll",WEBVIEW_LOADER_SHA256);
  startupPhase=L"WebView2 Loader 加载";
  loader=LoadLibraryExW((base+L"\\launcher\\WebView2Loader.dll").c_str(),nullptr,LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR|LOAD_LIBRARY_SEARCH_SYSTEM32);need(loader);
@@ -228,7 +238,7 @@ template<class T,class... A>struct Handler final:T{
  std::atomic<ULONG> refs{1};std::function<HRESULT(A...)> fn;Handler(std::function<HRESULT(A...)> f):fn(f){}
  HRESULT STDMETHODCALLTYPE QueryInterface(REFIID id,void** out)override{if(!out)return E_POINTER;*out=nullptr;if(IsEqualGUID(id,IID_IUnknown)||IsEqualGUID(id,interfaceID<T>())){*out=static_cast<T*>(this);AddRef();return S_OK;}return E_NOINTERFACE;}
  ULONG STDMETHODCALLTYPE AddRef()override{return ++refs;}ULONG STDMETHODCALLTYPE Release()override{ULONG n=--refs;if(!n)delete this;return n;}
- HRESULT STDMETHODCALLTYPE Invoke(A... args)override{try{return fn(args...);}catch(...){uiUnknown=true;stop();signalBackend(false);return E_FAIL;}}
+ HRESULT STDMETHODCALLTYPE Invoke(A... args)override{try{return fn(args...);}catch(...){reportTrialStartup(false);uiUnknown=true;stop();signalBackend(false);return E_FAIL;}}
 };
 template<class T,class... A>struct Factory{template<class F>static T* make(F f){return new Handler<T,A...>(std::function<HRESULT(A...)>(f));}};
 #define CB(T,...) Factory<T,__VA_ARGS__>::make
@@ -241,15 +251,16 @@ static void captureStartup(const std::wstring& metadata){
 }
 static void startupReply(const wchar_t* state,const std::wstring& message){if(!startupView||!view)return;if(startupMessageProbe&&std::wstring(state)==L"REFUSED"&&startupRefusal==L"DESKTOP_REQUEST_INVALID"){reportStartupProbe(L"{\"backend_refused_original_request\":true,\"child_closed\":true}");return;}std::string data="{\"protocol\":\"PARKWEAVE_STARTUP_V1\",\"state\":"+json(state)+",\"message\":"+json(message)+"}";std::wstring wide(data.begin(),data.end());ok(view->PostWebMessageAsJson(wide.c_str()));}
 static void showWeb(const std::wstring& profile){
+ trialStage=9; // WebView2 environment
  need(!controller&&!stopping&&!running&&loader);profilePath=profile;environmentPending=true;browserExited=false;
  using Create=HRESULT(STDMETHODCALLTYPE*)(PCWSTR,PCWSTR,ICoreWebView2EnvironmentOptions*,ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler*);
  auto create=(Create)GetProcAddress(loader,"CreateCoreWebView2EnvironmentWithOptions");need(create);
  auto env=CB(ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,HRESULT,ICoreWebView2Environment*)([](HRESULT hr,ICoreWebView2Environment* e)->HRESULT{
-  environmentPending=false;if(FAILED(hr)||!e){uiUnknown=true;stop();signalBackend(false);return E_FAIL;}environment=e;e->AddRef();
+  environmentPending=false;if(FAILED(hr)||!e){reportTrialStartup(false);uiUnknown=true;stop();signalBackend(false);return E_FAIL;}environment=e;e->AddRef();trialStage=10;
   ICoreWebView2Environment5* e5=nullptr;ok(e->QueryInterface(interfaceID<ICoreWebView2Environment5>(),(void**)&e5));EventRegistrationToken exitToken{};
   auto exited=CB(ICoreWebView2BrowserProcessExitedEventHandler,ICoreWebView2Environment*,ICoreWebView2BrowserProcessExitedEventArgs*)([](ICoreWebView2Environment*,ICoreWebView2BrowserProcessExitedEventArgs* a)->HRESULT{UINT32 pid=0;ok(a->get_BrowserProcessId(&pid));if(!browserHandle||pid!=browserPID||WaitForSingleObject(browserHandle,0)!=WAIT_OBJECT_0){uiUnknown=true;signalBackend(false);return E_FAIL;}browserExited=true;finishUIStop();return S_OK;});ok(e5->add_BrowserProcessExited(exited,&exitToken));exited->Release();e5->Release();controllerPending=true;
   auto made=CB(ICoreWebView2CreateCoreWebView2ControllerCompletedHandler,HRESULT,ICoreWebView2Controller*)([](HRESULT hr,ICoreWebView2Controller* c)->HRESULT{
-   controllerPending=false;if(FAILED(hr)||!c){uiUnknown=true;stop();signalBackend(false);return E_FAIL;}controller=c;c->AddRef();ok(c->get_CoreWebView2(&view));
+   controllerPending=false;if(FAILED(hr)||!c){reportTrialStartup(false);uiUnknown=true;stop();signalBackend(false);return E_FAIL;}controller=c;c->AddRef();trialStage=11;ok(c->get_CoreWebView2(&view));
    ok(view->get_BrowserProcessId(&browserPID));browserHandle=OpenProcess(SYNCHRONIZE|PROCESS_QUERY_LIMITED_INFORMATION,FALSE,browserPID);if(browserHandle)remember(browserHandle);need(browserHandle);BOOL inside=FALSE;need(IsProcessInJob(browserHandle,uiJob,&inside)&&inside);wchar_t image[4096];DWORD count=4096;need(QueryFullProcessImageNameW(browserHandle,0,image,&count));need(_wcsicmp(image,(runtimeFolder+L"\\msedgewebview2.exe").c_str())==0);
    if(stopping){closeView();finishUIStop();return S_OK;}
    configureDesktopSettings<ICoreWebView2Settings,ICoreWebView2Settings4>(view,interfaceID<ICoreWebView2Settings4>(),ok);
@@ -267,6 +278,16 @@ static void showWeb(const std::wstring& profile){
    }
    auto nav=CB(ICoreWebView2NavigationStartingEventHandler,ICoreWebView2*,ICoreWebView2NavigationStartingEventArgs*)([](ICoreWebView2*,ICoreWebView2NavigationStartingEventArgs* a)->HRESULT{LPWSTR u=nullptr;ok(a->get_Uri(&u));bool allowed=!stopping&&(startupView?desktopStartupNavigation(u):sameOrigin(u));if(!allowed&&startupView){std::wstring scheme=u;scheme=scheme.substr(0,scheme.find(L':'));status((L"启动页面导航被限制，协议："+scheme).c_str());}CoTaskMemFree(u);if(!allowed)ok(a->put_Cancel(TRUE));return S_OK;});
    ok(view->add_NavigationStarting(nav,&token));ok(view->add_FrameNavigationStarting(nav,&token));nav->Release();
+   if(trialView){
+    auto ready=CB(ICoreWebView2NavigationCompletedEventHandler,ICoreWebView2*,ICoreWebView2NavigationCompletedEventArgs*)([](ICoreWebView2* sender,ICoreWebView2NavigationCompletedEventArgs* args)->HRESULT{
+     if(trialStartupReported)return S_OK;
+     BOOL success=FALSE;ok(args->get_IsSuccess(&success));
+     LPWSTR source=nullptr;ok(sender->get_Source(&source));
+     bool original=source&&std::wstring(source)==origin+L"/";CoTaskMemFree(source);
+     reportTrialStartup(success&&original&&!stopping);
+     return S_OK;
+    });ok(view->add_NavigationCompleted(ready,&token));ready->Release();
+   }
    auto completed=CB(ICoreWebView2NavigationCompletedEventHandler,ICoreWebView2*,ICoreWebView2NavigationCompletedEventArgs*)([](ICoreWebView2*,ICoreWebView2NavigationCompletedEventArgs* a)->HRESULT{if(!startupView)return S_OK;BOOL success=FALSE;COREWEBVIEW2_WEB_ERROR_STATUS error{};ok(a->get_IsSuccess(&success));ok(a->get_WebErrorStatus(&error));if(!success){status((L"启动页面未完成，错误代码："+std::to_wstring(int(error))).c_str());return S_OK;}auto inspected=CB(ICoreWebView2ExecuteScriptCompletedHandler,HRESULT,LPCWSTR)([](HRESULT hr,LPCWSTR value)->HRESULT{if(FAILED(hr)){status(L"页面已导航，内容检查失败。");return S_OK;}if(startupProbe){if(startupMessageProbe&&!probeMessageSent){probeMessageSent=true;auto sent=CB(ICoreWebView2ExecuteScriptCompletedHandler,HRESULT,LPCWSTR)([](HRESULT hr,LPCWSTR)->HRESULT{ok(hr);return S_OK;});HRESULT posted=view->ExecuteScript(L"window.chrome.webview.postMessage(JSON.stringify({protocol:'PARKWEAVE_STARTUP_V1',request:{action:'reopen',instance:'',database_port:0,api_port:0,passwords:{},initialize_profile:false,unexpected:true}}))",sent);sent->Release();ok(posted);}else if(!startupMessageProbe){if(startupCapture)captureStartup(value?value:L"null");else reportStartupProbe(value);}return S_OK;}std::wstring result=value?value:L"null";if(result.size()>240)result.resize(240);status((L"启动页面检查："+result).c_str());return S_OK;});HRESULT result=view->ExecuteScript(L"({state:document.readyState,workspace:document.body.dataset.workspaceDesign,dialog:!!document.querySelector('.desktop-startup-panel:modal'),nodes:document.body?document.body.children.length:0,bytes:document.documentElement.outerHTML.length})",inspected);inspected->Release();ok(result);return S_OK;});ok(view->add_NavigationCompleted(completed,&token));completed->Release();
    auto popup=CB(ICoreWebView2NewWindowRequestedEventHandler,ICoreWebView2*,ICoreWebView2NewWindowRequestedEventArgs*)([](ICoreWebView2*,ICoreWebView2NewWindowRequestedEventArgs* a)->HRESULT{return a->put_Handled(TRUE);});ok(view->add_NewWindowRequested(popup,&token));popup->Release();
    auto permission=CB(ICoreWebView2PermissionRequestedEventHandler,ICoreWebView2*,ICoreWebView2PermissionRequestedEventArgs*)([](ICoreWebView2*,ICoreWebView2PermissionRequestedEventArgs* a)->HRESULT{return a->put_State(COREWEBVIEW2_PERMISSION_STATE_DENY);});ok(view->add_PermissionRequested(permission,&token));permission->Release();
@@ -291,7 +312,7 @@ static void showWeb(const std::wstring& profile){
    });ok(v4->add_DownloadStarting(download,&token));download->Release();v4->Release();
    for(HWND h:startup)ShowWindow(h,SW_HIDE);resize();
    if(startupView){ok(view->Navigate(DESKTOP_STARTUP_URI));status(L"正在加载园合工作台…");return S_OK;}
-   ok(view->Navigate((origin+L"/").c_str()));running=true;lastAlive=GetTickCount64();status(trialView?L"TRIAL_ONLY · 真实界面试验附件　｜　后台权限仍由原试验持有，未获产品准入":L"园合 · 本地合成资料工作台　｜　关闭窗口将正常停止本次后台");return S_OK;
+   trialStage=12;ok(view->Navigate((origin+L"/").c_str()));running=true;lastAlive=GetTickCount64();status(trialView?L"TRIAL_ONLY · 真实界面试验附件　｜　后台权限仍由原试验持有，未获产品准入":L"园合 · 本地合成资料工作台　｜　关闭窗口将正常停止本次后台");return S_OK;
   });HRESULT result=e->CreateCoreWebView2Controller(window,made);made->Release();if(FAILED(result)){controllerPending=false;uiUnknown=true;stop();signalBackend(false);}return result;
  });HRESULT r=create(runtimeFolder.c_str(),profile.c_str(),nullptr,env);env->Release();if(FAILED(r)){environmentPending=false;uiUnknown=true;stop();signalBackend(false);ok(r);}
 }
@@ -399,7 +420,7 @@ static void event(const std::string& line){
   need(fields[6].size()==32&&fields[6].find_first_not_of("0123456789abcdef")==std::string::npos);trialNonce=fields[6];
   BY_HANDLE_FILE_INFORMATION info{};need(GetFileInformationByHandle(trialProfile,&info)&&(info.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)&&!(info.dwFileAttributes&FILE_ATTRIBUTE_REPARSE_POINT));
   wchar_t profile[4096]{};DWORD count=GetFinalPathNameByHandleW(trialProfile,profile,4096,0);need(count>7&&count<4096&&std::wstring(profile).rfind(L"\\\\?\\",0)==0&&profile[5]==L':'&&profile[6]==L'\\');
-  verifyBootstrap();runtime();origin=L"http://127.0.0.1:"+std::to_wstring(port);trialAttached=true;backendReady=true;lastAlive=GetTickCount64();showWeb(std::wstring(profile+4));return;
+  trialStage=2;verifyBootstrap();runtime();origin=L"http://127.0.0.1:"+std::to_wstring(port);trialAttached=true;backendReady=true;lastAlive=GetTickCount64();showWeb(std::wstring(profile+4));return;
  }
  if(line=="PW1\tALIVE"){if(stopping)return;need(backendReady);lastAlive=GetTickCount64();return;}
  if(line=="PW1\tSTOPPED"){need(stopping&&stopSent&&browserExited&&!uiUnknown);terminal=true;status(L"本次后台已正常停止，资料与待核对请求均已保留。");if(closeWhenStopped)PostMessageW(window,WM_CLOSE,0,0);return;}
@@ -438,7 +459,7 @@ static LRESULT CALLBACK procedure(HWND h,UINT message,WPARAM w,LPARAM l){try{swi
   if(child||trialView){closeWhenStopped=true;stop();return 0;}closeView();DestroyWindow(h);return 0;
  case WM_DESTROY:KillTimer(h,1);PostQuitMessage(0);return 0;
  }}catch(const DesktopInputError& error){clearPasswords();status(inputHint(error.problem));return 0;}
- catch(...){clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child||trialView){uiUnknown=true;stop();}}return DefWindowProcW(h,message,w,l);}
+ catch(...){reportTrialStartup(false);clearPasswords();status(L"桌面启动或运行核验失败，已保留现有资料；没有浏览器或安装回退。");if(child||trialView){uiUnknown=true;stop();}}return DefWindowProcW(h,message,w,l);}
 int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,LPWSTR arguments,int show){
  try{startupMessageProbe=arguments&&std::wstring(arguments)==L"--startup-message-probe";startupCapture=arguments&&std::wstring(arguments)==L"--startup-capture";startupProbe=startupCapture||startupMessageProbe||(arguments&&std::wstring(arguments)==L"--startup-probe");if(startupProbe){need(GetFileType(GetStdHandle(STD_OUTPUT_HANDLE))==FILE_TYPE_PIPE);probeStarted=GetTickCount64();show=SW_HIDE;}wchar_t path[32768];DWORD n=GetModuleFileNameW(nullptr,path,32768);need(n&&n<32768);base=path;auto p=base.find_last_of(L"\\");need(p!=std::wstring::npos);base.resize(p);SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
   ok(CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED));SetCurrentProcessExplicitAppUserModelID(L"ParkWeave.Desktop");

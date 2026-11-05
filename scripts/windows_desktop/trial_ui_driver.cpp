@@ -36,6 +36,8 @@ static HANDLE job=nullptr,process=nullptr,hostInput=nullptr,hostOutput=nullptr;
 static bool childCreated=false,resumeAttempted=false,suspendedCleanupAttempted=false;
 static HWND hwnd=nullptr;static DWORD hostPID=0;static ULONGLONG hostBirth=0;static bool ambiguousWindow=false;
 static std::atomic<bool> ack{false},pipeUnknown{false},heartbeatStop{false};
+static std::atomic<bool> startupDone{false};
+static std::string startupFailure;
 static std::thread heartbeat,reader;static std::mutex writing;
 static std::string nonce;static IUIAutomation* automation=nullptr;
 struct OwnedHandle{HANDLE value;bool attempted=false,closed=false;};
@@ -67,8 +69,25 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
  char parentBirth[17];sprintf(parentBirth,"%016llx",(unsigned long long)birth(GetCurrentProcess()));
  writeLine(hostInput,"PWUI1\tSTART\t"+std::to_string(port)+"\t"+std::to_string((ULONG_PTR)profile)+"\t"+std::to_string(GetCurrentProcessId())+"\t"+parentBirth+"\t"+nonce);
  heartbeat=std::thread([]{try{while(!heartbeatStop){std::this_thread::sleep_for(std::chrono::milliseconds(500));if(!heartbeatStop){std::lock_guard<std::mutex> lock(writing);writeLine(hostInput,"PWUI1\tALIVE\t"+nonce);}}}catch(...){pipeUnknown=true;}});
- reader=std::thread([]{try{need(readLine(hostOutput)=="PWUI1\tVIEW_RELEASED\t"+nonce);ack=true;heartbeatStop=true;if(heartbeat.joinable())heartbeat.join();std::lock_guard<std::mutex> lock(writing);closeKnown(hostInput);}catch(...){pipeUnknown=true;}});
+ reader=std::thread([]{try{
+  auto first=readLine(hostOutput);
+  if(first!="PWUI1\tVIEW_READY\t"+nonce){
+   auto prefix="PWUI1\tVIEW_FAILED\t"+nonce+"\t";
+   need(first.rfind(prefix,0)==0&&first.size()==prefix.size()+8);
+   startupFailure=first.substr(prefix.size());
+   need(startupFailure.find_first_not_of("0123456789abcdef")==std::string::npos);
+   auto stage=std::stoul(startupFailure,nullptr,16);need(stage>=1&&stage<=12);
+   startupDone=true;return;
+  }
+  startupDone=true;
+  need(readLine(hostOutput)=="PWUI1\tVIEW_RELEASED\t"+nonce);ack=true;heartbeatStop=true;if(heartbeat.joinable())heartbeat.join();std::lock_guard<std::mutex> lock(writing);closeKnown(hostInput);
+ }catch(...){pipeUnknown=true;}});
  while(!hwnd){identity();EnumWindows(findWindow,0);need(!ambiguousWindow);if(!hwnd)Sleep(100);}identity();
+ phase="OPEN_WAIT_VIEW";
+ auto startupEnd=std::min(deadline,GetTickCount64()+45000);
+ while(!startupDone){identity();need(!pipeUnknown&&GetTickCount64()<startupEnd);Sleep(100);}
+ if(!startupFailure.empty()){phase="OPEN_VIEW_FAILED";failureCode=startupFailure;need(false);}
+ identity();need(!pipeUnknown);
  ok(CoCreateInstance(CLSID_CUIAutomation,nullptr,CLSCTX_INPROC_SERVER,IID_IUIAutomation,(void**)&automation));
 }
 static Ref<IUIAutomationElement> root(){identity();Ref<IUIAutomationElement> value;ok(automation->ElementFromHandle(hwnd,value.put()));return value;}
