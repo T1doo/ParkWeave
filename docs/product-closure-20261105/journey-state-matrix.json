@@ -783,7 +783,7 @@
       "template-input-open"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -795,9 +795,61 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "在授权独立 Windows 窗口以新诉求重跑模板、过期、撤权、版本变化、关闭与重开。",
+    "reviewed_scope": {
+      "release": {
+        "entry": "#template-input-catalog",
+        "route": "GET /api/template-consumer/catalog",
+        "guards": "当前身份读取可信发布版本。实例或来源变化后重新读取。"
+      },
+      "new_input": {
+        "entries": [
+          "#template-input-create",
+          "#template-input-resume"
+        ],
+        "routes": [
+          "POST /api/template-consumer/instances",
+          "POST /api/template-consumer/instances/{instance_id}/resume"
+        ],
+        "guards": "新目标和带来源的新材料。明确确认、当前模板版本、当前事项关系和幂等键。不同目标不继承旧批准。"
+      },
+      "staged": {
+        "entries": [
+          "#cold-prepare",
+          "#cold-stage-prepare",
+          "#cold-stage-send"
+        ],
+        "routes": [
+          "POST /api/service-instance-cold-inputs",
+          "POST /api/service-instance-cold-inputs/prepare-stage"
+        ],
+        "boundary": "准备新输入和组装阶段请求分离，提交仍由用户确认并经原业务端点处理。"
+      },
+      "unknown": {
+        "entries": [
+          "#template-input-recover",
+          "#cold-recover"
+        ],
+        "routes": [
+          "GET /api/template-consumer/creation-recovery",
+          "GET /api/service-instance-cold-inputs/recovery"
+        ],
+        "rule": "仅按原标识及绑定摘要核对，不自动重写。"
+      },
+      "evidence": {
+        "scope": "31 个 Node VM 原页面迁移和模板规划协议用例。数据库和原生窗口未运行。",
+        "result": "template-journey-guards-r21.xml",
+        "real_executor": "tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/template_consumer.py": "8351a30e88a386dfa0734de761f51ebfc1c50301084dd435e83da9d93d013452",
+        "src/parkweave/service_instance_consumer.py": "8f0bbd5d2834cd86328e182580c83ef721184b58e5409898fe43b8e0cabcff50"
+      }
+    }
   },
   {
     "journey": "历史与导出",
@@ -831,7 +883,7 @@
       "token"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -843,9 +895,33 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_TRANSPORT_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "用真实独立 Windows 登录、退出、冷重开，逐一验证四角色身份隔离和未决请求恢复。",
+    "reviewed_scope": {
+      "login": {
+        "entry": "#local-workspace-login",
+        "route": "POST /api/local/session",
+        "guards": "原回环来源检查，原受保护账户验证。Windows 提供者核对 DPAPI 解密、安装、actor 和 bearer 指纹，并在数据库重验当前授权。"
+      },
+      "logout": {
+        "entries": [
+          "#local-workspace-logout",
+          "#token"
+        ],
+        "rule": "令牌仅在当前页面内存，清除令牌和角色并触发原身份失效事件。未决请求保持只读核对边界，不能自动重发。"
+      },
+      "evidence": {
+        "scope": "4 项本地传输、页面组装或离线 JS 回归。1 项 Linux 安装检查跳过。未真实发放 Windows 会话。",
+        "result": "identity-journey-guards-r21-fixed.xml"
+      },
+      "sha256": {
+        "src/parkweave/local_workspace.py": "c025f6a852a3efa51aa9142471e1b8e496f31ab4c9df23da1e41c8111e4b5330",
+        "src/parkweave/local_workspace_login.js": "d4929a4dbd2a6f40407e5fe46fb23409ab066eea64357bd8cb432e5d9fa6d7e7",
+        "scripts/windows_portable/native_web_login.py": "678754f8da1bad96da965af5d4f6056cd37c103f44c7e2cdda15ad4ec8d0ac8b",
+        "tests/test_local_workspace_entry.py": "cccdae92c3251acba9bffdff502eb4a163237bd3e9d51c92ee4f3fd57254fa12"
+      }
+    }
   },
   {
     "journey": "精简端与宿主",
