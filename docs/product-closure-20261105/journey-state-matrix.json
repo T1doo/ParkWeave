@@ -653,7 +653,7 @@
       "prep-summary"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -665,9 +665,30 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "独立 Windows 以真实事项验证当前责任、阻塞原因和原导航入口。",
+    "reviewed_scope": {
+      "read": {
+        "entries": [
+          "#case-worklist-read",
+          "#prep-summary",
+          "#plan-next-action"
+        ],
+        "route": "GET /api/cases/worklist",
+        "guards": "当前企业 PREPARE 授权，只读分页，Case、Run 和资料事项分别取当前记录。"
+      },
+      "next_action": "根据当前步骤与阻塞状态指向原入口。没有 assignment 时保持解释性阻断。",
+      "evidence": {
+        "file": "progress-readiness-guards-r22.xml",
+        "scope": "离线列表及原入口隔离。真实执行器 tests/test_case_worklist_offline.py::test_real_asgi_queue_response_renders_in_original_page_code"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/case_worklist.py": "78f493d65f200c7931dcc773a1c2b257a4767c22a88160b53f31e30d4c1ba680"
+      }
+    }
   },
   {
     "journey": "事实准备度变化",
@@ -714,7 +735,7 @@
       "opportunity-panel"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -726,9 +747,40 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "在获授权真实后端验证来源缺失、过期、冲突、撤权与旧结论只读保留。",
+    "reviewed_scope": {
+      "facts": {
+        "entries": [
+          "#case-fact-read",
+          "#case-fact-declare",
+          "#case-fact-confirm"
+        ],
+        "routes": [
+          "GET /api/preparations/{preparation_id}/fact-clarifications",
+          "POST /api/preparations/{preparation_id}/fact-clarifications/declare",
+          "POST /api/preparations/{preparation_id}/fact-clarifications/confirm"
+        ],
+        "guards": "按原角色、目的、来源和版本核对后显式写入。"
+      },
+      "readiness": {
+        "entry": "#readiness-assess",
+        "route": "/api/preparations/{preparation_id}/readiness",
+        "boundary": "保存的本地准备度和有限合成规则结果不等于政策批准。缺证据保持 UNKNOWN。"
+      },
+      "evidence": {
+        "file": "progress-readiness-guards-r22.xml",
+        "scope": "独立 Kleene 真值表对照原计算函数。真实执行器 tests/test_readiness.py::test_review_correction_false_fill_unknown_manual_true_stale_and_refresh"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/case_fact_clarifications.py": "6ac092c2a292f973532d9571782236728878cb67fa9d41a8ef039cf7424557bc",
+        "src/parkweave/readiness.py": "983c8237030dc68d2b4e817f3fa388a7acb7cf4aa8b843782186a73d95a53440",
+        "src/parkweave/synthetic_rule_readiness.py": "50ebdf13e4e97779d1840e2c1628e0b3e16dcaae4bde2861f7fabad2e2d08cc9"
+      }
+    }
   },
   {
     "journey": "模板与重新使用",
@@ -861,7 +913,7 @@
       "prep-history"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -873,9 +925,39 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "独立 Windows 核对来源变化时拒绝旧导出、下载内容与重开读回。",
+    "reviewed_scope": {
+      "history": {
+        "entries": [
+          "#record-directory-read",
+          "#record-directory-next",
+          "#prep-history"
+        ],
+        "routes": [
+          "GET /api/runs",
+          "GET /api/runs/{run_id}"
+        ],
+        "guards": "分页和历史记录按当前访问权，只读。晚到的旧身份响应不填充当前视图。"
+      },
+      "export": {
+        "entries": [
+          "#case-record-pack-download",
+          "#material-pack-download"
+        ],
+        "boundary": "当前快照、权限、来源与版本复验后生成本地 TXT。浏览器下载不提交业务写入。"
+      },
+      "evidence": {
+        "file": "record-directory-guards-r22.xml",
+        "scope": "11 项目录错误、晚响应与明确重试检查。下载、授权及重开执行器 tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "tests/test_case_record_pack.py": "5d5ad36e5ea7eb2dfc8861be9eeef066048ebc7ab717170c490481590fae85dd"
+      }
+    }
   },
   {
     "journey": "身份切换",
