@@ -21,6 +21,8 @@ from scripts.windows_portable import fixed_journal as journal
 
 _unknown=[]
 NAMES=frozenset(('lock.bin','journal.bin','torn.bin','identities.dpapi'))
+ROOT_ACCESS=0x120081  # Enumerate/read metadata; retained marker is never deleted.
+FILE_ACCESS=0x13019f  # Owned files need writes and DELETE for bounded cleanup.
 
 
 def need(ok):
@@ -140,7 +142,13 @@ class OwnedNativeObjects:
         attrs=ObjectAttributes(C.sizeof(ObjectAttributes),parent,C.pointer(u),0x40,C.cast(sd,PTR) if sd else None,None)
         h=PTR();io=IOStatus();storage=(h,io,attrs,u,text,sd)
         self.buffers.append(storage)  # Original outputs remain alive before the syscall.
-        status=nt_status(self.api.ntcreate(C.byref(h),0x13019f,C.byref(attrs),C.byref(io),None,
+        # A writable+DELETE parent handle conflicts with PGDATA's independent
+        # read/list anchor (which excludes SHARE_DELETE). The retained marker
+        # needs no write/DELETE rights. Keep SHARE_READ and the original handle
+        # held, so competing writes/deletes remain refused without broadening
+        # product directory sharing or dropping its identity/descriptor pins.
+        access=ROOT_ACCESS if directory else FILE_ACCESS
+        status=nt_status(self.api.ntcreate(C.byref(h),access,C.byref(attrs),C.byref(io),None,
             0x10 if directory else 0x80,1,2 if create else 1,
             0x20|0x200000|(1 if directory else 0x40),None,0))
         if status==0x103:
