@@ -352,3 +352,10 @@ G2–G5 未完成，PR0 不作通过结论。
 - 持续授权 run 27（42085195491）完成 failure，云端精确重建/包验证成功；原生失败转移到 server adapter launch 的 WindowsJobProcess.create:206 / backend.resume，OwnedJobError。源码调用顺序说明 initialize_protected 已返回，但没有独立成功回执，不能签收完整初始化。
 - ResumeThread 数值返回与当时进程状态缺失，新根因待定位。无桌面、无真实业务、无冷恢复通过。工作流恢复禁用、记录 null；未盲目重试。
 - AT 补充达到 35 条工程入口及 AT-36 人工路线；新 11 selectors 收集 22 个 nodeid，无数据库执行。正式状态不变。
+
+## 2026-11-06 Run 29：取得暂停计数并补调试附加握手
+
+- r15 源码 39ab9b2 云端精确构建/包验证通过；42088432491 已 completed/failure。原服务进程仍活着（wait=258），ResumeThread previous_count=2、winerror=null，尚无桌面或真实办理。
+- 所有通用 Windows runtime 的 loader image 已使用原句柄核对的 DOS 表示，原 GUID/NT 身份与哈希保留。60 passed / 19 Linux-only skipped。恢复/Job/诊断检查 126 passed / 1 目录旧清单失败另记，不声称全套通过；目录有 98 文件未登记。
+- 原调试 watch 只等 attach 返回，未等初始断点 Continue 完成；按文档与观测作时序假设，现补等待原泵 ready、初始事件/断点/未退出/无失败、原 birth 与 deadline。暂停计数守卫仍恰好 1。37 passed / 19 skipped，新时序原生待验。
+- 本次源窗口恢复 null，工作流禁用；没有盲目重试，也没有修改前端或录屏包。
