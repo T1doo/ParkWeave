@@ -48,6 +48,11 @@ class Scope:
             from scripts.windows_portable import directories
             try:directories._decode(b'')  # Real fixed-source pure validation.
             except directories.LeaseRefused as cause:raise ControlFailure('ACQUIRE',cause,[]) from cause
+        if scenario=='iat-parser-site':
+            from scripts.windows_portable import api_set_map
+            from scripts.windows_portable.payload import PayloadRefused
+            try:api_set_map.parse_v6(b'SYNTHETIC_PRIVATE_DO_NOT_LOG')
+            except PayloadRefused as cause:raise ControlFailure('CONFIG',cause,[]) from cause
         if scenario in ('failure','both-nested','diagnostic-unavailable'):
             try:
                 subprocess.run([sys.executable,'-I','-B','-S','-c',
@@ -96,6 +101,16 @@ def test_actual_entry_preserves_business_evidence_and_fails_with_environment_blo
     assert report['environment_blockers']==[dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)]
     assert not report['activation_allowed'] and not report['usable_product']
     assert events[-1]=='scope-close-failed-False'
+
+
+def test_actual_entry_reports_iat_parser_source_without_exposing_namespace_bytes():
+    process,report,_=run_entry('iat-parser-site')
+    assert process.returncode==2
+    assert report['primary']['control']['phase']=='CONFIG'
+    details=report['primary']['exception_details']
+    parser=next(row for row in details if row['type']=='PayloadRefused')
+    assert any(site['module']=='scripts.windows_portable.api_set_map' and site['function']=='parse_v6'
+               for site in parser['source_sites']['frames'])
 
 
 def test_actual_child_failure_retains_control_phase_type_and_unknown():
