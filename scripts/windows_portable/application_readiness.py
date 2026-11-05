@@ -1,4 +1,5 @@
 """Startup observations share one deadline; native acceptance remains closed."""
+from contextlib import contextmanager
 from dataclasses import dataclass,field
 import socket
 import time
@@ -41,10 +42,27 @@ class ReadyApplication:
 _issued=weakref.WeakKeyDictionary()
 
 
+@contextmanager
+def _connected_api(application, remaining):
+    while True:
+        application.adapter.require_endpoint_support(application.api)
+        timeout=remaining()
+        with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
+            connection.settimeout(timeout)
+            try:
+                connection.connect(('127.0.0.1',application.port))
+            except (ConnectionRefusedError,TimeoutError):
+                # This attempt has sent no HTTP bytes or credentials.
+                pass
+            else:
+                yield connection
+                return
+        time.sleep(min(.05,remaining()))
+
+
 def _get(application, bearer, nonce, deadline):
     """One direct IPv4 loopback GET. Whole response shares the absolute clock."""
     port=application.port
-    application.adapter.require_endpoint_support(application.api)
     if type(port) is not int or not 1<=port<=65535: raise CandidateRefused('explicit local API port required')
     data=(f'GET /api/runtime/readiness HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {bearer}\r\n'
           f'X-ParkWeave-Readiness-Challenge: {nonce}\r\nConnection: close\r\n\r\n').encode('ascii')
@@ -52,8 +70,7 @@ def _get(application, bearer, nonce, deadline):
         left=deadline-time.monotonic()
         if left<=0: raise CandidateRefused('application readiness deadline')
         return min(.3,left)
-    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
-        connection.settimeout(remaining());connection.connect(('127.0.0.1',port))
+    with _connected_api(application,remaining) as connection:
         application.adapter.verify_api_connection(application.api,connection)
         connection.settimeout(remaining());connection.sendall(data)
         raw=bytearray();header=None;length=None

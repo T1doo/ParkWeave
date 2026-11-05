@@ -147,6 +147,54 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
             with self.assertRaises(p.ProcessRefused):a._get(app,TOKEN,NONCE,time.monotonic()+1)
         connection.connect.assert_called_once_with(('127.0.0.1',12345));connection.sendall.assert_not_called()
 
+    def test_api_connect_retries_on_fresh_socket_before_identity_and_one_get(self):
+        _,adapter,app,_,_=self.fixture()
+        first,second,connected=Mock(),Mock(),Mock()
+        first.connect.side_effect=TimeoutError
+        second.connect.side_effect=ConnectionRefusedError
+        events=[]
+        connected.sendall.side_effect=lambda _:events.append('sent')
+        connected.recv.return_value=(b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n'
+                                     b'Cache-Control: no-store\r\nContent-Length: 2\r\n\r\n{}')
+        with patch.object(adapter,'require_endpoint_support') as support, \
+             patch.object(adapter,'verify_api_connection',side_effect=lambda *_:events.append('verified')) as verify, \
+             patch.object(a.socket,'socket') as factory,patch.object(a.time,'sleep') as pause:
+            factory.return_value.__enter__.side_effect=[first,second,connected]
+            self.assertEqual(a._get(app,TOKEN,NONCE,time.monotonic()+1),{})
+        self.assertEqual(factory.call_count,3)
+        self.assertEqual(factory.return_value.__exit__.call_count,3)
+        self.assertEqual(support.call_count,3)
+        self.assertEqual(pause.call_count,2)
+        verify.assert_called_once_with(app.api,connected)
+        first.sendall.assert_not_called()
+        second.sendall.assert_not_called()
+        self.assertEqual(events,['verified','sent'])
+
+    def test_api_response_timeout_is_not_replayed(self):
+        _,adapter,app,_,_=self.fixture()
+        connection=Mock()
+        connection.recv.side_effect=TimeoutError
+        with patch.object(adapter,'require_endpoint_support'),patch.object(adapter,'verify_api_connection'), \
+             patch.object(a.socket,'socket') as factory:
+            factory.return_value.__enter__.return_value=connection
+            with self.assertRaises(TimeoutError):a._get(app,TOKEN,NONCE,time.monotonic()+1)
+        factory.assert_called_once()
+        connection.sendall.assert_called_once()
+
+    def test_api_connect_retry_stops_at_the_original_deadline(self):
+        _,adapter,app,_,_=self.fixture()
+        connection=Mock()
+        connection.connect.side_effect=TimeoutError
+        with patch.object(adapter,'require_endpoint_support'),patch.object(adapter,'verify_api_connection') as verify, \
+             patch.object(a.socket,'socket') as factory,patch.object(a.time,'monotonic',side_effect=[1.,1.25]):
+            factory.return_value.__enter__.return_value=connection
+            with self.assertRaisesRegex(a.CandidateRefused,'readiness deadline'):
+                a._get(app,TOKEN,NONCE,1.25)
+        factory.assert_called_once()
+        connection.settimeout.assert_called_once_with(.25)
+        verify.assert_not_called()
+        connection.sendall.assert_not_called()
+
     def test_logical_pair_gate_waits_for_running_before_one_go_and_rejects_stale_actor(self):
         lease,adapter,app,probe,tokens=self.fixture()
         worker=dict(schema='parkweave-worker-ready/1',challenge=NONCE,pid=42,database=dict(DB),mode='LOCAL',state='WAITING_GO',business_started=False)
