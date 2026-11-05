@@ -108,12 +108,11 @@ class _NativeDPAPI:
                           None, None, CRYPTPROTECT_UI_FORBIDDEN, C.byref(output))
             if not ok:
                 winerror = C.get_last_error()  # before any cleanup/LocalSize call
+                raise ProtectionRefused('NATIVE_DPAPI_CALL_FAILED')
             owned_output = bool(ok and output.pbData)
             phase = 'ALLOCATION'
             if owned_output:
                 allocation_size = int(self._size(output.pbData))
-            if not ok:
-                raise ProtectionRefused('NATIVE_DPAPI_CALL_FAILED')
             if not output.pbData or not 0 < output.cbData <= output_limit:
                 raise ProtectionRefused('NATIVE_DPAPI_OUTPUT_REFUSED')
             # Never read/clear an unvalidated output extent. LocalSize failure

@@ -7,6 +7,7 @@ marker on REOPEN. No marker deletion/repair or path-following fallback exists.
 import ctypes as C
 from hashlib import sha256
 import json
+from .source_identity import from_manifest
 
 from parkweave.windows_handles import (PTR, UnicodeString, ObjectAttributes, IOStatus,
     nt_status, completed_nt_handle, require_nt_create_ready, retain_pending_nt_create)
@@ -53,7 +54,7 @@ def require_domain(filesystem, *, fresh):
     need(value.root is not None and filesystem.base == str(value.parent)
          and api.final_path(root).endswith('\\'+value.root.rsplit('\\',1)[1]))
     expected = json.dumps(dict(domain='TRIAL_ONLY',schema=1,trial_key=value.key,
-        source_commit=value.manifest['source_commit'],manifest_sha256=value.window.manifest_sha256,
+        **from_manifest(value.manifest,value.window.manifest_sha256),
         root_identity=list(_identity(api,root,True))),sort_keys=True,separators=(',',':')).encode('ascii')
     if fresh:
         need(handle is None and value.marker is None and not value.generations)

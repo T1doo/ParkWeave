@@ -95,8 +95,7 @@ class IsolatedFixedStoreSecurity:
         need(type(mode) is ep.PlanMode and isinstance(api,FakeSecurityAPI) and callable(store_factory))
         need((mode is ep.PlanMode.NEW and type(request) is ep.EndpointRequest) or
              (mode is ep.PlanMode.REOPEN and request is None))
-        e.exact(runtime,('source_commit','manifest_sha256'))
-        e.digest(runtime['source_commit'],40);e.digest(runtime['manifest_sha256'])
+        e.runtime_identity(runtime)
         self.mode,self.request,self.api,self.store_factory=mode,request,api,store_factory
         self.runtime=json.loads(e.canonical(runtime));self.failed=False
         self.lease=self.binding=self.store=self.plan=None

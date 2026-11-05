@@ -15,6 +15,7 @@ from parkweave.windows_files import component, root_parts, private_acl, DIRECTOR
 from parkweave.windows_handles import (PTR, UnicodeString, ObjectAttributes, IOStatus,
     nt_status, completed_nt_handle, require_nt_create_ready, retain_pending_nt_create,
     require_query_ready, query_call, retain_query_unknown)
+from .source_identity import matches_manifest
 from . import payload
 from .controller import CandidateRefused
 from .endpoint_plan import _key_held
@@ -81,7 +82,7 @@ class RuntimeSource:
         root_parts(self.root)  # Pure syntax check, no OS operation.
         need(sha256(self.manifest).hexdigest() == runtime['manifest_sha256'])
         parsed = payload.parse_manifest(self.manifest)
-        need(parsed['source_commit'] == runtime['source_commit'])
+        need(matches_manifest(parsed,runtime))
         return installation_plan(self.manifest)
 
 
@@ -318,7 +319,7 @@ class NativeRuntimeInstallation:
                     return b''.join(chunks)
                 manifest_row = next(row for row in self.files if row[0] == payload.MANIFEST)
                 manifest = payload.parse_manifest(read(*manifest_row))
-                need(manifest.get('source_commit') == runtime['source_commit']
+                need(matches_manifest(manifest,runtime)
                      and manifest_row[2] == runtime['manifest_sha256']
                      and manifest.get('usable_product') is False
                      and manifest.get('native_initialization') == 'OWNER_MUTATION_PAUSED')

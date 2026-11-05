@@ -44,8 +44,8 @@ async (page) => {
   check(await page.locator('#resource-select').evaluate(e=>e.labels[0].textContent)==='资源','resource picker has no correct label');
   check(await page.locator('#resource-hold').evaluate(e=>e.form.id)==='resource-form','hold lost original form');
   check(await page.locator('#resource-hold').isDisabled(),'catalog read enabled holding without precheck');
-  check((await page.locator('#park-resource-summary').innerText()).includes('正在填写（尚未选入）'),'draft is presented as selection');
-  check((await page.locator('#park-resource-summary').innerText()).includes('已选组合 0 项'),'draft changed selected hold count');
+  check((await page.locator('#park-resource-summary').innerText()).includes('正在填写（未计入组合）'),'draft is presented as selection');
+  check((await page.locator('#park-resource-summary').innerText()).includes('已选占位组合 0 项'),'draft changed selected hold count');
   await page.locator('#resource-quantity').fill('2');
   check((await page.locator('#park-resource-summary').innerText()).includes('2 份'),'draft summary did not update');
   await page.locator('#resource-quantity').fill('1');
@@ -102,7 +102,7 @@ async (page) => {
   check(await page.locator('#prep-review').isDisabled(),'failed secondary read enabled review');
   check(await page.locator('#prep-summary .workspace-case-goal').evaluate(e=>e===document.activeElement),'opening detail did not move focus into the current case');
   check(await page.locator('#prep-refresh').isVisible(),'refresh missing next to invalid-read warning');
-  check(await page.locator('#prep-refresh').evaluate(e=>e.parentElement===document.querySelector('#prep-read-status').parentElement),'refresh is not adjacent to read warning');
+  check(await page.locator('#prep-refresh').evaluate(e=>e.closest('.v2-read-state')===document.querySelector('#prep-read-status').closest('.v2-read-state')),'refresh is not adjacent to read warning');
   const master=await page.locator('.v2-master').boundingBox(),stack=await page.locator('.v2-detail-stack').boundingBox();
   check(stack.x>=master.x+master.width && Math.abs(stack.y-master.y)<2,'master/detail alignment failed');
   check(await page.locator('#prep-detail').evaluate(e=>getComputedStyle(e).overflowY)==='visible','nested card scroll remains inside detail stack');

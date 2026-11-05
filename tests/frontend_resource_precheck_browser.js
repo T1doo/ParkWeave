@@ -18,7 +18,7 @@ async (page) => {
   await page.locator('#resource-preview').click();
   await page.waitForFunction(()=>!document.querySelector('#resource-hold').disabled);
   check((await page.locator('#resource-preview-result').innerText()).includes('尚未占位'),'available preview is presented as a hold');
-  check((await page.locator('#park-resource-summary').innerText()).includes('已选组合 0 项'),'preview changed hold selection');
+  check((await page.locator('#park-resource-summary').innerText()).includes('已选占位组合 0 项'),'preview changed hold selection');
   await page.locator('.v2-precheck-evidence>summary').click();
   check((await page.locator('.v2-precheck-evidence').innerText()).includes('NOT_CONFIRMED'),'source reservation boundary lost');
   await page.locator('#resource-quantity').fill('2');

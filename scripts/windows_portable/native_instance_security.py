@@ -38,8 +38,7 @@ class NativeFixedStoreSecurity:
     def __init__(self,mode,*,request,runtime,payload_source=None):
         need(type(mode) is ep.PlanMode and ((mode is ep.PlanMode.NEW and type(request) is ep.EndpointRequest)
              or (mode is ep.PlanMode.REOPEN and request is None)))
-        e.exact(runtime,('source_commit','manifest_sha256'))
-        e.digest(runtime['source_commit'],40);e.digest(runtime['manifest_sha256'])
+        e.runtime_identity(runtime)
         self.mode=mode;self.request=request;self.runtime=json.loads(e.canonical(runtime))
         self.lease=self.store=self.layout=self.target=self.plan=self.inputs=self.endpoint=None
         self.state=self._state_digest=self._credential=self._secrets=self._sessions=None

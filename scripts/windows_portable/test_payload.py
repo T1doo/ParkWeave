@@ -17,13 +17,13 @@ from . import build, entry, payload as p
 # Product packaging contract, independent of the builder's selection logic.
 RUNTIME_MODULES = (
     '__init__.py', 'application_readiness.py', 'cluster_processes.py', 'controller.py',
-    'credential_envelope.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
+    'credential_envelope.py', 'source_identity.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
     'fixed_journal.py', 'fixed_secret_store.py', 'fixed_store_security.py', 'fixed_windows_journal.py',
     'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
     'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
     'windows_process_handles.py', 'windows_user_protection.py',
     'native_composition.py', 'native_cluster.py', 'native_instance_security.py', 'pgdata_probe_boundary.py',
-    'native_runtime_staging.py', 'native_web_login.py', 'native_system_crt.py', 'authenticode_signature.py', 'crt_pe.py',
+    'native_runtime_staging.py', 'native_web_login.py', 'native_sample.py', 'native_system_crt.py', 'authenticode_signature.py', 'crt_pe.py',
     'native_acceptance_contract.py', 'native_acceptance_issuer.py', 'native_protected_objects.py',
     'native_business_adapter.py', 'preparation_business_trial.py', 'loader_inputs.py', 'api_set_map.py',
     'native_trial_authority.py', 'native_trial_domain.py', 'native_trial_facts.py',
@@ -232,6 +232,19 @@ class PayloadChecks(unittest.TestCase):
             subprocess.run(['git', *args], cwd=repo, check=True, capture_output=True)
         source = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
         return repo, assets, lock, source
+
+    def test_snapshot_assembly_includes_uncommitted_ui_without_claiming_git_commit(self):
+        from .source_snapshot import write_snapshot
+        repo,assets,lock,source=self.assembly_fixture()
+        current=b'<!-- uncommitted current UI -->\r\n'
+        (repo/'src/parkweave/web.html').write_bytes(current)
+        snapshot=self.root/'current-source.zip'
+        receipt=write_snapshot(repo,snapshot)
+        files,manifest=build.assemble(repo,receipt['source_snapshot_sha256'],assets,lock,source_snapshot=snapshot)
+        self.assertEqual(files['app/src/parkweave/web.html'],current)
+        self.assertIsNone(manifest['source_commit'])
+        self.assertEqual(manifest['source_snapshot_sha256'],receipt['source_snapshot_sha256'])
+        self.assertFalse(manifest['usable_product'])
 
     def test_full_frozen_fixture_assembly_verifies_and_preserves_original_block(self):
         repo, assets, lock, source = self.assembly_fixture()

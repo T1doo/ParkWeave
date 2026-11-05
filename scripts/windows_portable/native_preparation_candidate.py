@@ -44,8 +44,7 @@ class _NativePreparationController:
 
     def __init__(self,mode,*,runtime,request=None,initdb=None):
         need(type(mode) is ep.PlanMode)
-        e.exact(runtime,('source_commit','manifest_sha256'))
-        e.digest(runtime['source_commit'],40);e.digest(runtime['manifest_sha256'])
+        e.runtime_identity(runtime)
         if mode is ep.PlanMode.NEW:
             need(type(request) is ep.EndpointRequest and type(initdb) is Command and
                  initdb.relative_executable=='runtime/postgresql/bin/initdb.exe' and initdb.model=='WINDOWS_JOB'
@@ -154,7 +153,7 @@ class _NativePreparationController:
                 self.pipe=self._hold('pipe',_OwnedInitdbPipe(lease,self.owner));self.pipe.create()
                 frozen=_freeze(lease,self.owner,self.pipe,self.spec.initdb,data_target=self.target)
                 runtime=json.loads(self.spec.runtime)
-                payload=RuntimePayloadPrerequisite(lease,manifest_sha256=runtime['manifest_sha256'],source_commit=runtime['source_commit'])
+                payload=RuntimePayloadPrerequisite(lease,**runtime)
                 backend=_RestrictedInitdbBackend(frozen,payload,deadline)
                 self.adapter=PrivateProcessAdapter(lease,{'initdb':frozen.command},_backend=backend)
                 def record(token):

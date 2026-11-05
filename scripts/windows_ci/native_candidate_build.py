@@ -1,4 +1,4 @@
-"""Exact source-bound candidate build on one hosted Linux runner; never Windows.
+"""Exact source-bound candidate build on one hosted runner; no product execution.
 
 Null approval refuses before Git/temp/network/build actions. Official locked
 public assets only; no credential/alternate URL/retry/cache adoption. The final
@@ -24,11 +24,11 @@ from scripts.windows_ci.native_business_window import _record,_read,need,RECORD,
 
 def source_window():
     window,raw=_record()
-    expected=dict(GITHUB_ACTIONS='true',RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux',
+    expected=dict(GITHUB_ACTIONS='true',RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Windows' if os.name=='nt' else 'Linux',
         GITHUB_REPOSITORY=window.repository,GITHUB_REF=window.ref,GITHUB_JOB='candidate-build',
         GITHUB_EVENT_NAME='push',GITHUB_RUN_ATTEMPT='1',GITHUB_RUN_NUMBER=str(window.run_number),
         NATIVE_PUBLIC='true',GITHUB_WORKFLOW_REF=window.repository+'/'+workflow_for(window)+'@'+window.ref)
-    need(all(os.environ.get(k)==v for k,v in expected.items()) and os.name=='posix' and sys.platform=='linux'
+    need(all(os.environ.get(k)==v for k,v in expected.items()) and ((os.name=='posix' and sys.platform=='linux') or (os.name=='nt' and sys.platform=='win32'))
         and sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode
         and re.fullmatch('[1-9][0-9]{0,19}',os.environ.get('GITHUB_RUN_ID',''))
         and (window.run_id is None or os.environ['GITHUB_RUN_ID']==window.run_id)
@@ -71,22 +71,36 @@ def download(row,destination,deadline):
     need(total==row['bytes'] and digest.hexdigest()==row['sha256'])
 
 
+def compiler_layout(platform):
+    need(platform in ('nt','posix'))
+    stem='zig-x86_64-'+('windows' if platform=='nt' else 'linux')+'-0.15.2'
+    return stem+('.zip' if platform=='nt' else '.tar.xz'),stem+('/zig.exe' if platform=='nt' else '/zig')
+
+
 def extract_compiler(archive,destination):
-    with tarfile.open(archive,'r:xz') as stream:
-        members=stream.getmembers();need(0<len(members)<=30000)
-        names=set()
-        for item in members:
-            parts=Path(item.name).parts
-            need(parts and parts[0]=='zig-x86_64-linux-0.15.2' and not Path(item.name).is_absolute()
-                and '..' not in parts and item.name not in names and (item.isfile() or item.isdir()))
-            names.add(item.name)
-        stream.extractall(destination,members=members,filter='data')
+    if archive.suffix=='.zip':
+        with zipfile.ZipFile(archive) as stream:
+            members=stream.infolist();need(0<len(members)<=30000);seen=set()
+            for item in members:
+                parts=Path(item.filename).parts
+                need(parts and parts[0]=='zig-x86_64-windows-0.15.2' and not Path(item.filename).is_absolute() and '..' not in parts and ':' not in item.filename and '\\' not in item.filename and item.filename.casefold() not in seen)
+                seen.add(item.filename.casefold())
+                need(item.is_dir() or ((item.external_attr>>16)&0o170000) in (0,0o100000))
+            stream.extractall(destination)
+    else:
+        with tarfile.open(archive,'r:xz') as stream:
+            members=stream.getmembers();need(0<len(members)<=30000);names=set()
+            for item in members:
+                parts=Path(item.name).parts
+                need(parts and parts[0]=='zig-x86_64-linux-0.15.2' and not Path(item.name).is_absolute() and '..' not in parts and item.name not in names and (item.isfile() or item.isdir()))
+                names.add(item.name)
+            stream.extractall(destination,members=members,filter='data')
 
 
 def build(window,work,deadline):
     need(not work.exists());work.mkdir(mode=0o700)
     source=work/'source'
-    subprocess.run(['git','worktree','add','--detach',str(source),window.reviewed_parent],cwd=ROOT,
+    subprocess.run(['git','-c','core.autocrlf=false','worktree','add','--detach',str(source),window.reviewed_parent],cwd=ROOT,
         check=True,capture_output=True,timeout=10)
     # All executable builders and locks come from the reviewed parent, not an
     # input download or an approval-commit code change.
@@ -95,15 +109,29 @@ def build(window,work,deadline):
     need(runtime['schema']=='parkweave-windows-runtime-assets/1'
         and tools['schema']=='parkweave-native-candidate-tools/1')
     assets=work/'assets'
-    for row in runtime['assets']+tools['assets']:
+    compiler_archive,compiler_binary=compiler_layout(os.name)
+    selected_tools=[r for r in tools['assets'] if not r['file'].startswith('zig-') or r['file']==compiler_archive]
+    need(sum(r['file']==compiler_archive for r in selected_tools)==1)
+    for row in runtime['assets']+selected_tools:
         name=Path(row['file']);need(not name.is_absolute() and '..' not in name.parts)
         download(row,assets/name,deadline)
     compiler=work/'compiler';compiler.mkdir()
-    extract_compiler(assets/'zig-x86_64-linux-0.15.2.tar.xz',compiler)
+    extract_compiler(assets/compiler_archive,compiler)
+    # Use the same pinned Python/zlib for ZIP bytes as the reviewed local build.
+    build_python=sys.executable
+    if os.name=='nt':
+        python_asset=next(row for row in runtime['assets'] if row['kind']=='python')
+        build_runtime=work/'build-python';build_runtime.mkdir()
+        with zipfile.ZipFile(assets/python_asset['file']) as stream:
+            for item in stream.infolist():
+                name=Path(item.filename)
+                need(not name.is_absolute() and '..' not in name.parts and ':' not in item.filename and '\\' not in item.filename)
+            stream.extractall(build_runtime)
+        build_python=str(build_runtime/'python.exe')
     code="import runpy,sys;sys.path.insert(0,sys.argv.pop(1));runpy.run_module(sys.argv.pop(1),run_name='__main__')"
     def run(module,*args):
         need(time.monotonic()<deadline)
-        command=[sys.executable,'-I','-B','-S','-c',code,str(source),module,*map(str,args)]
+        command=[build_python,'-I','-B','-S','-c',code,str(source),module,*map(str,args)]
         result=subprocess.run(command,cwd=source,capture_output=True,timeout=max(.001,deadline-time.monotonic()))
         (work/(module.rsplit('.',1)[-1]+'-'+str(len(list(work.glob('*.log'))))+'.log')).write_bytes(result.stdout+result.stderr)
         need(result.returncode==0)
@@ -115,8 +143,8 @@ def build(window,work,deadline):
             need(not Path(name).is_absolute() and '..' not in Path(name).parts)
         stream.extractall(bootstrap)
     artifact=work/'artifact';artifact.mkdir()
-    run('scripts.windows_desktop.build','--zig',compiler/'zig-x86_64-linux-0.15.2/zig',
-        '--zig-archive',assets/'zig-x86_64-linux-0.15.2.tar.xz',
+    run('scripts.windows_desktop.build','--zig',compiler/compiler_binary,
+        '--zig-archive',assets/compiler_archive,
         '--sdk',assets/'microsoft.web.webview2.1.0.3537.50.nupkg',
         '--python-asset',assets/'python-3.12.10-embed-amd64.zip',
         '--bootstrap-root',bootstrap,'--output',work/'desktop','--ui-driver-output',artifact/'trial-ui-driver.exe')

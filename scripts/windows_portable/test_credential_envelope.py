@@ -25,6 +25,14 @@ def payloads():
 
 
 class EnvelopeChecks(unittest.TestCase):
+    def test_snapshot_runtime_roundtrip_and_ambiguous_source_refused(self):
+        value=payloads()[e.Purpose.CONFIG]
+        value['runtime']={'source_snapshot_sha256':'3'*64,'manifest_sha256':'2'*64}
+        raw=e.encode_plaintext(binding(),e.Purpose.CONFIG,value)
+        self.assertEqual(e.decode_plaintext(binding(),e.Purpose.CONFIG,raw),value)
+        value['runtime']['source_commit']='1'*40
+        with self.assertRaises(e.EnvelopeRefused):e.encode_plaintext(binding(),e.Purpose.CONFIG,value)
+
     def test_all_closed_purposes_roundtrip_and_separate_entropy(self):
         b = binding()
         for purpose, payload in payloads().items():

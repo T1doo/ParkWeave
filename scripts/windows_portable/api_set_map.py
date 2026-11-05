@@ -64,7 +64,7 @@ def parse_v6(raw):
             value_flags,alias_offset,alias_length,host_offset,host_length=words(value_offset+j*20,5)
             alias=text(alias_offset,alias_length,empty=True);host=text(host_offset,host_length,empty=True)
             need(alias not in aliases and (not alias or re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)*',alias)))
-            need(not host or re.fullmatch(r'[a-z0-9_-]+\.dll',host))
+            need(not host or re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.(?:dll|sys|exe|drv)',host))
             aliases.add(alias);values.append(dict(flags=value_flags,alias=alias,host=host))
         h=0
         for char in text(name_offset,hashed_length):h=(h*factor+ord(char))&0xffffffff
@@ -131,7 +131,7 @@ def selected_metadata(value,expected_sha256):
                  and len(target['alias'])<=512 and len(target['host'])<=512)
             alias=target['alias'].lower();host=target['host'].lower()
             need(alias not in seen and (not alias or re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)*',alias))
-                 and (not host or re.fullmatch(r'[a-z0-9_-]+\.dll',host)))
+                 and (not host or re.fullmatch(r'[a-z0-9_-]+(?:\.[a-z0-9_-]+)*\.(?:dll|sys|exe|drv)',host)))
             seen.add(alias);values.append(dict(flags=target['flags'],alias=alias,host=host))
         entries[name]=dict(flags=row['flags'],hashed_length=row['hashed_length'],values=values)
     need(set(wanted)==set(entries)|set(absent) and len(entries)<=header['count'])
@@ -167,6 +167,7 @@ def resolve_metadata(mapping,contract,importer_basename):
     choices=exact or [row for row in entry['values'] if row['alias']=='']
     need(len(choices)<=1)
     if choices and choices[0]['host']:
+        if not choices[0]['host'].endswith('.dll'):return dict(result,status='NON_DLL_HOST_NOT_ACCEPTED')
         result.update(status='STATIC_MAPPED_NOT_NATIVE_VERIFIED',host=choices[0]['host'],
             selected_by='EXACT_IMPORTER_ALIAS' if exact else 'DEFAULT')
     return result
@@ -206,19 +207,24 @@ def read_bounded(path):
     path=Path(path);fd=None
     def snapshot(info):
         need(stat.S_ISREG(info.st_mode) and 0<info.st_size<=MAX_METADATA_BYTES)
-        return info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns,info.st_ctime_ns
+        return info.st_dev,info.st_ino,info.st_size,info.st_mtime_ns
     try:
-        before=snapshot(path.lstat())
+        before_info=path.lstat();before=snapshot(before_info)
         flags=os.O_RDONLY
         for name in ('O_BINARY','O_CLOEXEC','O_NONBLOCK','O_NOFOLLOW'):flags|=getattr(os,name,0)
-        fd=os.open(path,flags);need(snapshot(os.fstat(fd))==before)
+        fd=os.open(path,flags);held_before=os.fstat(fd);need(snapshot(held_before)==before)
         parts=[];total=0
         while total<=MAX_METADATA_BYTES:
             chunk=os.read(fd,min(65536,MAX_METADATA_BYTES+1-total))
             if not chunk:break
             parts.append(chunk);total+=len(chunk)
+        held_after=os.fstat(fd);after_info=path.lstat()
+        # Windows path stat and descriptor stat may expose different ctime
+        # semantics. Preserve change detection within each observation method.
         need(0<total<=MAX_METADATA_BYTES and total==before[2]
-             and snapshot(os.fstat(fd))==before and snapshot(path.lstat())==before)
+             and snapshot(held_after)==before and snapshot(after_info)==before
+             and held_after.st_ctime_ns==held_before.st_ctime_ns
+             and after_info.st_ctime_ns==before_info.st_ctime_ns)
         return b''.join(parts)
     except OSError:
         raise PayloadRefused('API_SET_V6_METADATA_REFUSED') from None

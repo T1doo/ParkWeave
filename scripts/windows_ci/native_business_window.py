@@ -125,7 +125,7 @@ def _record():
     need(type(value['operations']) is list and len(set(value['operations'])) == len(value['operations']))
     value['operations'] = tuple(value['operations']); window = FrozenWindow(**value)
     need(window.repository == 'T1doo/ParkWeave' and type(window.ref) is str
-         and window.ref == 'refs/heads/dev/local-product-runtime-20261028'
+         and window.ref in ('refs/heads/dev/local-product-runtime-20261028','refs/heads/codex/windows-closure-20261105')
          and window.job == ('pgdata-probe' if configuration_only(window) else 'native-business-trial')
          and type(window.run_number) is int and window.run_number > 0
          and (window.run_id is None or type(window.run_id) is str and re.fullmatch('[1-9][0-9]{0,19}', window.run_id))

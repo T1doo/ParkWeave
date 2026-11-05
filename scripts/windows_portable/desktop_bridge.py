@@ -26,6 +26,11 @@ def request(stream):
             result[key]=value
         return result
     value=json.loads(raw,object_pairs_hook=pairs)
+    if type(value) is dict and 'protocol' in value:
+        if set(value)!={'protocol','request'} or value['protocol']!='PARKWEAVE_STARTUP_V1' or type(value['request']) is not dict:
+            raise ValueError('DESKTOP_STARTUP_PROTOCOL')
+        value=value['request']
+        if value.get('action') not in ('new','reopen'):raise ValueError('DESKTOP_STARTUP_ACTION')
     required={'action','instance','database_port','api_port','passwords','initialize_profile'}
     if type(value) is not dict or set(value) not in (required,required|{'sample_collaboration'}):
         raise ValueError('DESKTOP_REQUEST_SHAPE')
@@ -150,7 +155,10 @@ def main():
         raise SystemExit(2)
     channel=Channel(sys.stdin.buffer,sys.stdout.buffer)
     try:
-        value=request(channel.source)
+        try:value=request(channel.source)
+        except (ValueError,UnicodeError):
+            channel.emit('REFUSED','DESKTOP_REQUEST_INVALID')
+            return 2
         thread=threading.Thread(target=channel.monitor,daemon=True);thread.start()
         return run(value,channel)
     except BaseException:

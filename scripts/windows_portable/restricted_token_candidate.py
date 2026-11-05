@@ -79,6 +79,30 @@ def _admit_default_dacl(raw, current_sid):
     _need(offset <= len(raw))  # remaining free space belongs to the original ACL
 
 
+def _without_logon_grants(raw, current):
+    """Remove only grants to logon groups observed in this derived token.
+
+    Do not admit additional principals or edit the original token ACL. Unknown
+    grants and unsupported ACEs still fail the original closed-subset check.
+    """
+    _need(type(raw) is bytes and 8<=len(raw)<=65532)
+    revision,zero1,size,count,zero2=struct.unpack_from('<BBHHH',raw)
+    _need(revision in (2,4) and zero1==zero2==0 and size==len(raw) and count<=2048)
+    logon={sid for sid,attributes in current[2].items() if attributes&0xc0000000==0xc0000000}
+    kept=[];offset=8
+    for _ in range(count):
+        _need(offset+16<=len(raw))
+        kind,flags,extent=struct.unpack_from('<BBH',raw,offset)
+        _need(kind in (0,1) and flags&~0x0f==0 and extent>=16 and extent%4==0 and offset+extent<=len(raw))
+        ace=raw[offset:offset+extent];sid=ace[8:]
+        _need(len(sid)>=8 and sid[0]==1 and sid[1]<=15 and len(sid)==8+4*sid[1])
+        if not (kind==0 and sid in logon):kept.append(ace)
+        offset+=extent
+    result=struct.pack('<BBHHH',revision,0,8+sum(map(len,kept)),len(kept),0)+b''.join(kept)
+    _admit_default_dacl(result,current[1])
+    return result
+
+
 class TokenFailure(TokenRefused):
     def __init__(self, primary_type, cleanup_type, phase, winerror):
         self.primary_type, self.cleanup_type = primary_type, cleanup_type
@@ -322,9 +346,10 @@ class _RestrictedPrimaryCandidate:
             _need(current == self._restricted_snapshot)
             original = self._read_default_dacl()
             from .default_dacl_candidate import _NativeDefaultDaclBuilder
-            candidate = _NativeDefaultDaclBuilder().build(original, current[1])
+            restricted = _without_logon_grants(original,current)
+            candidate = _NativeDefaultDaclBuilder().build(restricted, current[1])
             self._phase = 'ADMIT_DEFAULT_DACL_SUBSET'
-            _admit_default_dacl(original, current[1])
+            _admit_default_dacl(candidate, current[1])
             _need(self._read_default_dacl() == original)
             _need(self._query(self._derived) == current)
             allocation = C.create_string_buffer(candidate, len(candidate))

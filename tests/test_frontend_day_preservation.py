@@ -31,6 +31,9 @@ def test_original_html_ids_and_business_javascript_are_preserved():
         original = before.split('<script>')[1].split('</script>')[0].strip()
         current = after.split('<script>')[1].split('// Frontend-day presentation.')[0].strip()
         if name == 'web.html':
+            # Display-only DTO fields avoid guessing title/state from rendered text.
+            # The original click handler, request and authorization checks stay exact.
+            current = current.replace('button.dataset.preparationId=p.id;button.dataset.preparationGoal=p.goal;button.dataset.preparationState=p.state;', '')
             current = current.replace('bundleControls();parkDesignRefresh();}', 'bundleControls();}')
             # New explicit-owner candidates retain every original seal/binding
             # assertion while extending only the exact producer/version pairing.

@@ -7,6 +7,7 @@ native stop/restart bridge before a second-generation issuer can consume them.
 from dataclasses import dataclass
 import time
 import weakref
+from .source_identity import from_manifest
 
 from . import native_trial_authority as a
 from .fixed_directories import FixedDirectoryLease, _exclusive_operation
@@ -40,8 +41,7 @@ def subject(lease,*,cleanup=False):
     lease._verify();a.need(value.marker is not None)
     fs=lease.fs
     files=tuple((tuple(fs.identity(handle)),fs.api.descriptor(handle)) for handle in (fs.root,fs.lock,fs.journal))
-    observed=Subject(value.key,tuple(sorted(dict(source_commit=value.manifest['source_commit'],
-        manifest_sha256=value.window.manifest_sha256).items())),files,lease._verified_instance_uuid(),value.marker)
+    observed=Subject(value.key,tuple(sorted(from_manifest(value.manifest,value.window.manifest_sha256).items())),files,lease._verified_instance_uuid(),value.marker)
     if value.subject is None:value.subject=observed
     else:a.need(value.subject==observed)
     return observed
