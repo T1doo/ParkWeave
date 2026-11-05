@@ -49,6 +49,25 @@ def _arguments(data_directory, pipe_name):
             '--encoding=UTF8', '--locale=C')
 
 
+def _command_image(data_directory, relative_executable, dos_file_path):
+    """Represent the existing PGDATA-pinned install root for the Windows loader.
+
+    This pure conversion issues no authority: the caller must first revalidate
+    the original data target and executable handles. GUID paths remain their
+    identity representation; initdb's loader needs an ordinary DOS image path.
+    """
+    from .pgdata_candidate import pg_command_path
+    _need(relative_executable == 'runtime/postgresql/bin/initdb.exe')
+    _need(type(data_directory) is str and data_directory.endswith('/data/postgresql'))
+    root = data_directory[:-len('/data/postgresql')]
+    # Both paths use the same conservative component/length contract as PGDATA.
+    pg_command_path('\\\\?\\' + data_directory.replace('/', '\\'))
+    observed = pg_command_path(dos_file_path)[0]
+    expected = root + '/' + relative_executable
+    _need(observed.casefold() == expected.casefold())
+    return observed
+
+
 class _FrozenInitdb:
     def __reduce__(self): raise TypeError('INITDB_COMMAND_NOT_TRANSFERABLE')
     def __copy__(self): raise TypeError('INITDB_COMMAND_NOT_TRANSFERABLE')
@@ -143,8 +162,19 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
               and group.executable.command is group.command and group.executable.lease is self.lease)
         _need(_frozen_by_lease.get(self.lease) is self.frozen and _key_held(self.lease) == self.frozen.key)
         name = _pwfile_name_held(self.lease, self.server, self.owner)
-        _need(group.command.arguments == _arguments(_path_held(self.lease, self.frozen.data_target), name))
+        data_directory = _path_held(self.lease, self.frozen.data_target)
+        _need(group.command.arguments == _arguments(data_directory, name))
         group.executable.verify()
+        from parkweave.windows_handles import query_call
+        api = self.lease.fs.api
+        buffer = C.create_unicode_buffer(4096)
+        count = query_call(api.readonly, 'INITDB_DOS_IMAGE', api.getpath,
+                           (group.executable.file, buffer, len(buffer), 0), (group, buffer))
+        self._time(deadline)
+        _need(0 < count < len(buffer))
+        image = _command_image(data_directory, group.command.relative_executable, buffer.value)
+        previous = group.resources.setdefault('restricted_command_image', image)
+        _need(previous == image)
         _need(_handle(self.owner._derived))  # NULL must never select caller token
 
     def _child_token(self, group):
@@ -209,8 +239,9 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
             with open(os.devnull, 'r+b', buffering=0) as null:
                 handle = backend.crt.get_osfhandle(null.fileno())
                 startup.prepare((handle, handle, capture.write_handle if capture is not None else handle))
-                command = command_buffer(group.executable.path, group.command.arguments)
-                application = _utf16(group.executable.path + '\0')
+                image = r['restricted_command_image']
+                command = command_buffer(image, group.command.arguments)
+                application = _utf16(image + '\0')
                 cwd = _utf16(group.executable.root_path + '\0')
                 environment_buffer(environment)  # ordinary OS-only contract first
                 self._fresh(group, deadline)  # after external registration callback
