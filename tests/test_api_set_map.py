@@ -43,6 +43,21 @@ def test_real_namespace_dotted_hosts_and_kernel_entries_do_not_grant_loading():
     with pytest.raises(PayloadRefused):a.parse_v6(namespace([('api-ms-test-l1-1-0',[('','../bad.dll')])]))
 
 
+def test_v6_namespace_reads_documented_aliases_and_groups_without_resolving_them():
+    mapping=a.parse_v6(namespace([
+        ('api-win-core-samplefeature',[('','kernelbase.dll')]),
+        ('api-win-core-samplefeature~AdvancedOperations',[('','kernelbase.dll')]),
+        ('api-ms-test-l1-1-0',[('','default.dll')]),
+    ]))
+    assert mapping['namespace_count']==3
+    assert 'api-win-core-samplefeature~advancedoperations' in mapping['entries']
+    assert a.resolve_metadata(mapping,'api-ms-test-l1-1-0','client.exe')['host']=='default.dll'
+    for name in ('api-win-core-samplefeature','api-win-core-samplefeature~advancedoperations'):
+        with pytest.raises(PayloadRefused):a.resolve_metadata(mapping,name,'client.exe')
+    for name in ('api-win-core-samplefeature~../other','ext-ms-sample-l1-1-0~advanced','api-win-test~~advanced'):
+        with pytest.raises(PayloadRefused):a.parse_v6(namespace([(name,[])]))
+
+
 def test_target_contract_exact_importer_default_absent_and_unmapped_are_distinct():
     raw=namespace([('api-ms-test-l1-1-0',[('', 'default.dll'),('client.exe','special.dll')]),
                    ('ext-ms-test-l1-1-0',[])])
