@@ -166,14 +166,23 @@ static void signedMicrosoft(HANDLE file,const std::wstring& path){
  auto& data=record->data;data.cbStruct=sizeof(data);data.dwUIChoice=WTD_UI_NONE;data.fdwRevocationChecks=WTD_REVOKE_WHOLECHAIN;data.dwUnionChoice=WTD_CHOICE_FILE;data.pFile=&f;data.dwStateAction=WTD_STATEACTION_VERIFY;
  data.dwProvFlags=WTD_CACHE_ONLY_URL_RETRIEVAL|WTD_REVOCATION_CHECK_CHAIN_EXCLUDE_ROOT;
  LONG r=WinVerifyTrust(nullptr,&record->policy,&data);bool trusted=false;
+ if(r==CRYPT_E_REVOCATION_OFFLINE||r==CRYPT_E_NO_REVOCATION_CHECK||r==CERT_E_REVOCATION_FAILURE)trialStage=13;
+ else if(r==CERT_E_REVOKED||r==CRYPT_E_REVOKED)trialStage=14;
+ else if(r!=ERROR_SUCCESS)trialStage=15;
  if(r==ERROR_SUCCESS){auto p=WTHelperProvDataFromStateData(data.hWVTStateData);auto s=p?WTHelperGetProvSignerFromChain(p,0,FALSE,0):nullptr;auto c=s?WTHelperGetProvCertFromChain(s,0):nullptr;
+  trialStage=16;
   if(c&&c->pCert&&s->csCertChain>=2&&s->csCertChain<=8&&s->dwError==0&&!(s->dwSignerType&0x10)){
    wchar_t name[256]{};char oid[]="2.5.4.10";DWORD n=CertGetNameStringW(c->pCert,CERT_NAME_ATTR_TYPE,0,oid,name,256);trusted=n>1&&std::wstring(name)==L"Microsoft Corporation";
-   for(DWORD i=0;i<s->csCertChain;i++){auto cert=WTHelperGetProvCertFromChain(s,i);if(!cert||!cert->pCert||cert->fTestCert||cert->fIsCyclic||cert->dwError||cert->dwRevokedReason){trusted=false;break;}
-    if(i+1==s->csCertChain){BYTE digest[32]{};DWORD length=32;bool hashed=CryptHashCertificate2(BCRYPT_SHA256_ALGORITHM,0,nullptr,cert->pCert->pbCertEncoded,cert->pCert->cbCertEncoded,digest,&length);char hex[65];for(int j=0;j<32;j++)sprintf(hex+j*2,"%02x",digest[j]);trusted=trusted&&hashed&&length==32&&std::string(hex)=="847df6a78497943f27fc72eb93f9a637320a02b561d0a91b09e87a7807ed7c61";}
+   for(DWORD i=0;trusted&&i<s->csCertChain;i++){auto cert=WTHelperGetProvCertFromChain(s,i);if(!cert||!cert->pCert||cert->fTestCert||cert->fIsCyclic||cert->dwError||cert->dwRevokedReason){trialStage=17;trusted=false;break;}
+    if(i+1==s->csCertChain){
+     BYTE digest[32]{};DWORD length=sizeof(digest);
+     trusted=CryptHashCertificate2(BCRYPT_SHA256_ALGORITHM,0,nullptr,cert->pCert->pbCertEncoded,cert->pCert->cbCertEncoded,digest,&length)&&length==sizeof(digest);
+     if(trusted){char hex[65];for(int j=0;j<32;j++)sprintf(hex+j*2,"%02x",digest[j]);trusted=std::string(hex)=="847df6a78497943f27fc72eb93f9a637320a02b561d0a91b09e87a7807ed7c61";}
+     if(!trusted)trialStage=18;
+    }
    }
   }}
- data.dwStateAction=WTD_STATEACTION_CLOSE;record->closeAttempted=true;LONG closed=WinVerifyTrust(nullptr,&record->policy,&data);record->closed=closed==ERROR_SUCCESS;if(!record->closed)uiUnknown=true;need(trusted&&record->closed);
+ data.dwStateAction=WTD_STATEACTION_CLOSE;record->closeAttempted=true;LONG closed=WinVerifyTrust(nullptr,&record->policy,&data);record->closed=closed==ERROR_SUCCESS;if(!record->closed){trialStage=19;uiUnknown=true;}need(trusted&&record->closed);
 }
 static bool jobPIDs(HANDLE value,std::set<ULONG_PTR>& result){
  alignas(ULONG_PTR) BYTE buffer[4096]{};DWORD used=0;if(!value||!QueryInformationJobObject(value,JobObjectBasicProcessIdList,buffer,sizeof(buffer),&used))return false;

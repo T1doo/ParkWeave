@@ -68,11 +68,14 @@ def test_real_child_close_ack_exit_eof_then_profile_close_once(monkeypatch):
     finally:dispose(session)
 
 
-def test_host_stage_refusal_stays_distinct_from_ui_hresult(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys;sys.stdin.readline();sys.stdout.buffer.write(b'UI1\\tUNKNOWN\\tOPEN_VIEW_FAILED\\t00000007\\n');sys.stdout.buffer.flush()")
+@pytest.mark.parametrize('stage',['00000007','0000000d','00000012','00000013'])
+def test_host_stage_refusal_stays_distinct_from_ui_hresult(monkeypatch,stage):
+    line=f'UI1\tUNKNOWN\tOPEN_VIEW_FAILED\t{stage}\n'.encode('ascii')
+    program=f'import sys;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush()'
+    session,close=child_session(monkeypatch,program)
     try:
         with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('OPEN')
-        assert session.failure_details==dict(operation='OPEN_VIEW_FAILED',host_stage='00000007')
+        assert session.failure_details==dict(operation='OPEN_VIEW_FAILED',host_stage=stage)
         assert session.unknown and not session.closed
         close.assert_not_called()
     finally:dispose(session)

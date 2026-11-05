@@ -76,7 +76,7 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
    need(first.rfind(prefix,0)==0&&first.size()==prefix.size()+8);
    startupFailure=first.substr(prefix.size());
    need(startupFailure.find_first_not_of("0123456789abcdef")==std::string::npos);
-   auto stage=std::stoul(startupFailure,nullptr,16);need(stage>=1&&stage<=12);
+   auto stage=std::stoul(startupFailure,nullptr,16);need(stage>=1&&stage<=19);
    startupDone=true;return;
   }
   startupDone=true;
