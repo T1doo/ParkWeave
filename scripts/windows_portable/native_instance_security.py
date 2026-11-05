@@ -87,7 +87,12 @@ class NativeFixedStoreSecurity:
                 need(0<end-time.monotonic()<=30)
                 if self.store is not None:self.store.api.deadline=end
                 if self.target is not None:self.target.deadline=end
-                if self.layout is not None:self.layout.deadline=end
+                if self.layout is not None:
+                    self.layout.deadline=end
+                    # The layout owns a distinct SID/security probe. It is
+                    # consulted by _leaf_held during PGDATA verification and
+                    # must share this operation's clamped observation window.
+                    if self.layout.probe is not None:self.layout.probe.deadline=end
                 self._context(lease)
                 result=operation(end)
                 budget(self,end)

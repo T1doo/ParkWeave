@@ -58,3 +58,17 @@ def test_same_inputs_identity_still_required_before_bootstrap(monkeypatch):
     other=DatabaseInputs('maintenance','owner','application','OWNED_DATA')
     with pytest.raises(CandidateRefused):prerequisites.initialize_protected(object(),other,object(),lambda t:None,132.0)
     assert value.failed and not any(row[0]=='bootstrap' for row in calls)
+
+
+@pytest.mark.parametrize('probe_present',[False,True])
+def test_nested_security_probe_shares_the_same_clamped_observation_budget(monkeypatch,probe_present):
+    value,prerequisites,calls=prepared(monkeypatch,cap=125.0)
+    value.store=SimpleNamespace(api=SimpleNamespace(deadline=105.0))
+    value.layout=SimpleNamespace(deadline=105.0,probe=SimpleNamespace(deadline=105.0) if probe_present else None)
+    def context(lease):
+        deadlines=[value.target.deadline,value.store.api.deadline,value.layout.deadline]
+        if probe_present:deadlines.append(value.layout.probe.deadline)
+        assert all(end==125.0 for end in deadlines)
+    value._context=context
+    assert prerequisites.initialize_protected(object(),value.inputs,object(),lambda t:None,132.0)=='BOUNDARY_ONLY'
+    assert calls==[('bootstrap',132.0,125.0)]
