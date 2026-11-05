@@ -1,4 +1,4 @@
-"""Bound startup observations and the subsequent one-shot worker activation."""
+"""Bound readiness observations, physical recheck and one-shot activation."""
 from contextlib import contextmanager
 from dataclasses import dataclass,field
 import socket
@@ -140,26 +140,34 @@ def require_application_ready(lease, inputs, application, probe, registered):
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
     lease._verify()
-    if time.monotonic()>=deadline: raise CandidateRefused('application readiness deadline')
-    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,deadline,None)
+    now=time.monotonic()
+    if now>=deadline: raise CandidateRefused('application readiness deadline')
+    # Both live probes must finish within their original deadline. The
+    # physical database recheck that follows has its own bounded native I/O.
+    recheck_end=budget(lease,now+10)
+    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,recheck_end,None)
     return receipt  # Worker is still blocked before its first claim.
 
 
 def check_before_running(receipt):
     if type(receipt) is not ReadyApplication or receipt not in _issued:
         raise CandidateRefused('current readiness required before RUNNING')
-    application,lease,identities,deadline,activation_end=_issued[receipt]
-    if activation_end is not None or time.monotonic()>=deadline or lease.status()!='APPLICATION':
-        raise CandidateRefused('application readiness deadline or phase changed')
+    application,lease,identities,recheck_end,activation_end=_issued[receipt]
+    if activation_end is not None:
+        raise CandidateRefused('worker activation is already armed')
+    if time.monotonic()>=recheck_end:
+        raise CandidateRefused('application recheck deadline')
+    if lease.status()!='APPLICATION':
+        raise CandidateRefused('application phase changed before RUNNING')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
     now=time.monotonic()
-    if now>=deadline:raise CandidateRefused('application readiness deadline')
+    if now>=recheck_end:raise CandidateRefused('application recheck deadline')
     from .native_trial_authority import budget
     # Arm once, while the observations are fresh. The durable RUNNING write
     # and the GO helper share this phase budget under the original source end.
     activation_end=budget(lease,now+5)
-    _issued[receipt]=(application,lease,identities,deadline,activation_end)
+    _issued[receipt]=(application,lease,identities,recheck_end,activation_end)
 
 
 def activate_application(receipt):

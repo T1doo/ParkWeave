@@ -230,6 +230,33 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
             a.activate_application(receipt)
             go.assert_called_once_with(app.worker,NONCE,17.)
 
+    def test_physical_recheck_has_its_own_deadline_after_both_live_probes(self):
+        lease,adapter,app,probe,tokens=self.fixture()
+        from . import native_trial_authority
+        worker=dict(schema='parkweave-worker-ready/1',challenge=NONCE,pid=42,database=dict(DB),
+                    mode='LOCAL',state='WAITING_GO',business_started=False)
+        api=dict(schema='parkweave-api-ready/1',challenge=NONCE,pid=41,database=dict(DB),
+                 actor=dict(ACTOR),mode='LOCAL',business_authority=False)
+        now=[10.]
+        def observe(*_):
+            now[0]=14.9
+            return api
+        with patch.object(a.time,'monotonic',side_effect=lambda:now[0]), \
+             patch.object(native_trial_authority,'budget',side_effect=lambda _,end:min(end,20.)), \
+             patch.object(adapter,'require_endpoint_support'),patch.object(a,'_database',return_value=DB), \
+             patch.object(adapter,'worker_ready_frame',return_value=worker),patch.object(a,'_get',side_effect=observe):
+            first=a.require_application_ready(lease,None,app,probe,tokens)
+            self.assertEqual(a._issued[first][3],20.)
+            now[0]=10.
+            second=a.require_application_ready(lease,None,app,probe,tokens)
+            now[0]=17.
+            a.check_before_running(first)
+            self.assertEqual(a._issued[first][4],20.)
+            now[0]=20.
+            with self.assertRaisesRegex(a.CandidateRefused,'recheck deadline'):
+                a.check_before_running(second)
+            self.assertIsNone(a._issued[second][4])
+
     def test_go_requires_an_unexpired_armed_window(self):
         lease,adapter,app,_,tokens=self.fixture()
         identities=tuple(adapter.live_identity(token) for token in tokens)
