@@ -1,0 +1,26 @@
+{
+  "scope": "R32_ORIGINAL_WORKER_PIPE_HELPER_DEBUG_OWNERSHIP",
+  "run_number": 63,
+  "run_id": 42123044845,
+  "url": "https://github.com/T1doo/ParkWeave/actions/runs/42123044845",
+  "reviewed_source": "977c9981aeb6b5b7ce0c626a7572b03444af4ded",
+  "approval_commit": "fc35c73b526f3e43d80fced1723b8cac103a6e00",
+  "candidate_job_id": 127580059432,
+  "native_job_id": 127581872267,
+  "candidate_build_result": "PASS_EXACT_APPROVED_BYTES",
+  "workflow_conclusion": "failure",
+  "observed_progress": "Worker readiness frame was read and matched before the API readiness attempt.",
+  "failure": "TimeoutError on the first TCP connect at application_readiness._get:56, before socket ownership verification or any HTTP request bytes.",
+  "environment_blockers": [
+    {
+      "observation": "dpapi_cross_os_identity_isolation",
+      "phase": "SERVICE_LOGON",
+      "winerror": 5
+    }
+  ],
+  "desktop_started": false,
+  "business_completed": false,
+  "reopen_verified": false,
+  "usable_product": false,
+  "next_change": "Retry only a failed connect using a fresh socket under the original readiness deadline. Keep connected ownership verification before credential dispatch and never replay the HTTP request."
+}
