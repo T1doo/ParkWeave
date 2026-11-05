@@ -158,8 +158,7 @@ class NativePasswordLogin:
             # A failed password never reuses a poisoned DPAPI call object.
             raw = native.unprotect(base64.b64decode(row['ciphertext'], validate=True), extra)
         except NativeFailure as error:
-            if (not error.cleanup_types and error.phase == 'ALLOCATION' and
-                    error.primary_type == 'ProtectionRefused' and error.winerror == 13):
+            if error.invalid_data_call_refusal:
                 raise Denied('protected local login unavailable') from None
             self.failed = True; self.unknown_native.append(native)
             raise RuntimeError('native login outcome unknown; restart requires original runtime verification') from None

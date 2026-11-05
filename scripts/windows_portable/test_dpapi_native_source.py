@@ -3,6 +3,7 @@ import ast
 import ctypes as C
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from . import dpapi_native_candidate as n
 from . import windows_user_protection as original
@@ -36,6 +37,24 @@ class NativeSourceChecks(unittest.TestCase):
         self.assertEqual(failure.outcome, 'UNKNOWN')
         self.assertEqual(str(failure), 'NATIVE_DPAPI_UNKNOWN:COPY')
         self.assertFalse(n._NativeDPAPI.native_acceptance)
+
+    def test_invalid_data_failure_is_at_call_not_allocation(self):
+        from scripts.windows_ci.native_failure_diagnostics import detail
+        from scripts.windows_portable import dpapi_native_candidate as native
+        value = object.__new__(native._NativeDPAPI)
+        value.failed, value.unknown = False, []
+        value._unprotect = lambda *args: 0
+        with patch.object(C, 'get_last_error', return_value=13, create=True):
+            with self.assertRaises(native.NativeFailure) as caught:
+                value.unprotect(b'SYNTHETIC CIPHERTEXT', b'x' * 32)
+        error = caught.exception
+        self.assertTrue(error.invalid_data_call_refusal)
+        self.assertFalse(value.unknown)
+        self.assertEqual(detail(error, 'NativeFailure')['dpapi'],
+                         {'phase': 'CALL', 'winerror': 13, 'cleanup_count': 0})
+        self.assertFalse(native.NativeFailure('ALLOCATION', 'ProtectionRefused', (), 13).invalid_data_call_refusal)
+        self.assertFalse(native.NativeFailure('CALL', 'ProtectionRefused', ('OSError',), 13).invalid_data_call_refusal)
+        self.assertFalse(native.NativeFailure('CALL', 'ProtectionRefused', (), 87).invalid_data_call_refusal)
 
     def test_no_import_time_loader_and_fixed_native_call_shape(self):
         tree = ast.parse(Path(n.__file__).read_text())

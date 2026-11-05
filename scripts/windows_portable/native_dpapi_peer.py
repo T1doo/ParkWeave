@@ -123,8 +123,7 @@ class LocalServiceDPAPIPeer:
             self._effective(identity)
             try:self.refusal_crypto.unprotect(self.cipher,self.entropy)
             except NativeFailure as error:
-                a.need(error.winerror==13 and error.primary_type=='ProtectionRefused'
-                    and error.phase=='ALLOCATION' and not error.cleanup_types and not self.refusal_crypto.unknown)
+                a.need(error.invalid_data_call_refusal and not self.refusal_crypto.unknown)
             else:a.need(False)
             self._effective(identity)
             self.observation=(self.thread_id(self.thread_handle),identity,effective,

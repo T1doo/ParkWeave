@@ -21,6 +21,7 @@ _KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError"
         ("scripts.windows_portable.restricted_token_candidate","TokenGroupRefused","TokenRefused","TOKEN_GROUP_PREDICATE"),
         ("scripts.windows_portable.initdb_pipe_candidate","PipeRefused","PipeRefused","PIPE_PREDICATE"),
         ("scripts.windows_portable.initdb_pipe_candidate","PipeFailure","PipeFailure","PIPE_OPERATION"),
+        ("scripts.windows_portable.dpapi_native_candidate","NativeFailure","NativeFailure","DPAPI_OPERATION"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -36,6 +37,7 @@ _KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError"
          "CRTTrustFailure","CRT_SIGNATURE_INSPECTION"))
 _SOURCES=(
     ('scripts.windows_ci.owned_job','scripts/windows_ci/owned_job.py'),
+    ('scripts.windows_portable.dpapi_native_candidate','scripts/windows_portable/dpapi_native_candidate.py'),
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
@@ -146,6 +148,13 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='DPAPI_OPERATION':
+        data=vars(error);phase=data.get('phase');code=data.get('winerror');cleanup=data.get('cleanup_types')
+        if (type(phase) is str and phase in ('INPUT','CALL','ALLOCATION','COPY')
+                and (code is None or type(code) is int and 0<=code<2**32)
+                and type(cleanup) is tuple and len(cleanup)<=8):
+            result['dpapi']=dict(phase=phase,winerror=code,cleanup_count=len(cleanup))
+        else:result['dpapi']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category']=='OWNED_THREAD_RESUME':
         data=vars(error);count=data.get('previous_count');code=data.get('winerror')
         if (type(count) is int and 0<=count<2**32
