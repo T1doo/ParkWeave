@@ -42,6 +42,8 @@ _SOURCES=(
     ('scripts.windows_portable.native_dpapi_peer','scripts/windows_portable/native_dpapi_peer.py'),
     ('scripts.windows_portable.native_trial_facts','scripts/windows_portable/native_trial_facts.py'),
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
+    ('scripts.windows_portable.application_readiness','scripts/windows_portable/application_readiness.py'),
+    ('scripts.windows_portable.polling_database','scripts/windows_portable/polling_database.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
     ('scripts.windows_portable.fixed_journal','scripts/windows_portable/fixed_journal.py'),
@@ -79,6 +81,8 @@ _SOURCES=(
     ('scripts.windows_portable.native_protected_objects','scripts/windows_portable/native_protected_objects.py'),
     ('scripts.windows_portable.native_trial_authority','scripts/windows_portable/native_trial_authority.py'),
     ('scripts.windows_portable.native_trial_domain','scripts/windows_portable/native_trial_domain.py'),
+    ('parkweave.installed_fixture_receipt','src/parkweave/installed_fixture_receipt.py'),
+    ('parkweave.runtime_readiness','src/parkweave/runtime_readiness.py'),
     ('parkweave.windows_files','src/parkweave/windows_files.py'),
     ('parkweave.windows_handles','src/parkweave/windows_handles.py'))
 

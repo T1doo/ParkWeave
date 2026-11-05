@@ -125,6 +125,27 @@ def test_actual_child_failure_retains_control_phase_type_and_unknown():
     assert report['usable_product'] is report['activation_allowed'] is False
 
 
+def test_readiness_refusal_reports_only_the_verified_validator_location():
+    from parkweave.runtime_readiness import validate_database
+    from parkweave.store import Denied
+    from scripts.windows_ci.native_failure_diagnostics import SourceSites
+
+    row = dict(name='parkweave', role='parkweave_app', login='parkweave_app',
+               oid=1, address='127.0.0.1', port=55431, postmaster='synthetic',
+               schema=32, safe=True)
+    assert validate_database(row, 'LOCAL') == row
+    try:
+        validate_database(dict(row, address='127.0.0.1/32'), 'LOCAL')
+    except Denied as cause:
+        report = entry._failure_diagnostic(ControlFailure('APPLICATION', cause, []), SourceSites(ROOT, 'a'*40))
+    else:
+        raise AssertionError('readiness must require the exact IPv4 address')
+    details = report['exception_details']
+    assert any(site['module']=='parkweave.runtime_readiness' and site['function']=='validate_database'
+               for item in details for site in item['source_sites']['frames'])
+    assert '127.0.0.1/32' not in json.dumps(report)
+
+
 def test_actual_entry_cleanup_failure_cannot_rewrite_success():
     process,report,events=run_entry('cleanup-failure')
     assert process.returncode==2 and events[-1]=='scope-close-failed-False'
