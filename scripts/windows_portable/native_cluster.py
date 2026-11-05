@@ -67,7 +67,9 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
             command=Command(self.postgres.relative_executable,self.postgres.sha256,self.postgres.size,
                 ('-D',self.inputs.data_directory,'-h','127.0.0.1','-p',port,'-c','unix_socket_directories=',
                  '-c','ssl=off','-c','logging_collector=off','-c','log_statement=none'),'WINDOWS_JOB')
-            self.adapter=PrivateProcessAdapter(lease,{'postgres':command})
+            backend=self.prerequisites.server_process_backend(lease,self.inputs,command,deadline)
+            self._time(deadline,5)
+            self.adapter=PrivateProcessAdapter(lease,{'postgres':command},_backend=backend)
             phase='SERVER_START'
             token=self.adapter.launch('postgres',self._register_adapter(self.adapter,register))
             identity=self.adapter.live_identity(token)

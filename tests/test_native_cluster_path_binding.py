@@ -1,6 +1,8 @@
 """Controlled capability-call seams only; no native admission, PG or OS calls."""
 from dataclasses import replace
+import ctypes as C
 from pathlib import PureWindowsPath
+from threading import RLock
 from types import SimpleNamespace
 import time
 
@@ -13,6 +15,8 @@ from scripts.windows_portable.endpoint_plan import PlanMode
 from scripts.windows_portable.instance_processes import InstanceProcesses
 from scripts.windows_portable.native_cluster import NativeProtectedClusterProcesses
 from scripts.windows_portable import native_cluster, native_trial_authority, pgdata_probe_boundary
+from scripts.windows_portable import restricted_startup_candidate, restricted_token_candidate
+from scripts.windows_portable.windows_process_handles import WindowsJobProcess
 from scripts.windows_portable.pgdata_candidate import pg_command_path
 
 
@@ -90,10 +94,60 @@ def test_cluster_phases_keep_individual_windows_under_source_end(bound,monkeypat
     monkeypatch.setattr(b.prerequisites,'initialize_protected',initialize)
     monkeypatch.setattr(b.prerequisites,'before_server',before_server)
     monkeypatch.setattr(b.prerequisites,'server_ready',lambda lease,inputs,adapter,token,deadline:windows.append(('ready',deadline)))
-    monkeypatch.setattr(native_cluster,'PrivateProcessAdapter',lambda *args:SimpleNamespace(launch=lambda *args:object(),live_identity=lambda token:'same-process'))
+    monkeypatch.setattr(native_cluster,'PrivateProcessAdapter',lambda *args,**kwargs:SimpleNamespace(launch=lambda *args:object(),live_identity=lambda token:'same-process'))
     b.security.endpoint=object()
     assert b.cluster._run('NEW',b.lease,object(),lambda token:None) is b.inputs
     assert windows==[('configure',130),('initdb',150),('server',server_end),('ready',server_end-3)]
+
+
+@pytest.mark.parametrize('matching_child',[True,False])
+def test_postgres_launch_checks_actual_child_token_and_retains_created_handles(monkeypatch,matching_child):
+    lease=object()
+    command=SimpleNamespace(arguments=('-D','C:/pw/one/data/postgresql'))
+    owner=object.__new__(restricted_token_candidate._RestrictedPrimaryCandidate)
+    owner._lock=RLock()
+    owner._derived=71
+    owner._closed=owner._failed=False
+    owner._restricted_snapshot,owner._prepared_owner,owner._prepared_dacl=({},b'sid',b'dacl')
+    expected=owner._restricted_snapshot,owner._prepared_owner,owner._prepared_dacl
+    owner._primary_full=lambda token:expected if token==71 or matching_child else ({},b'other',b'dacl')
+    calls=[]
+
+    def create(token,application,argv,proc_security,thread_security,inherit,flags,environment,cwd,startup,result):
+        assert token==71 and inherit is True and flags&4
+        calls.append('create_suspended')
+        info=result._obj
+        info.process,info.thread,info.pid,info.thread_id=80,81,19,20
+        return 1
+
+    def open_token(process,access,out):
+        assert (process,access)==(80,8)
+        out._obj.value=82
+        return 1
+
+    owner._adv=SimpleNamespace(CreateProcessAsUserW=create,OpenProcessToken=open_token)
+    security=SimpleNamespace(lease=lease,resources=[owner])
+    trial=SimpleNamespace(deadline=time.monotonic()+10)
+    monkeypatch.setattr(native_trial_authority,'bound_state',lambda resource,**kwargs:trial)
+    monkeypatch.setattr(restricted_startup_candidate,'_OwnedStartup',lambda:SimpleNamespace(
+        info=C.c_uint32(),prepare=lambda handles:calls.append(handles),
+        close=lambda:calls.append('close_startup'),cleanup_errors=[]))
+    backend=object.__new__(WindowsJobProcess)
+    backend._postgres_authority=(security,lease,command,owner,time.monotonic()+5)
+    backend.original=SimpleNamespace(crt=SimpleNamespace(get_osfhandle=lambda fd:fd+100),close=calls.append)
+    backend.kernel=SimpleNamespace(GetThreadId=lambda thread:20,GetProcessIdOfThread=lambda thread:19)
+    exe=SimpleNamespace(lease=lease,command=command,command_path='C:/pw/one/runtime/postgresql/bin/postgres.exe',
+                        root_path='C:/pw/one',verify=lambda:None)
+    group=SimpleNamespace(executable=exe,command=command,registration='ACKNOWLEDGED',resources={})
+    if matching_child:
+        backend._create_postgres_suspended(group,{},[1,2,3],time.monotonic()+3)
+    else:
+        from scripts.windows_portable.processes import ProcessRefused
+        with pytest.raises(ProcessRefused,match='RESTRICTED_POSTGRES_CHILD_TOKEN_CHANGED'):
+            backend._create_postgres_suspended(group,{},[1,2,3],time.monotonic()+3)
+    assert group.resources==dict(process=80,thread=81,pid=19,bound=False)
+    assert calls==[(101,102,103),'create_suspended',82,'close_startup']
+    assert backend._postgres_authority is None
 
 
 def test_native_instance_checks_same_cluster_security_and_inputs(bound,monkeypatch):

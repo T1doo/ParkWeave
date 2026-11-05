@@ -139,7 +139,8 @@ class FileTime(C.Structure):
 class WindowsJobProcess:
     scope = 'EXACT_CREATED_WINDOWS_JOB_TREE_NOT_NATIVE_ACCEPTED'
 
-    def __init__(self):
+    def __init__(self, *, _postgres_authority=None):
+        self._postgres_authority = _postgres_authority
         if os.name != 'nt': raise ProcessRefused('NATIVE_WINDOWS_REQUIRED')
         from scripts.windows_ci.owned_job import WindowsBackend
         self.original = WindowsBackend()
@@ -169,6 +170,80 @@ class WindowsJobProcess:
         if not pid or not ticks: raise ProcessRefused('CREATION_IDENTITY_REFUSED')
         return pid, ticks
 
+    def _create_postgres_suspended(self, group, env, fds, deadline):
+        from .native_trial_authority import bound_state, budget
+        from .restricted_initdb_candidate import ProcessInformation
+        from .restricted_startup_candidate import _OwnedStartup, _handle, _utf16, command_buffer, environment_buffer
+        from .restricted_token_candidate import _RestrictedPrimaryCandidate
+
+        authority = getattr(self, '_postgres_authority', None)
+        self._postgres_authority = None  # Consume the one launch before touching the OS.
+        if authority is None:
+            raise ProcessRefused('RESTRICTED_POSTGRES_AUTHORITY_REQUIRED')
+        security, lease, command, owner, authority_end = authority
+        trial = bound_state(lease)
+        if (trial is None or bound_state(security) is not trial or security.lease is not lease
+                or type(owner) is not _RestrictedPrimaryCandidate or bound_state(owner) is not trial
+                or owner not in security.resources or group.executable.lease is not lease
+                or group.command is not command or group.executable.command is not command
+                or group.registration != 'ACKNOWLEDGED'):
+            raise ProcessRefused('RESTRICTED_POSTGRES_BINDING_REFUSED')
+        end = budget(lease, min(deadline, authority_end))
+        group.executable.verify()
+        with owner._lock:
+            expected = owner._restricted_snapshot, owner._prepared_owner, owner._prepared_dacl
+            if (owner._closed or owner._failed or not _handle(owner._derived)
+                    or any(value is None for value in expected) or owner._primary_full(owner._derived) != expected):
+                raise ProcessRefused('RESTRICTED_POSTGRES_TOKEN_REFUSED')
+            startup = _OwnedStartup()
+            r = group.resources
+            try:
+                startup.prepare(tuple(self.original.crt.get_osfhandle(fd) for fd in fds))
+                path = group.executable.command_path
+                argv = command_buffer(path, command.arguments)
+                environment = environment_buffer(env)
+                create = owner._adv.CreateProcessAsUserW
+                create.argtypes = [C.c_void_p]*5 + [C.c_int32, C.c_uint32] + [C.c_void_p]*3 + [C.POINTER(ProcessInformation)]
+                create.restype = C.c_int32
+                info = ProcessInformation()
+                budget(lease, end)
+                ok = create(owner._derived, _utf16(path+'\0'), argv, None, None,
+                            True, 0x4|0x400|0x80000, environment,
+                            _utf16(group.executable.root_path+'\0'), C.byref(startup.info), C.byref(info))
+                if ok:
+                    if _handle(info.process): r['process'] = info.process
+                    if _handle(info.thread) and info.thread != info.process: r['thread'] = info.thread
+                    r.update(pid=info.pid, bound=False)
+                    if not ('process' in r and 'thread' in r and info.pid and info.thread_id):
+                        r.setdefault('stdio_close_unknown', []).append(('INVALID_POSTGRES_PROCESS_INFORMATION',info))
+                        raise ProcessRefused('RESTRICTED_POSTGRES_PROCESS_INFORMATION_REFUSED')
+                else:
+                    raise C.WinError(C.get_last_error())
+                for name in ('GetThreadId', 'GetProcessIdOfThread'):
+                    query = getattr(self.kernel, name)
+                    query.argtypes, query.restype = [C.c_void_p], C.c_uint32
+                if (self.kernel.GetThreadId(r['thread']) != info.thread_id
+                        or self.kernel.GetProcessIdOfThread(r['thread']) != info.pid):
+                    raise ProcessRefused('RESTRICTED_POSTGRES_THREAD_IDENTITY_REFUSED')
+                token = C.c_void_p()
+                if not owner._adv.OpenProcessToken(r['process'], 8, C.byref(token)) or not _handle(token.value):
+                    raise ProcessRefused('RESTRICTED_POSTGRES_CHILD_TOKEN_REFUSED')
+                try:
+                    if owner._primary_full(token) != expected:
+                        raise ProcessRefused('RESTRICTED_POSTGRES_CHILD_TOKEN_CHANGED')
+                finally:
+                    try:
+                        self.original.close(token.value)
+                    except BaseException:
+                        r.setdefault('stdio_close_unknown', []).append(('POSTGRES_CHILD_TOKEN', token.value))
+                        raise
+            finally:
+                try:
+                    startup.close()
+                finally:
+                    if startup.cleanup_errors:
+                        r.setdefault('stdio_close_unknown', []).append(('POSTGRES_RESTRICTED_STARTUP',startup))
+
     def create(self, group, register, env, deadline):
         r, backend = group.resources, self.original
         from scripts.windows_ci.owned_job import ExtendedLimit
@@ -183,6 +258,7 @@ class WindowsJobProcess:
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
         duplicates, primary, cleanup = [], None, []
         capture = None
+        restricted_postgres = False
         with open(os.devnull, 'r+b', buffering=0) as null:
             try:
                 win = backend.win
@@ -198,22 +274,25 @@ class WindowsJobProcess:
                     fds=prepare_stdio(self,group,null.fileno())
                 if getattr(group.command,'relative_executable',None)=='runtime/postgresql/bin/postgres.exe':
                     from .native_trial_authority import bound_state
-                    if bound_state(group.executable.lease) is not None:
+                    restricted_postgres = bound_state(group.executable.lease) is not None
+                    if restricted_postgres:
                         from .initdb_output_capture import PostgresOutputCapture
                         capture = r['postgres_stderr_capture'] = PostgresOutputCapture()
                         fds[2] = capture.write_fd
-                for fd in fds:
-                    duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
-                        win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
-                startup = subprocess.STARTUPINFO(); startup.dwFlags = win.STARTF_USESTDHANDLES
-                startup.hStdInput, startup.hStdOutput, startup.hStdError = duplicates
-                startup.lpAttributeList = {'handle_list': duplicates}
-                args = [group.executable.command_path, *group.command.arguments]
-                process, thread, pid, _ = win.CreateProcess(args[0], subprocess.list2cmdline(args), None, None, True,
-                    0x4 | 0x400 | 0x80000, env, group.executable.root_path, startup)
-                # Store exact returned handles before any fallible validation or
-                # cleanup. Failure before Job assignment still owns this child.
-                r.update(process=process, thread=thread, pid=pid, bound=False)
+                if restricted_postgres:
+                    self._create_postgres_suspended(group,env,fds,deadline)
+                else:
+                    for fd in fds:
+                        duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
+                            win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
+                    startup = subprocess.STARTUPINFO(); startup.dwFlags = win.STARTF_USESTDHANDLES
+                    startup.hStdInput, startup.hStdOutput, startup.hStdError = duplicates
+                    startup.lpAttributeList = {'handle_list': duplicates}
+                    args = [group.executable.command_path, *group.command.arguments]
+                    process, thread, pid, _ = win.CreateProcess(args[0], subprocess.list2cmdline(args), None, None, True,
+                        0x4 | 0x400 | 0x80000, env, group.executable.root_path, startup)
+                    # Register exact handles before any fallible validation or cleanup.
+                    r.update(process=process, thread=thread, pid=pid, bound=False)
                 for key in ('worker_go_r','worker_ready_w','interrupt_file_fd','interrupt_ready_w'):
                     fd=r.pop(key,None)
                     if fd is not None:

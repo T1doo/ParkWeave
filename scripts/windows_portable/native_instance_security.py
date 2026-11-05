@@ -369,6 +369,29 @@ class NativeClusterPrerequisites:
             native_installation=self.security.runtime_installation)
         return payload.require_for_cluster(lease,deadline)
 
+    def server_process_backend(self,lease,inputs,command,deadline):
+        from .native_trial_authority import bound_state, inherit, need as trial_need
+        trial = bound_state(lease)
+        if trial is None:
+            return None
+        trial_need(bound_state(self.security) is trial
+                   and {'OWN_PRIVATE_PG_API_WORKER','OWN_DERIVED_TOKEN_OWNER',
+                        'OWN_DERIVED_TOKEN_DEFAULT_DACL'} <= set(trial.window.operations))
+        from .restricted_token_candidate import _RestrictedPrimaryCandidate, TokenProfile
+        from .windows_process_handles import WindowsJobProcess
+
+        def prepare(_):
+            need(inputs is self.security.inputs)
+            owner = self.security._hold(object.__new__(_RestrictedPrimaryCandidate))
+            inherit(self.security, owner)
+            _RestrictedPrimaryCandidate.__init__(owner, TokenProfile.CREATE_CANDIDATE)
+            owner.derive()
+            owner.prepare_default_dacl()
+            owner.prepare_owner()
+            return WindowsJobProcess(_postgres_authority=(self.security, lease, command, owner, deadline))
+
+        return self.security._run(lease,prepare,deadline=deadline)
+
     def server_ready(self,lease,inputs,adapter,token,deadline):
         need(inputs is self.security.inputs and self.security.endpoint is None)
         need(self.security.system_crt is not None)

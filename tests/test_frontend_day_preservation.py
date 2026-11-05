@@ -27,10 +27,25 @@ def test_original_html_ids_and_business_javascript_are_preserved():
         path = 'src/parkweave/' + name
         before = subprocess.check_output(['git', 'show', BASE + ':' + path], cwd=ROOT, text=True)
         after = (ROOT / path).read_text()
-        assert IDs(before).ids == IDs(after).ids
+        expected_ids = IDs(before).ids
+        if name == 'web.html':
+            expected_ids['prep-service'] = 1
+        assert expected_ids == IDs(after).ids
         original = before.split('<script>')[1].split('</script>')[0].strip()
         current = after.split('<script>')[1].split('// Frontend-day presentation.')[0].strip()
         if name == 'web.html':
+            # G2 permits only the explicit current catalog version selection.
+            current = current.replace("$('prep-service').replaceChildren();$('prep-reviewer').replaceChildren();",
+                                      "$('prep-reviewer').replaceChildren();")
+            picker = """  const servicePicker=$('prep-service');
+  if(x.services.length>1){const prompt=textElement('option','请选择服务与版本');prompt.value='';prompt.disabled=true;servicePicker.append(prompt);}
+  for(const [index,service] of x.services.entries()){const option=textElement('option',service.name+' · v'+service.version);option.value=String(index);servicePicker.append(option);}
+  servicePicker.value=x.services.length===1?'0':'';
+"""
+            current = current.replace(picker, '')
+            current = current.replace('请核对本次目标、服务版本和核对专员', '请在下方填写本次目标并选择核对专员')
+            current = current.replace("const selection=$('prep-service').value;const s=prepCatalog.services.find((_,index)=>String(index)===selection);if(!s)throw Error('请选择当前目录中的服务与版本');const context=prepContext(),reviewer=$('prep-reviewer').value;",
+                                      "const context=prepContext(),s=prepCatalog.services[0],reviewer=$('prep-reviewer').value;")
             # Display-only DTO fields avoid guessing title/state from rendered text.
             # The original click handler, request and authorization checks stay exact.
             current = current.replace('button.dataset.preparationId=p.id;button.dataset.preparationGoal=p.goal;button.dataset.preparationState=p.state;', '')
