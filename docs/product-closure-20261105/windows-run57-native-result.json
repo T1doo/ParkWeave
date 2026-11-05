@@ -1,0 +1,165 @@
+{
+  "result": "NOT_EXECUTED_OR_UNKNOWN",
+  "primary_type": "ControlFailure",
+  "cleanup_type": null,
+  "failure_stage": "BUSINESS",
+  "primary": {
+    "type": "ControlFailure",
+    "control": {
+      "outcome": "UNKNOWN",
+      "phase": "CONFIG",
+      "cause_count": 1,
+      "cleanup_count": 0,
+      "causes": [
+        "PayloadRefused"
+      ],
+      "cleanup": [],
+      "operation": "CREATE"
+    },
+    "nested_controls": [],
+    "nested_controls_truncated": false,
+    "cause_details": [
+      0
+    ],
+    "cleanup_details": [],
+    "exception_details": [
+      {
+        "type": "PayloadRefused",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "8ae95315759dafd84eb39ea3f32cbf8f87a85fab",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity.publish_configuration_exclusive.<locals>.publish",
+              "line": 252
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity._database",
+              "line": 244
+            },
+            {
+              "module": "scripts.windows_portable.native_iat_observer",
+              "function": "capture_peer",
+              "line": 240
+            },
+            {
+              "module": "scripts.windows_portable.native_iat_observer",
+              "function": "_observe",
+              "line": 190
+            },
+            {
+              "module": "scripts.windows_portable.native_iat_observer",
+              "function": "OriginalMemory.namespace",
+              "line": 132
+            },
+            {
+              "module": "scripts.windows_portable.api_set_map",
+              "function": "parse_v6",
+              "line": 71
+            },
+            {
+              "module": "scripts.windows_portable.api_set_map",
+              "function": "_namespace_name",
+              "line": 44
+            },
+            {
+              "module": "scripts.windows_portable.api_set_map",
+              "function": "need",
+              "line": 26
+            }
+          ],
+          "examined_nodes": 15,
+          "truncated": true
+        }
+      }
+    ],
+    "details_truncated": true
+  },
+  "cleanup": null,
+  "environment_blockers": [
+    {
+      "observation": "dpapi_cross_os_identity_isolation",
+      "phase": "SERVICE_LOGON",
+      "winerror": 5
+    }
+  ],
+  "crt_preflight": {
+    "status": "ORIGINAL_STRICT_CHECKS_PASSED_NOT_PRODUCT_ACCEPTANCE",
+    "seconds": 0.219,
+    "retrieval": {
+      "crl_sha256": "24e60769c036323f4559aeb1ec51a2a6afbe31007ba6281914177780be8bceb8",
+      "bytes": 830,
+      "policy": {
+        "this_update_utc": "2026-10-28T21:04:31Z",
+        "next_update_utc": "2027-01-27T09:24:31Z",
+        "this_update_filetime": 134376950710000000,
+        "next_update_filetime": 134455154710000000,
+        "checked_at_utc": "2026-11-05T22:04:30.523417Z",
+        "entry_count": 0,
+        "leaf_listed": false,
+        "leaf_entry": null,
+        "revocation_acceptance": "NOT_DECIDED_REQUIRES_FRESH_ORIGINAL_CACHE_ONLY_VERIFIER"
+      },
+      "native_signature_requested": true,
+      "automatic_authentication": "INHIBITED",
+      "redirects": "NATIVE_OPAQUE_MAY_FOLLOW",
+      "final_url": "NOT_OBSERVED",
+      "cache_effect": "MAY_HAVE_WRITTEN_TEMPORARY_ACCOUNT_CRYPTNET_CACHE",
+      "last_sync_filetime": "134383898705218221",
+      "native_timeout_ms": 15000,
+      "requested_byte_limit": 16777216,
+      "cleanup": "OWNED_CONTEXTS_CLOSED"
+    },
+    "failure": null,
+    "original_file_cleanup": [
+      {
+        "index": 3,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 2,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 1,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 0,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      }
+    ],
+    "rows": [
+      {
+        "file": "msvcp140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      },
+      {
+        "file": "vcruntime140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      }
+    ]
+  },
+  "desktop": {
+    "state": "NOT_STARTED",
+    "phase": "NOT_STARTED",
+    "sessions": [],
+    "captures_completed": 0,
+    "normal_product_entry": "NOT_ACCEPTED",
+    "usable_product": false
+  },
+  "pgdata_probe": null,
+  "outer_cleanup": {
+    "scope": "SCOPE_CLOSE",
+    "returned_without_exception": true,
+    "controller_cleanup": "SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED"
+  },
+  "activation_allowed": false,
+  "usable_product": false,
+  "native_acceptance": "NOT_ACCEPTED"
+}
