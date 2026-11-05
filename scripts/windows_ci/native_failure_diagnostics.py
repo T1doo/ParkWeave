@@ -16,6 +16,7 @@ from types import CodeType
 _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
         ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenGroupRefused","TokenRefused","TOKEN_GROUP_PREDICATE"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -138,6 +139,12 @@ def detail(error,public_type,sites=None,budget=None):
         if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
             result['restricted_token']=dict(phase=phase,winerror=code)
         else:result['restricted_token']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='TOKEN_GROUP_PREDICATE':
+        data=vars(error);scope=data.get('group_scope');before=data.get('before');observed=data.get('observed')
+        if (type(scope) is str and scope in ('REQUESTED_DISABLED','UNCHANGED_GROUP')
+                and all(type(value) is int and 0<=value<2**32 for value in (before,observed))):
+            result['token_group']=dict(scope=scope,before=before,observed=observed)
+        else:result['token_group']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')

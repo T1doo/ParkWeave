@@ -25,6 +25,12 @@ class TokenRefused(RuntimeError):
     pass
 
 
+class TokenGroupRefused(TokenRefused):
+    def __init__(self, group_scope, before, observed):
+        self.group_scope,self.before,self.observed=group_scope,before,observed
+        super().__init__('RESTRICTED_GROUP_ATTRIBUTES_REFUSED')
+
+
 class TokenProfile(Enum):
     DERIVE_ONLY = 0x000a
     CREATE_CANDIDATE = 0x008b
@@ -178,8 +184,20 @@ def _check(base, derived, disabled_sids, change_notify):
     _need(base[8] == derived[8] == 1 and base[1] == derived[1])
     _need(set(base[2]) == set(derived[2]))
     for sid, attributes in base[2].items():
-        expected = (attributes | 0x10) & ~0x6 if sid in disabled_sids else attributes
-        _need(derived[2][sid] == expected)
+        observed=derived[2][sid]
+        _need(type(attributes) is int and 0<=attributes<2**32
+              and type(observed) is int and 0<=observed<2**32)
+        if sid in disabled_sids:
+            # CreateRestrictedToken guarantees deny-only and clears both
+            # enabled bits; other attributes are ignored by that operation.
+            # Permit removal of existing flags, never new flags other than
+            # DENY_ONLY. Requiring every ignored bit to survive rejects valid
+            # restricted groups with OWNER/MANDATORY flags removed.
+            valid=observed&0x16==0x10 and observed&~(attributes|0x10)==0
+        else:valid=observed==attributes
+        if not valid:
+            raise TokenGroupRefused('REQUESTED_DISABLED' if sid in disabled_sids else 'UNCHANGED_GROUP',
+                                    attributes,observed)
     _need(set(derived[3]) <= set(base[3]))
     for luid, attributes in derived[3].items():
         # Documented lower bound: all non-change-notify privileges disabled.
