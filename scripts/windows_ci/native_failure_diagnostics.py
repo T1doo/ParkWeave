@@ -17,6 +17,8 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
         ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
         ("scripts.windows_portable.restricted_token_candidate","TokenGroupRefused","TokenRefused","TOKEN_GROUP_PREDICATE"),
+        ("scripts.windows_portable.initdb_pipe_candidate","PipeRefused","PipeRefused","PIPE_PREDICATE"),
+        ("scripts.windows_portable.initdb_pipe_candidate","PipeFailure","PipeFailure","PIPE_OPERATION"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -40,6 +42,17 @@ _SOURCES=(
     ('scripts.windows_portable.native_instance_security','scripts/windows_portable/native_instance_security.py'),
     ('scripts.windows_portable.restricted_token_candidate','scripts/windows_portable/restricted_token_candidate.py'),
     ('scripts.windows_portable.native_protected_bootstrap','scripts/windows_portable/native_protected_bootstrap.py'),
+    ('scripts.windows_portable.initdb_pipe_candidate','scripts/windows_portable/initdb_pipe_candidate.py'),
+    ('scripts.windows_portable.initdb_client_candidate','scripts/windows_portable/initdb_client_candidate.py'),
+    ('scripts.windows_portable.restricted_initdb_candidate','scripts/windows_portable/restricted_initdb_candidate.py'),
+    ('scripts.windows_portable.restricted_startup_candidate','scripts/windows_portable/restricted_startup_candidate.py'),
+    ('scripts.windows_portable.default_dacl_candidate','scripts/windows_portable/default_dacl_candidate.py'),
+    ('scripts.windows_portable.native_cluster','scripts/windows_portable/native_cluster.py'),
+    ('scripts.windows_portable.native_database_endpoint','scripts/windows_portable/native_database_endpoint.py'),
+    ('scripts.windows_portable.runtime_payload','scripts/windows_portable/runtime_payload.py'),
+    ('scripts.windows_portable.instance_processes','scripts/windows_portable/instance_processes.py'),
+    ('scripts.windows_portable.processes','scripts/windows_portable/processes.py'),
+    ('scripts.windows_portable.windows_process_handles','scripts/windows_portable/windows_process_handles.py'),
     ('scripts.windows_portable.pgdata_candidate','scripts/windows_portable/pgdata_candidate.py'),
     ('scripts.windows_portable.pgdata_probe_boundary','scripts/windows_portable/pgdata_probe_boundary.py'),
     ('scripts.windows_portable.native_runtime_staging','scripts/windows_portable/native_runtime_staging.py'),
@@ -145,6 +158,13 @@ def detail(error,public_type,sites=None,budget=None):
                 and all(type(value) is int and 0<=value<2**32 for value in (before,observed))):
             result['token_group']=dict(scope=scope,before=before,observed=observed)
         else:result['token_group']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='PIPE_OPERATION':
+        data=vars(error);phase=data.get('phase');code=data.get('winerror')
+        phases=('NEW','CREATE_SECURITY_DESCRIPTOR','CREATE_ORIGINAL_PIPE','RELEASE_CREATION_SD',
+            'VERIFY_ORIGINAL_PIPE','READ_PIPE_SECURITY','CONNECT_COMPLETION_UNKNOWN','CLOSE')
+        if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
+            result['initdb_pipe']=dict(phase=phase,winerror=code)
+        else:result['initdb_pipe']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')
