@@ -49,6 +49,7 @@ class _State:
     closed: bool = False
     generations: list = field(default_factory=list)
     facts: list = field(default_factory=list)
+    environment_blockers: list = field(default_factory=list)
     restart_ready: bool = False
     compositions: tuple = ()
 

@@ -46,6 +46,7 @@ class LocalServiceDPAPIPeer:
         self.failed=False;self.complete=False;self.started=False;self.handles=[];self.thread=None
         self.thread_handle=None;self.worker_error=None;self.observation=None
         self.revert_error=None;self.phase='PRIMARY'
+        self.denied_without_token=False;self.environment_unavailable=False
         self.impersonation_attempted=False;self.reverted=False
         _retained.append(self)  # Before construction or thread ownership can fail.
         self.k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
@@ -70,7 +71,11 @@ class LocalServiceDPAPIPeer:
         output=P();row=dict(output=output,owned=False,attempted=False,closed=False)
         self.handles.append(row)  # Original output storage before its call.
         ok=call(*args,C.byref(output));row['owned']=bool(ok and output.value)
-        if not ok:raise LocalServicePeerFailure(self.phase,C.get_last_error())
+        if not ok:
+            code=C.get_last_error()
+            if self.phase=='SERVICE_LOGON' and call is self.logon and code==5 and output.value is None:
+                self.denied_without_token=True
+            raise LocalServicePeerFailure(self.phase,code)
         a.need(row['owned']);return output.value
 
     def _snapshot(self,token):
@@ -157,6 +162,11 @@ class LocalServiceDPAPIPeer:
             elif type(error) is LocalServicePeerFailure:
                 self.worker_error=LocalServicePeerFailure(error.phase,error.winerror,error.dpapi_phase)
             else:self.worker_error=LocalServicePeerFailure(self.phase)
+            if self.denied_without_token:
+                try:self._no_thread_token()
+                except BaseException:
+                    self.denied_without_token=False
+                    self.worker_error=LocalServicePeerFailure('THREAD')
         finally:
             if self.impersonation_attempted:
                 try:
@@ -177,16 +187,22 @@ class LocalServiceDPAPIPeer:
             self.thread.start();self.thread.join(max(0,self.deadline-time.monotonic()))
             if self.thread.is_alive():raise LocalServicePeerFailure('WAIT_WORKER')
             errors=[error for error in (self.worker_error,self.revert_error) if error is not None]
-            if errors:raise BaseExceptionGroup('LOCAL_SERVICE_DPAPI_PEER_REFUSED',errors)
+            denied=(self.denied_without_token and len(errors)==1
+                    and errors[0].phase=='SERVICE_LOGON' and errors[0].winerror==5
+                    and not self.impersonation_attempted and not self.reverted and self.observation is None
+                    and all(row['owned'] or row['output'].value is None for row in self.handles))
+            if errors and not denied:raise BaseExceptionGroup('LOCAL_SERVICE_DPAPI_PEER_REFUSED',errors)
             self.phase='FINAL_VERIFY'
-            self._time();a.need(not self.thread.is_alive() and self.thread_handle and not self.worker_error
-                and self.reverted and self.observation is not None
+            self._time();a.need(not self.thread.is_alive() and self.thread_handle
+                and (denied or self.reverted and self.observation is not None)
                 and self.thread_id(self.thread_handle)==self.thread.native_id)
             left=self.deadline-time.monotonic();a.need(left>0)
             a.need(self.wait(self.thread_handle,int(left*1000))==0)
             self._no_thread_token();a.need(self._snapshot(primary)==self.primary_before)
             a.budget(self.lease,self.deadline)
-            self._close_owned();self.complete=True
+            self._close_owned()
+            self.complete=not denied
+            self.environment_unavailable=denied
             self.cipher=self.entropy=None  # No secret data in the emitted record.
             return self.observation
         except BaseException:

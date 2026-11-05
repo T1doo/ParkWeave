@@ -16,9 +16,11 @@ class NativeBusinessScope:
         self.storage = self.adapter = None
         self.started = self.closed = False
         self.crt_preflight=None
+        self.environment_blockers=[]
 
     def run(self, *, consume=lambda observation: None):
         value = a.state(self.cap)
+        self.environment_blockers=value.environment_blockers
         a.need(not self.started); self.started = True
         # Same source-issued trial, same account and original absolute clock.
         # This is NOT the standalone diagnostic's job/env gate reused as a grant.
@@ -80,7 +82,10 @@ class NativeBusinessScope:
         result['crt_preflight']=self.crt_preflight
         result['desktop_trial']=desktop.result()
         from scripts.windows_portable.native_acceptance_contract import coverage
-        result.update(observations=list(observed),coverage=coverage(observed))
+        result.update(observations=list(observed),coverage=coverage(observed),
+                      environment_blockers=list(self.environment_blockers))
+        if self.environment_blockers:
+            result['result']='NATIVE_BUSINESS_RESTART_OBSERVED_WITH_ENVIRONMENT_BLOCKER'
         return result
 
     def close(self, *, failed=False):

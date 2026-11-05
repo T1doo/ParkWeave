@@ -208,7 +208,8 @@ def completed_dpapi(lease,provider):
 
 
 def cross_identity_dpapi(lease,provider,cipher,entropy,deadline):
-    if a.bound_state(lease) is None:return
+    value=a.bound_state(lease)
+    if value is None:return
     from .native_preparation_sessions import NativePreparationSessionProvider,PreparationFile,_roundtrip_evidence
     from .native_dpapi_peer import LocalServiceDPAPIPeer
     from hashlib import sha256
@@ -219,6 +220,12 @@ def cross_identity_dpapi(lease,provider,cipher,entropy,deadline):
         and sha256(cipher).hexdigest()==frame[1] and entropy.hex()==frame[2])
     peer=LocalServiceDPAPIPeer(lease,cipher,entropy,deadline)
     evidence=peer.run()
+    if peer.environment_unavailable:
+        a.need(evidence is None and not peer.complete and not peer.failed
+               and all(not row['owned'] or row['closed'] for row in peer.handles))
+        blocker=dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)
+        if blocker not in value.environment_blockers:value.environment_blockers.append(blocker)
+        return  # No cross-identity fact. The scoped business trial may proceed.
     a.need(peer.complete and not peer.failed and all(not row['owned'] or row['closed'] for row in peer.handles))
     return _seal(lease,('dpapi_cross_os_identity_isolation',),peer,(provider,frame,evidence))
 

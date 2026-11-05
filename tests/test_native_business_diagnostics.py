@@ -61,7 +61,10 @@ class Scope:
                     raise outer from inner
                 if scenario=='diagnostic-unavailable':inner.cleanup_errors=((private,),)
                 raise inner from cause
-        return dict(result='CONTROLLED_PROTOCOL_RESULT',activation_allowed=False,usable_product=False)
+        value=dict(result='CONTROLLED_PROTOCOL_RESULT',activation_allowed=False,usable_product=False)
+        if scenario=='environment-blocked':
+            value['environment_blockers']=[dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)]
+        return value
     def close(self,*,failed):
         events.append('scope-close-failed-'+str(failed))
         if scenario in ('cleanup-failure','both-nested'):
@@ -84,6 +87,15 @@ def test_actual_entry_normal_result_and_exit_preserved():
     assert process.returncode==0
     assert report==dict(result='CONTROLLED_PROTOCOL_RESULT',activation_allowed=False,usable_product=False)
     assert events==['source','pins','imports','scope','business-protocol','scope-close-failed-False']
+
+
+def test_actual_entry_preserves_business_evidence_and_fails_with_environment_blocker():
+    process,report,events=run_entry('environment-blocked')
+    assert process.returncode==2
+    assert report['result']=='CONTROLLED_PROTOCOL_RESULT'
+    assert report['environment_blockers']==[dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)]
+    assert not report['activation_allowed'] and not report['usable_product']
+    assert events[-1]=='scope-close-failed-False'
 
 
 def test_actual_child_failure_retains_control_phase_type_and_unknown():
