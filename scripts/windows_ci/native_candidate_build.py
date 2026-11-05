@@ -19,7 +19,17 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
-from scripts.windows_ci.native_business_window import _record,_read,need,RECORD,workflow_for
+from scripts.windows_ci.native_business_window import _record,_read,need,RECORD,workflow_for,WindowRefused
+
+
+class CandidateBuildRefused(WindowRefused):
+    def __init__(self,stage):
+        super().__init__('CANDIDATE_BUILD_REFUSED')
+        self.stage=stage
+
+
+def admit(value,stage):
+    if not value:raise CandidateBuildRefused(stage)
 
 
 def source_window():
@@ -28,25 +38,26 @@ def source_window():
         GITHUB_REPOSITORY=window.repository,GITHUB_REF=window.ref,GITHUB_JOB='candidate-build',
         GITHUB_EVENT_NAME='push',GITHUB_RUN_ATTEMPT='1',GITHUB_RUN_NUMBER=str(window.run_number),
         NATIVE_PUBLIC='true',GITHUB_WORKFLOW_REF=window.repository+'/'+workflow_for(window)+'@'+window.ref)
-    need(all(os.environ.get(k)==v for k,v in expected.items()) and ((os.name=='posix' and sys.platform=='linux') or (os.name=='nt' and sys.platform=='win32'))
+    admit(not any(k.upper().startswith('PG') for k in os.environ),'AMBIENT_PG_ENVIRONMENT')
+    admit(all(os.environ.get(k)==v for k,v in expected.items()) and ((os.name=='posix' and sys.platform=='linux') or (os.name=='nt' and sys.platform=='win32'))
         and sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode
         and re.fullmatch('[1-9][0-9]{0,19}',os.environ.get('GITHUB_RUN_ID',''))
         and (window.run_id is None or os.environ['GITHUB_RUN_ID']==window.run_id)
         and not any(k.upper().startswith('PG') for k in os.environ)
         and os.environ.get('GITHUB_SHA')==os.environ.get('GITHUB_WORKFLOW_SHA')
-        and re.fullmatch('[a-f0-9]{40}',os.environ.get('GITHUB_SHA','')))
+        and re.fullmatch('[a-f0-9]{40}',os.environ.get('GITHUB_SHA','')),'HOSTED_SOURCE_CONTEXT')
     deadline=min(time.monotonic()+330,time.monotonic()+window.expires_utc-time.time()-window.work_seconds-window.cleanup_seconds)
-    need(deadline>time.monotonic())
+    admit(deadline>time.monotonic(),'SOURCE_WINDOW_DEADLINE')
     def git(*args):
         return subprocess.check_output(['git','--no-optional-locks',*args],cwd=ROOT,timeout=10)
-    need(ROOT==Path(os.environ['GITHUB_WORKSPACE']).resolve(strict=True)
+    admit(ROOT==Path(os.environ['GITHUB_WORKSPACE']).resolve(strict=True)
         and git('rev-parse','HEAD').decode().strip()==os.environ['GITHUB_SHA']
         and git('rev-parse','HEAD^').decode().strip()==window.reviewed_parent
         and not git('status','--porcelain=v1')
         and set(git('diff','--name-only','HEAD^','HEAD').decode().splitlines())<={RECORD,workflow_for(window)}
         and git('show','HEAD:'+RECORD)==raw
-        and sha256(_read(ROOT/workflow_for(window),65536)).hexdigest()==window.workflow_sha256)
-    temp=Path(os.environ['RUNNER_TEMP']);need(temp.is_absolute() and not temp.is_symlink())
+        and sha256(_read(ROOT/workflow_for(window),65536)).hexdigest()==window.workflow_sha256,'GIT_SOURCE_BINDING')
+    temp=Path(os.environ['RUNNER_TEMP']);admit(temp.is_absolute() and not temp.is_symlink(),'RUNNER_TEMP_PATH')
     return window,temp/('parkweave-candidate-build-'+os.environ['GITHUB_RUN_ID']),deadline
 
 
@@ -162,15 +173,19 @@ def build(window,work,deadline):
 
 
 def main():
+    stage='SOURCE_ADMISSION'
     try:
         window,work,deadline=source_window()
+        stage='CANDIDATE_BUILD'
         artifact=build(window,work,deadline)
+        stage='ARTIFACT_OUTPUT'
         # Output is consumed only by the same-run pinned artifact action.
         with open(os.environ['GITHUB_OUTPUT'],'a') as stream:stream.write('artifact='+str(artifact)+'\n')
         print(json.dumps(dict(candidate='EXACT_APPROVED_BYTES',native_windows_executed=False)))
         return 0
     except BaseException as error:
-        print(json.dumps(dict(candidate='NOT_BUILT_OR_UNKNOWN',error_type=type(error).__name__)))
+        print(json.dumps(dict(candidate='NOT_BUILT_OR_UNKNOWN',error_type=type(error).__name__,
+            stage=error.stage if isinstance(error,CandidateBuildRefused) else stage)))
         return 2
 
 
