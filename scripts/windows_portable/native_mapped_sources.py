@@ -545,7 +545,15 @@ def before_resume(backend,group,deadline):
     if a.bound_state(lease) is None:return
     need(group.resources.get('bound') is True and not group.started)
     value=session(lease);r=group.resources
-    value.watch(backend,r['process'],r['job'],r['birth'],group,deadline)
+    item=value.watch(backend,r['process'],r['job'],r['birth'],group,deadline)
+    if item.attached:
+        # DebugActiveProcess temporarily suspends existing threads. Its return
+        # alone is not a completed attach handshake. ready is set only after
+        # the original pump has validated AND continued its initial breakpoint.
+        need(item.ready.wait(max(0,deadline-time.monotonic())) and not value.failed
+             and item.initial_event and item.initial_breakpoint and not item.exited)
+        a.budget(lease,deadline)
+        need(backend.birth(r['process'])==r['birth'])
 
 
 def actual_peer(lease,peer,deadline):

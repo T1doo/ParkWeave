@@ -13,6 +13,40 @@ from scripts.windows_portable.windows_process_handles import WindowsJobProcess
 from tests.test_native_trial_boundaries import controlled_state
 
 
+@pytest.mark.parametrize('ready', [False, True])
+def test_before_resume_waits_for_validated_continued_attach_breakpoint(monkeypatch,ready):
+    lease=object();backend=object.__new__(WindowsJobProcess);calls=[]
+    backend.birth=lambda process:(calls.append('identity') or (33,44))
+    item=SimpleNamespace(attached=True,ready=SimpleNamespace(wait=lambda seconds:(calls.append('ready') or ready)),
+                         initial_event=True,initial_breakpoint=True,exited=False)
+    trace=SimpleNamespace(watch=lambda *args:(calls.append('attach') or item),failed=False)
+    group=SimpleNamespace(executable=SimpleNamespace(lease=lease),started=False,
+                          resources=dict(bound=True,process=11,job=22,birth=(33,44)))
+    monkeypatch.setattr(a,'bound_state',lambda selected:object())
+    monkeypatch.setattr(a,'budget',lambda *args:calls.append('budget'))
+    monkeypatch.setattr(mapped,'session',lambda selected:trace)
+    if ready:
+        mapped.before_resume(backend,group,time.monotonic()+1)
+        assert calls==['attach','ready','budget','identity']
+    else:
+        with pytest.raises(a.TrialRefused):mapped.before_resume(backend,group,time.monotonic()+1)
+        assert calls==['attach','ready']
+
+
+@pytest.mark.parametrize('field', ['failed','initial_event','initial_breakpoint','exited'])
+def test_ready_signal_does_not_bypass_attach_state_validation(monkeypatch,field):
+    lease=object();backend=object.__new__(WindowsJobProcess)
+    item=SimpleNamespace(attached=True,ready=SimpleNamespace(wait=lambda seconds:True),
+                         initial_event=True,initial_breakpoint=True,exited=False)
+    trace=SimpleNamespace(watch=lambda *args:item,failed=False)
+    setattr(trace if field=='failed' else item,field,field in ('failed','exited'))
+    group=SimpleNamespace(executable=SimpleNamespace(lease=lease),started=False,
+                          resources=dict(bound=True,process=11,job=22,birth=(33,44)))
+    monkeypatch.setattr(a,'bound_state',lambda selected:object())
+    monkeypatch.setattr(mapped,'session',lambda selected:trace)
+    with pytest.raises(a.TrialRefused):mapped.before_resume(backend,group,time.monotonic()+1)
+
+
 def signature_pump(monkeypatch, callback):
     """Real Python thread/registry protocol; no Windows/native observation."""
     from scripts.windows_ci import native_business_window as window
