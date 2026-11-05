@@ -14,6 +14,8 @@ from types import CodeType
 # Only concrete classes already loaded by the original execution path. This
 # is a finite category contract, not permission to accept arbitrary type names.
 _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -35,6 +37,8 @@ _SOURCES=(
     ('scripts.windows_portable.fixed_windows_journal','scripts/windows_portable/fixed_windows_journal.py'),
     ('scripts.windows_portable.windows_directory_handles','scripts/windows_portable/windows_directory_handles.py'),
     ('scripts.windows_portable.native_instance_security','scripts/windows_portable/native_instance_security.py'),
+    ('scripts.windows_portable.restricted_token_candidate','scripts/windows_portable/restricted_token_candidate.py'),
+    ('scripts.windows_portable.native_protected_bootstrap','scripts/windows_portable/native_protected_bootstrap.py'),
     ('scripts.windows_portable.pgdata_candidate','scripts/windows_portable/pgdata_candidate.py'),
     ('scripts.windows_portable.pgdata_probe_boundary','scripts/windows_portable/pgdata_probe_boundary.py'),
     ('scripts.windows_portable.native_runtime_staging','scripts/windows_portable/native_runtime_staging.py'),
@@ -124,6 +128,16 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='TOKEN_OPERATION':
+        # Existing numeric error and finite source phase only. Never emit the
+        # token, SID, ACL, error text, arbitrary type names or caller fields.
+        data=vars(error);phase=data.get('phase');code=data.get('winerror')
+        phases=frozenset(('NEW','OPEN_CURRENT_PRIMARY','QUERY_8','QUERY_1','QUERY_2','QUERY_3',
+            'DERIVE','LOOKUP_CHANGE_NOTIFY','QUERY_DEFAULT_DACL','QUERY_TOKEN_OWNER',
+            'ADMIT_DEFAULT_DACL_SUBSET','SET_OWNED_DERIVED_DEFAULT_DACL','SET_OWNED_DERIVED_TOKEN_OWNER'))
+        if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
+            result['restricted_token']=dict(phase=phase,winerror=code)
+        else:result['restricted_token']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')
