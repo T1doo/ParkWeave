@@ -58,6 +58,25 @@ def test_v6_namespace_reads_documented_aliases_and_groups_without_resolving_them
         with pytest.raises(PayloadRefused):a.parse_v6(namespace([(name,[])]))
 
 
+def test_live_namespace_checks_opaque_keys_without_resolving_them():
+    opaque = ('api-ms-test-l1-1-0~internal', [('', 'other.dll')])
+    supported = ('api-ms-test-l1-1-0', [('', 'default.dll')])
+    raw = namespace([opaque, supported])
+    with pytest.raises(PayloadRefused):
+        a.parse_v6(raw)
+    mapping = a.parse_v6(raw, allow_opaque_names=True)
+    assert a.resolve_metadata(mapping, supported[0], 'client.exe')['host'] == 'default.dll'
+    with pytest.raises(PayloadRefused):
+        a.resolve_metadata(mapping, opaque[0], 'client.exe')
+
+    tampered = bytearray(raw)
+    hashes = struct.unpack_from('<I', raw, 20)[0]
+    struct.pack_into('<I', tampered, hashes, 0)
+    for invalid in (bytes(tampered), namespace([opaque, opaque])):
+        with pytest.raises(PayloadRefused):
+            a.parse_v6(invalid, allow_opaque_names=True)
+
+
 def test_target_contract_exact_importer_default_absent_and_unmapped_are_distinct():
     raw=namespace([('api-ms-test-l1-1-0',[('', 'default.dll'),('client.exe','special.dll')]),
                    ('ext-ms-test-l1-1-0',[])])

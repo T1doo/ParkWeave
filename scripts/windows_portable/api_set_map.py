@@ -35,20 +35,26 @@ def contract_name(value):
     return value
 
 
-def _namespace_name(value):
+def _namespace_name(value, *, allow_opaque_names):
     # The live v6 namespace can contain unversioned aliases and named groups
     # which the original import resolver does not support. Preserve their
     # validated metadata without widening contract_name or DLL trust.
     name = value.removesuffix('.dll')
     contract, separator, group = name.partition('~')
-    need(bool(re.fullmatch(r'(?:api|ext)-[a-z0-9]+(?:-[a-z0-9]+)*', contract)))
+    valid = bool(re.fullmatch(r'(?:api|ext)-[a-z0-9]+(?:-[a-z0-9]+)*', contract))
     if separator:
-        need(bool(re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', group))
-             and not re.search(r'-l[0-9]+-[0-9]+-[0-9]+$', contract))
-    return name
+        valid = (valid and bool(re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', group))
+                 and not re.search(r'-l[0-9]+-[0-9]+-[0-9]+$', contract))
+    if valid:
+        return name
+    # The live table may include keys outside the supported resolver grammar.
+    # Keep their raw key for duplicate and hash validation, without mapping it
+    # to a name that resolve_metadata can request.
+    need(allow_opaque_names)
+    return value
 
 
-def parse_v6(raw):
+def parse_v6(raw, *, allow_opaque_names=False):
     need(type(raw) is bytes and 28<=len(raw)<=4*1024*1024)
     version,size,flags,count,entries,hashes,factor=struct.unpack_from('<7I',raw)
     need(version==6 and 28<=size<=len(raw) and count<=20000 and 0<factor<=65535)
@@ -68,7 +74,7 @@ def parse_v6(raw):
     result={};by_index=[];total_values=0
     for i in range(count):
         entry_flags,name_offset,name_length,hashed_length,value_offset,value_count=words(entries+i*24,6)
-        name=_namespace_name(text(name_offset,name_length))
+        name=_namespace_name(text(name_offset,name_length),allow_opaque_names=allow_opaque_names)
         need(name not in result and hashed_length%2==0 and 0<hashed_length<=name_length and value_count<=64)
         total_values+=value_count;need(total_values<=65536)
         if value_count:span(value_offset,value_count*20)
