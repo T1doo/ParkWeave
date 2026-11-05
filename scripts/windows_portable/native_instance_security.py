@@ -372,7 +372,7 @@ class NativeClusterPrerequisites:
     def server_ready(self,lease,inputs,adapter,token,deadline):
         need(inputs is self.security.inputs and self.security.endpoint is None)
         need(self.security.system_crt is not None)
-        self.security.system_crt.observe_group(adapter,token,deadline)
+        self.security.system_crt.observe_group(adapter,token,deadline,wait_for_modules=True)
         endpoint=NativeOwnedDatabaseEndpoint(adapter,token,crt_witness=self.security.system_crt)
         from .native_trial_authority import inherit
         inherit(self.security,endpoint)

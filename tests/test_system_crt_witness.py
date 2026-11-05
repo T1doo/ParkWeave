@@ -15,6 +15,32 @@ from scripts.windows_portable.test_payload import pe
 from parkweave.windows_files import Security,Ace
 
 
+@pytest.mark.parametrize('modules_arrive',[True,False])
+def test_starting_server_waits_for_required_crt_within_existing_deadline(monkeypatch,modules_arrive):
+    witness=object.__new__(n.NativeSystemCRT)
+    witness.failed=False
+    clock=[10.0]
+    snapshots=[]
+    def sample(process):
+        assert process==7
+        snapshots.append(clock[0])
+        return {'crt':{'vcruntime140.dll':'system32'} if modules_arrive and len(snapshots)>1 else {},'modules':()}
+    witness._binding=lambda:None
+    witness._verify_files=lambda:None
+    witness._time=lambda:n.need(clock[0]<witness.deadline)
+    witness._loaded=sample
+    witness.rows={}
+    monkeypatch.setattr(n,'time',SimpleNamespace(monotonic=lambda:clock[0],sleep=lambda seconds:clock.__setitem__(0,clock[0]+seconds)))
+    if modules_arrive:
+        witness._observe_locked(7,lambda:None,('vcruntime140.dll',),10.05,wait_for_modules=True)
+        assert len(snapshots)==3
+        assert not witness.failed
+    else:
+        with pytest.raises(n.CRTRefused):
+            witness._observe_locked(7,lambda:None,('vcruntime140.dll',),10.05,wait_for_modules=True)
+        assert witness.failed and max(snapshots)<10.05
+
+
 def dll():
     raw=bytearray(pe());opt=0x98
     struct.pack_into('<I',raw,opt+56,0x2000)
