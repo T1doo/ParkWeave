@@ -198,12 +198,17 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
         self._native_result(group, backend.kernel.SetInformationJobObject(
             r['job'], 9, C.byref(limits), C.sizeof(limits)), 'SetInformationJobObject')
         startup, primary, cleanup = None, None, []
+        capture=None
         try:
+            from .native_trial_authority import bound_state
+            if bound_state(self.lease) is not None:
+                from .initdb_output_capture import InitdbOutputCapture
+                capture=InitdbOutputCapture();r['initdb_stderr_capture']=capture
             startup = _OwnedStartup()
             r['restricted_startup'] = startup  # retain partial prepare failures
             with open(os.devnull, 'r+b', buffering=0) as null:
                 handle = backend.crt.get_osfhandle(null.fileno())
-                startup.prepare((handle, handle, handle))
+                startup.prepare((handle, handle, capture.write_handle if capture is not None else handle))
                 command = command_buffer(group.executable.path, group.command.arguments)
                 application = _utf16(group.executable.path + '\0')
                 cwd = _utf16(group.executable.root_path + '\0')
@@ -255,6 +260,9 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
                 except BaseException as error: cleanup.append(error)
                 if startup.cleanup_errors:
                     r.setdefault('stdio_close_unknown', []).append(('RESTRICTED_STARTUP', startup))
+            if capture is not None:
+                try:capture.close_write()
+                except BaseException as error:cleanup.append(error)
         if primary is not None or cleanup:
             raise BaseExceptionGroup('RESTRICTED_CREATE_OR_CLEANUP_UNKNOWN',
                                      ([primary] if primary is not None else []) + cleanup)
@@ -263,6 +271,12 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
         errors = []
         try: super().close_observed(group)
         except BaseException as error: errors.append(error)
+        capture=group.resources.get('initdb_stderr_capture')
+        if capture is not None:
+            try:capture.close()
+            except BaseException as error:
+                group.resources.setdefault('stdio_close_unknown',[]).append(('INITDB_CAPTURE',capture))
+                errors.append(error)
         if self.server._claimed_group is group:
             try: self.server.close()
             except BaseException as error:
@@ -272,3 +286,10 @@ class _RestrictedInitdbBackend(WindowsJobProcess):
                 group.resources.setdefault('stdio_close_unknown', []).append(('BOOTSTRAP_PIPE_RELEASE_UNKNOWN', self.server))
                 errors.append(ProcessRefused('OWNED_BOOTSTRAP_PIPE_RELEASE_UNKNOWN'))
         if errors: raise BaseExceptionGroup('RESTRICTED_PROCESS_CLOSE_UNKNOWN', errors)
+
+    def collect_exit_diagnostic(self,group,error):
+        from .initdb_output_capture import InitdbOutputCapture
+        capture=group.resources.get('initdb_stderr_capture')
+        if type(capture) is not InitdbOutputCapture:return
+        try:error.capture=capture.snapshot(secret_started=group.resources.get('initdb_secret_started',False))
+        except BaseException:error.capture=dict(status='READ_UNAVAILABLE',bytes_read=0,truncated=False,labels=())

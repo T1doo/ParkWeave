@@ -14,6 +14,7 @@ from types import CodeType
 # Only concrete classes already loaded by the original execution path. This
 # is a finite category contract, not permission to accept arbitrary type names.
 _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+        ("scripts.windows_portable.processes","OwnedProcessExited","ProcessRefused","OWNED_PROCESS_EXIT"),
         ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
         ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
         ("scripts.windows_portable.restricted_token_candidate","TokenGroupRefused","TokenRefused","TOKEN_GROUP_PREDICATE"),
@@ -44,6 +45,7 @@ _SOURCES=(
     ('scripts.windows_portable.native_protected_bootstrap','scripts/windows_portable/native_protected_bootstrap.py'),
     ('scripts.windows_portable.initdb_pipe_candidate','scripts/windows_portable/initdb_pipe_candidate.py'),
     ('scripts.windows_portable.initdb_client_candidate','scripts/windows_portable/initdb_client_candidate.py'),
+    ('scripts.windows_portable.initdb_output_capture','scripts/windows_portable/initdb_output_capture.py'),
     ('scripts.windows_portable.restricted_initdb_candidate','scripts/windows_portable/restricted_initdb_candidate.py'),
     ('scripts.windows_portable.restricted_startup_candidate','scripts/windows_portable/restricted_startup_candidate.py'),
     ('scripts.windows_portable.default_dacl_candidate','scripts/windows_portable/default_dacl_candidate.py'),
@@ -165,6 +167,20 @@ def detail(error,public_type,sites=None,budget=None):
         if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
             result['initdb_pipe']=dict(phase=phase,winerror=code)
         else:result['initdb_pipe']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='OWNED_PROCESS_EXIT':
+        data=vars(error);code=data.get('code');capture=data.get('capture')
+        if type(code) is int and -(2**31)<=code<2**32:result['owned_exit_code']=code
+        allowed=('PASSWORD_INPUT_ERROR','POSTGRES_LOOKUP_ERROR','BKI_FILE_ERROR','CONFIG_SAMPLE_ERROR',
+            'ACCESS_DENIED','MISSING_FILE','LOAD_OR_EXEC_ERROR','LOCALE_ERROR','ADMIN_TOKEN_ERROR','INITDB_REPORTED_ERROR')
+        if (type(capture) is dict and set(capture)=={'status','bytes_read','truncated','labels'}
+                and type(capture['status']) is str and capture['status'] in
+                    ('SUPPRESSED_AFTER_SECRET','EMPTY_OR_CLOSED','READ_UNAVAILABLE','CLASSIFIED')
+                and type(capture['bytes_read']) is int and 0<=capture['bytes_read']<=65536
+                and type(capture['truncated']) is bool and type(capture['labels']) is tuple
+                and len(capture['labels'])<=len(allowed)
+                and all(type(label) is str and label in allowed for label in capture['labels'])):
+            result['initdb_output']=dict(capture)
+        elif capture is not None:result['initdb_output']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')
