@@ -181,6 +181,58 @@ def test_foreign_original_group_cannot_be_duplicated_queued_or_attached():
     finally:a._bound.pop(local,None)
 
 
+@pytest.mark.parametrize('op', ['read', 'go'])
+def test_worker_pipe_helper_requires_exact_active_owner_command_and_pipe(op):
+    from dataclasses import replace
+    from scripts.windows_portable.isolated_pipe import _command
+    from scripts.windows_portable.processes import Command
+
+    lease=object()
+    backend=object.__new__(WindowsJobProcess)
+    worker_backend=object.__new__(WindowsJobProcess)
+    adapter=object.__new__(PrivateProcessAdapter)
+    adapter.lease=lease
+    adapter.backend=worker_backend
+    worker_command=Command('runtime/python/python.exe','a'*64,1,model='WINDOWS_JOB',
+                           stdio_contract='WORKER_READINESS_V1')
+    nonce='b'*32
+    pipe='worker_ready_r' if op=='read' else 'worker_go_w'
+    pin=SimpleNamespace(lease=lease)
+    worker=_ProcessState(worker_command,pin,resources={pipe:41,'readiness_challenge':nonce,'bound':True},
+                         started=True,creating=False,registration='ACKNOWLEDGED')
+    helper=_ProcessState(_command(worker_command,op,nonce),pin,
+                         resources=dict(pipe_borrowed=41,bound=True,process=11,job=22,birth=(33,44)),
+                         registration='ACKNOWLEDGED')
+    worker.resources['active_pipe_helpers']=[(backend,helper)]
+    token=OwnedGroup()
+    adapter._issued={id(token):(token,worker)}
+    live_checks=[]
+    adapter._live_identity=lambda group:live_checks.append(group)
+    owner=[token,adapter,False,False]
+    trace=object.__new__(mapped.NativeMappedSources)
+    trace.lease=lease
+    trace.security=SimpleNamespace(processes=SimpleNamespace(_owned={id(token):owner}))
+    check=lambda:trace._require_origin(backend,11,22,(33,44),helper)
+    check()
+    assert live_checks==[worker]
+
+    originals=(helper.command,worker.resources['active_pipe_helpers'])
+    for command in (replace(helper.command,arguments=('-I','-B','-c','raise SystemExit',op,nonce)),
+                    _command(worker_command,op,'c'*32)):
+        helper.command=command
+        with pytest.raises(a.TrialRefused):check()
+    helper.command=originals[0]
+    helper.resources['pipe_borrowed']=42
+    with pytest.raises(a.TrialRefused):check()
+    helper.resources['pipe_borrowed']=41
+    worker.resources['active_pipe_helpers']=[(worker_backend,helper)]
+    with pytest.raises(a.TrialRefused):check()
+    worker.resources['active_pipe_helpers']=originals[1]
+    owner[3]=True
+    with pytest.raises(a.TrialRefused):check()
+    assert live_checks==[worker]
+
+
 def controlled_trace():
     trace=object.__new__(mapped.NativeMappedSources);trace.lock=threading.Lock()
     trace.events=[];trace.files=[];trace.pending=None;trace.incomplete=set();trace.failed=False

@@ -185,12 +185,23 @@ class NativeMappedSources:
         from .processes import _ProcessState,PrivateProcessAdapter
         from .native_database_endpoint import _BackendWitness
         if type(origin) is _ProcessState:
+            from .isolated_pipe import is_owned_worker_helper
             matches=[]
             for token,owner,stopped,attempted in self.security.processes._owned.values():
                 adapter=owner if type(owner) is PrivateProcessAdapter else getattr(owner,'_adapters',{}).get(id(token))
-                if type(adapter) is PrivateProcessAdapter and adapter._group(token) is origin:
-                    need(not stopped and not attempted and adapter.lease is self.lease and adapter.backend is backend)
-                    matches.append(adapter)
+                if type(adapter) is not PrivateProcessAdapter:
+                    continue
+                group=adapter._group(token)
+                if group is not origin and not is_owned_worker_helper(group,backend,origin):
+                    continue
+                need(not stopped and not attempted and adapter.lease is self.lease)
+                if group is origin:
+                    need(adapter.backend is backend)
+                else:
+                    need(type(adapter.backend) is WindowsJobProcess and group.executable.lease is self.lease
+                         and group.registration=='ACKNOWLEDGED' and group.resources.get('bound') is True)
+                    adapter._live_identity(group)
+                matches.append(adapter)
             need(len(matches)==1 and origin.executable.lease is self.lease
                 and origin.registration=='ACKNOWLEDGED' and origin.resources.get('bound') is True
                 and origin.resources.get('process')==process and origin.resources.get('job')==job

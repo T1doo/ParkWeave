@@ -44,6 +44,7 @@ _SOURCES=(
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.application_readiness','scripts/windows_portable/application_readiness.py'),
     ('scripts.windows_portable.polling_database','scripts/windows_portable/polling_database.py'),
+    ('scripts.windows_portable.isolated_pipe','scripts/windows_portable/isolated_pipe.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
     ('scripts.windows_portable.fixed_journal','scripts/windows_portable/fixed_journal.py'),

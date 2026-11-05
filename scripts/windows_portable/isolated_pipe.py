@@ -81,6 +81,28 @@ def _decode(raw):
     return parse(raw.rstrip(b'\n'))
 
 
+def _command(worker, op, nonce):
+    return p.Command(worker.relative_executable,worker.sha256,worker.size,
+                     ('-I','-B','-c',HELPER,op,nonce),worker.model,'PIPE_PROBE_V1')
+
+
+def is_owned_worker_helper(worker, backend, helper):
+    """Verify the original helper retained by the worker's pipe operation."""
+    if not any(backend is owner and helper is state
+               for owner,state in worker.resources.get('active_pipe_helpers',())):
+        return False
+    command=helper.command
+    if (type(command) is not p.Command or worker.command.stdio_contract!='WORKER_READINESS_V1' or not helper.creating
+            or helper.started or len(command.arguments)!=6):
+        return False
+    op,nonce=command.arguments[-2:]
+    if op not in ('read','go') or nonce!=worker.resources.get('readiness_challenge'):
+        return False
+    fd=worker.resources.get('worker_ready_r' if op=='read' else 'worker_go_w')
+    return (type(fd) is int and fd==helper.resources.get('pipe_borrowed')
+            and command==_command(worker.command,op,nonce))
+
+
 def _operation(owner,group,op,nonce,deadline):
     from parkweave.runtime_readiness import challenge,parse,require_pipe
     if (op not in ('read','go') or type(deadline) not in (int,float) or not math.isfinite(deadline)
@@ -90,8 +112,7 @@ def _operation(owner,group,op,nonce,deadline):
     # Cleanup has part of the SAME deadline, never an extra stop_seconds clock.
     work_deadline=deadline-.5
     if time.monotonic()>=work_deadline:raise PipeFailure('NO_CLEANUP_RESERVE',op,True)
-    command=p.Command(group.command.relative_executable,group.command.sha256,group.command.size,
-                      ('-I','-B','-c',HELPER,op,nonce),group.command.model,'PIPE_PROBE_V1')
+    command=_command(group.command,op,nonce)
     if os.name=='posix':backend=_LinuxHelper()
     else:
         from .windows_process_handles import WindowsJobProcess
