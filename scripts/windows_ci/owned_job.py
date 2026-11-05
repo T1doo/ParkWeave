@@ -16,6 +16,14 @@ class OwnedJobError(RuntimeError):
     """Fixed failure category; raw WinAPI errors are not public diagnostics."""
 
 
+class OwnedThreadResumeError(OwnedJobError):
+    """Finite numeric observation of an original created thread, no HANDLEs."""
+    def __init__(self, previous_count, winerror):
+        self.previous_count = previous_count
+        self.winerror = winerror
+        super().__init__('THREAD_RESUME_REFUSED')
+
+
 # Fixed Win32 widths even when imported by the Linux contract tests.
 DWORD = ctypes.c_uint32
 BOOL = ctypes.c_int32
@@ -151,8 +159,10 @@ class WindowsBackend:
             raise OwnedJobError('JOB_MEMBERSHIP_REFUSED')
 
     def resume(self, thread):
-        if self.kernel.ResumeThread(thread) != 1:
-            raise OwnedJobError('THREAD_RESUME_REFUSED')
+        previous = self.kernel.ResumeThread(thread)
+        if previous != 1:
+            code = ctypes.get_last_error() if previous == 0xffffffff else None
+            raise OwnedThreadResumeError(previous, code)
 
     def wait(self, process, timeout):
         status = self.win.WaitForSingleObject(process, max(0, int(timeout * 1000)))

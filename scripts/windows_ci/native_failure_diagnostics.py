@@ -13,7 +13,8 @@ from types import CodeType
 
 # Only concrete classes already loaded by the original execution path. This
 # is a finite category contract, not permission to accept arbitrary type names.
-_KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+_KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError","OWNED_THREAD_RESUME"),
+        ("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.processes","OwnedProcessExited","ProcessRefused","OWNED_PROCESS_EXIT"),
         ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
         ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
@@ -34,6 +35,7 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.authenticode_signature","CRTTrustFailure",
          "CRTTrustFailure","CRT_SIGNATURE_INSPECTION"))
 _SOURCES=(
+    ('scripts.windows_ci.owned_job','scripts/windows_ci/owned_job.py'),
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
@@ -144,6 +146,18 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='OWNED_THREAD_RESUME':
+        data=vars(error);count=data.get('previous_count');code=data.get('winerror')
+        if (type(count) is int and 0<=count<2**32
+                and (code is None or type(code) is int and 0<=code<2**32)):
+            result['thread_resume']=dict(previous_count=count,winerror=code)
+        else:result['thread_resume']=dict(details='UNAVAILABLE')
+        observation=data.get('process_observation')
+        if (type(observation) is dict and set(observation)=={'wait','exit_code'}
+                and type(observation['wait']) is int and observation['wait'] in (0,258)
+                and (observation['exit_code'] is None or type(observation['exit_code']) is int
+                     and 0<=observation['exit_code']<2**32)):
+            result['owned_process_at_resume']=dict(observation)
     if kind is not None and kind['category']=='TOKEN_OPERATION':
         # Existing numeric error and finite source phase only. Never emit the
         # token, SID, ACL, error text, arbitrary type names or caller fields.

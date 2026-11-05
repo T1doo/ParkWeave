@@ -203,7 +203,22 @@ class WindowsJobProcess:
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
         from .native_mapped_sources import before_resume
         before_resume(self,group,deadline)
-        backend.resume(r['thread']); group.started = True
+        from scripts.windows_ci.owned_job import OwnedThreadResumeError
+        try:
+            backend.resume(r['thread'])
+        except OwnedThreadResumeError as error:
+            # Observe only the exact creation handle already owned above.
+            # Never discover/reopen a PID or retry a refused ResumeThread.
+            error.process_observation = None
+            try:
+                wait = backend.win.WaitForSingleObject(r['process'], 0)
+                code = backend.win.GetExitCodeProcess(r['process']) if wait == 0 else None
+                if wait in (0, 258) and (code is None or type(code) is int and 0<=code<2**32):
+                    error.process_observation = dict(wait=wait, exit_code=code)
+            except BaseException:
+                pass  # Preserve the original start refusal and normal cleanup.
+            raise
+        group.started = True
 
     def observe(self, group, deadline):
         r = group.resources
