@@ -2,9 +2,9 @@
 from pathlib import Path
 import subprocess
 import sys
+import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from scripts import local_product as product
 from parkweave.local_workspace import full_workspace_page, mount_workspace
 
 
@@ -31,7 +31,10 @@ def test_mounted_workspace_reuses_login_and_keeps_original_script(tmp_path):
         assert calls==[('enterprise','PUBLIC_TEST')]
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux local product only')
 def test_linux_password_installation_serves_same_workspace_adapter(tmp_path):
+    from scripts import local_product as product
+
     with TestClient(product.application(tmp_path,{},58764),base_url='http://127.0.0.1:58764') as client:
         assert 'id="local-workspace-login"' in client.get('/workspace').text
         script=client.get('/local-workspace-login.js')

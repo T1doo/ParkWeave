@@ -14,7 +14,7 @@ from scripts.windows_portable.controller import DatabaseInputs,CandidateRefused
 from scripts.windows_portable.endpoint_plan import PlanMode
 from scripts.windows_portable.instance_processes import InstanceProcesses
 from scripts.windows_portable.native_cluster import NativeProtectedClusterProcesses
-from scripts.windows_portable import native_cluster, native_trial_authority, pgdata_probe_boundary
+from scripts.windows_portable import native_cluster, native_database_endpoint, native_trial_authority, pgdata_probe_boundary
 from scripts.windows_portable import restricted_startup_candidate, restricted_token_candidate
 from scripts.windows_portable.windows_process_handles import WindowsJobProcess
 from scripts.windows_portable.pgdata_candidate import pg_command_path
@@ -148,6 +148,61 @@ def test_postgres_launch_checks_actual_child_token_and_retains_created_handles(m
     assert group.resources==dict(process=80,thread=81,pid=19,bound=False)
     assert calls==[(101,102,103),'create_suspended',82,'close_startup']
     assert backend._postgres_authority is None
+
+
+@pytest.mark.parametrize('witness_times_out',[False,True])
+def test_listener_retries_only_connect_timeout_after_closing_probe(monkeypatch,witness_times_out):
+    calls=[]
+    sockets=[]
+
+    class Probe:
+        def __init__(self,*_):
+            sockets.append(self)
+            self.number=len(sockets)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self,*_):
+            calls.append(('close_socket',self.number))
+
+        def settimeout(self,value):
+            assert 0<value<=.2
+
+        def connect(self,address):
+            assert address==('127.0.0.1',55431)
+            calls.append(('connect',self.number))
+            if self.number==1:raise TimeoutError('TCP connect not completed')
+
+    class Witness:
+        def __init__(self,endpoint,connection,deadline):
+            assert connection is sockets[1]
+
+        def verify(self):
+            calls.append('verify_witness')
+            if witness_times_out:raise TimeoutError('witness verification timed out')
+
+        def close(self):
+            calls.append('close_witness')
+
+    def observe(token,seconds):
+        assert calls[-1]==('close_socket',1)
+        assert 0<seconds<=.05
+        calls.append('observe_original')
+
+    monkeypatch.setattr(native_database_endpoint.socket,'socket',Probe)
+    monkeypatch.setattr(native_database_endpoint,'_BackendWitness',Witness)
+    endpoint=object.__new__(native_database_endpoint.NativeOwnedDatabaseEndpoint)
+    endpoint.verify=lambda:calls.append('verify_endpoint')
+    endpoint.adapter=SimpleNamespace(observe=observe)
+    endpoint.port,endpoint.token='55431',object()
+    if witness_times_out:
+        with pytest.raises(TimeoutError,match='witness verification'):
+            endpoint.wait_for_listener(time.monotonic()+1)
+    else:
+        endpoint.wait_for_listener(time.monotonic()+1)
+    assert calls==['verify_endpoint',('connect',1),('close_socket',1),'observe_original',
+                   'verify_endpoint',('connect',2),'verify_witness','close_witness',('close_socket',2)]
 
 
 def test_native_instance_checks_same_cluster_security_and_inputs(bound,monkeypatch):

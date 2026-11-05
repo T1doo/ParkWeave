@@ -183,19 +183,20 @@ class NativeOwnedDatabaseEndpoint:
         """Read-only probes before any libpq startup or credential dispatch."""
         while True:
             self.verify();budget=remaining(deadline)
-            try:
-                with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
-                    connection.settimeout(min(.2,budget))
+            with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
+                connection.settimeout(min(.2,budget))
+                try:
                     connection.connect(('127.0.0.1',int(self.port)))
+                except (ConnectionRefusedError, TimeoutError):
+                    # This socket has sent no PostgreSQL startup packet or
+                    # credential. Only connect failures can poll after close.
+                    pass
+                else:
                     witness=_BackendWitness(self,connection,deadline)
                     try:witness.verify()
                     finally:witness.close()
-                return
-            except ConnectionRefusedError:
-                # A completed refusal sent no startup packet/password. Closing
-                # the original socket succeeded; only this condition may poll.
-                if self.adapter.observe(self.token,min(.05,remaining(deadline))) is not None:
-                    need(False)
+                    return
+            self.adapter.observe(self.token,min(.05,remaining(deadline)))
 
     def connect(self,parsed,*,autocommit=False,deadline=None):
         from .native_trial_authority import budget
