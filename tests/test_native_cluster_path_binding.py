@@ -12,6 +12,7 @@ from scripts.windows_portable.controller import DatabaseInputs,CandidateRefused
 from scripts.windows_portable.endpoint_plan import PlanMode
 from scripts.windows_portable.instance_processes import InstanceProcesses
 from scripts.windows_portable.native_cluster import NativeProtectedClusterProcesses
+from scripts.windows_portable import native_cluster, native_trial_authority, pgdata_probe_boundary
 from scripts.windows_portable.pgdata_candidate import pg_command_path
 
 
@@ -60,6 +61,39 @@ def test_native_configuration_uses_original_held_command_path_not_guid_string(bo
         postgres_sha256='d'*64,postgres_size=1)
     legacy.lease=b.lease
     with pytest.raises(CandidateRefused):legacy._configuration(b.lease,object(),time.monotonic()+5)
+
+
+@pytest.mark.parametrize('source_end,server_end', [(200,176),(160,160)])
+def test_cluster_phases_keep_individual_windows_under_source_end(bound,monkeypatch,source_end,server_end):
+    b=bound
+    clock=[100]
+    windows=[]
+
+    def configure(lease,credentials,deadline):
+        windows.append(('configure',deadline))
+        clock[0]+=20
+        return b.inputs,'55432'
+
+    def initialize(lease,inputs,specification,register,deadline):
+        windows.append(('initdb',deadline))
+        clock[0]+=26
+        assert clock[0]<deadline
+
+    def before_server(lease,inputs,mode,deadline):
+        windows.append(('server',deadline))
+
+    monkeypatch.setattr(native_cluster,'time',SimpleNamespace(monotonic=lambda:clock[0]))
+    monkeypatch.setattr(native_trial_authority,'budget',lambda lease,end:min(end,source_end))
+    monkeypatch.setattr(pgdata_probe_boundary,'stop_before_initdb',lambda *args:None)
+    monkeypatch.setattr(b.cluster,'_time',lambda end,reserve=0:pytest.fail('expired stage') if clock[0]+reserve>=end else None)
+    monkeypatch.setattr(b.cluster,'_configuration',configure)
+    monkeypatch.setattr(b.prerequisites,'initialize_protected',initialize)
+    monkeypatch.setattr(b.prerequisites,'before_server',before_server)
+    monkeypatch.setattr(b.prerequisites,'server_ready',lambda lease,inputs,adapter,token,deadline:windows.append(('ready',deadline)))
+    monkeypatch.setattr(native_cluster,'PrivateProcessAdapter',lambda *args:SimpleNamespace(launch=lambda *args:object(),live_identity=lambda token:'same-process'))
+    b.security.endpoint=object()
+    assert b.cluster._run('NEW',b.lease,object(),lambda token:None) is b.inputs
+    assert windows==[('configure',130),('initdb',150),('server',server_end),('ready',server_end-3)]
 
 
 def test_native_instance_checks_same_cluster_security_and_inputs(bound,monkeypatch):

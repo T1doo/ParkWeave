@@ -45,18 +45,25 @@ class NativeProtectedClusterProcesses(FixedClusterProcesses):
             raise CandidateRefused('single original native cluster attempt required')
         self.mode,self.lease=mode,lease
         from .native_trial_authority import budget
-        deadline=budget(lease,time.monotonic()+30);phase='CONFIGURATION'
+        # Configuration, protected initdb and server readiness each have a
+        # bounded observation window inside one cluster deadline and source end.
+        cluster_end=budget(lease,time.monotonic()+(90 if mode=='NEW' else 60))
+        deadline=min(cluster_end,time.monotonic()+30);phase='CONFIGURATION'
         try:
             self.inputs,port=self._configuration(lease,credentials,deadline)
             from .pgdata_probe_boundary import stop_before_initdb
             stop_before_initdb(self,lease,self.inputs)
             if mode=='NEW':
                 phase='PROTECTED_INITDB'
+                deadline=min(cluster_end-5,time.monotonic()+30)
+                self._time(deadline)
                 self.prerequisites.initialize_protected(lease,self.inputs,self.initdb,
-                    lambda adapter,token:self._register_adapter(adapter,register)(token),deadline-5)
+                    lambda adapter,token:self._register_adapter(adapter,register)(token),deadline)
             phase='SERVER_INPUTS'
+            deadline=min(cluster_end,time.monotonic()+30)
             self._time(deadline,5)
             self.prerequisites.before_server(lease,self.inputs,mode,deadline)
+            self._time(deadline,5)
             command=Command(self.postgres.relative_executable,self.postgres.sha256,self.postgres.size,
                 ('-D',self.inputs.data_directory,'-h','127.0.0.1','-p',port,'-c','unix_socket_directories=',
                  '-c','ssl=off','-c','logging_collector=off','-c','log_statement=none'),'WINDOWS_JOB')
