@@ -53,6 +53,7 @@ def pin_executable(pin):
         pin.path = api.final_path(pin.file)
         pin.root_path = api.final_path(pin.lease.fs.root)
         pin.native_path = native_file_path(api, pin.file)
+        pin.command_path = loader_command_path(pin)
         verify_executable(pin)
     except BaseException as primary:
         try: pin.close()
@@ -67,6 +68,38 @@ def native_file_path(api, handle):
     return buffer.value
 
 
+def loader_image(root_dos_path, relative_executable, file_dos_path):
+    """DOS loader representation only; original held GUID/NT paths bind identity."""
+    from .pgdata_candidate import pg_command_path
+    from parkweave.windows_files import component
+    if type(relative_executable) is not str:
+        raise ProcessRefused('LOADER_COMMAND_PATH_REFUSED')
+    parts = relative_executable.split('/')
+    if not 1<=len(parts)<=64:
+        raise ProcessRefused('LOADER_COMMAND_PATH_REFUSED')
+    for part in parts:
+        component(part)
+    root = pg_command_path(root_dos_path)[0]
+    observed = pg_command_path(file_dos_path)[0]
+    if observed.casefold() != (root+'/'+relative_executable).casefold():
+        raise ProcessRefused('LOADER_COMMAND_PATH_REFUSED')
+    return observed
+
+
+def loader_command_path(pin):
+    from parkweave.windows_handles import query_call
+    api = pin.lease.fs.api
+    values = []
+    for handle in (pin.lease.fs.root, pin.file):
+        buffer = C.create_unicode_buffer(4096)
+        count = query_call(api.readonly, 'PINNED_LOADER_DOS_PATH', api.getpath,
+                           (handle, buffer, len(buffer), 0), (pin, buffer))
+        if not 0<count<len(buffer):
+            raise ProcessRefused('LOADER_COMMAND_PATH_REFUSED')
+        values.append(buffer.value)
+    return loader_image(values[0], pin.command.relative_executable, values[1])
+
+
 def verify_executable(pin):
     from parkweave.windows_files import private_acl
     api = pin.lease.fs.api; info = api.info(pin.file)
@@ -77,7 +110,9 @@ def verify_executable(pin):
     if (info != pin.original or api.descriptor(pin.file) != pin.descriptor
             or info.attributes & (0x10 | 0x400 | 0x40 | 0x1000 | 0x40000 | 0x400000)
             or info.links != 1 or info.volume != pin.lease.fs.volume or info.size != pin.command.size
-            or api.final_path(pin.file) != pin.path or native_file_path(api, pin.file) != pin.native_path):
+            or api.final_path(pin.file) != pin.path or native_file_path(api, pin.file) != pin.native_path
+            or api.final_path(pin.lease.fs.root) != pin.root_path
+            or loader_command_path(pin).casefold() != pin.command_path.casefold()):
         raise ProcessRefused('NATIVE_EXEC_BINDING_REFUSED')
     private_acl(api.security(pin.file), api.user_sid())
     # Explicitly rewind the held handle for GO-time revalidation.
@@ -166,7 +201,7 @@ class WindowsJobProcess:
                 startup = subprocess.STARTUPINFO(); startup.dwFlags = win.STARTF_USESTDHANDLES
                 startup.hStdInput, startup.hStdOutput, startup.hStdError = duplicates
                 startup.lpAttributeList = {'handle_list': duplicates}
-                args = [group.executable.path, *group.command.arguments]
+                args = [group.executable.command_path, *group.command.arguments]
                 process, thread, pid, _ = win.CreateProcess(args[0], subprocess.list2cmdline(args), None, None, True,
                     0x4 | 0x400 | 0x80000, env, group.executable.root_path, startup)
                 # Store exact returned handles before any fallible validation or

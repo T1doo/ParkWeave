@@ -356,7 +356,7 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         def image(process, flags, buffer, size):
             buffer.value = '\\Device\\Volume\\private.exe'; size._obj.value = len(buffer.value); return 1
         backend.image = image
-        executable = SimpleNamespace(path='C:\\private\\private.exe', root_path='C:\\private',
+        executable = SimpleNamespace(path='C:\\private\\private.exe', command_path='C:\\private\\private.exe', root_path='C:\\private',
             native_path='\\Device\\Volume\\private.exe', verify=lambda: calls.append(('verify_exe',)))
         group = SimpleNamespace(resources={}, command=SimpleNamespace(arguments=()), executable=executable, started=False, returncode=None)
         return backend, group, calls
