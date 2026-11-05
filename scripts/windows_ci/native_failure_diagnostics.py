@@ -22,6 +22,7 @@ _KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError"
         ("scripts.windows_portable.initdb_pipe_candidate","PipeRefused","PipeRefused","PIPE_PREDICATE"),
         ("scripts.windows_portable.initdb_pipe_candidate","PipeFailure","PipeFailure","PIPE_OPERATION"),
         ("scripts.windows_portable.dpapi_native_candidate","NativeFailure","NativeFailure","DPAPI_OPERATION"),
+        ("scripts.windows_portable.native_dpapi_peer","LocalServicePeerFailure","TrialRefused","LOCAL_SERVICE_DPAPI_PEER"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -38,6 +39,8 @@ _KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError"
 _SOURCES=(
     ('scripts.windows_ci.owned_job','scripts/windows_ci/owned_job.py'),
     ('scripts.windows_portable.dpapi_native_candidate','scripts/windows_portable/dpapi_native_candidate.py'),
+    ('scripts.windows_portable.native_dpapi_peer','scripts/windows_portable/native_dpapi_peer.py'),
+    ('scripts.windows_portable.native_trial_facts','scripts/windows_portable/native_trial_facts.py'),
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
@@ -148,6 +151,14 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='LOCAL_SERVICE_DPAPI_PEER':
+        from scripts.windows_portable.native_dpapi_peer import PEER_PHASES
+        data=vars(error);phase=data.get('phase');code=data.get('winerror');dpapi=data.get('dpapi_phase')
+        if (type(phase) is str and phase in PEER_PHASES
+                and (code is None or type(code) is int and 0<=code<2**32)
+                and (dpapi is None or type(dpapi) is str and dpapi in ('INPUT','CALL','ALLOCATION','COPY'))):
+            result['local_service_dpapi']=dict(phase=phase,winerror=code,dpapi_phase=dpapi)
+        else:result['local_service_dpapi']=dict(details='UNAVAILABLE')
     if kind is not None and kind['category']=='DPAPI_OPERATION':
         data=vars(error);phase=data.get('phase');code=data.get('winerror');cleanup=data.get('cleanup_types')
         if (type(phase) is str and phase in ('INPUT','CALL','ALLOCATION','COPY')
