@@ -12,16 +12,18 @@ def digest(path):
     with path.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
 
 def curate():
-    source=DOCS/'native-release-check/session-1'
-    verification=json.loads((DOCS/'native-release-check/verification.json').read_bytes())
+    source=DOCS/'native-clean-final-check/session-1'
+    verification=json.loads((DOCS/'native-clean-final-check/verification.json').read_bytes())
     if not verification['process_restart_state_restored'] or any(r['exit_code']!=0 or r['exports']['count']!=5 for r in verification['results']):raise ValueError('VERIFIED_NATIVE_DEMO_REQUIRED')
     target=DOCS/'软件截图_1440x900';target.mkdir(exist_ok=True)
+    prior=json.loads((target/'截图来源.json').read_bytes()) if (target/'截图来源.json').exists() else []
+    prior_hash={row['file']:row['sha256'] for row in prior}
     mapping=[]
     for original,name in SHOTS:
         src=source/original
         if struct.unpack('>II',src.read_bytes()[16:24])!=(1440,900):raise ValueError('SAME_SIZE_PNG_REQUIRED')
         dst=target/name
-        if dst.exists() and digest(dst)!=digest(src):raise ValueError('EXISTING_SCREENSHOT_PROTECTED')
+        if dst.exists() and digest(dst)!=digest(src) and digest(dst)!=prior_hash.get(name):raise ValueError('EXISTING_SCREENSHOT_PROTECTED')
         shutil.copyfile(src,dst);mapping.append(dict(file=name,source=original,scope='ACTUAL_EXE_WEBVIEW2_PRESET_SYNTHETIC_DEMO',sha256=digest(dst)))
     (target/'截图来源.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     return mapping
@@ -47,8 +49,8 @@ def main():
     copy(DOCS/'软件截图_1440x900/截图来源.json','视频素材/01-软件截图_1440x900/截图来源.json')
     copy(DOCS/'output-preview/产品理念_设计示意.png','视频素材/02-产品理念_设计示意.png')
     copy(DOCS/'output-preview/案例成果页.png','视频素材/03-案例成果页.png')
-    copy(DOCS/'interactive-final-r2/ParkWeave-交互操作参考.webm','视频素材/04-交互操作参考_含校验与冲突.webm')
-    for src in sorted((DOCS/'interactive-final-r2/outputs').iterdir()):
+    copy(DOCS/'interactive-clean/ParkWeave-交互操作参考.webm','视频素材/04-交互操作参考_含校验与冲突.webm')
+    for src in sorted((DOCS/'interactive-clean/outputs').iterdir()):
         if src.is_file() and src.suffix in ('.md','.json','.html'):copy(src,'输出样例/'+src.name)
     copy(DOCS/'output-preview/案例二-培训对照.json','输出样例/案例二-20人培训对照.json')
     for name in ('先看这里.md','录制操作路线.md','90秒讲解提纲.md','给GPT的审阅提示词.txt'):copy(DOCS/name,name)

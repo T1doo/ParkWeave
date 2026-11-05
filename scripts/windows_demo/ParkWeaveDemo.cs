@@ -30,7 +30,7 @@ internal sealed class DemoWindow : Form
     {
         captureDir=capture;
         profileDir=profileOverride??(capture==null ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"ParkWeave","ProductDemo","WebView") : Path.Combine(capture,"_webview-profile"));
-        Text="园合 ParkWeave · 产品演示";
+        Text="园合 ParkWeave";
         AutoScaleMode=AutoScaleMode.None;
         ClientSize=new Size(1440,900);MinimumSize=new Size(860,580);
         StartPosition=capture==null?FormStartPosition.CenterScreen:FormStartPosition.Manual;
@@ -41,7 +41,7 @@ internal sealed class DemoWindow : Form
         if(File.Exists(icon))Icon=new Icon(icon);
         web.Dock=DockStyle.Fill;Controls.Add(web);
         loading.Dock=DockStyle.Fill;loading.TextAlign=ContentAlignment.MiddleCenter;
-        loading.Text="正在打开园合演示工作台…";Controls.Add(loading);loading.BringToFront();
+        loading.Text="正在打开园合工作台…";Controls.Add(loading);loading.BringToFront();
         Shown+=async delegate {await OpenWorkspace();};
         FormClosed+=delegate {watchdog.Stop();watchdog.Dispose();web.Dispose();};
         if(captureDir!=null){watchdog.Interval=45000;watchdog.Tick+=delegate {watchdog.Stop();Fail("演示截图超时。",new TimeoutException());};watchdog.Start();}
@@ -92,7 +92,7 @@ internal sealed class DemoWindow : Form
             }
             core.Navigate(Origin+"/index.html");
         }
-        catch(Exception error){Fail("演示工作台未能打开，请确认本机 WebView2 运行组件可用。",error);}
+        catch(Exception error){Fail("工作台未能打开，请确认本机 WebView2 运行组件可用。",error);}
     }
     void SaveDemonstrationFile(object sender,CoreWebView2DownloadStartingEventArgs e)
     {
@@ -114,7 +114,7 @@ internal sealed class DemoWindow : Form
         BeginInvoke(new Action(delegate {
             try{using(var dialog=new SaveFileDialog())
             {
-                dialog.Title="保存园合演示输出";dialog.FileName=Path.GetFileName(e.ResultFilePath);
+                dialog.Title="保存办理文件";dialog.FileName=Path.GetFileName(e.ResultFilePath);
                 dialog.Filter="演示文件|*.md;*.json;*.html;*.txt|所有文件|*.*";dialog.OverwritePrompt=true;
                 if(dialog.ShowDialog(this)==DialogResult.OK){e.ResultFilePath=dialog.FileName;e.Handled=true;e.Cancel=false;}
             }}finally{deferral.Complete();}
