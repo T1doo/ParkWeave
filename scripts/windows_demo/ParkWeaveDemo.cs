@@ -44,7 +44,7 @@ internal sealed class DemoWindow : Form
         loading.Text="正在打开园合工作台…";Controls.Add(loading);loading.BringToFront();
         Shown+=async delegate {await OpenWorkspace();};
         FormClosed+=delegate {watchdog.Stop();watchdog.Dispose();web.Dispose();};
-        if(captureDir!=null){watchdog.Interval=45000;watchdog.Tick+=delegate {watchdog.Stop();Fail("演示截图超时。",new TimeoutException());};watchdog.Start();}
+        if(captureDir!=null){watchdog.Interval=45000;watchdog.Tick+=delegate {watchdog.Stop();Fail("截图超时。",new TimeoutException());};watchdog.Start();}
     }
     protected override bool ShowWithoutActivation {get{return captureDir!=null;}}
     protected override CreateParams CreateParams
@@ -115,7 +115,7 @@ internal sealed class DemoWindow : Form
             try{using(var dialog=new SaveFileDialog())
             {
                 dialog.Title="保存办理文件";dialog.FileName=Path.GetFileName(e.ResultFilePath);
-                dialog.Filter="演示文件|*.md;*.json;*.html;*.txt|所有文件|*.*";dialog.OverwritePrompt=true;
+                dialog.Filter="办理文件|*.md;*.json;*.html;*.txt|所有文件|*.*";dialog.OverwritePrompt=true;
                 if(dialog.ShowDialog(this)==DialogResult.OK){e.ResultFilePath=dialog.FileName;e.Handled=true;e.Cancel=false;}
             }}finally{deferral.Complete();}
         }));
@@ -164,7 +164,7 @@ internal sealed class DemoWindow : Form
                 file.Write(json.Serialize(new {scope="NATIVE_BLOB_DOWNLOAD_TO_FIXED_TEST_DIRECTORY",count=completedExports.Count,files=completedExports}));
             Environment.ExitCode=0;Close();
         }
-        catch(Exception error){Fail("演示截图未完成。",error);}
+        catch(Exception error){Fail("截图未完成。",error);}
     }
     static bool IsWorkspace(string value)
     {
