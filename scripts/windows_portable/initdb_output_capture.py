@@ -1,6 +1,30 @@
 """Trial-only anonymous stderr capture; never serialize raw child output."""
 import ctypes as C
 import os
+import threading
+
+
+POSTGRES_STARTUP_LABELS = (
+    'ADMIN_TOKEN_ERROR', 'LISTEN_ADDRESS_UNAVAILABLE', 'POSTMASTER_LOCK_CONFLICT',
+    'DATA_DIRECTORY_ERROR', 'ACCESS_DENIED', 'CONFIGURATION_ERROR',
+    'POSTGRES_FATAL', 'POSTGRES_PANIC',
+)
+
+
+def postgres_startup_labels(raw):
+    data = raw.lower()
+    signatures = (
+        (b'user with administrative permissions', b'unprivileged user id'),
+        (b'could not bind', b'address already in use', b'could not create any tcp/ip sockets'),
+        (b'lock file "postmaster.pid" already exists',),
+        (b'data directory', b'pg_control'),
+        (b'permission denied', b'access is denied'),
+        (b'configuration file', b'unrecognized configuration parameter'),
+        (b'fatal:',),
+        (b'panic:',),
+    )
+    return tuple(label for label, phrases in zip(POSTGRES_STARTUP_LABELS, signatures)
+                 if any(phrase in data for phrase in phrases))
 
 
 def labels(raw):
@@ -64,3 +88,43 @@ class InitdbOutputCapture:
             try:self._close(name)
             except BaseException as error:errors.append(error)
         if errors:raise BaseExceptionGroup('CAPTURE_CLOSE_UNKNOWN',errors)
+
+
+class PostgresOutputCapture(InitdbOutputCapture):
+    """Drain the trial server's pipe so diagnostic output cannot block it."""
+
+    def __init__(self):
+        super().__init__()
+        self.reader = None
+        self.result = dict(status='READ_UNAVAILABLE', bytes_read=0, truncated=False, labels=())
+
+    def start(self):
+        self.close_write()
+        reader = threading.Thread(target=self._drain, name='parkweave-postgres-stderr', daemon=True)
+        reader.start()
+        self.reader = reader
+
+    def _drain(self):
+        first = bytearray()
+        truncated = False
+        try:
+            while chunk := os.read(self.read_fd, 4096):
+                remaining = 65536 - len(first)
+                first.extend(chunk[:remaining])
+                truncated |= len(chunk) > remaining
+        except OSError:
+            return
+        self.result = dict(status='CLASSIFIED' if first else 'EMPTY_OR_CLOSED',
+                           bytes_read=len(first), truncated=truncated, labels=postgres_startup_labels(first))
+
+    def snapshot(self):
+        if self.reader is not None:
+            self.reader.join(0.2)
+        return dict(self.result)
+
+    def close(self):
+        if getattr(self, 'reader', None) is not None:
+            self.reader.join(0.2)
+            if self.reader.is_alive():
+                raise RuntimeError('CAPTURE_DRAIN_UNKNOWN')
+        super().close()

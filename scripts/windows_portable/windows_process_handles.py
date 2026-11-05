@@ -182,6 +182,7 @@ class WindowsJobProcess:
             raise ProcessRefused('JOB_LIMIT_REFUSED')
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
         duplicates, primary, cleanup = [], None, []
+        capture = None
         with open(os.devnull, 'r+b', buffering=0) as null:
             try:
                 win = backend.win
@@ -195,6 +196,12 @@ class WindowsJobProcess:
                 if getattr(group.command,'stdio_contract','NONE')=='FIXED_SLOT_INTERRUPT_V1':
                     from .native_trial_interruptions import prepare_stdio
                     fds=prepare_stdio(self,group,null.fileno())
+                if getattr(group.command,'relative_executable',None)=='runtime/postgresql/bin/postgres.exe':
+                    from .native_trial_authority import bound_state
+                    if bound_state(group.executable.lease) is not None:
+                        from .initdb_output_capture import PostgresOutputCapture
+                        capture = r['postgres_stderr_capture'] = PostgresOutputCapture()
+                        fds[2] = capture.write_fd
                 for fd in fds:
                     duplicates.append(win.DuplicateHandle(win.GetCurrentProcess(), backend.crt.get_osfhandle(fd),
                         win.GetCurrentProcess(), 0, True, win.DUPLICATE_SAME_ACCESS))
@@ -224,6 +231,8 @@ class WindowsJobProcess:
                         cleanup.append(error)
         if primary is not None or cleanup:
             raise BaseExceptionGroup('NATIVE_CREATE_OR_STDIO_FAILED', ([primary] if primary is not None else []) + cleanup)
+        if capture is not None:
+            capture.start()
         if time.monotonic() >= deadline: raise ProcessRefused('NATIVE_START_DEADLINE')
         r['birth'] = self.birth(r['process'])
         if r['birth'][0] != r['pid']: raise ProcessRefused('CREATION_IDENTITY_REFUSED')
@@ -262,6 +271,14 @@ class WindowsJobProcess:
             raise ProcessRefused('CREATION_IDENTITY_CHANGED')
         try: return self.original.wait(r['process'], max(0, deadline - time.monotonic()))
         except subprocess.TimeoutExpired: return None
+
+    def collect_exit_diagnostic(self, group, error):
+        capture = group.resources.get('postgres_stderr_capture')
+        if capture is not None:
+            try:
+                error.postgres_capture = capture.snapshot()
+            except (OSError, RuntimeError):
+                error.postgres_capture = dict(status='READ_UNAVAILABLE', bytes_read=0, truncated=False, labels=())
 
     def stop(self, group, deadline):
         from scripts.windows_ci.owned_job import Accounting, DWORD
@@ -320,4 +337,14 @@ class WindowsJobProcess:
                 record=dict(name=name,value=handle,attempted=True,closed=False,kind='HANDLE');records.append(record)
                 try: self.original.close(handle);record['closed']=True
                 except BaseException as error: errors.append(error)
+        capture = group.resources.get('postgres_stderr_capture')
+        if capture is not None:
+            record = dict(name='postgres_stderr_capture',value=capture,attempted=True,closed=False,kind='CAPTURE')
+            records.append(record)
+            try:
+                capture.close()
+                record['closed'] = True
+                group.resources.pop('postgres_stderr_capture')
+            except BaseException as error:
+                errors.append(error)
         if errors: raise BaseExceptionGroup('NATIVE_PROCESS_CLOSE_UNKNOWN', errors)

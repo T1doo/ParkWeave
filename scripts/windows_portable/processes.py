@@ -528,7 +528,9 @@ class PrivateProcessAdapter:
         if code is not None:
             error=OwnedProcessExited(code)
             from .restricted_initdb_candidate import _RestrictedInitdbBackend
-            if type(self.backend) is _RestrictedInitdbBackend:self.backend.collect_exit_diagnostic(group,error)
+            from .windows_process_handles import WindowsJobProcess
+            if type(self.backend) in (_RestrictedInitdbBackend,WindowsJobProcess):
+                self.backend.collect_exit_diagnostic(group,error)
             raise error
         r=group.resources
         if 'pid' not in r or 'birth' not in r: raise ProcessRefused('OWNED_BIRTH_REQUIRED')

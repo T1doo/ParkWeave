@@ -4,7 +4,7 @@ import json
 import os
 from types import SimpleNamespace
 import pytest
-from scripts.windows_portable.initdb_output_capture import InitdbOutputCapture,labels
+from scripts.windows_portable.initdb_output_capture import InitdbOutputCapture,PostgresOutputCapture,labels
 from scripts.windows_portable.processes import PrivateProcessAdapter,OwnedProcessExited,ProcessRefused
 from scripts.windows_ci.native_failure_diagnostics import detail
 
@@ -75,3 +75,39 @@ def test_actual_anonymous_pipe_reads_only_public_test_output_and_closes():
         assert PRIVATE not in json.dumps(result)
     finally:value.close()
     assert value.read_fd is value.write_fd is None and not value.errors
+
+
+def test_postgres_pipe_drain_bounds_classification_without_retaining_raw_output(monkeypatch):
+    capture=object.__new__(PostgresOutputCapture)
+    capture.read_fd=7
+    capture.reader=None
+    first=(f'FATAL: could not bind socket {PRIVATE}\n').encode()
+    chunks=iter([first]+[b'x'*4096]*18+[b''])
+    monkeypatch.setattr(os,'read',lambda fd,size:next(chunks))
+    capture._drain()
+    error=OwnedProcessExited(1)
+    error.postgres_capture=capture.snapshot()
+    proof=detail(error,'ProcessRefused')
+    assert proof['owned_exit_code']==1
+    assert proof['postgres_output']==dict(status='CLASSIFIED',bytes_read=65536,truncated=True,
+                                         labels=('LISTEN_ADDRESS_UNAVAILABLE','POSTGRES_FATAL'))
+    assert PRIVATE not in json.dumps(proof)
+    error.postgres_capture['labels']=(PRIVATE,)
+    assert detail(error,'ProcessRefused')['postgres_output']==dict(details='UNAVAILABLE')
+
+
+@pytest.mark.skipif(os.name!='nt',reason='actual Windows anonymous pipe required')
+def test_actual_postgres_pipe_drains_inherited_output_and_closes():
+    capture=PostgresOutputCapture()
+    writer=os.dup(capture.write_fd)
+    try:
+        capture.start()
+        os.write(writer,('Execution of PostgreSQL by a user with administrative permissions '+PRIVATE).encode())
+    finally:
+        os.close(writer)
+    try:
+        capture.reader.join(2)
+        assert capture.snapshot()['labels']==('ADMIN_TOKEN_ERROR',)
+    finally:
+        capture.close()
+    assert capture.read_fd is capture.write_fd is None

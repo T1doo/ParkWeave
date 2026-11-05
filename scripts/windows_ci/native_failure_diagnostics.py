@@ -186,6 +186,10 @@ def detail(error,public_type,sites=None,budget=None):
         if type(code) is int and -(2**31)<=code<2**32:result['owned_exit_code']=code
         allowed=('PASSWORD_INPUT_ERROR','POSTGRES_LOOKUP_ERROR','BKI_FILE_ERROR','CONFIG_SAMPLE_ERROR',
             'ACCESS_DENIED','MISSING_FILE','LOAD_OR_EXEC_ERROR','LOCALE_ERROR','ADMIN_TOKEN_ERROR','INITDB_REPORTED_ERROR')
+        output_key='initdb_output'
+        if 'postgres_capture' in data:
+            from scripts.windows_portable.initdb_output_capture import POSTGRES_STARTUP_LABELS
+            capture=data['postgres_capture'];allowed=POSTGRES_STARTUP_LABELS;output_key='postgres_output'
         if (type(capture) is dict and set(capture)=={'status','bytes_read','truncated','labels'}
                 and type(capture['status']) is str and capture['status'] in
                     ('SUPPRESSED_AFTER_SECRET','EMPTY_OR_CLOSED','READ_UNAVAILABLE','CLASSIFIED')
@@ -193,8 +197,8 @@ def detail(error,public_type,sites=None,budget=None):
                 and type(capture['truncated']) is bool and type(capture['labels']) is tuple
                 and len(capture['labels'])<=len(allowed)
                 and all(type(label) is str and label in allowed for label in capture['labels'])):
-            result['initdb_output']=dict(capture)
-        elif capture is not None:result['initdb_output']=dict(details='UNAVAILABLE')
+            result[output_key]=dict(capture)
+        elif capture is not None:result[output_key]=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')
