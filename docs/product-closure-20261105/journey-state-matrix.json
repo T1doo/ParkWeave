@@ -135,7 +135,7 @@
       "plan-candidate-status"
     ],
     "source": "src/parkweave/web.html",
-    "role_and_allowed_action_review": "PENDING_HANDLER_DTO_REVIEW",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
     "states_required": [
       "UNREAD",
       "LOADING",
@@ -147,9 +147,55 @@
       "UNKNOWN",
       "SUPPORTED_SUCCESS"
     ],
-    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_PLANNING_REGRESSION",
     "real_backend_execution": "NOT_RUN",
-    "next": "逐入口核对 handler、当前授权、版本与恢复；只对适用状态补验，不由元素存在推断可办理"
+    "next": "在授权独立窗口验证当前来源预览、明确采用、部分采用、重开及方案保留。LIVE 另走获授权真实端点。",
+    "reviewed_scope": {
+      "preview": {
+        "entries": [
+          "#service-plan-read",
+          "#plan-candidate-read"
+        ],
+        "routes": [
+          "GET /api/preparations/{preparation_id}/service-case-plan",
+          "GET /api/preparations/{preparation_id}/service-plan-candidates/{candidate_id}/preview"
+        ],
+        "boundary": "当前需求目标、来源版本和覆盖状态与候选分开。预览及已保存候选不产生执行授权。"
+      },
+      "candidate": {
+        "entry": "#plan-candidate-generate",
+        "route": "POST /api/preparations/{preparation_id}/service-plan-candidates",
+        "guards": "原事项权限、版本、来源摘要与请求键重验。服务器记录有效期。本地生产与离线替代响应不能作为 LIVE 证据。"
+      },
+      "adoption": {
+        "entries": [
+          "#service-plan-adopt",
+          "#plan-candidate-confirm",
+          "#service-plan-partial-confirm"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/service-case-plan",
+        "guards": "企业本人、当前需求与资料版本、当前确定性验证及候选哈希。部分采用要求显式确认，保留未覆盖目标。来源冲突和已有协同说明进入原阻断或受控修订。"
+      },
+      "unknown": {
+        "entry": "#plan-candidate-recover",
+        "route": "GET /api/preparations/{preparation_id}/service-plan-candidates/recovery",
+        "rule": "按原请求键只读核对。句柄过期、身份变化或不明结果不触发重写。"
+      },
+      "evidence": {
+        "scope": "56 个期限和离线选择用例。原生采用与持久化未运行。",
+        "result": "plan-journey-guards-r20.xml",
+        "real_executors": [
+          "tests/test_service_plan_candidates.py::test_candidate_identity_verification_and_original_adoption",
+          "tests/test_service_plan_candidates.py::test_original_key_candidate_and_adoption_recovery_after_material_change"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/service_case_steps.py": "e01f767a757ebcbb718b9de264fc4340d299cb588d3d1b3f653c2454a55285e2",
+        "src/parkweave/service_plan_candidates.py": "0db0e5767811df0ee52e60fc22a31b6005b94a1983fcdc3709d90ff7f653882b"
+      }
+    }
   },
   {
     "journey": "材料与核对",
