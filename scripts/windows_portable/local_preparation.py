@@ -408,9 +408,10 @@ class PreparationWorkspace:
         if type(identities) is not PreparationIdentities or not callable(check):
             raise CandidateRefused('explicit running workspace dependencies required')
         self.application, self.transport = application, transport
-        if deadline is not None and (type(deadline) not in (int, float)
-                or not math.isfinite(deadline) or not 0 < deadline - time.monotonic() <= 180):
-            raise CandidateRefused('bounded business invocation deadline required')
+        if deadline is not None:
+            now = time.monotonic()
+            if type(deadline) not in (int, float) or not math.isfinite(deadline) or not now < deadline <= now + 180:
+                raise CandidateRefused('bounded business invocation deadline required')
         self.deadline = deadline
         self._check, self._active = check, True
         values = identities.mapping()
@@ -433,8 +434,9 @@ class PreparationWorkspace:
 
     def limit_deadline(self, deadline):
         """Install or tighten one bounded business window for both clients."""
+        now = time.monotonic()
         if (type(deadline) not in (int,float) or not math.isfinite(deadline)
-                or not 0 < deadline-time.monotonic() <= 180):
+                or not now < deadline <= now + 180):
             raise CandidateRefused('bounded business invocation deadline required')
         self.check()  # An expired/ended workspace cannot be revived.
         self.deadline=deadline if self.deadline is None else min(self.deadline,deadline)

@@ -41,6 +41,7 @@ _SOURCES=(
     ('scripts.windows_ci.native_desktop_trial','scripts/windows_ci/native_desktop_trial.py'),
     ('scripts.windows_portable.native_business_adapter','scripts/windows_portable/native_business_adapter.py'),
     ('scripts.windows_portable.preparation_business_trial','scripts/windows_portable/preparation_business_trial.py'),
+    ('scripts.windows_portable.local_preparation','scripts/windows_portable/local_preparation.py'),
     ('scripts.windows_portable.dpapi_native_candidate','scripts/windows_portable/dpapi_native_candidate.py'),
     ('scripts.windows_portable.native_dpapi_peer','scripts/windows_portable/native_dpapi_peer.py'),
     ('scripts.windows_portable.native_trial_facts','scripts/windows_portable/native_trial_facts.py'),
