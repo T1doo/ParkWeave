@@ -54,6 +54,12 @@ def test_original_html_ids_and_business_javascript_are_preserved():
             # assertion while extending only the exact producer/version pairing.
             current = current.replace('!parkObservationProducerValid(consumption)', "consumption?.verification_basis?.validator_version!=='LOCAL_SYNTHETIC_DEMO_V2'||!localDemoProducerValid(consumption.producer,'LOCAL_SYNTHETIC_DEMO_V2')")
             current = current.replace('parkSelectionProducerCaption(source.candidate.producer)', "'原候选来自离线合成规划输出；原provider未启用，原采用仍由企业明确确认。'")
+        else:
+            # A confirmed original write rebases only the submitted form's UI draft.
+            for form in ('submit-case','evidence-form','decision-form'):
+                notification=f"$('{form}').dispatchEvent(new Event('parkweave:write-confirmed',{{bubbles:true}}));"
+                assert current.count(notification)==1
+                current=current.replace(notification,'')
         assert original == current, 'business handler or original request contract changed'
 
 
