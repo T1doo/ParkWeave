@@ -197,7 +197,8 @@ static void select(const std::wstring& selector,const std::wstring& option,bool 
   phase="SELECT_ITEM_NAME";need(name(chosen.p)==option);
   Ref<IUIAutomationSelectionItemPattern> pattern;
   ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));
-  BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));
+  BOOL selected=FALSE;
+  if(byId)ok(pattern->get_CurrentIsSelected(&selected));
   if(!selected){
    phase="SELECT_ITEM_READY";
    BOOL enabled=FALSE;ok(chosen->get_CurrentIsEnabled(&enabled));
@@ -208,7 +209,7 @@ static void select(const std::wstring& selector,const std::wstring& option,bool 
   }
   phase="SELECT_CONFIRM";
   ExpandCollapseState state;ok(expand->get_CurrentExpandCollapseState(&state));
-  if(state!=ExpandCollapseState_Collapsed)ok(expand->Collapse());
+  if(state==ExpandCollapseState_Expanded||state==ExpandCollapseState_PartiallyExpanded)ok(expand->Collapse());
   return;
  }
 }
