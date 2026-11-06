@@ -218,7 +218,9 @@ static std::wstring referenceAt(unsigned revision){
  while(true){
   identity();need(GetTickCount64()<end);
   try{
-   Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true);
+   // Saving can scroll the version header out of view. This is a read-only
+   // receipt in the original window, so its visibility is not required.
+   Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true,true);
    if(e.p){auto value=name(e.p);if(value.size()>=suffix.size()&&value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0)return value;}
   }catch(const UIAError& error){
    if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
