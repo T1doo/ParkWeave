@@ -178,6 +178,7 @@ def main(argv=None):
             primary=_failure_diagnostic(primary,sites),cleanup=_failure_diagnostic(cleanup,sites),
             environment_blockers=getattr(scope,'environment_blockers',[]),
             crt_preflight=getattr(scope,'crt_preflight',None),
+            webview_preflight=getattr(scope,'webview_preflight',None),
             desktop=scope.desktop.public() if scope is not None and getattr(scope,'desktop',None) is not None else None,
             pgdata_probe=_probe_summary(scope),
             outer_cleanup=dict(scope=cleanup_scope,
