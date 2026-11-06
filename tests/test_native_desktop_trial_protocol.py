@@ -81,6 +81,19 @@ def test_host_stage_refusal_stays_distinct_from_ui_hresult(monkeypatch,stage):
     finally:dispose(session)
 
 
+def test_chain_refusal_records_only_bounded_certificate_position_and_status(monkeypatch):
+    line=b'UI1\tUNKNOWN\tOPEN_VIEW_FAILED\t00000018\t2\t80092013\n'
+    program=f'import sys;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush()'
+    session,close=child_session(monkeypatch,program)
+    try:
+        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('OPEN')
+        assert session.failure_details==dict(operation='OPEN_VIEW_FAILED',host_stage='00000018',
+                                             chain_index=2,provider_status='80092013')
+        assert session.unknown and not session.closed
+        close.assert_not_called()
+    finally:dispose(session)
+
+
 @pytest.mark.parametrize('during_constructor',[False,True])
 def test_callback_failure_aborts_before_controller_unwinds_and_keeps_unknown(monkeypatch,during_constructor):
     trial=object.__new__(ui.NativeDesktopTrial);trial.sessions=[];trial.cap=object();trial.driver='unused'

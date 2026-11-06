@@ -73,10 +73,14 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
   auto first=readLine(hostOutput);
   if(first!="PWUI1\tVIEW_READY\t"+nonce){
    auto prefix="PWUI1\tVIEW_FAILED\t"+nonce+"\t";
-   need(first.rfind(prefix,0)==0&&first.size()==prefix.size()+8);
+   need(first.rfind(prefix,0)==0);
    startupFailure=first.substr(prefix.size());
-   need(startupFailure.find_first_not_of("0123456789abcdef")==std::string::npos);
-   auto stage=std::stoul(startupFailure,nullptr,16);need(stage>=1&&stage<=19);
+   auto details=split(startupFailure);
+   auto hexCode=[](const std::string& code){return code.size()==8&&code.find_first_not_of("0123456789abcdef")==std::string::npos;};
+   need(!details.empty()&&hexCode(details[0]));
+   auto stage=std::stoul(details[0],nullptr,16);need(stage>=1&&stage<=24);
+   if(stage>=20)need(details.size()==3&&details[1].size()==1&&details[1][0]>='0'&&details[1][0]<='7'&&hexCode(details[2]));
+   else need(details.size()==1);
    startupDone=true;return;
   }
   startupDone=true;

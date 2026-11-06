@@ -79,13 +79,16 @@ class Session:
             answer=self.responses.get(timeout=max(.001,self.end-time.monotonic()))
             a.need(answer is not None)
             parts=answer.decode('ascii').rstrip('\n').split('\t')
-            if (len(parts)==4 and parts[:2]==['UI1','UNKNOWN'] and parts[2] in
+            if (len(parts) in (4,6) and parts[:2]==['UI1','UNKNOWN'] and parts[2] in
                 ('OPEN','OPEN_WAIT_VIEW','OPEN_VIEW_FAILED','SET','CLICK','ITEM','SELECT','SELECT_CONTROL','SELECT_EXPAND',
                  'SELECT_OPTIONS','SELECT_ITEM','SELECT_CONFIRM','REFERENCE','WAIT','CAPTURE','CLOSE')
                 and (parts[3]=='NOT_RECORDED' or re.fullmatch('[a-f0-9]{8}',parts[3]))):
                 self.failure_details=dict(operation=parts[2],hresult=parts[3])
                 if parts[2]=='OPEN_VIEW_FAILED':
                     self.failure_details['host_stage']=self.failure_details.pop('hresult')
+                    if (len(parts)==6 and parts[3] in ('00000014','00000015','00000016','00000017','00000018')
+                            and re.fullmatch('[0-7]',parts[4]) and re.fullmatch('[a-f0-9]{8}',parts[5])):
+                        self.failure_details.update(chain_index=int(parts[4]),provider_status=parts[5])
             a.need(parts[:2]==['UI1','OK']);return parts[2:]
         except BaseException:
             self.unknown=True

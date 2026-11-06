@@ -80,6 +80,8 @@ static HANDLE trialInput=nullptr,trialOutput=nullptr,trialParent=nullptr,trialPr
 static std::string trialNonce;
 static bool trialStartupReported=false;
 static unsigned trialStage=1; // START frame and profile validation
+static unsigned trialCertificateIndex=0;
+static DWORD trialCertificateStatus=0;
 static constexpr UINT EVENT_LINE=WM_APP+1, EVENT_EXIT=WM_APP+2;
 static constexpr UINT TRIAL_EOF=WM_APP+3;
 static const wchar_t* accounts[]={L"fixture-a",L"fixture-b",L"fixture-c",L"prep-specialist-fixture-a",L"prep-specialist-fixture-b",L"prep-specialist-fixture-c"};
@@ -97,6 +99,10 @@ static void reportTrialStartup(bool ready){
  trialStartupReported=true;
  std::string line=ready?"PWUI1\tVIEW_READY\t":"PWUI1\tVIEW_FAILED\t";line+=trialNonce;
  if(!ready){char code[9];sprintf(code,"%08x",trialStage);line+="\t";line+=code;}
+ if(!ready&&trialStage>=20&&trialStage<=24){
+  char code[9];sprintf(code,"%08x",unsigned(trialCertificateStatus));
+  line+="\t"+std::to_string(trialCertificateIndex)+"\t"+code;
+ }
  line+="\n";DWORD used=0;
  if(!WriteFile(trialOutput,line.data(),DWORD(line.size()),&used,nullptr)||used!=line.size())uiUnknown=true;
 }
@@ -173,7 +179,14 @@ static void signedMicrosoft(HANDLE file,const std::wstring& path){
   trialStage=16;
   if(c&&c->pCert&&s->csCertChain>=2&&s->csCertChain<=8&&s->dwError==0&&!(s->dwSignerType&0x10)){
    wchar_t name[256]{};char oid[]="2.5.4.10";DWORD n=CertGetNameStringW(c->pCert,CERT_NAME_ATTR_TYPE,0,oid,name,256);trusted=n>1&&std::wstring(name)==L"Microsoft Corporation";
-   for(DWORD i=0;trusted&&i<s->csCertChain;i++){auto cert=WTHelperGetProvCertFromChain(s,i);if(!cert||!cert->pCert||cert->fTestCert||cert->fIsCyclic||cert->dwError||cert->dwRevokedReason){trialStage=17;trusted=false;break;}
+   for(DWORD i=0;trusted&&i<s->csCertChain;i++){
+    auto cert=WTHelperGetProvCertFromChain(s,i);
+    if(!cert||!cert->pCert)trialStage=20;
+    else if(cert->fTestCert)trialStage=21;
+    else if(cert->fIsCyclic)trialStage=22;
+    else if(cert->dwError){trialStage=23;trialCertificateStatus=cert->dwError;}
+    else if(cert->dwRevokedReason){trialStage=24;trialCertificateStatus=cert->dwRevokedReason;}
+    if(trialStage>=20){trialCertificateIndex=i;trusted=false;break;}
     if(i+1==s->csCertChain){
      BYTE digest[32]{};DWORD length=sizeof(digest);
      trusted=CryptHashCertificate2(BCRYPT_SHA256_ALGORITHM,0,nullptr,cert->pCert->pbCertEncoded,cert->pCert->cbCertEncoded,digest,&length)&&length==sizeof(digest);
