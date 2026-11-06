@@ -142,6 +142,16 @@ def test_ui_command_sequence_waits_exact_revision_and_only_client_read_verifies(
     assert json.loads(Path('scripts/windows_ci/native_business_window.json').read_text()) is None
 
 
+def test_material_entry_targets_fixed_field_and_verifies_saved_revision():
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.reference=Mock()
+    session=Mock()
+    trial.evidence(session,'材料目录','SYNTHETIC_TEXT','SYNTHETIC_SOURCE',5)
+    assert session.call.call_args_list[0].args==('SELECT_MATERIAL',ui.encoded('材料目录'))
+    assert session.call.call_args_list[-1].args==('CLICK',ui.encoded('保存本次材料'))
+    trial.reference.assert_called_once_with(session,5)
+
+
 @pytest.mark.parametrize('specialist,account,label', [
     (False,'fixture-a','企业 A'), (True,'prep-specialist-fixture-a','专员 A'),
 ])

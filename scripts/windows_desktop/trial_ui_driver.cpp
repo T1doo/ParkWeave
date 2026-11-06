@@ -98,14 +98,18 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
 }
 static Ref<IUIAutomationElement> root(){identity();Ref<IUIAutomationElement> value;ok(automation->ElementFromHandle(hwnd,value.put()));return value;}
 static std::wstring name(IUIAutomationElement* element){BSTR s=nullptr;ok(element->get_CurrentName(&s));std::wstring value=s?s:L"";SysFreeString(s);need(value.size()<=8192);return value;}
-static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool includeOffscreen=false){
+static std::wstring automationId(IUIAutomationElement* element){
+ BSTR value=nullptr;ok(element->get_CurrentAutomationId(&value));
+ std::wstring id=value?value:L"";SysFreeString(value);need(id.size()<=8192);return id;
+}
+static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool includeOffscreen=false,bool byId=false){
  auto base=root();
  VARIANT kind{};kind.vt=VT_I4;kind.lVal=type;
  Ref<IUIAutomationCondition> typeFilter,nameFilter,combined;
  ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,typeFilter.put()));
  if(!prefix){
   VARIANT label{};label.vt=VT_BSTR;label.bstrVal=SysAllocStringLen(wanted.data(),UINT(wanted.size()));need(label.bstrVal);
-  HRESULT result=automation->CreatePropertyCondition(UIA_NamePropertyId,label,nameFilter.put());
+  HRESULT result=automation->CreatePropertyCondition(byId?UIA_AutomationIdPropertyId:UIA_NamePropertyId,label,nameFilter.put());
   SysFreeString(label.bstrVal);ok(result);
   ok(automation->CreateAndCondition(typeFilter.p,nameFilter.p,combined.put()));
  }
@@ -115,14 +119,14 @@ static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,
  Ref<IUIAutomationElement> match;
  for(int i=0;i<count;i++){
   Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));
-  auto text=name(e.p);if(prefix?text.rfind(wanted,0)!=0:text!=wanted)continue;
+  auto text=byId?automationId(e.p):name(e.p);if(prefix?text.rfind(wanted,0)!=0:text!=wanted)continue;
   BOOL off=TRUE,enabled=FALSE;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));
   if((off&&!includeOffscreen)||!enabled)continue;
   need(!match.p);match.p=e.p;e.p=nullptr;
  }
  auto result=match.p;match.p=nullptr;return result;
 }
-static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false,ULONGLONG end=0){
+static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false,ULONGLONG end=0,bool byId=false){
  if(!end)end=std::min(deadline,GetTickCount64()+15000);
  bool scrolled=false;
  const auto originalPhase=phase;
@@ -130,9 +134,9 @@ static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type
   identity();need(GetTickCount64()<end);
   Ref<IUIAutomationElement> target;
   try{
-   auto visible=find(wanted,type,prefix);
+   auto visible=find(wanted,type,prefix,false,byId);
    if(visible){phase=originalPhase;failureCode="NOT_RECORDED";return visible;}
-   if(scroll&&!scrolled)target.p=find(wanted,type,prefix,true);
+   if(scroll&&!scrolled)target.p=find(wanted,type,prefix,true,byId);
   }catch(const UIAError& error){
    if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
    Sleep(100);continue;
@@ -158,9 +162,9 @@ static void click(const std::wstring& selector,bool prefix){
   phase="CLICK_INVOKE";ok(p->Invoke());return;
  }
 }
-static void select(const std::wstring& selector,const std::wstring& option){
- phase="SELECT_CONTROL";
- Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId,false,true);
+static void select(const std::wstring& selector,const std::wstring& option,bool byId=false){
+ phase=byId?"SELECT_ID_CONTROL":"SELECT_CONTROL";
+ Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId,false,true,0,byId);
  phase="SELECT_EXPAND";
  Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
  phase="SELECT_OPTIONS";
@@ -227,6 +231,7 @@ int main(){
    else if(f[0]=="CLICK"){need(f.size()==2);click(wide(f[1]),false);}
    else if(f[0]=="ITEM"){need(f.size()==2);click(wide(f[1]),true);}
    else if(f[0]=="SELECT"){need(f.size()==3);select(wide(f[1]),wide(f[2]));}
+   else if(f[0]=="SELECT_MATERIAL"){need(f.size()==2);select(L"slot",wide(f[1]),true);}
    else if(f[0]=="REFERENCE"){need(f.size()==2);writeLine(GetStdHandle(STD_OUTPUT_HANDLE),"UI1\tOK\t"+hex(referenceAt(std::stoul(f[1]))));continue;}
    else if(f[0]=="WAIT"){need(f.size()==3);Ref<IUIAutomationElement> e;e.p=await(wide(f[1]),std::stoi(f[2]));}
    else if(f[0]=="CAPTURE"){need(f.size()==4);screenshot(wide(f[1]),std::stoul(f[2]),std::stoul(f[3]));RECT client{};need(GetClientRect(hwnd,&client));writeLine(GetStdHandle(STD_OUTPUT_HANDLE),"UI1\tOK\t"+std::to_string(client.right)+"\t"+std::to_string(client.bottom)+"\t"+std::to_string(GetDpiForWindow(hwnd))+"\t"+std::to_string(hostPID)+"\t"+std::to_string(hostBirth));continue;}
