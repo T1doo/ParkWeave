@@ -45,13 +45,20 @@ def dispose(session):
     if session in ui._retained:ui._retained.remove(session)
 
 
-@pytest.mark.parametrize('command,phase,code',[('SET','SET','80004005'),('CLICK','CLICK_INVOKE','80040201')])
+@pytest.mark.parametrize('command,phase,code',[
+    ('SET','SET','80004005'), ('CLICK','CLICK_INVOKE','80040201'),
+    ('SELECT_MATERIAL','SELECT_ITEM_ACTION','80040201'),
+])
 def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch,command,phase,code):
     line=f'UI1\tUNKNOWN\t{phase}\t{code}\n'.encode('ascii')
     program=f'import sys,time;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush();time.sleep(30)'
     session,close=child_session(monkeypatch,program)
     try:
-        fields=(ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT')) if command=='SET' else (ui.encoded('提交本地诉求'),)
+        fields={
+            'SET':(ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT')),
+            'CLICK':(ui.encoded('提交本地诉求'),),
+            'SELECT_MATERIAL':(ui.encoded('材料目录'),),
+        }[command]
         with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call(command,*fields)
         assert session.unknown and session.abort_attempted and session.proc.poll() is not None
         assert session.failure_details==dict(operation=phase,hresult=code)

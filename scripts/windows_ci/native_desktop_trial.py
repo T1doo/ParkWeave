@@ -83,7 +83,8 @@ class Session:
                 ('OPEN','OPEN_WAIT_VIEW','OPEN_VIEW_FAILED','SET','CLICK','CLICK_FIND','CLICK_PATTERN','CLICK_INVOKE',
                  'ITEM','SCROLL_CONTROL','SCROLL_VISIBLE',
                  'SELECT','SELECT_CONTROL','SELECT_ID_CONTROL','SELECT_EXPAND',
-                 'SELECT_OPTIONS','SELECT_ITEM','SELECT_CONFIRM','REFERENCE','WAIT','CAPTURE','CLOSE')
+                 'SELECT_OPTIONS','SELECT_ITEM','SELECT_ITEM_NAME','SELECT_ITEM_READY','SELECT_ITEM_ACTION',
+                 'SELECT_CONFIRM','REFERENCE','WAIT','CAPTURE','CLOSE')
                 and (parts[3]=='NOT_RECORDED' or re.fullmatch('[a-f0-9]{8}',parts[3]))):
                 self.failure_details=dict(operation=parts[2],hresult=parts[3])
                 if parts[2]=='OPEN_VIEW_FAILED':
