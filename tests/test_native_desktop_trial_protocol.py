@@ -159,6 +159,26 @@ def test_material_entry_targets_fixed_field_and_verifies_saved_revision():
     trial.reference.assert_called_once_with(session,5)
 
 
+@pytest.mark.parametrize('revision,history,expected', [
+    (2, ['CREATE','ADD_EVIDENCE'], 'PERSISTED_REVISION_2'),
+    (1, ['CREATE'], 'REVISION_2_NOT_OBSERVED'),
+    (2, ['CREATE','OTHER'], 'REVISION_2_NOT_OBSERVED'),
+])
+def test_first_material_verification_reads_only_the_original_item(revision,history,expected):
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.goal='SYNTHETIC_GOAL'
+    item='00000000-0000-4000-8000-000000000001'
+    case='00000000-0000-4000-8000-000000000002'
+    read=Mock(return_value={
+        'preparation':dict(id=item,case_id=case,goal=trial.goal,revision=revision),
+        'history':[dict(action=action) for action in history],
+    })
+    workspace=SimpleNamespace(enterprise=SimpleNamespace(_request=read))
+    trial.observe_first_material(workspace,f'事项 {item} · Case {case} · 版本 1')
+    read.assert_called_once_with('GET','/api/preparations/'+item)
+    assert trial.first_material_observation==expected
+
+
 @pytest.mark.parametrize('specialist,account,label', [
     (False,'fixture-a','企业 A'), (True,'prep-specialist-fixture-a','专员 A'),
 ])

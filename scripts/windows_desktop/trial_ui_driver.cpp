@@ -215,7 +215,16 @@ static void select(const std::wstring& selector,const std::wstring& option,bool 
 }
 static std::wstring referenceAt(unsigned revision){
  need(revision>=1&&revision<=64);auto end=std::min(deadline,GetTickCount64()+15000);std::wstring suffix=L" · 版本 "+std::to_wstring(revision);
- while(true){identity();need(GetTickCount64()<end);Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true);if(e.p){auto value=name(e.p);if(value.size()>=suffix.size()&&value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0)return value;}Sleep(50);}
+ while(true){
+  identity();need(GetTickCount64()<end);
+  try{
+   Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true);
+   if(e.p){auto value=name(e.p);if(value.size()>=suffix.size()&&value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0)return value;}
+  }catch(const UIAError& error){
+   if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
+  }
+  Sleep(50);
+ }
 }
 static void visible(const std::wstring& selector,CONTROLTYPEID type){Ref<IUIAutomationElement> e;e.p=await(selector,type);RECT r{};ok(e->get_CurrentBoundingRectangle(&r));RECT area{};need(GetWindowRect(hwnd,&area)&&r.right>r.left&&r.bottom>r.top&&r.left>=area.left&&r.top>=area.top&&r.right<=area.right&&r.bottom<=area.bottom);}
 static void screenshot(const std::wstring& path,unsigned width,unsigned height){

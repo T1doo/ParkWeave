@@ -146,6 +146,7 @@ class NativeDesktopTrial:
         self.passwords={key:passwords[key] for key in ('fixture-a','prep-specialist-fixture-a')}
         self.goal='SYNTHETIC UI '+str(uuid4())
         self.checkpoint=None;self.captures=[];self.sessions=[];self.state='NOT_STARTED';self.phase='NOT_STARTED'
+        self.first_material_observation='NOT_CHECKED'
         self.directory=Path(dict(value.context[0])['RUNNER_TEMP'])/'parkweave-ui-evidence'
         a.need(not self.directory.exists());self.directory.mkdir()
 
@@ -168,7 +169,8 @@ class NativeDesktopTrial:
     def public(self):
         return dict(state=self.state,phase=self.phase,sessions=[dict(closed=x.closed,
             unknown=x.unknown,abnormal_cleanup=x.abort_result,failure=x.failure_details) for x in self.sessions],
-            captures_completed=len(self.captures),normal_product_entry='NOT_ACCEPTED',usable_product=False)
+            captures_completed=len(self.captures),first_material_observation=self.first_material_observation,
+            normal_product_entry='NOT_ACCEPTED',usable_product=False)
 
     def login(self,session,specialist=False):
         self.phase='LOGIN'
@@ -189,6 +191,24 @@ class NativeDesktopTrial:
         session.call('SET',encoded('材料内容'),encoded(text));session.call('SET',encoded('来源与版本'),encoded(label))
         session.call('CLICK',encoded('保存本次材料'))
         self.reference(session,revision)
+
+    def observe_first_material(self,workspace,created):
+        """Read the original item after a UI write, including an uncertain UI receipt."""
+        match=re.fullmatch(r'事项 ([a-f0-9-]{36}) · Case ([a-f0-9-]{36}) · 版本 1',created)
+        if match is None:
+            self.first_material_observation='CREATE_REFERENCE_UNAVAILABLE'
+            return
+        try:
+            view=workspace.enterprise._request('GET','/api/preparations/'+match[1])
+            row=view['preparation']
+            if (row['id']==match[1] and row['case_id']==match[2] and row['goal']==self.goal
+                    and row['revision']==2
+                    and [event['action'] for event in view['history']]==['CREATE','ADD_EVIDENCE']):
+                self.first_material_observation='PERSISTED_REVISION_2'
+            else:
+                self.first_material_observation='REVISION_2_NOT_OBSERVED'
+        except Exception:
+            self.first_material_observation='READBACK_UNAVAILABLE'
 
     def decision(self,session,button,text,revision):
         self.phase='DECISION'
@@ -218,8 +238,10 @@ class NativeDesktopTrial:
             session.call('CLICK',encoded('提交本地诉求'))
             self.phase='PREPARATION_START'
             session.call('CLICK',encoded('开始准备材料'))
-            self.reference(session,1)
-            self.evidence(session,'诉求摘要','SYNTHETIC 初稿','SYNTHETIC v1',2)
+            created=self.reference(session,1)
+            try:self.evidence(session,'诉求摘要','SYNTHETIC 初稿','SYNTHETIC v1',2)
+            finally:self.observe_first_material(workspace,created)
+            a.need(self.first_material_observation=='PERSISTED_REVISION_2')
             self.switch(session,True);self.decision(session,'要求补正','SYNTHETIC 请补齐两项材料',3)
             self.switch(session,False)
             self.evidence(session,'诉求摘要','\u0085SYNTHETIC 修订需求\u0085','SYNTHETIC v2',4)
