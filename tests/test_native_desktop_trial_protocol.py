@@ -45,13 +45,17 @@ def dispose(session):
     if session in ui._retained:ui._retained.remove(session)
 
 
-def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys,time;sys.stdin.readline();sys.stdout.buffer.write(b'UI1\\tUNKNOWN\\tSET\\t80004005\\n');sys.stdout.buffer.flush();time.sleep(30)")
+@pytest.mark.parametrize('command,phase,code',[('SET','SET','80004005'),('CLICK','CLICK_INVOKE','80040201')])
+def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch,command,phase,code):
+    line=f'UI1\tUNKNOWN\t{phase}\t{code}\n'.encode('ascii')
+    program=f'import sys,time;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush();time.sleep(30)'
+    session,close=child_session(monkeypatch,program)
     try:
-        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('SET',ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT'))
+        fields=(ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT')) if command=='SET' else (ui.encoded('提交本地诉求'),)
+        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call(command,*fields)
         assert session.unknown and session.abort_attempted and session.proc.poll() is not None
-        assert session.failure_details==dict(operation='SET',hresult='80004005')
-        with pytest.raises(Exception):session.call('SET','again')
+        assert session.failure_details==dict(operation=phase,hresult=code)
+        with pytest.raises(Exception):session.call(command,*fields)
         session.profile.close.assert_not_called();close.assert_not_called()
         assert not session.closed and session.duplicate.value==123 and session in ui._retained
     finally:dispose(session)

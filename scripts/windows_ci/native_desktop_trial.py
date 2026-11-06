@@ -80,7 +80,8 @@ class Session:
             a.need(answer is not None)
             parts=answer.decode('ascii').rstrip('\n').split('\t')
             if (len(parts) in (4,6) and parts[:2]==['UI1','UNKNOWN'] and parts[2] in
-                ('OPEN','OPEN_WAIT_VIEW','OPEN_VIEW_FAILED','SET','CLICK','ITEM','SCROLL_CONTROL','SCROLL_VISIBLE',
+                ('OPEN','OPEN_WAIT_VIEW','OPEN_VIEW_FAILED','SET','CLICK','CLICK_FIND','CLICK_PATTERN','CLICK_INVOKE',
+                 'ITEM','SCROLL_CONTROL','SCROLL_VISIBLE',
                  'SELECT','SELECT_CONTROL','SELECT_EXPAND',
                  'SELECT_OPTIONS','SELECT_ITEM','SELECT_CONFIRM','REFERENCE','WAIT','CAPTURE','CLOSE')
                 and (parts[3]=='NOT_RECORDED' or re.fullmatch('[a-f0-9]{8}',parts[3]))):
@@ -210,8 +211,12 @@ class NativeDesktopTrial:
     def first(self,workspace,invocation):
         a.need(self.state=='NOT_STARTED');self.state='UNKNOWN'
         with self.session(workspace,invocation,True) as session:
-            self.login(session);session.call('SET',encoded('这次希望准备什么？'),encoded(self.goal))
-            session.call('CLICK',encoded('提交本地诉求'));session.call('CLICK',encoded('开始准备材料'))
+            self.login(session)
+            self.phase='GOAL_SUBMISSION'
+            session.call('SET',encoded('这次希望准备什么？'),encoded(self.goal))
+            session.call('CLICK',encoded('提交本地诉求'))
+            self.phase='PREPARATION_START'
+            session.call('CLICK',encoded('开始准备材料'))
             self.reference(session,1)
             self.evidence(session,'诉求摘要','SYNTHETIC 初稿','SYNTHETIC v1',2)
             self.switch(session,True);self.decision(session,'要求补正','SYNTHETIC 请补齐两项材料',3)

@@ -6,6 +6,7 @@
 #define INITGUID
 #include <windows.h>
 #include <uiautomation.h>
+#include <uiautomationcoreapi.h>
 #include <wincodec.h>
 #include <bcrypt.h>
 #include <objbase.h>
@@ -23,7 +24,8 @@
 
 static void need(bool b){if(!b)throw std::runtime_error("OWN_UI_UNKNOWN");}
 static std::string phase="OPEN",failureCode="NOT_RECORDED";
-static void ok(HRESULT r){if(FAILED(r)){char value[9];sprintf(value,"%08x",unsigned(r));failureCode=value;}need(SUCCEEDED(r));}
+struct UIAError{HRESULT code;};
+static void ok(HRESULT r){if(FAILED(r)){char value[9];sprintf(value,"%08x",unsigned(r));failureCode=value;throw UIAError{r};}}
 template<class T>struct Ref{T* p=nullptr;Ref()=default;Ref(const Ref&)=delete;Ref& operator=(const Ref&)=delete;Ref(Ref&& other)noexcept:p(other.p){other.p=nullptr;}~Ref(){if(p)p->Release();}T** put(){need(!p);return &p;}T* operator->(){need(p);return p;}};
 static ULONGLONG deadline=0,cleanupDeadline=0;static void guard(){need(GetTickCount64()<deadline);}
 static std::string readLine(HANDLE h){std::string s;char c;DWORD n;while(ReadFile(h,&c,1,&n,nullptr)&&n){if(c=='\n')return s;need(s.size()<32768&&c!='\r');s+=c;}throw std::runtime_error("PIPE_UNKNOWN");}
@@ -97,30 +99,65 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
 static Ref<IUIAutomationElement> root(){identity();Ref<IUIAutomationElement> value;ok(automation->ElementFromHandle(hwnd,value.put()));return value;}
 static std::wstring name(IUIAutomationElement* element){BSTR s=nullptr;ok(element->get_CurrentName(&s));std::wstring value=s?s:L"";SysFreeString(s);need(value.size()<=8192);return value;}
 static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool includeOffscreen=false){
- auto base=root();Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> values;ok(base->FindAll(TreeScope_Descendants,condition.p,values.put()));int count=0;ok(values->get_Length(&count));need(count<4000);IUIAutomationElement* match=nullptr;
- for(int i=0;i<count;i++){Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));BOOL off=TRUE,enabled=FALSE;CONTROLTYPEID kind=0;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));ok(e->get_CurrentControlType(&kind));if((off&&!includeOffscreen)||!enabled||kind!=type)continue;auto text=name(e.p);if(prefix?text.rfind(wanted,0)==0:text==wanted){need(!match);match=e.p;match->AddRef();}}
- return match;
+ auto base=root();
+ VARIANT kind{};kind.vt=VT_I4;kind.lVal=type;
+ Ref<IUIAutomationCondition> typeFilter,nameFilter,combined;
+ ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,typeFilter.put()));
+ if(!prefix){
+  VARIANT label{};label.vt=VT_BSTR;label.bstrVal=SysAllocStringLen(wanted.data(),UINT(wanted.size()));need(label.bstrVal);
+  HRESULT result=automation->CreatePropertyCondition(UIA_NamePropertyId,label,nameFilter.put());
+  SysFreeString(label.bstrVal);ok(result);
+  ok(automation->CreateAndCondition(typeFilter.p,nameFilter.p,combined.put()));
+ }
+ Ref<IUIAutomationElementArray> values;
+ ok(base->FindAll(TreeScope_Descendants,prefix?typeFilter.p:combined.p,values.put()));
+ int count=0;ok(values->get_Length(&count));need(count>=0&&count<4000);
+ Ref<IUIAutomationElement> match;
+ for(int i=0;i<count;i++){
+  Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));
+  auto text=name(e.p);if(prefix?text.rfind(wanted,0)!=0:text!=wanted)continue;
+  BOOL off=TRUE,enabled=FALSE;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));
+  if((off&&!includeOffscreen)||!enabled)continue;
+  need(!match.p);match.p=e.p;e.p=nullptr;
+ }
+ auto result=match.p;match.p=nullptr;return result;
 }
-static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false){
- auto end=std::min(deadline,GetTickCount64()+15000);bool scrolled=false;
+static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false,ULONGLONG end=0){
+ if(!end)end=std::min(deadline,GetTickCount64()+15000);
+ bool scrolled=false;
  const auto originalPhase=phase;
  while(true){
   identity();need(GetTickCount64()<end);
-  auto visible=find(wanted,type,prefix);if(visible){phase=originalPhase;return visible;}
-  if(scroll&&!scrolled){
-   Ref<IUIAutomationElement> target;target.p=find(wanted,type,prefix,true);
-   if(target.p){
+  Ref<IUIAutomationElement> target;
+  try{
+   auto visible=find(wanted,type,prefix);
+   if(visible){phase=originalPhase;failureCode="NOT_RECORDED";return visible;}
+   if(scroll&&!scrolled)target.p=find(wanted,type,prefix,true);
+  }catch(const UIAError& error){
+   if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
+   Sleep(100);continue;
+  }
+  if(target.p){
     phase="SCROLL_CONTROL";
     Ref<IUIAutomationScrollItemPattern> item;
     ok(target->GetCurrentPatternAs(UIA_ScrollItemPatternId,IID_IUIAutomationScrollItemPattern,(void**)item.put()));
     ok(item->ScrollIntoView());scrolled=true;phase="SCROLL_VISIBLE";
-   }
   }
   Sleep(100);
  }
 }
 static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId,false,true);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
-static void click(const std::wstring& selector,bool prefix){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix,true);Ref<IUIAutomationInvokePattern> p;ok(e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put()));ok(p->Invoke());}
+static void click(const std::wstring& selector,bool prefix){
+ auto end=std::min(deadline,GetTickCount64()+15000);
+ while(true){
+  phase="CLICK_FIND";Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix,true,end);
+  phase="CLICK_PATTERN";Ref<IUIAutomationInvokePattern> p;
+  HRESULT result=e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put());
+  if(result==UIA_E_ELEMENTNOTAVAILABLE&&GetTickCount64()<end){Sleep(100);continue;}
+  ok(result);identity();need(GetTickCount64()<end);
+  phase="CLICK_INVOKE";ok(p->Invoke());return;
+ }
+}
 static void select(const std::wstring& selector,const std::wstring& option){
  phase="SELECT_CONTROL";
  Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId,false,true);
