@@ -304,9 +304,16 @@ static void showWeb(const std::wstring& profile){
     auto ready=CB(ICoreWebView2NavigationCompletedEventHandler,ICoreWebView2*,ICoreWebView2NavigationCompletedEventArgs*)([](ICoreWebView2* sender,ICoreWebView2NavigationCompletedEventArgs* args)->HRESULT{
      if(trialStartupReported)return S_OK;
      BOOL success=FALSE;ok(args->get_IsSuccess(&success));
+     int http=0;ICoreWebView2NavigationCompletedEventArgs2* extended=nullptr;
+     if(SUCCEEDED(args->QueryInterface(interfaceID<ICoreWebView2NavigationCompletedEventArgs2>(),(void**)&extended))){
+      HRESULT status=extended->get_HttpStatusCode(&http);extended->Release();ok(status);
+     }
      LPWSTR source=nullptr;ok(sender->get_Source(&source));
      bool original=source&&std::wstring(source)==origin+L"/";CoTaskMemFree(source);
-     reportTrialStartup(success&&original&&!stopping);
+     if(http>=500)trialStage=25;
+     else if(!success||(http&&http!=200))trialStage=26;
+     else if(!original)trialStage=27;
+     reportTrialStartup(success&&(!http||http==200)&&original&&!stopping);
      return S_OK;
     });ok(view->add_NavigationCompleted(ready,&token));ready->Release();
    }

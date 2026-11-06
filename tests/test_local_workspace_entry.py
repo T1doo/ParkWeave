@@ -49,6 +49,23 @@ def test_account_labels_are_not_executable_html():
     assert 'value="x&quot;&lt;&gt;"' in page
 
 
+def test_workspace_routes_serve_utf8_assets_under_windows_ansi_defaults(monkeypatch):
+    read_text = Path.read_text
+
+    def read_with_windows_default(path, encoding=None, *args, **kwargs):
+        return read_text(path, encoding or 'cp1252', *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'read_text', read_with_windows_default)
+    app = mount_workspace(FastAPI(), lambda *_: None, 58763, [('enterprise', '企业')])
+    with TestClient(app, base_url='http://127.0.0.1:58763') as client:
+        for url, expected in (('/', '进入本地工作台'), ('/materials', '进入本地工作台'),
+                              ('/workspace', '进入服务与协同工作台'),
+                              ('/local-workspace-login.js', '原待核对'),
+                              ('/local-command-pending.js', '核对')):
+            response = client.get(url)
+            assert response.status_code == 200 and expected in response.text
+
+
 def test_password_adapter_unknown_and_late_response_contract():
     for script in ('local_workspace_login.js','local_workspace_login_with_page.js'):
         result=subprocess.run(['node','tests/'+script],cwd=Path(__file__).parents[1],text=True,capture_output=True,timeout=15)

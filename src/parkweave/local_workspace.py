@@ -22,7 +22,7 @@ class Login(BaseModel):
 def full_workspace_page(root, accounts, *, materials_path='/'):
     """Password entry only; never adds identities, resources or permissions."""
     if materials_path not in ('/','/materials'): raise Denied('original material entry required')
-    page = (root/'web.html').read_text()
+    page = (root/'web.html').read_text(encoding='utf-8')
     options = ''.join('<option value="'+escape(name, quote=True)+'">'+escape(label)+'</option>'
                       for name, label in accounts)
     panel = ('<section id="local-workspace-session" class="session-panel">'
@@ -107,7 +107,7 @@ def mount_workspace(app, unlock, port, accounts,*,sample_workspace=None):
 
     @app.get('/materials', response_class=HTMLResponse)
     def materials():
-        page = (root/'local_preparation_web.html').read_text()
+        page = (root/'local_preparation_web.html').read_text(encoding='utf-8')
         selectors = list(re.finditer(r'<select\b[^>]*\bid="role"[^>]*>', page))
         if len(selectors) != 1: raise Denied('local account selector unavailable')
         start = selectors[0].end()
@@ -126,14 +126,14 @@ def mount_workspace(app, unlock, port, accounts,*,sample_workspace=None):
             if not authorization or not authorization.startswith('Bearer '):raise HTTPException(403,'local identity required')
             return sample_workspace.resources(authorization[7:])
         @app.get('/local-sample-resources.js')
-        def sample_resources_script():return Response((root/'local_sample_resources.js').read_text(),media_type='text/javascript')
+        def sample_resources_script():return Response((root/'local_sample_resources.js').read_text(encoding='utf-8'),media_type='text/javascript')
 
     @app.get('/local-workspace-login.js')
     def workspace_login():
-        return Response((root/'local_workspace_login.js').read_text(), media_type='text/javascript')
+        return Response((root/'local_workspace_login.js').read_text(encoding='utf-8'), media_type='text/javascript')
 
     @app.get('/local-command-pending.js')
-    def pending(): return Response((root/'local_command_pending.js').read_text(), media_type='text/javascript')
+    def pending(): return Response((root/'local_command_pending.js').read_text(encoding='utf-8'), media_type='text/javascript')
 
     @app.post('/api/local/session')
     def login(data: Login, request: Request):

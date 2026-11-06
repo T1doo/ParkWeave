@@ -78,8 +78,8 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
    auto details=split(startupFailure);
    auto hexCode=[](const std::string& code){return code.size()==8&&code.find_first_not_of("0123456789abcdef")==std::string::npos;};
    need(!details.empty()&&hexCode(details[0]));
-   auto stage=std::stoul(details[0],nullptr,16);need(stage>=1&&stage<=24);
-   if(stage>=20)need(details.size()==3&&details[1].size()==1&&details[1][0]>='0'&&details[1][0]<='7'&&hexCode(details[2]));
+   auto stage=std::stoul(details[0],nullptr,16);need(stage>=1&&stage<=27);
+   if(stage>=20&&stage<=24)need(details.size()==3&&details[1].size()==1&&details[1][0]>='0'&&details[1][0]<='7'&&hexCode(details[2]));
    else need(details.size()==1);
    startupDone=true;return;
   }
