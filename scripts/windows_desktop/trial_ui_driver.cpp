@@ -110,12 +110,32 @@ static void select(const std::wstring& selector,const std::wstring& option){
  phase="SELECT_EXPAND";
  Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
  phase="SELECT_OPTIONS";
- Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> items;ok(e->FindAll(TreeScope_Descendants,condition.p,items.put()));int count=0;ok(items->get_Length(&count));need(count>0&&count<32);Ref<IUIAutomationElement> chosen;
- for(int i=0;i<count;i++){Ref<IUIAutomationElement> item;ok(items->GetElement(i,item.put()));if(name(item.p)==option){need(!chosen.p);chosen.p=item.p;chosen.p->AddRef();}}
+ VARIANT label{};label.vt=VT_BSTR;label.bstrVal=SysAllocStringLen(option.data(),UINT(option.size()));need(label.bstrVal);
+ Ref<IUIAutomationCondition> exactName;
+ HRESULT filter=automation->CreatePropertyCondition(UIA_NamePropertyId,label,exactName.put());
+ SysFreeString(label.bstrVal);ok(filter);
+ VARIANT kind{};kind.vt=VT_I4;
+ Ref<IUIAutomationCondition> listItem,menuItem,itemType,condition;
+ kind.lVal=UIA_ListItemControlTypeId;ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,listItem.put()));
+ kind.lVal=UIA_MenuItemControlTypeId;ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,menuItem.put()));
+ ok(automation->CreateOrCondition(listItem.p,menuItem.p,itemType.put()));
+ ok(automation->CreateAndCondition(exactName.p,itemType.p,condition.put()));
+ Ref<IUIAutomationElement> chosen;
+ auto optionEnd=std::min(deadline,GetTickCount64()+15000);
+ while(!chosen.p){
+  identity();need(GetTickCount64()<optionEnd);
+  Ref<IUIAutomationElementArray> items;ok(e->FindAll(TreeScope_Descendants,condition.p,items.put()));
+  int count=0;ok(items->get_Length(&count));need(count>=0&&count<=1);
+  if(count==1)ok(items->GetElement(0,chosen.put()));
+  else Sleep(100);
+ }
  phase="SELECT_ITEM";
- need(chosen.p);Ref<IUIAutomationSelectionItemPattern> pattern;ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));ok(pattern->Select());
+ BOOL enabled=FALSE;ok(chosen->get_CurrentIsEnabled(&enabled));need(enabled&&name(chosen.p)==option);
+ Ref<IUIAutomationSelectionItemPattern> pattern;ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));ok(pattern->Select());
  phase="SELECT_CONFIRM";
- BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));need(selected);ok(expand->Collapse());
+ BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));need(selected);
+ ExpandCollapseState state;ok(expand->get_CurrentExpandCollapseState(&state));
+ if(state!=ExpandCollapseState_Collapsed)ok(expand->Collapse());
 }
 static std::wstring referenceAt(unsigned revision){
  need(revision>=1&&revision<=64);auto end=std::min(deadline,GetTickCount64()+15000);std::wstring suffix=L" · 版本 "+std::to_wstring(revision);
