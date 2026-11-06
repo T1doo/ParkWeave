@@ -2,7 +2,7 @@ name: ParkWeave source-bound native business trial preparation
 
 on:
   push:
-    branches: [dev/local-product-runtime-20261028, codex/windows-closure-20261105]
+    branches: [codex/windows-closure-20261105]
     paths:
       - scripts/windows_ci/native_business_window.json
       - .github/workflows/native-business-trial-once.yml
@@ -16,13 +16,17 @@ concurrency:
 
 jobs:
   candidate-build:
-    if: ${{ false && github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    if: ${{ github.run_number == 101 && github.run_attempt == 1 && github.ref == 'refs/heads/codex/windows-closure-20261105' && github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
     runs-on: windows-2025
     timeout-minutes: 6
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
         with:
           persist-credentials: false
           fetch-depth: 2
@@ -46,7 +50,7 @@ jobs:
 
   native-business-trial:
     needs: candidate-build
-    if: ${{ false && github.event_name == 'push' && needs.candidate-build.result == 'success' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
+    if: ${{ github.run_number == 101 && github.run_attempt == 1 && github.ref == 'refs/heads/codex/windows-closure-20261105' && github.event_name == 'push' && needs.candidate-build.result == 'success' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
     runs-on: windows-2025
     timeout-minutes: 19
     steps:
