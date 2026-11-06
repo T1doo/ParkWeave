@@ -96,17 +96,34 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
 }
 static Ref<IUIAutomationElement> root(){identity();Ref<IUIAutomationElement> value;ok(automation->ElementFromHandle(hwnd,value.put()));return value;}
 static std::wstring name(IUIAutomationElement* element){BSTR s=nullptr;ok(element->get_CurrentName(&s));std::wstring value=s?s:L"";SysFreeString(s);need(value.size()<=8192);return value;}
-static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false){
+static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool includeOffscreen=false){
  auto base=root();Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> values;ok(base->FindAll(TreeScope_Descendants,condition.p,values.put()));int count=0;ok(values->get_Length(&count));need(count<4000);IUIAutomationElement* match=nullptr;
- for(int i=0;i<count;i++){Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));BOOL off=TRUE,enabled=FALSE;CONTROLTYPEID kind=0;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));ok(e->get_CurrentControlType(&kind));if(off||!enabled||kind!=type)continue;auto text=name(e.p);if(prefix?text.rfind(wanted,0)==0:text==wanted){need(!match);match=e.p;match->AddRef();}}
+ for(int i=0;i<count;i++){Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));BOOL off=TRUE,enabled=FALSE;CONTROLTYPEID kind=0;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));ok(e->get_CurrentControlType(&kind));if((off&&!includeOffscreen)||!enabled||kind!=type)continue;auto text=name(e.p);if(prefix?text.rfind(wanted,0)==0:text==wanted){need(!match);match=e.p;match->AddRef();}}
  return match;
 }
-static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false){auto end=std::min(deadline,GetTickCount64()+15000);while(true){identity();need(GetTickCount64()<end);auto e=find(wanted,type,prefix);if(e)return e;Sleep(100);}}
-static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
-static void click(const std::wstring& selector,bool prefix){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix);Ref<IUIAutomationInvokePattern> p;ok(e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put()));ok(p->Invoke());}
+static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false){
+ auto end=std::min(deadline,GetTickCount64()+15000);bool scrolled=false;
+ const auto originalPhase=phase;
+ while(true){
+  identity();need(GetTickCount64()<end);
+  auto visible=find(wanted,type,prefix);if(visible){phase=originalPhase;return visible;}
+  if(scroll&&!scrolled){
+   Ref<IUIAutomationElement> target;target.p=find(wanted,type,prefix,true);
+   if(target.p){
+    phase="SCROLL_CONTROL";
+    Ref<IUIAutomationScrollItemPattern> item;
+    ok(target->GetCurrentPatternAs(UIA_ScrollItemPatternId,IID_IUIAutomationScrollItemPattern,(void**)item.put()));
+    ok(item->ScrollIntoView());scrolled=true;phase="SCROLL_VISIBLE";
+   }
+  }
+  Sleep(100);
+ }
+}
+static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId,false,true);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
+static void click(const std::wstring& selector,bool prefix){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix,true);Ref<IUIAutomationInvokePattern> p;ok(e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put()));ok(p->Invoke());}
 static void select(const std::wstring& selector,const std::wstring& option){
  phase="SELECT_CONTROL";
- Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId);
+ Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId,false,true);
  phase="SELECT_EXPAND";
  Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
  phase="SELECT_OPTIONS";
