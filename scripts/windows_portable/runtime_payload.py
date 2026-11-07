@@ -37,10 +37,13 @@ class RuntimePayloadPrerequisite:
     Python closure, native loading, symbols/forwarders or initdb's internal
     bootstrap/standalone backend and pipe-command execution.
     """
-    def __init__(self, lease, *, manifest_sha256, source_commit, native_installation=None):
+    def __init__(self, lease, *, manifest_sha256, source_commit=None, source_snapshot_sha256=None, native_installation=None):
         require(type(lease) is FixedDirectoryLease, 'EXACT_FIXED_LEASE_REQUIRED')
         require(type(manifest_sha256) is str and re.fullmatch('[0-9a-f]{64}', manifest_sha256), 'EXTERNAL_MANIFEST_PIN_REQUIRED')
-        require(type(source_commit) is str and re.fullmatch('[0-9a-f]{40}', source_commit), 'EXACT_SOURCE_PIN_REQUIRED')
+        from .source_identity import from_manifest
+        try:from_manifest(dict(source_commit=source_commit,source_snapshot_sha256=source_snapshot_sha256),manifest_sha256)
+        except ValueError:raise RuntimePayloadRefused('EXACT_SOURCE_PIN_REQUIRED') from None
+        self.source_snapshot_sha256=source_snapshot_sha256
         lease._verify()
         self.lease, self.manifest_sha256, self.source_commit = lease, manifest_sha256, source_commit
         self.binding = self._binding()
@@ -49,7 +52,11 @@ class RuntimePayloadPrerequisite:
         if native_installation is not None:
             from .native_runtime_staging import NativeRuntimeInstallation
             require(type(native_installation) is NativeRuntimeInstallation,'ORIGINAL_NATIVE_INSTALLATION_REQUIRED')
-            native_installation._issued_binding(lease,dict(manifest_sha256=manifest_sha256,source_commit=source_commit))
+            native_installation._issued_binding(lease,self.runtime_identity())
+
+    def runtime_identity(self):
+        from .source_identity import from_manifest
+        return from_manifest(dict(source_commit=self.source_commit,source_snapshot_sha256=self.source_snapshot_sha256),self.manifest_sha256)
 
     def _binding(self):
         return (bytes(self.lease.snapshot[0]), tuple(self.lease.snapshot[1]),
@@ -57,8 +64,9 @@ class RuntimePayloadPrerequisite:
 
     def _check(self, lease, deadline):
         require(not self.failed and lease is self.lease, 'SAME_PAYLOAD_LEASE_REQUIRED')
+        now = time.monotonic()
         require(type(deadline) in (int, float) and math.isfinite(deadline) and
-                0 < deadline - time.monotonic() <= 30, 'PAYLOAD_DEADLINE')
+                now < deadline <= now + 30, 'PAYLOAD_DEADLINE')
         lease._verify()
         require(self._binding() == self.binding and lease.status() == 'CLUSTER', 'PAYLOAD_LEASE_STATE_CHANGED')
 
@@ -69,7 +77,7 @@ class RuntimePayloadPrerequisite:
             if os.name == 'nt':
                 require(self.native_installation is not None,'NATIVE_PAYLOAD_ENUMERATION_NOT_ACCEPTED')
                 result = self.native_installation.inspect_pg_static(lease,
-                    dict(source_commit=self.source_commit,manifest_sha256=self.manifest_sha256),deadline)
+                    self.runtime_identity(),deadline)
                 self._check(lease,deadline)
                 return result
             # Native Windows uses the original issued installer pins above.
@@ -83,7 +91,8 @@ class RuntimePayloadPrerequisite:
             require(0 < meta.st_size <= 4 * 1024 * 1024, 'PAYLOAD_MANIFEST_SIZE')
             manifest_pin = pin(payload.MANIFEST, dict(bytes=meta.st_size, sha256=self.manifest_sha256))
             manifest = payload.parse_manifest(manifest_pin.read_bytes())
-            require(manifest.get('source_commit') == self.source_commit and manifest.get('usable_product') is False and
+            from .source_identity import matches_manifest
+            require(matches_manifest(manifest,self.runtime_identity()) and manifest.get('usable_product') is False and
                     manifest.get('native_initialization') == 'OWNER_MUTATION_PAUSED', 'PAYLOAD_SOURCE_OR_SCOPE_CHANGED')
             expected = {name: row for name, row in manifest['files'].items() if name.startswith(PG)}
             require(REQUIRED <= set(expected), 'PG_BOOTSTRAP_PAYLOAD_MISSING')
@@ -126,7 +135,7 @@ class RuntimePayloadPrerequisite:
                 data[name] = item.read_bytes()
             # Same frozen bootstrap subset used by the existing builder. Do not
             # claim support for every optional extension merely present in share.
-            report = static_report(data,dict(source_commit=self.source_commit,manifest_sha256=self.manifest_sha256))
+            report = static_report(data,self.runtime_identity())
             for item in pins:
                 self._check(lease, deadline); item.verify()
             # Repeat actual name enumeration while original file/ancestor pins

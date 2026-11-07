@@ -1,0 +1,2180 @@
+{
+  "scope": "CURRENT_SOURCE_REVALIDATION_NOT_ACCEPTANCE_EXECUTION",
+  "input_sha256": {
+    "docs\\product-closure-20261105\\at-audit.json": "a200faf92efee40ab44d9bdb0ddda288271a4f30ac41f1afab93ceab6c6f1f60",
+    "docs\\验收规格.json": "e1d4c7ac228b8a8b60decc43e027c8119b71a2dd3f17a69e48d729b6c89a7ae8",
+    "docs\\product-closure-20261105\\at-resource-clock-bindings.json": "27c6665866db2947e030ad475a75d6628ef0d091cc77878c8221063ed2d0bfc3"
+  },
+  "formal_statuses_unchanged": true,
+  "planner_unit_result": {
+    "file": "docs\\product-closure-20261105\\selection-planner-20261106.xml",
+    "sha256": "37e29cb872ee1cc20f8c3fd7f31a9c39168fba4eb95a0bd9cd7d72d33ebaf9c5",
+    "tests": 44,
+    "failures": 0,
+    "skipped": 0,
+    "scope": "OFFLINE_MODEL_RESPONSE_BOUNDARY_ONLY_NOT_LIVE_OR_DATABASE",
+    "source_sha256": "bcd8e901f767890f7d6e5d2f6a63cef049b13bf3e0ae9e13edf7b70b981820ea"
+  },
+  "cases": [
+    {
+      "id": "AT-01",
+      "scenario": "Windows原生启动",
+      "requirement": {
+        "id": "AT-01",
+        "scenario": "Windows原生启动",
+        "steps": "按说明准备环境、启动API/worker/数据库，查看PID与路径，停止再启动",
+        "oracle": "原生进程真实存在，数据可读；WSL2或远程浏览器不替代；错误清晰且不覆盖既有配置",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "LIVE"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_lifecycle.py::test_native_cli_cannot_run_on_linux",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_lifecycle.py::test_process_identity_refuses_pid_reuse_foreign_command_and_cwd",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-02",
+      "scenario": "书生真实工具闭环",
+      "requirement": {
+        "id": "AT-02",
+        "scenario": "书生真实工具闭环",
+        "steps": "真实理解→选工具→接收确定性反馈→修订计划",
+        "oracle": "调用ID、工具回填与修订可核查；无开发模型兜底；不能用stub计通过",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "LIVE"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_intern_adapter.py::test_offline_tool_feedback_and_known_model_case_identity",
+          "exists": true,
+          "executed": false,
+          "sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_model_chain.py::test_actual_worker_plan_tool_feedback_and_failures",
+          "exists": true,
+          "executed": false,
+          "sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_model_chain.py::test_feedback_resume_keeps_known_effect_and_does_not_repeat_plan",
+          "exists": true,
+          "executed": false,
+          "sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_plan_revision.py::test_normal_cli_worker_persists_actual_revision_and_independent_oracle",
+          "exists": true,
+          "executed": false,
+          "sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_plan_revision.py::test_invalid_revision_keeps_known_effect_without_publishing_artifact",
+          "exists": true,
+          "executed": false,
+          "sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-03",
+      "scenario": "恶意规格与注入拒绝",
+      "requirement": {
+        "id": "AT-03",
+        "scenario": "恶意规格与注入拒绝",
+        "steps": "提交候选规格并尝试执行；注册表、权限和结构检查",
+        "oracle": "先拒绝后无业务副作用；不会执行“看得懂的半截”或加载新工具",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_foundation.py::test_rejected_contract_has_no_effect",
+          "exists": true,
+          "executed": false,
+          "sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_intern_adapter.py::test_invalid_proposal_is_rejected_before_any_execution",
+          "exists": true,
+          "executed": false,
+          "sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_v1_contracts.py::test_v1_source_deadline_tool_and_rule_boundaries",
+          "exists": true,
+          "executed": false,
+          "sha256": "406fa4454e729eb6023a66af634b6412629b3da65e0fc35c09ea694f5a820da1",
+          "previous_sha256": "406fa4454e729eb6023a66af634b6412629b3da65e0fc35c09ea694f5a820da1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-04",
+      "scenario": "跨企业/园区隔离",
+      "requirement": {
+        "id": "AT-04",
+        "scenario": "跨企业/园区隔离",
+        "steps": "猜测另一企业ID访问资料、Case、结果和匿名占用记录",
+        "oracle": "后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_authorization_files.py::test_application_cannot_self_grant_or_register_resource",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_cross_scope_even_with_misconfigured_assignment_zero_effect",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_identity_scope_change_does_not_carry_old_grants",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_actual_http_fact_and_assessment_cross_scope_denial",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-05",
+      "scenario": "文件和凭证边界",
+      "requirement": {
+        "id": "AT-05",
+        "scenario": "文件和凭证边界",
+        "steps": "导入/下载/渲染恶意输入，检查结果与日志",
+        "oracle": "只读授权根目录；无密钥/宿主文件外泄；危险内容不执行",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_authorization_files.py::test_denied_file_authorization_never_opens_backend",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_fixture_writer_cannot_follow_configured_root_symlink",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_lifecycle.py::test_child_environment_drops_owner_and_model_secrets",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_private_directory_wrong_owner_and_new_minimum_mode",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_lifecycle.py::test_windows_existing_acl_check_does_not_repair_permissions",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_lifecycle.py::test_environment_whitelist_never_reads_or_forwards_unrelated_keys",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_windows_file_candidate.py::test_candidate_flow_opens_relative_once_keeps_handles_and_checks_acl_twice",
+          "exists": true,
+          "executed": false,
+          "sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_windows_file_candidate.py::test_reparse_every_component_and_bad_object_refused_handles_close",
+          "exists": true,
+          "executed": false,
+          "sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_windows_file_candidate.py::test_unsafe_or_unsupported_acl_refused_without_mutators",
+          "exists": true,
+          "executed": false,
+          "sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_windows_file_candidate.py::test_linux_does_not_load_dll_or_expose_unsafe_fallback",
+          "exists": true,
+          "executed": false,
+          "sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_sha256": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-06",
+      "scenario": "事实冲突与必要澄清",
+      "requirement": {
+        "id": "AT-06",
+        "scenario": "事实冲突与必要澄清",
+        "steps": "提取候选事实并准备服务条件",
+        "oracle": "保留双方来源，不猜测有权事实，不把缺值当不符合；必要问题集中展示",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_api_facts_conflict_missing_and_independent_source_preservation",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_normal_cli_source_projection_questions_and_independent_hash",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_existing_assertion_history_not_promoted_or_overwritten",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_expired_source_and_empty_fields_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_cross_org_park_review_and_answer_denied",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_current_read_write_and_role_intersection",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_assigned_status_role_never_reads_candidates",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_queued_revoke_no_review_side_effect",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_control_during_mock_wait_old_fence_cannot_publish",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_mock_value_disagrees_preserve_source_and_stays_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_clarification_append_only_lineage_retry_conflict_and_cancel",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_missing_answer_becomes_only_unverified_not_known",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_answer_retry_rechecks_grants_and_rejects_out_of_review_field",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_cancel_queued_child_no_review_and_no_change_parent",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_invalid_mock_projection_never_persisted",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_untrusted_candidate_contract_rejects_origin_promotion_new_field_real_source",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_concurrent_clarification_same_key_one_child",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-07",
+      "scenario": "复合目标服务编排",
+      "requirement": {
+        "id": "AT-07",
+        "scenario": "复合目标服务编排",
+        "steps": "模型选服务、拆步骤、绑定动作并预检",
+        "oracle": "必需目标不删；步骤有责任与验收；不可行明确等待/拒绝，软件输出不是虚假履约",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_service_selection_full_chain.py::test_three_capability_selection_second_park_original_local_outputs",
+          "exists": true,
+          "executed": false,
+          "sha256": "45aa4e22a988ecbf0d899507b8f54ce3fd5bdcf8b5c153b48d32efe56372ff65",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_service_selection_full_chain.py::test_selection_api_scope_revocation_and_cancel_cannot_dispatch_model",
+          "exists": true,
+          "executed": false,
+          "sha256": "45aa4e22a988ecbf0d899507b8f54ce3fd5bdcf8b5c153b48d32efe56372ff65",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": true,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-08",
+      "scenario": "模板新输入与冷会话",
+      "requirement": {
+        "id": "AT-08",
+        "scenario": "模板新输入与冷会话",
+        "steps": "应用参数化模板并运行有效新输入及错误输入",
+        "oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections",
+          "exists": true,
+          "executed": false,
+          "sha256": "99224729e78a41903e29b24777d3f061cfd6be2ae0c481a803a7d2d90ebab005",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": true,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-09",
+      "scenario": "本地组合资源确认",
+      "requirement": {
+        "id": "AT-09",
+        "scenario": "本地组合资源确认",
+        "steps": "占位并提交必需组合；失败条件下注入冲突",
+        "oracle": "同本地事务全成功或全不提交；部分替代需重新选方案；不会残留未说明占用",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_resource_combinations.py::test_atomic_pair_persistence_order_equivalent_replay_and_whole_cancel",
+          "exists": true,
+          "executed": false,
+          "sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation",
+          "exists": true,
+          "executed": false,
+          "sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_failure_after_first_mutation_rolls_back_all",
+          "exists": true,
+          "executed": false,
+          "sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-10",
+      "scenario": "并发最后名额",
+      "requirement": {
+        "id": "AT-10",
+        "scenario": "并发最后名额",
+        "steps": "并行确认同一资源时段，重复提交同键与不同参数",
+        "oracle": "总有效确认不超容量；同键不重复，不同指纹冲突",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_resource_holds.py::test_overcapacity_and_concurrent_distinct_keys_never_overbook",
+          "exists": true,
+          "executed": false,
+          "sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_holds.py::test_same_key_concurrent_once_conflicts_and_UTC_normalization",
+          "exists": true,
+          "executed": false,
+          "sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_confirm.py::test_same_hold_distinct_confirmation_keys_commit_once",
+          "exists": true,
+          "executed": false,
+          "sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_concurrent_same_key_reverse_order_and_distinct_key_commit_once",
+          "exists": true,
+          "executed": false,
+          "sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-11",
+      "scenario": "陈旧批准与过期占位",
+      "requirement": {
+        "id": "AT-11",
+        "scenario": "陈旧批准与过期占位",
+        "steps": "继续提交，清理worker可故意停止",
+        "oracle": "提交时重验并拒绝陈旧批准；数据库当前时点判断占位，不靠清理任务才过期",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt",
+          "exists": true,
+          "executed": false,
+          "sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_confirm.py::test_confirm_uses_clock_after_lock_wait_and_never_revives_expired_hold",
+          "exists": true,
+          "executed": false,
+          "sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_second_lock_wait_expiry_and_stable_order",
+          "exists": true,
+          "executed": false,
+          "sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-12",
+      "scenario": "多人协同最小权限",
+      "requirement": {
+        "id": "AT-12",
+        "scenario": "多人协同最小权限",
+        "steps": "执行者读取/更新步骤并尝试查看全企业材料或越级批准",
+        "oracle": "只允许所获派数据与动作；所有入口一致，改变客户端角色无效",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-13",
+      "scenario": "Case与Run成功分离",
+      "requirement": {
+        "id": "AT-13",
+        "scenario": "Case与Run成功分离",
+        "steps": "完成技术任务并显示业务状态",
+        "oracle": "Run可成功，Case仍待补件；不得计业务目标已交付",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_foundation.py::test_api_worker_process_restart_and_business_separation",
+          "exists": true,
+          "executed": false,
+          "sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-14",
+      "scenario": "预览与真实数据隔离",
+      "requirement": {
+        "id": "AT-14",
+        "scenario": "预览与真实数据隔离",
+        "steps": "预览执行写入，然后核对真实命名空间",
+        "oracle": "预览只影响测试命名空间，不能占用生产资源或沿用生产Grant",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-15",
+      "scenario": "履约核验与重开",
+      "requirement": {
+        "id": "AT-15",
+        "scenario": "履约核验与重开",
+        "steps": "尝试关闭Case，随后补真实回执、确认和重开",
+        "oracle": "发送不等于履约；无证据不关闭；冲突需复核；重开不抹历史",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-16",
+      "scenario": "outbox与消息去重",
+      "requirement": {
+        "id": "AT-16",
+        "scenario": "outbox与消息去重",
+        "steps": "中断再消费同事件，模拟新旧版本倒序",
+        "oracle": "业务与事件意图不分离丢失；同事件不重复逻辑效果；陈旧事件不覆盖新版",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_authorization_files.py::test_outbox_ack_fault_rolls_back_delivery_monotonic_replay",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_worker_gateway.py::test_real_api_worker_unknown_reconcile_outbox_and_no_duplicate",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-17",
+      "scenario": "worker失联与旧worker回报",
+      "requirement": {
+        "id": "AT-17",
+        "scenario": "worker失联与旧worker回报",
+        "steps": "新worker核对后续跑，旧worker尝试提交",
+        "oracle": "已提交效果不重复，旧token不能写新状态，结果未明先核对",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_heartbeat_renews_independently_during_mock_wait_and_competing_worker_cannot_steal",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_killed_waiting_worker_lease_expires_and_old_heartbeat_cannot_resurrect",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+          "exists": true,
+          "executed": false,
+          "sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_rate_deferred_feedback_resumes_no_duplicate_case_or_plan",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_rate_denial_retry_is_bounded_three_attempts_known_effect_preserved",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-18",
+      "scenario": "暂停取消在途动作",
+      "requirement": {
+        "id": "AT-18",
+        "scenario": "暂停取消在途动作",
+        "steps": "请求暂停/取消，模拟在途返回或丢失响应",
+        "oracle": "不派发新动作；不把取消当撤销；未知保持核对；已有影响可见",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_wait_revocation_or_cancel_aborts_without_assessment_or_deadlock",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_worker_gateway.py::test_real_worker_crash_old_callback_control_and_effect_visibility",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-19",
+      "scenario": "撤权与缓存",
+      "requirement": {
+        "id": "AT-19",
+        "scenario": "撤权与缓存",
+        "steps": "撤回权限后继续读写或发送，再查看输出",
+        "oracle": "当前授权优先，旧缓存/批准不恢复授权；记录在途无法收回边界",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_authorization_files.py::test_action_grant_and_role_change_cannot_reuse_queued_identity",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_field_delivery_after_withdrawal_retracted",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_outbox_field_grant_revoked_before_consume",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability",
+          "exists": true,
+          "executed": false,
+          "sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_sha256": "2165bb53c660377819369d0c6d65981b9b432361d9a80f6d895b648896d3954f",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_grant_revoke_blocks_cached_receipt_new_read_and_write_and_seed_does_not_restore",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_plan_revision.py::test_current_authority_and_cross_scope_no_revision_leak",
+          "exists": true,
+          "executed": false,
+          "sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_plan_revision.py::test_assigned_status_role_never_receives_plan_documents",
+          "exists": true,
+          "executed": false,
+          "sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_sha256": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_candidate_review.py::test_current_read_write_and_role_intersection",
+          "exists": true,
+          "executed": false,
+          "sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_sha256": "8fa6bf239694747f70912fafac4332cc3ecaa236de31e6a6e95bf0c1a9bcb98a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-20",
+      "scenario": "外部结果不明工程测试",
+      "requirement": {
+        "id": "AT-20",
+        "scenario": "外部结果不明工程测试",
+        "steps": "驱动恢复与重试逻辑，按业务ID核对",
+        "oracle": "OUTCOME_UNKNOWN不盲重发；失败适配器明确标FAULT_INJECTION，不称真实集成",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_worker_gateway.py::test_crash_without_observed_effect_stays_unknown_and_stops_automatic_queries",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_worker_gateway.py::test_invalid_receipt_rejected_by_actual_worker_gateway",
+          "exists": true,
+          "executed": false,
+          "sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_sha256": "24b5f54a237847755eb24d83a3ded2577174a245113f313bcae75644949b8ee7",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-21",
+      "scenario": "准备度三值",
+      "requirement": {
+        "id": "AT-21",
+        "scenario": "准备度三值",
+        "steps": "执行条件和AND/OR组合核对",
+        "oracle": "三值结果符合独立真值表；无证据不通过；不显示官方审批结论",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_foundation.py::test_independent_three_value_truth_table",
+          "exists": true,
+          "executed": false,
+          "sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_sha256": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-22",
+      "scenario": "地区日期与规则版本",
+      "requirement": {
+        "id": "AT-22",
+        "scenario": "地区日期与规则版本",
+        "steps": "在指定时点评估并更换服务版本",
+        "oracle": "不混用地区或失效版本；未审核候选不直接用于承诺；历史按当时规则留存",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency",
+          "exists": true,
+          "executed": false,
+          "sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_sha256": "f59c7fd9bec3df4231dd25092268da76a277b896bf8952420cb7c8f8113a07f9",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_synthetic_rule_readiness_api.py::test_at22_api_business_date_region_and_reviewed_version_keep_original_history",
+          "exists": true,
+          "executed": false,
+          "sha256": "9b1492b7278ab54755b6370a978597e324fa22e393ca18662c6b897bc36b5726",
+          "previous_sha256": "9b1492b7278ab54755b6370a978597e324fa22e393ca18662c6b897bc36b5726",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-23",
+      "scenario": "材料清单与不伪造",
+      "requirement": {
+        "id": "AT-23",
+        "scenario": "材料清单与不伪造",
+        "steps": "生成材料目录与草稿并请求复核",
+        "oracle": "缺事实留缺口；不生成虚假资质/财务/签章；材料齐全不冒充已批准",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_readiness_checklist.py::test_missing_and_actual_evidence_read_only_without_policy_invention",
+          "exists": true,
+          "executed": false,
+          "sha256": "1fee73ad3df7a1abf73858cc86934ee117cdfb5ff4c15803c28a9f961bfefb5a",
+          "previous_sha256": "1fee73ad3df7a1abf73858cc86934ee117cdfb5ff4c15803c28a9f961bfefb5a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_material_preparation_drafts.py::test_no_selection_does_not_generate_a_brief_or_guess_required_policy_materials",
+          "exists": true,
+          "executed": false,
+          "sha256": "0fb4cd11b902d6c04bb5a158a2aa55388f80322fb89610c8c94e26e8e73b2997",
+          "previous_sha256": "0fb4cd11b902d6c04bb5a158a2aa55388f80322fb89610c8c94e26e8e73b2997",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_material_preparation_drafts.py::test_actual_brief_selected_values_missing_directory_persistence_and_independent_review",
+          "exists": true,
+          "executed": false,
+          "sha256": "0fb4cd11b902d6c04bb5a158a2aa55388f80322fb89610c8c94e26e8e73b2997",
+          "previous_sha256": "0fb4cd11b902d6c04bb5a158a2aa55388f80322fb89610c8c94e26e8e73b2997",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-24",
+      "scenario": "机会提示作用域和去重",
+      "requirement": {
+        "id": "AT-24",
+        "scenario": "机会提示作用域和去重",
+        "steps": "导入事件与手动刷新，重复/乱序触发",
+        "oracle": "只匹配有权企业；同版本不重复骚扰；不外发消息或宣称后台一直在线",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-25",
+      "scenario": "依赖失效与未知扩大重验",
+      "requirement": {
+        "id": "AT-25",
+        "scenario": "依赖失效与未知扩大重验",
+        "steps": "修改源规则/资料/容量，再生成补丁和检查",
+        "oracle": "确定依赖更新；未知扩大重验而非乱改；分别报告漏更新与误改",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_at24_27_change_batch_independent.py::test_at25_fixed_two_case_literal_source_partitions",
+          "exists": true,
+          "executed": false,
+          "sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_at24_27_change_batch_independent.py::test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind",
+          "exists": true,
+          "executed": false,
+          "sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-26",
+      "scenario": "人工锁与历史事实",
+      "requirement": {
+        "id": "AT-26",
+        "scenario": "人工锁与历史事实",
+        "steps": "提出变更并处理冲突",
+        "oracle": "LOCK_CONFLICT保留原内容；未解冲突不自动发布；历史不删除，当前有效性单列",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_at24_27_change_batch_independent.py::test_at26_fixed_both_locked_full_text_history_and_explicit_business_recheck",
+          "exists": true,
+          "executed": false,
+          "sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-27",
+      "scenario": "定义升级与业务数据",
+      "requirement": {
+        "id": "AT-27",
+        "scenario": "定义升级与业务数据",
+        "steps": "尝试不兼容发布/数据迁移/回退",
+        "oracle": "阻止不兼容操作；版本回退不回滚业务事实，预检有证据",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_at24_27_change_batch_independent.py::test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial",
+          "exists": true,
+          "executed": false,
+          "sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_sha256": "b71109a6d5f1f182edd9225fc9045b47754fec86898ad48b7e82fe62211206a1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-28",
+      "scenario": "资源状态新鲜度",
+      "requirement": {
+        "id": "AT-28",
+        "scenario": "资源状态新鲜度",
+        "steps": "检查可用性并申请确认",
+        "oracle": "显示来源/时间及需确认；本地非权威快照不能保证外部资源可用",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_at28_resource_observation.py::test_current_preview_source_is_not_prior_catalog_and_writes_nothing",
+          "exists": true,
+          "executed": false,
+          "sha256": "a135248f1d1f6be97f9612cd283e91d137ef0b7776f1bf4ef56d16f558994cb8",
+          "previous_sha256": "a135248f1d1f6be97f9612cd283e91d137ef0b7776f1bf4ef56d16f558994cb8",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_at28_resource_observation.py::test_original_page_discloses_current_source_before_explicit_local_confirmation",
+          "exists": true,
+          "executed": false,
+          "sha256": "a135248f1d1f6be97f9612cd283e91d137ef0b7776f1bf4ef56d16f558994cb8",
+          "previous_sha256": "a135248f1d1f6be97f9612cd283e91d137ef0b7776f1bf4ef56d16f558994cb8",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-29",
+      "scenario": "时间与办理期限",
+      "requirement": {
+        "id": "AT-29",
+        "scenario": "时间与办理期限",
+        "steps": "计算冲突/期限，执行合法与非法停表",
+        "oracle": "UTC存储和业务时区一致；[start,end)与缓冲正确；无来源不编SLA，非法暂停被拒",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_explicit_synthetic_holiday_without_guessing_real_holidays",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_dst_nonexistent_ambiguous_supplied_offset_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_dst_crossing_utc_elapsed_seconds_not_wall_clock_hours",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_extreme_dates_and_invalid_source_encoding_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer",
+          "exists": true,
+          "executed": false,
+          "sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_actual_http_pg_exact_source_utc_readonly_concurrent_cold_store",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_source_missing_invalid_and_pause_declarations_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_original_changes_request_and_technical_pause_cannot_stop_clock",
+          "exists": true,
+          "executed": false,
+          "sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610",
+          "previous_sha256": null,
+          "previous_source_matches": null,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-30",
+      "scenario": "限流截断与全成本",
+      "requirement": {
+        "id": "AT-30",
+        "scenario": "限流截断与全成本",
+        "steps": "请求、失败、验证与修复多条路径",
+        "oracle": "共享或明确划分总额度；非流式工具完整校验；步骤有上限；未知usage不记零；注入不冒充真实上游",
+        "stage": "F1",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_intern_adapter.py::test_atomic_offline_attempt_budget_and_unknown_usage",
+          "exists": true,
+          "executed": false,
+          "sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_intern_adapter.py::test_errors_timeout_truncation_usage_and_no_automatic_retry",
+          "exists": true,
+          "executed": false,
+          "sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_sha256": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_model_chain.py::test_two_products_coordinate_same_account_atomically",
+          "exists": true,
+          "executed": false,
+          "sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_model_chain.py::test_unknown_sent_work_survives_restart_no_refund_or_resend",
+          "exists": true,
+          "executed": false,
+          "sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget",
+          "exists": true,
+          "executed": false,
+          "sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_sha256": "18f2c39b0cc114c4ab5914460306d7fe7edfb759c2758d6ed6fbf81274094ac5",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_thirty_first_immediate_send_denied_and_unsent_refunded",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_exact_sixty_second_boundary_and_same_unsent_work_retry",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_held_and_inflight_do_not_expire_delayed_send_cooldown_from_finish",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_release_unsent_held_slot_once_no_refund_sent_or_unknown",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_reopened_unsent_work_fences_old_generation",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_lowered_rate_rechecked_at_dispatch_and_zero_disables",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_clock_rewind_blocks_send_and_finish_is_conservative",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_cross_worker_account_admission_atomic",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_two_synthetic_products_same_coordinator_share_thirty_slots",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_clock_and_rate_policy_owner_only_live_ignores_synthetic_clock",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_live_config_presence_checks_names_only",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_live_missing_names_fail_closed",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_live_each_explicit_precondition_required",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_default_live_off_does_not_even_iterate_names",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        },
+        {
+          "selector": "tests/test_account_rate.py::test_coordinator_upgrade_idempotent_and_sent_history_preserved",
+          "exists": true,
+          "executed": false,
+          "sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-31",
+      "scenario": "公平对照与验收不降低",
+      "requirement": {
+        "id": "AT-31",
+        "scenario": "公平对照与验收不降低",
+        "steps": "运行B0/B1/B2，复核失败与标准版本",
+        "oracle": "各组有合理能力且安全保护相同；固定标准不被模型降低；保留全部失败和修复成本",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_acceptance_runner.py::test_whole_acceptance_never_passes_and_missing_tests_are_incomplete",
+          "exists": true,
+          "executed": false,
+          "sha256": "f3eaeba11e53547963409deda39d6fe3c27fd38d232cb19bb513777eebaa6e0a",
+          "previous_sha256": "f3eaeba11e53547963409deda39d6fe3c27fd38d232cb19bb513777eebaa6e0a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-32",
+      "scenario": "数据来源与效果声明",
+      "requirement": {
+        "id": "AT-32",
+        "scenario": "数据来源与效果声明",
+        "steps": "检查输入、输出、使用反馈和报告引用",
+        "oracle": "各类分列；无真实试点就明确无证据；不能把校园模拟/专家检查当园区上线",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_acceptance_runner.py::test_sources_archive_integrity",
+          "exists": true,
+          "executed": false,
+          "sha256": "f3eaeba11e53547963409deda39d6fe3c27fd38d232cb19bb513777eebaa6e0a",
+          "previous_sha256": "f3eaeba11e53547963409deda39d6fe3c27fd38d232cb19bb513777eebaa6e0a",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-33",
+      "scenario": "第二园区配置迁移",
+      "requirement": {
+        "id": "AT-33",
+        "scenario": "第二园区配置迁移",
+        "steps": "映射配置并在新授权下运行A/B/C任务",
+        "oracle": "结果可核对、不同园区隔离；统计人工配置/代码与回归问题，不预设一键迁移",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-34",
+      "scenario": "干净Windows复现与关机边界",
+      "requirement": {
+        "id": "AT-34",
+        "scenario": "干净Windows复现与关机边界",
+        "steps": "重建、关闭网页/API/worker、重启环境，检查时效",
+        "oracle": "隐含依赖可见；关机期间不报继续运行；重开不重复操作，占位按当前时钟失效",
+        "stage": "F3",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "LIVE"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [
+        {
+          "selector": "tests/test_lifecycle.py::test_native_cli_cannot_run_on_linux",
+          "exists": true,
+          "executed": false,
+          "sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_sha256": "10aa7ebbe01b1fe70361ffad65b7a2c30b0402290ef8bf6d945bf51f7f004490",
+          "previous_source_matches": true,
+          "ast_selector_found": true
+        }
+      ],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-35",
+      "scenario": "首个完整办理和重新使用",
+      "requirement": {
+        "id": "AT-35",
+        "scenario": "首个完整办理和重新使用",
+        "steps": "规划→确认→本地办理→补件/接单→回执→确认；再次运行",
+        "oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+        "stage": "F2",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    },
+    {
+      "id": "AT-36",
+      "scenario": "单PDF及双赛道提交核查",
+      "requirement": {
+        "id": "AT-36",
+        "scenario": "单PDF及双赛道提交核查",
+        "steps": "逐栏/命名核对，接收方打开/扫码；检查关联作品声明和实际上传回执",
+        "oracle": "单PDF符合所取得规则；不移植他赛道硬要求；未知项阻塞而非默认为通过；无虚构链接/效果",
+        "stage": "C0",
+        "status": "NOT_RUN",
+        "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+        "initial_state": "待实现fixture",
+        "type": "待执行时指定"
+      },
+      "formal_status": "NOT_RUN",
+      "audit_whole_status": "NOT_RUN",
+      "source_bindings": [],
+      "source_review_only": false,
+      "source_missing": false,
+      "source_drift": false,
+      "supplemental_scope": null,
+      "actual_windows_business_execution": "NOT_COMPLETED",
+      "demo_evidence_is_acceptance": false
+    }
+  ],
+  "summary": {
+    "cases": 36,
+    "with_bindings": 29,
+    "missing_binding": 7,
+    "source_missing": 0,
+    "source_drift": 0
+  }
+}

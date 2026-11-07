@@ -139,6 +139,7 @@ def _transmit(lease,observation,password,deadline):
                 op=_Connection(backend,group);op.identity(deadline)
                 writer=_PipeWrite(backend.server,password)
                 try:
+                    group.resources['initdb_secret_started']=True
                     writer.send(deadline-.25)
                     writer.finish()
                     from .native_trial_authority import bound_state,budget

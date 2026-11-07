@@ -1,5 +1,6 @@
 """Single-use reservation/clock protocol only, no native authority or IO."""
 import time
+import math
 import threading
 from types import SimpleNamespace
 
@@ -47,6 +48,26 @@ def test_workspace_and_both_clients_only_tighten_existing_limit():
     with pytest.raises(CandidateRefused):workspace.limit_deadline(now+120)
     workspace.deadline=None;workspace.close()
     with pytest.raises(CandidateRefused):workspace.limit_deadline(now+120)
+
+
+def test_workspace_accepts_exact_180_second_absolute_end_without_float_subtraction(monkeypatch):
+    from scripts.windows_portable.local_preparation_identity import PreparationIdentities, ENTERPRISES, REVIEWERS
+
+    now=math.nextafter(900., 0.)
+    end=now+180
+    assert end-now>180
+    monkeypatch.setattr(local,'time',SimpleNamespace(monotonic=lambda:now))
+    identities=PreparationIdentities.from_mapping({
+        name:f'SYNTHETIC_{i}' for i,name in enumerate(ENTERPRISES+REVIEWERS)
+    })
+    fresh=local.PreparationWorkspace(None,identities,None,lambda:None)
+    assert fresh.limit_deadline(end)==end
+    reopened=local.PreparationWorkspace(None,identities,None,lambda:None,deadline=end)
+    assert reopened.deadline==end
+    for invalid in (now, math.nextafter(end, math.inf)):
+        with pytest.raises(CandidateRefused):fresh.limit_deadline(invalid)
+        with pytest.raises(CandidateRefused):
+            local.PreparationWorkspace(None,identities,None,lambda:None,deadline=invalid)
 
 
 def test_bound_adapter_reserves_before_startup_and_starts_clock_at_first_callback(monkeypatch):

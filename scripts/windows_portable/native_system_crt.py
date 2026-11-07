@@ -95,8 +95,9 @@ class NativeSystemCRT(SignatureVerification):
     def __deepcopy__(self,memo):raise TypeError('SYSTEM_CRT_WITNESS_NOT_TRANSFERABLE')
 
     def _time(self):
+        now=time.monotonic()
         need(not self.failed and not self.closed and type(self.deadline) in (int,float)
-             and math.isfinite(self.deadline) and 0<self.deadline-time.monotonic()<=30)
+             and math.isfinite(self.deadline) and now<self.deadline<=now+30)
         from .native_trial_authority import budget
         self.deadline=budget(self.lease,self.deadline)
 
@@ -196,18 +197,33 @@ class NativeSystemCRT(SignatureVerification):
                 result[name]=path.casefold()
         self._time();return dict(crt=result,modules=tuple(sorted(observed)))
 
-    def _observe(self,process,check,required,deadline):
+    def _observe(self,process,check,required,deadline,*,wait_for_modules=False):
         self._binding();need(self.lock.acquire(blocking=False))
-        try:return self._observe_locked(process,check,required,deadline)
+        try:return self._observe_locked(process,check,required,deadline,wait_for_modules=wait_for_modules)
         finally:self.lock.release()
 
-    def _observe_locked(self,process,check,required,deadline):
-        self._binding();need(type(deadline) in (int,float) and math.isfinite(deadline) and 0<deadline-time.monotonic()<=30)
+    def _observe_locked(self,process,check,required,deadline,*,wait_for_modules=False):
+        self._binding();now=time.monotonic()
+        need(type(deadline) in (int,float) and math.isfinite(deadline) and now<deadline<=now+30)
         self.deadline=deadline
         try:
             check();self._verify_files();first=self._loaded(process)
-            need(set(required)<=set(first['crt']));check()
-            need(self._loaded(process)==first);self._verify_files();check();self._binding()
+            required=set(required)
+            if wait_for_modules:
+                while True:
+                    self._time()
+                    time.sleep(min(0.02,max(0,self.deadline-time.monotonic())))
+                    self._time();check()
+                    second=self._loaded(process)
+                    if second==first and required.issubset(first['crt']):break
+                    # Startup may add modules, but an observed mapping must
+                    # not disappear or change its address/path binding.
+                    need(set(first['modules']).issubset(second['modules']))
+                    first=second
+            else:
+                need(required.issubset(first['crt']));check()
+                need(self._loaded(process)==first)
+            self._verify_files();check();self._binding()
         except BaseException:
             self.failed=True;raise CRTRefused() from None
         return dict(scope='ORIGINAL_PROCESS_SYSTEM_CRT_SNAPSHOT',native_acceptance=False,
@@ -215,7 +231,7 @@ class NativeSystemCRT(SignatureVerification):
                     files={name:dict(sha256=row[2],version=row[3],signer_chain_sha256=row[4])
                            for name,row in self.rows.items()})
 
-    def observe_group(self,adapter,token,deadline):
+    def observe_group(self,adapter,token,deadline,*,wait_for_modules=False):
         from .processes import PrivateProcessAdapter
         from .windows_process_handles import WindowsJobProcess
         need(type(adapter) is PrivateProcessAdapter and isinstance(adapter.backend,WindowsJobProcess))
@@ -232,7 +248,7 @@ class NativeSystemCRT(SignatureVerification):
                 text=C.create_unicode_buffer(4096);n=D(len(text))
                 need(adapter.backend.image(process,1,text,C.byref(n)) and 0<n.value<len(text)
                      and text.value.casefold()==image.casefold());group.executable.verify()
-            return self._observe(process,check,required,deadline)
+            return self._observe(process,check,required,deadline,wait_for_modules=wait_for_modules)
         finally:group.operation_lock.release()
 
     def observe_peer(self,peer,deadline):

@@ -13,7 +13,7 @@ def startup_binary(tmp_path_factory):
     compiler=shutil.which('g++')
     if compiler is None:pytest.skip('portable C++ compiler unavailable; not Windows evidence')
     host=Path('scripts/windows_desktop/host.cpp').read_text()
-    inputs=host[host.index('enum class DesktopInputProblem'):host.index('static void launch(')]
+    inputs=host[host.index('enum class DesktopInputProblem'):host.index('static void launchRequest(std::string input){')]
     actual_json=host[host.index('static std::string json('):host.index('static void clearPasswords(')]
     accounts=next(x for x in host.splitlines() if x.startswith('static const wchar_t* accounts[]'))
     sample_accounts=next(x for x in host.splitlines() if x.startswith('static const wchar_t* sampleAccounts[]'))
@@ -93,8 +93,9 @@ def test_actual_host_payload_and_python_boundary_agree_including_utf16_and_reope
 def test_form_validation_is_before_runtime_and_specific_error_handler_does_not_start_recovery():
     host=Path('scripts/windows_desktop/host.cpp').read_text()
     launch=host.split('static void launch(',1)[1].split('static void event(',1)[0]
-    assert launch.index('payload(action)')<launch.index('verifyBootstrap()')<launch.index('runtime()')<launch.index('CreateProcessW(')
-    assert 'DesktopMessage message{payload(action)};auto& data=message.bytes;' in launch
+    assert 'launchRequest(payload(action));' in launch
+    request=host.split('static void launchRequest(std::string input){',1)[1].split('static void launch(',1)[0]
+    assert request.index('DesktopMessage message{std::move(input)};')<request.index('verifyBootstrap()')<request.index('runtime()')<request.index('CreateProcessW(')
     assert int(re.search(r'SendMessageW\(pass\[i\],EM_SETLIMITTEXT,(\d+),0\)',host).group(1))>=512
     handler=host.split('catch(const DesktopInputError& error)',1)[1].split('catch(...)',1)[0]
     assert 'clearPasswords();status(inputHint(error.problem));return 0;' in handler

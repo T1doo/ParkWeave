@@ -33,9 +33,9 @@ def need(value):
 
 def remaining(deadline):
     need(type(deadline) in (int,float) and math.isfinite(deadline))
-    left=deadline-time.monotonic()
-    need(0<left<=30)
-    return left
+    now=time.monotonic()
+    need(now<deadline<=now+30)
+    return min(30,deadline-now)
 
 
 def _wait(raw,events,deadline):
@@ -45,14 +45,20 @@ def _wait(raw,events,deadline):
 
 
 class _BackendWitness:
-    """Retain this socket's actual backend HANDLE, birth, image and Job."""
-    def __init__(self,endpoint,connection,deadline):
+    """Retain socket context ownership and a validated backend HANDLE."""
+    def __init__(self,endpoint,connection,deadline,*,authenticated_pid=None):
         need(type(endpoint) is NativeOwnedDatabaseEndpoint)
         endpoint.verify()
         self.endpoint,self.socket,self.deadline=endpoint,connection.fileno(),deadline
         self.handle=None;self.close_attempted=False
         self.client,self.server=connection.getsockname(),connection.getpeername()
-        self.pid=connection_owner(connection)
+        self.socket_pid=connection_owner(connection)
+        self.pid=self.socket_pid if authenticated_pid is None else authenticated_pid
+        # Windows can retain the original postmaster's context-bind PID after
+        # it duplicates the socket to a PostgreSQL backend. Only that exact
+        # postmaster can account for a different TCP owner.
+        need(type(self.pid) is int and 0<self.pid<2**32
+             and (self.socket_pid==self.pid or self.socket_pid==endpoint.birth[0]))
         k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
         self.kernel=k
         for name,args,result in (
@@ -70,7 +76,7 @@ class _BackendWitness:
         try:
             self.birth=endpoint.backend.birth(handle)
             need(self.birth[0]==self.pid)
-            _witnesses[self]=(endpoint,handle,self.birth,self.client,self.server)
+            _witnesses[self]=(endpoint,handle,self.birth,self.client,self.server,self.socket_pid)
             self.verify()
         except BaseException:
             self.close()
@@ -83,19 +89,21 @@ class _BackendWitness:
 
     def _verify_identity(self):
         need(not self.close_attempted and _witnesses.get(self)==(
-            self.endpoint,self.handle,self.birth,self.client,self.server))
+            self.endpoint,self.handle,self.birth,self.client,self.server,self.socket_pid))
         endpoint=self.endpoint;endpoint.verify()
         need(self.kernel.WaitForSingleObject(self.handle,0)==258)
         inside=C.c_int32()
         need(self.kernel.IsProcessInJob(self.handle,endpoint.job,C.byref(inside)) and inside.value==1)
         need(endpoint.backend.birth(self.handle)==self.birth)
+        if self.socket_pid!=self.pid:
+            need(self.socket_pid==endpoint.birth[0] and self.birth[1]>endpoint.birth[1][1])
         image=C.create_unicode_buffer(4096);length=C.c_uint32(len(image))
         need(endpoint.backend.image(self.handle,1,image,C.byref(length)) and 0<length.value<len(image)
              and image.value.casefold()==endpoint.image.casefold())
         borrowed=socket.socket(fileno=self.socket)
         try:
             need(borrowed.getsockname()==self.client and borrowed.getpeername()==self.server
-                 and connection_owner(borrowed)==self.pid)
+                 and connection_owner(borrowed)==self.socket_pid)
         finally:
             borrowed.detach()
         need(endpoint.backend.birth(self.handle)==self.birth and self.kernel.WaitForSingleObject(self.handle,0)==258)
@@ -183,19 +191,20 @@ class NativeOwnedDatabaseEndpoint:
         """Read-only probes before any libpq startup or credential dispatch."""
         while True:
             self.verify();budget=remaining(deadline)
-            try:
-                with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
-                    connection.settimeout(min(.2,budget))
+            with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
+                connection.settimeout(min(.2,budget))
+                try:
                     connection.connect(('127.0.0.1',int(self.port)))
+                except (ConnectionRefusedError, TimeoutError):
+                    # This socket has sent no PostgreSQL startup packet or
+                    # credential. Only connect failures can poll after close.
+                    pass
+                else:
                     witness=_BackendWitness(self,connection,deadline)
                     try:witness.verify()
                     finally:witness.close()
-                return
-            except ConnectionRefusedError:
-                # A completed refusal sent no startup packet/password. Closing
-                # the original socket succeeded; only this condition may poll.
-                if self.adapter.observe(self.token,min(.05,remaining(deadline))) is not None:
-                    need(False)
+                    return
+            self.adapter.observe(self.token,min(.05,remaining(deadline)))
 
     def connect(self,parsed,*,autocommit=False,deadline=None):
         from .native_trial_authority import budget
@@ -221,7 +230,7 @@ class NativeOwnedDatabaseEndpoint:
             'passfile':os.devnull,'sslmode':'disable','gssencmode':'disable',
             'require_auth':'scram-sha-256','target_session_attrs':'any',
             'options':f'-c lock_timeout={min(3000,milliseconds)} -c statement_timeout={milliseconds}'}
-        raw=connection=witness=borrowed=None
+        raw=connection=witness=borrowed=authenticated=None
         try:
             raw=pq.PGconn.connect_start(make_conninfo(**options).encode())
             need(raw.status in (pq.ConnStatus.STARTED,pq.ConnStatus.MADE) and raw.socket>=0)
@@ -239,9 +248,17 @@ class NativeOwnedDatabaseEndpoint:
                 elif status==pq.PollingStatus.WRITING:_wait(raw,selectors.EVENT_WRITE,deadline)
                 else:need(False)
             witness.verify();remaining(deadline)
-            # Match authenticated BackendKeyData to the same retained kernel
-            # socket owner before treating its image as the actual SQL backend.
-            need(type(raw.backend_pid) is int and raw.backend_pid==witness.pid)
+            # BackendKeyData is a locator, never proof. Keep the original
+            # transport witness until the actual SQL process is bound to the
+            # same socket, pinned image, birth and original Job.
+            pid=raw.backend_pid
+            need(type(pid) is int and 0<pid<2**32 and pid!=self.birth[0])
+            if pid!=witness.pid:
+                need(witness.socket_pid==self.birth[0])
+                authenticated=_BackendWitness(self,borrowed,deadline,authenticated_pid=pid)
+                need(authenticated.socket_pid==witness.socket_pid)
+                witness.close()
+                witness,authenticated=authenticated,None
             raw.nonblocking=1
             connection=_OwnedConnection(raw,row_factory=dict_row)
             connection._deadline=deadline
@@ -253,7 +270,7 @@ class NativeOwnedDatabaseEndpoint:
             return connection
         except BaseException as primary:
             cleanup=[]
-            for value,method in ((connection,'close'),(raw,'finish'),(witness,'close')):
+            for value,method in ((connection,'close'),(raw,'finish'),(authenticated,'close'),(witness,'close')):
                 if value is not None:
                     try:getattr(value,method)()
                     except BaseException as error:cleanup.append(error)

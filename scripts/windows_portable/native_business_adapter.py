@@ -66,8 +66,9 @@ def _composition(invocation, mode):
 def _snapshot(invocation, deadline):
     processes, security = _composition(invocation, invocation.security.security.mode)
     lease, inputs = processes.lease, processes.inputs
+    now = time.monotonic()
     need(type(deadline) in (int, float) and math.isfinite(deadline)
-         and 0 < deadline - time.monotonic() <= 30 and not processes.failed)
+         and now < deadline <= now + 30 and not processes.failed)
     def held(_):
         lease._verify()
         need(lease.record['phase'] == 'RUNNING' and processes.application is not None)

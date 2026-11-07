@@ -129,7 +129,7 @@ class OriginalMemory:
         address=struct.unpack('<Q',self.read(pointer,8))[0]
         header=self.read(address,28);version,size=struct.unpack_from('<II',header)
         a.need(version==self.policy.namespace_version and 28<=size<=4*1024*1024)
-        raw=self.read(address,size);mapping=parse_v6(raw)
+        raw=self.read(address,size);mapping=parse_v6(raw,allow_opaque_names=True)
         a.need(mapping['namespace_size']==size and raw[:28]==header and self.read(pointer,8)==struct.pack('<Q',address))
         self.check();return pointer,address,raw,mapping
 

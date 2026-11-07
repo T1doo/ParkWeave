@@ -5,6 +5,7 @@ source grant, identity, native fact or Windows configuration acceptance.
 """
 import ast
 import json
+import os
 from pathlib import Path
 import time
 from types import SimpleNamespace
@@ -112,6 +113,7 @@ def test_probe_workflow_and_packaging_are_disabled_and_complete():
 
 
 @pytest.mark.parametrize('fault',[None,'configuration','cleanup','poisoned'])
+@pytest.mark.skipif(os.name != 'posix', reason='actual POSIX journal required')
 def test_original_controller_and_real_posix_journal_stop_or_preserve_failure(tmp_path,monkeypatch,fault):
     from scripts.windows_portable.fixed_directories import FixedPrivateDirectories
     from scripts.windows_portable import native_trial_facts

@@ -76,7 +76,7 @@ def signature_budget(delegation,crt,deadline=None,*,cleanup=False):
     now=time.monotonic()
     if deadline is None:return min(trace.state.deadline,now+30)
     need(type(deadline) in (int,float) and math.isfinite(deadline)
-        and now<deadline<=trace.state.deadline and deadline-now<=30)
+        and now<deadline<=min(trace.state.deadline,now+30))
     return deadline
 
 
@@ -185,12 +185,23 @@ class NativeMappedSources:
         from .processes import _ProcessState,PrivateProcessAdapter
         from .native_database_endpoint import _BackendWitness
         if type(origin) is _ProcessState:
+            from .isolated_pipe import is_owned_worker_helper
             matches=[]
             for token,owner,stopped,attempted in self.security.processes._owned.values():
                 adapter=owner if type(owner) is PrivateProcessAdapter else getattr(owner,'_adapters',{}).get(id(token))
-                if type(adapter) is PrivateProcessAdapter and adapter._group(token) is origin:
-                    need(not stopped and not attempted and adapter.lease is self.lease and adapter.backend is backend)
-                    matches.append(adapter)
+                if type(adapter) is not PrivateProcessAdapter:
+                    continue
+                group=adapter._group(token)
+                if group is not origin and not is_owned_worker_helper(group,backend,origin):
+                    continue
+                need(not stopped and not attempted and adapter.lease is self.lease)
+                if group is origin:
+                    need(adapter.backend is backend)
+                else:
+                    need(type(adapter.backend) is WindowsJobProcess and group.executable.lease is self.lease
+                         and group.registration=='ACKNOWLEDGED' and group.resources.get('bound') is True)
+                    adapter._live_identity(group)
+                matches.append(adapter)
             need(len(matches)==1 and origin.executable.lease is self.lease
                 and origin.registration=='ACKNOWLEDGED' and origin.resources.get('bound') is True
                 and origin.resources.get('process')==process and origin.resources.get('job')==job
@@ -545,7 +556,15 @@ def before_resume(backend,group,deadline):
     if a.bound_state(lease) is None:return
     need(group.resources.get('bound') is True and not group.started)
     value=session(lease);r=group.resources
-    value.watch(backend,r['process'],r['job'],r['birth'],group,deadline)
+    item=value.watch(backend,r['process'],r['job'],r['birth'],group,deadline)
+    if item.attached:
+        # DebugActiveProcess temporarily suspends existing threads. Its return
+        # alone is not a completed attach handshake. ready is set only after
+        # the original pump has validated AND continued its initial breakpoint.
+        need(item.ready.wait(max(0,deadline-time.monotonic())) and not value.failed
+             and item.initial_event and item.initial_breakpoint and not item.exited)
+        a.budget(lease,deadline)
+        need(backend.birth(r['process'])==r['birth'])
 
 
 def actual_peer(lease,peer,deadline):

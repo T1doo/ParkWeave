@@ -152,8 +152,7 @@ class NativePreparationSessionProvider:
             budget(store.lease,api.deadline)
             try:wrong.unprotect(raw,hashlib.sha256(entropy+b'wrong entropy').digest())
             except NativeFailure as error:
-                need(error.winerror==13 and error.primary_type=='ProtectionRefused'
-                     and error.phase=='ALLOCATION' and not error.cleanup_types and not wrong.unknown)
+                need(error.invalid_data_call_refusal and not wrong.unknown)
             else:need(False)
             budget(store.lease,api.deadline)
             _roundtrip_evidence[self]=(store.lease,kind,frame)

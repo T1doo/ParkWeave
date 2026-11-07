@@ -144,6 +144,7 @@ def inspect_payload(root):
         files[name]=raw
     report=symbol_requirements(files)
     return dict(**report,payload_source=manifest['source_commit'],
+        payload_source_snapshot_sha256=manifest.get('source_snapshot_sha256'),
         payload_manifest_sha256=sha256(raw_manifest).hexdigest(),
         producer_assets=[{key:row[key] for key in ('file','version','sha256')}
             for row in json.loads(files['runtime-assets.json'])['assets']],

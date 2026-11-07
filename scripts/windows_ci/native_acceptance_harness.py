@@ -233,8 +233,7 @@ class NativeBackend:
         wrong=_NativeDPAPI();self.crypto.append(wrong)
         try:wrong.unprotect(base64.b64decode(sealed[ENTERPRISES[0]],validate=True),entropies[REVIEWERS[0]])
         except NativeFailure as error:
-            need(not wrong.unknown and not error.cleanup_types and error.winerror==13
-                 and error.primary_type=='ProtectionRefused' and error.phase=='ALLOCATION')
+            need(error.invalid_data_call_refusal and not wrong.unknown)
         else:need(False)
         # Plaintext never enters argv/env/files/logs; immutable Python copies
         # cannot be promised erased, so no process-memory secrecy claim.

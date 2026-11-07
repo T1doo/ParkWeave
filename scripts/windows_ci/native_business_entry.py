@@ -176,7 +176,9 @@ def main(argv=None):
             cleanup_type=_error_type(cleanup) if cleanup is not None else None,
             failure_stage=failure_stage or cleanup_scope,
             primary=_failure_diagnostic(primary,sites),cleanup=_failure_diagnostic(cleanup,sites),
+            environment_blockers=getattr(scope,'environment_blockers',[]),
             crt_preflight=getattr(scope,'crt_preflight',None),
+            webview_preflight=getattr(scope,'webview_preflight',None),
             desktop=scope.desktop.public() if scope is not None and getattr(scope,'desktop',None) is not None else None,
             pgdata_probe=_probe_summary(scope),
             outer_cleanup=dict(scope=cleanup_scope,
@@ -189,7 +191,8 @@ def main(argv=None):
         result['pgdata_probe']=summary
         result['outer_cleanup']=dict(scope=cleanup_scope,returned_without_exception=True,
             persistent_cleanup='NO_DELETION_OR_POST_CLOSE_REOPEN')
-    print(json.dumps(result));return 0
+    print(json.dumps(result))
+    return 2 if result.get('environment_blockers') else 0
 
 
 if __name__=='__main__':raise SystemExit(main())

@@ -1,0 +1,28 @@
+// Real DOM + explicit fake host transport. Not a native business acceptance.
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const {JSDOM}=require('jsdom');
+const dom=new JSDOM('<!doctype html><html><head></head><body></body></html>',{url:'https://parkweave.invalid/desktop-startup',runScripts:'outside-only'});
+const w=dom.window,d=w.document,sent=[];let reply;
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+w.chrome={webview:{postMessage:raw=>sent.push(JSON.parse(raw)),addEventListener:(event,fn)=>{assert.equal(event,'message');reply=fn;}}};
+w.fetch=()=>{throw Error('No network permitted')};
+w.eval(fs.readFileSync('src/parkweave/desktop_startup.js','utf8'));
+const form=d.querySelector('form'),submit=form.querySelector('button[type=submit]'),path=form.querySelector('input');
+const send=()=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+assert.equal(sent.length,0);
+path.value='E:\\synthetic-not-created';
+send();send();assert.equal(sent.length,1);
+assert.equal(sent[0].request.action,'reopen');assert.deepEqual(sent[0].request.passwords,{});
+reply({data:{protocol:'PARKWEAVE_STARTUP_V1',state:'UNKNOWN',message:'未知'}});
+assert.equal(submit.disabled,true);send();assert.equal(sent.length,1);
+reply({data:{protocol:'wrong',state:'REFUSED',message:'wrong'}});assert.equal(submit.disabled,true);
+reply({data:{protocol:'PARKWEAVE_STARTUP_V1',state:'REFUSED',message:'拒绝'}});assert.equal(submit.disabled,false);
+[...d.querySelectorAll('button')].find(e=>e.textContent==='创建新工作台').click();
+const passwords=[...d.querySelectorAll('input[type=password]')];
+passwords.forEach((e,i)=>e.value='SYNTHETIC_ONLY_'+i);
+send();assert.equal(sent.length,2);assert.equal(sent[1].request.action,'new');
+assert.equal(sent[1].request.initialize_profile,true);assert.equal(sent[1].request.sample_collaboration,true);
+assert.equal(Object.keys(sent[1].request.passwords).length,4);
+assert(passwords.every(e=>e.value===''));
+send();assert.equal(sent.length,2);
+dom.window.close();console.log(JSON.stringify({scope:'DOM + fake host',implicitRequests:0,duplicateSuppression:true,unknownNoRetry:true,refusalRecoverable:true,passwordFieldsCleared:true}));

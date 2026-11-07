@@ -11,7 +11,7 @@ from .store import Denied
 LIMIT = 4096
 DATABASE_SQL = """SELECT current_database() AS name,current_user AS role,session_user AS login,
     (SELECT oid::bigint FROM pg_database WHERE datname=current_database()) AS oid,
-    inet_server_addr()::text AS address,inet_server_port() AS port,
+    host(inet_server_addr()) AS address,inet_server_port() AS port,
     pg_postmaster_start_time()::text AS postmaster,
     (SELECT max(version) FROM schema_version) AS schema,
     (SELECT r.rolcanlogin AND NOT(r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls)

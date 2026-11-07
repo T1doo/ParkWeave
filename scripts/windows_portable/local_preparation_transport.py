@@ -21,12 +21,13 @@ class OwnedPreparationRequest:
     """One owned connection; bearer is sent only after endpoint verification."""
 
     def request(self, application, actor, method, path, body, request_key, deadline):
+        now = time.monotonic()
         if (type(application) is not RegisteredApplication
                 or type(application.adapter) is not PrivateProcessAdapter
                 or application.api is application.worker or type(actor) is not ExistingActorProbe
                 or type(application.port) is not int or not 1 <= application.port <= 65535
                 or type(deadline) not in (int, float) or not math.isfinite(deadline)
-                or not 0 < deadline - time.monotonic() <= 30):
+                or not now < deadline <= now + 30):
             raise CandidateRefused('bounded original application request required')
         actor.expected()
         reads = re.fullmatch('/api/(?:runs/' + UUID_PATH + '|preparations/' + UUID_PATH + ')', path)

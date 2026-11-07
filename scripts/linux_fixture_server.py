@@ -8,7 +8,6 @@ import signal
 import subprocess
 import sys
 import time
-import pgserver
 import tempfile
 import shutil
 from contextlib import contextmanager
@@ -49,6 +48,7 @@ def demo_database(fresh=False):
     creation evidence. Only an already schema-25/26/27/28/29 demo may use the old path.
     """
     if sys.platform != "linux":raise Denied("Linux synthetic demo only; Windows installed adapter remains blocked")
+    import pgserver
     base=Path(tempfile.mkdtemp(prefix="parkweave-demo-")) if fresh else None
     root=base/".runtime" if fresh else Path(".runtime").resolve()
     data=base/"data" if fresh else root/"smoke-pg"

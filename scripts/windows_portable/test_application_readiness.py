@@ -147,6 +147,54 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
             with self.assertRaises(p.ProcessRefused):a._get(app,TOKEN,NONCE,time.monotonic()+1)
         connection.connect.assert_called_once_with(('127.0.0.1',12345));connection.sendall.assert_not_called()
 
+    def test_api_connect_retries_on_fresh_socket_before_identity_and_one_get(self):
+        _,adapter,app,_,_=self.fixture()
+        first,second,connected=Mock(),Mock(),Mock()
+        first.connect.side_effect=TimeoutError
+        second.connect.side_effect=ConnectionRefusedError
+        events=[]
+        connected.sendall.side_effect=lambda _:events.append('sent')
+        connected.recv.return_value=(b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n'
+                                     b'Cache-Control: no-store\r\nContent-Length: 2\r\n\r\n{}')
+        with patch.object(adapter,'require_endpoint_support') as support, \
+             patch.object(adapter,'verify_api_connection',side_effect=lambda *_:events.append('verified')) as verify, \
+             patch.object(a.socket,'socket') as factory,patch.object(a.time,'sleep') as pause:
+            factory.return_value.__enter__.side_effect=[first,second,connected]
+            self.assertEqual(a._get(app,TOKEN,NONCE,time.monotonic()+1),{})
+        self.assertEqual(factory.call_count,3)
+        self.assertEqual(factory.return_value.__exit__.call_count,3)
+        self.assertEqual(support.call_count,3)
+        self.assertEqual(pause.call_count,2)
+        verify.assert_called_once_with(app.api,connected)
+        first.sendall.assert_not_called()
+        second.sendall.assert_not_called()
+        self.assertEqual(events,['verified','sent'])
+
+    def test_api_response_timeout_is_not_replayed(self):
+        _,adapter,app,_,_=self.fixture()
+        connection=Mock()
+        connection.recv.side_effect=TimeoutError
+        with patch.object(adapter,'require_endpoint_support'),patch.object(adapter,'verify_api_connection'), \
+             patch.object(a.socket,'socket') as factory:
+            factory.return_value.__enter__.return_value=connection
+            with self.assertRaises(TimeoutError):a._get(app,TOKEN,NONCE,time.monotonic()+1)
+        factory.assert_called_once()
+        connection.sendall.assert_called_once()
+
+    def test_api_connect_retry_stops_at_the_original_deadline(self):
+        _,adapter,app,_,_=self.fixture()
+        connection=Mock()
+        connection.connect.side_effect=TimeoutError
+        with patch.object(adapter,'require_endpoint_support'),patch.object(adapter,'verify_api_connection') as verify, \
+             patch.object(a.socket,'socket') as factory,patch.object(a.time,'monotonic',side_effect=[1.,1.25]):
+            factory.return_value.__enter__.return_value=connection
+            with self.assertRaisesRegex(a.CandidateRefused,'readiness deadline'):
+                a._get(app,TOKEN,NONCE,1.25)
+        factory.assert_called_once()
+        connection.settimeout.assert_called_once_with(.25)
+        verify.assert_not_called()
+        connection.sendall.assert_not_called()
+
     def test_logical_pair_gate_waits_for_running_before_one_go_and_rejects_stale_actor(self):
         lease,adapter,app,probe,tokens=self.fixture()
         worker=dict(schema='parkweave-worker-ready/1',challenge=NONCE,pid=42,database=dict(DB),mode='LOCAL',state='WAITING_GO',business_started=False)
@@ -156,11 +204,70 @@ class ConsumerAndEndpointChecks(unittest.TestCase):
              patch.object(adapter,'worker_ready_frame',return_value=worker),patch.object(a,'_get',return_value=api), \
              patch.object(adapter,'worker_go') as go:
             receipt=a.require_application_ready(lease,None,app,probe,tokens)
-            a.check_before_running(receipt);go.assert_not_called();deadline=a._issued[receipt][3]
+            a.check_before_running(receipt);go.assert_not_called();deadline=a._issued[receipt][4]
             lease.status=lambda:'RUNNING';a.activate_application(receipt);go.assert_called_once_with(app.worker,NONCE,deadline)
             with self.assertRaises(a.CandidateRefused):a.activate_application(receipt)
             lease.status=lambda:'APPLICATION';api['actor']={**ACTOR,'id':'different-owner'}
             with self.assertRaises(a.CandidateRefused):a.require_application_ready(lease,None,app,probe,tokens)
+
+    def test_go_uses_a_single_source_capped_budget_armed_before_running(self):
+        lease,adapter,app,_,tokens=self.fixture()
+        from . import native_trial_authority
+        identities=tuple(adapter.live_identity(token) for token in tokens)
+        now=[14.6]
+        receipt=a.ReadyApplication()
+        a._issued[receipt]=(app,lease,identities,15.,None)
+        with patch.object(a.time,'monotonic',side_effect=lambda:now[0]), \
+             patch.object(native_trial_authority,'budget',side_effect=lambda _,end:min(end,17.)), \
+             patch.object(adapter,'worker_go') as go:
+            a.check_before_running(receipt)
+            self.assertEqual(a._issued[receipt][4],17.)
+            now[0]=14.9
+            with self.assertRaises(a.CandidateRefused):a.check_before_running(receipt)
+            self.assertEqual(a._issued[receipt][4],17.)
+            now[0]=15.1
+            lease.status=lambda:'RUNNING'
+            a.activate_application(receipt)
+            go.assert_called_once_with(app.worker,NONCE,17.)
+
+    def test_physical_recheck_has_its_own_deadline_after_both_live_probes(self):
+        lease,adapter,app,probe,tokens=self.fixture()
+        from . import native_trial_authority
+        worker=dict(schema='parkweave-worker-ready/1',challenge=NONCE,pid=42,database=dict(DB),
+                    mode='LOCAL',state='WAITING_GO',business_started=False)
+        api=dict(schema='parkweave-api-ready/1',challenge=NONCE,pid=41,database=dict(DB),
+                 actor=dict(ACTOR),mode='LOCAL',business_authority=False)
+        now=[10.]
+        def observe(*_):
+            now[0]=14.9
+            return api
+        with patch.object(a.time,'monotonic',side_effect=lambda:now[0]), \
+             patch.object(native_trial_authority,'budget',side_effect=lambda _,end:min(end,20.)), \
+             patch.object(adapter,'require_endpoint_support'),patch.object(a,'_database',return_value=DB), \
+             patch.object(adapter,'worker_ready_frame',return_value=worker),patch.object(a,'_get',side_effect=observe):
+            first=a.require_application_ready(lease,None,app,probe,tokens)
+            self.assertEqual(a._issued[first][3],20.)
+            now[0]=10.
+            second=a.require_application_ready(lease,None,app,probe,tokens)
+            now[0]=17.
+            a.check_before_running(first)
+            self.assertEqual(a._issued[first][4],20.)
+            now[0]=20.
+            with self.assertRaisesRegex(a.CandidateRefused,'recheck deadline'):
+                a.check_before_running(second)
+            self.assertIsNone(a._issued[second][4])
+
+    def test_go_requires_an_unexpired_armed_window(self):
+        lease,adapter,app,_,tokens=self.fixture()
+        identities=tuple(adapter.live_identity(token) for token in tokens)
+        lease.status=lambda:'RUNNING'
+        with patch.object(a.time,'monotonic',return_value=17.),patch.object(adapter,'worker_go') as go:
+            for end in (None,17.):
+                receipt=a.ReadyApplication()
+                a._issued[receipt]=(app,lease,identities,15.,end)
+                with self.assertRaises(a.CandidateRefused):a.activate_application(receipt)
+                self.assertNotIn(receipt,a._issued)
+            go.assert_not_called()
 
     def test_private_pipe_read_keeps_same_cap_stop_from_closing_descriptors(self):
         _,adapter,app,_,_=self.fixture();read_fd,write_fd=os.pipe()

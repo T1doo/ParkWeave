@@ -1,0 +1,206 @@
+{
+  "result": "NOT_EXECUTED_OR_UNKNOWN",
+  "primary_type": "ControlFailure",
+  "cleanup_type": null,
+  "failure_stage": "BUSINESS",
+  "primary": {
+    "type": "ControlFailure",
+    "control": {
+      "outcome": "UNKNOWN",
+      "phase": "CLUSTER",
+      "cause_count": 3,
+      "cleanup_count": 0,
+      "causes": [
+        "CRTRefused",
+        "CRTRefused",
+        "ClusterStartFailure"
+      ],
+      "cleanup": [],
+      "operation": "CREATE"
+    },
+    "nested_controls": [],
+    "nested_controls_truncated": false,
+    "cause_details": [
+      0,
+      1,
+      2
+    ],
+    "cleanup_details": [],
+    "exception_details": [
+      {
+        "type": "CRTRefused",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "281aab86936f2effad13187de6ce433d3dce44ef",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.native_system_crt",
+              "function": "NativeSystemCRT._observe_locked",
+              "line": 216
+            },
+            {
+              "module": "scripts.windows_portable.authenticode_signature",
+              "function": "need",
+              "line": 54
+            }
+          ],
+          "examined_nodes": 2,
+          "truncated": false
+        }
+      },
+      {
+        "type": "CRTRefused",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "281aab86936f2effad13187de6ce433d3dce44ef",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.native_cluster",
+              "function": "NativeProtectedClusterProcesses._run",
+              "line": 75
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeClusterPrerequisites.server_ready",
+              "line": 375
+            },
+            {
+              "module": "scripts.windows_portable.native_system_crt",
+              "function": "NativeSystemCRT.observe_group",
+              "line": 241
+            },
+            {
+              "module": "scripts.windows_portable.native_system_crt",
+              "function": "NativeSystemCRT._observe",
+              "line": 201
+            },
+            {
+              "module": "scripts.windows_portable.native_system_crt",
+              "function": "NativeSystemCRT._observe_locked",
+              "line": 218
+            }
+          ],
+          "examined_nodes": 5,
+          "truncated": false
+        }
+      },
+      {
+        "type": "ClusterStartFailure",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "281aab86936f2effad13187de6ce433d3dce44ef",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.controller",
+              "function": "Controller._run",
+              "line": 222
+            },
+            {
+              "module": "scripts.windows_portable.instance_processes",
+              "function": "InstanceProcesses.create_cluster",
+              "line": 91
+            },
+            {
+              "module": "scripts.windows_portable.instance_processes",
+              "function": "InstanceProcesses._cluster",
+              "line": 72
+            },
+            {
+              "module": "scripts.windows_portable.native_cluster",
+              "function": "NativeProtectedClusterProcesses.create_cluster",
+              "line": 20
+            },
+            {
+              "module": "scripts.windows_portable.native_cluster",
+              "function": "NativeProtectedClusterProcesses._run",
+              "line": 82
+            }
+          ],
+          "examined_nodes": 5,
+          "truncated": false
+        }
+      }
+    ],
+    "details_truncated": false
+  },
+  "cleanup": null,
+  "crt_preflight": {
+    "status": "ORIGINAL_STRICT_CHECKS_PASSED_NOT_PRODUCT_ACCEPTANCE",
+    "seconds": 0.125,
+    "retrieval": {
+      "crl_sha256": "24e60769c036323f4559aeb1ec51a2a6afbe31007ba6281914177780be8bceb8",
+      "bytes": 830,
+      "policy": {
+        "this_update_utc": "2026-10-28T21:04:31Z",
+        "next_update_utc": "2027-01-27T09:24:31Z",
+        "this_update_filetime": 134376950710000000,
+        "next_update_filetime": 134455154710000000,
+        "checked_at_utc": "2026-11-05T19:32:51.960514Z",
+        "entry_count": 0,
+        "leaf_listed": false,
+        "leaf_entry": null,
+        "revocation_acceptance": "NOT_DECIDED_REQUIRES_FRESH_ORIGINAL_CACHE_ONLY_VERIFIER"
+      },
+      "native_signature_requested": true,
+      "automatic_authentication": "INHIBITED",
+      "redirects": "NATIVE_OPAQUE_MAY_FOLLOW",
+      "final_url": "NOT_OBSERVED",
+      "cache_effect": "MAY_HAVE_WRITTEN_TEMPORARY_ACCOUNT_CRYPTNET_CACHE",
+      "last_sync_filetime": "134383807719591588",
+      "native_timeout_ms": 15000,
+      "requested_byte_limit": 16777216,
+      "cleanup": "OWNED_CONTEXTS_CLOSED"
+    },
+    "failure": null,
+    "original_file_cleanup": [
+      {
+        "index": 3,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 2,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 1,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 0,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      }
+    ],
+    "rows": [
+      {
+        "file": "msvcp140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      },
+      {
+        "file": "vcruntime140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      }
+    ]
+  },
+  "desktop": {
+    "state": "NOT_STARTED",
+    "phase": "NOT_STARTED",
+    "sessions": [],
+    "captures_completed": 0,
+    "normal_product_entry": "NOT_ACCEPTED",
+    "usable_product": false
+  },
+  "pgdata_probe": null,
+  "outer_cleanup": {
+    "scope": "SCOPE_CLOSE",
+    "returned_without_exception": true,
+    "controller_cleanup": "SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED"
+  },
+  "activation_allowed": false,
+  "usable_product": false,
+  "native_acceptance": "NOT_ACCEPTED"
+}

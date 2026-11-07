@@ -356,7 +356,7 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         def image(process, flags, buffer, size):
             buffer.value = '\\Device\\Volume\\private.exe'; size._obj.value = len(buffer.value); return 1
         backend.image = image
-        executable = SimpleNamespace(path='C:\\private\\private.exe', root_path='C:\\private',
+        executable = SimpleNamespace(path='C:\\private\\private.exe', command_path='C:\\private\\private.exe', root_path='C:\\private',
             native_path='\\Device\\Volume\\private.exe', verify=lambda: calls.append(('verify_exe',)))
         group = SimpleNamespace(resources={}, command=SimpleNamespace(arguments=()), executable=executable, started=False, returncode=None)
         return backend, group, calls
@@ -422,15 +422,18 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         if before is not None:self.assertEqual(len(os.listdir('/proc/self/fd')),before)
 
     def test_child_stdio_crt_close_unknown_never_signs_whole_stop(self):
-        before=len(os.listdir('/proc/self/fd'))
+        before=len(os.listdir('/proc/self/fd')) if sys.platform=='linux' else None
         backend,group,calls=self.created_backend()
         group.command.stdio_contract='WORKER_READINESS_V1'
         original=os.close;unknown=[]
+        original_pipe=os.pipe;allocated=[]
+        def tracked_pipe():
+            pair=original_pipe();allocated.extend(pair);return pair
         def close_once(fd):
             original(fd)
             if not unknown:
                 unknown.append(fd);raise OSError('injected close outcome unknown')
-        with patch('subprocess.STARTUPINFO',SimpleNamespace,create=True),patch.object(os,'close',side_effect=close_once):
+        with patch('subprocess.STARTUPINFO',SimpleNamespace,create=True),patch.object(os,'close',side_effect=close_once),patch.object(os,'pipe',side_effect=tracked_pipe):
             with self.assertRaises(BaseExceptionGroup):backend.create(group,lambda cap:None,{},time.monotonic()+1)
         self.assertEqual(group.resources['stdio_close_unknown'],[('CRT',unknown[0])])
         group.creating=False;group.attempted_stop=False;group.stopped=False;group.errors=[];group.operation_lock=threading.Lock()
@@ -440,7 +443,9 @@ class WindowsProcessStandInChecks(unittest.TestCase):
         token=p.OwnedGroup();adapter._issued[id(token)]=(token,group)
         self.assertFalse(adapter.stop_owned(token));self.assertTrue(adapter.unknown);self.assertEqual(marks,['RUNNING'])
         self.assertFalse(group.stopped)
-        self.assertEqual(len(os.listdir('/proc/self/fd')),before)
+        for fd in allocated:
+            with self.assertRaises(OSError):os.fstat(fd)
+        if before is not None:self.assertEqual(len(os.listdir('/proc/self/fd')),before)
 
     def test_assignment_failure_never_resumes_and_exact_unassigned_handle_is_stopped(self):
         backend, group, calls = self.created_backend(bind_error=True)

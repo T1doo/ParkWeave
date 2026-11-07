@@ -13,7 +13,16 @@ from types import CodeType
 
 # Only concrete classes already loaded by the original execution path. This
 # is a finite category contract, not permission to accept arbitrary type names.
-_KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+_KNOWN=(("scripts.windows_ci.owned_job","OwnedThreadResumeError","OwnedJobError","OWNED_THREAD_RESUME"),
+        ("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
+        ("scripts.windows_portable.processes","OwnedProcessExited","ProcessRefused","OWNED_PROCESS_EXIT"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenRefused","TokenRefused","TOKEN_PREDICATE"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenFailure","TokenFailure","TOKEN_OPERATION"),
+        ("scripts.windows_portable.restricted_token_candidate","TokenGroupRefused","TokenRefused","TOKEN_GROUP_PREDICATE"),
+        ("scripts.windows_portable.initdb_pipe_candidate","PipeRefused","PipeRefused","PIPE_PREDICATE"),
+        ("scripts.windows_portable.initdb_pipe_candidate","PipeFailure","PipeFailure","PIPE_OPERATION"),
+        ("scripts.windows_portable.dpapi_native_candidate","NativeFailure","NativeFailure","DPAPI_OPERATION"),
+        ("scripts.windows_portable.native_dpapi_peer","LocalServicePeerFailure","TrialRefused","LOCAL_SERVICE_DPAPI_PEER"),
         ("scripts.windows_portable.pgdata_probe_boundary","_ConfigurationBoundaryReached","PGDATA_BOUNDARY_STOP","PGDATA_DIAGNOSTIC_STOP"),
         ("scripts.windows_portable.pgdata_candidate","DataRefused","DataRefused","PGDATA_PREDICATE"),
         ("scripts.windows_portable.pgdata_candidate","DataConstructionFailure","DataConstructionFailure","PGDATA_CONSTRUCTION"),
@@ -28,13 +37,44 @@ _KNOWN=(("parkweave.store","Denied","Denied","ACCESS_OR_BINDING_REFUSED"),
         ("scripts.windows_portable.authenticode_signature","CRTTrustFailure",
          "CRTTrustFailure","CRT_SIGNATURE_INSPECTION"))
 _SOURCES=(
+    ('scripts.windows_ci.owned_job','scripts/windows_ci/owned_job.py'),
+    ('scripts.windows_ci.native_desktop_trial','scripts/windows_ci/native_desktop_trial.py'),
+    ('scripts.windows_portable.native_business_adapter','scripts/windows_portable/native_business_adapter.py'),
+    ('scripts.windows_portable.preparation_business_trial','scripts/windows_portable/preparation_business_trial.py'),
+    ('scripts.windows_portable.local_preparation','scripts/windows_portable/local_preparation.py'),
+    ('scripts.windows_portable.dpapi_native_candidate','scripts/windows_portable/dpapi_native_candidate.py'),
+    ('scripts.windows_portable.native_dpapi_peer','scripts/windows_portable/native_dpapi_peer.py'),
+    ('scripts.windows_portable.native_trial_facts','scripts/windows_portable/native_trial_facts.py'),
     ('scripts.windows_portable.controller','scripts/windows_portable/controller.py'),
+    ('scripts.windows_portable.application_readiness','scripts/windows_portable/application_readiness.py'),
+    ('scripts.windows_portable.polling_database','scripts/windows_portable/polling_database.py'),
+    ('scripts.windows_portable.isolated_pipe','scripts/windows_portable/isolated_pipe.py'),
     ('scripts.windows_portable.directories','scripts/windows_portable/directories.py'),
     ('scripts.windows_portable.fixed_directories','scripts/windows_portable/fixed_directories.py'),
     ('scripts.windows_portable.fixed_journal','scripts/windows_portable/fixed_journal.py'),
     ('scripts.windows_portable.fixed_windows_journal','scripts/windows_portable/fixed_windows_journal.py'),
     ('scripts.windows_portable.windows_directory_handles','scripts/windows_portable/windows_directory_handles.py'),
     ('scripts.windows_portable.native_instance_security','scripts/windows_portable/native_instance_security.py'),
+    ('scripts.windows_portable.restricted_token_candidate','scripts/windows_portable/restricted_token_candidate.py'),
+    ('scripts.windows_portable.native_protected_bootstrap','scripts/windows_portable/native_protected_bootstrap.py'),
+    ('scripts.windows_portable.initdb_pipe_candidate','scripts/windows_portable/initdb_pipe_candidate.py'),
+    ('scripts.windows_portable.initdb_client_candidate','scripts/windows_portable/initdb_client_candidate.py'),
+    ('scripts.windows_portable.initdb_output_capture','scripts/windows_portable/initdb_output_capture.py'),
+    ('scripts.windows_portable.restricted_initdb_candidate','scripts/windows_portable/restricted_initdb_candidate.py'),
+    ('scripts.windows_portable.restricted_startup_candidate','scripts/windows_portable/restricted_startup_candidate.py'),
+    ('scripts.windows_portable.default_dacl_candidate','scripts/windows_portable/default_dacl_candidate.py'),
+    ('scripts.windows_portable.native_cluster','scripts/windows_portable/native_cluster.py'),
+    ('scripts.windows_portable.native_database_endpoint','scripts/windows_portable/native_database_endpoint.py'),
+    ('scripts.windows_portable.native_iat_observer','scripts/windows_portable/native_iat_observer.py'),
+    ('scripts.windows_portable.native_loader_images','scripts/windows_portable/native_loader_images.py'),
+    ('scripts.windows_portable.native_mapped_sources','scripts/windows_portable/native_mapped_sources.py'),
+    ('scripts.windows_portable.api_set_map','scripts/windows_portable/api_set_map.py'),
+    ('scripts.windows_portable.crt_pe','scripts/windows_portable/crt_pe.py'),
+    ('scripts.windows_portable.payload','scripts/windows_portable/payload.py'),
+    ('scripts.windows_portable.runtime_payload','scripts/windows_portable/runtime_payload.py'),
+    ('scripts.windows_portable.instance_processes','scripts/windows_portable/instance_processes.py'),
+    ('scripts.windows_portable.processes','scripts/windows_portable/processes.py'),
+    ('scripts.windows_portable.windows_process_handles','scripts/windows_portable/windows_process_handles.py'),
     ('scripts.windows_portable.pgdata_candidate','scripts/windows_portable/pgdata_candidate.py'),
     ('scripts.windows_portable.pgdata_probe_boundary','scripts/windows_portable/pgdata_probe_boundary.py'),
     ('scripts.windows_portable.native_runtime_staging','scripts/windows_portable/native_runtime_staging.py'),
@@ -46,6 +86,8 @@ _SOURCES=(
     ('scripts.windows_portable.native_protected_objects','scripts/windows_portable/native_protected_objects.py'),
     ('scripts.windows_portable.native_trial_authority','scripts/windows_portable/native_trial_authority.py'),
     ('scripts.windows_portable.native_trial_domain','scripts/windows_portable/native_trial_domain.py'),
+    ('parkweave.installed_fixture_receipt','src/parkweave/installed_fixture_receipt.py'),
+    ('parkweave.runtime_readiness','src/parkweave/runtime_readiness.py'),
     ('parkweave.windows_files','src/parkweave/windows_files.py'),
     ('parkweave.windows_handles','src/parkweave/windows_handles.py'))
 
@@ -124,6 +166,74 @@ def detail(error,public_type,sites=None,budget=None):
     result=dict(type=kind['type'] if kind else public_type,
         category=kind['category'] if kind else
             'UNCLASSIFIED' if public_type=='UNLISTED_EXCEPTION' else 'RECORDED_TYPE')
+    if kind is not None and kind['category']=='LOCAL_SERVICE_DPAPI_PEER':
+        from scripts.windows_portable.native_dpapi_peer import PEER_PHASES
+        data=vars(error);phase=data.get('phase');code=data.get('winerror');dpapi=data.get('dpapi_phase')
+        if (type(phase) is str and phase in PEER_PHASES
+                and (code is None or type(code) is int and 0<=code<2**32)
+                and (dpapi is None or type(dpapi) is str and dpapi in ('INPUT','CALL','ALLOCATION','COPY'))):
+            result['local_service_dpapi']=dict(phase=phase,winerror=code,dpapi_phase=dpapi)
+        else:result['local_service_dpapi']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='DPAPI_OPERATION':
+        data=vars(error);phase=data.get('phase');code=data.get('winerror');cleanup=data.get('cleanup_types')
+        if (type(phase) is str and phase in ('INPUT','CALL','ALLOCATION','COPY')
+                and (code is None or type(code) is int and 0<=code<2**32)
+                and type(cleanup) is tuple and len(cleanup)<=8):
+            result['dpapi']=dict(phase=phase,winerror=code,cleanup_count=len(cleanup))
+        else:result['dpapi']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='OWNED_THREAD_RESUME':
+        data=vars(error);count=data.get('previous_count');code=data.get('winerror')
+        if (type(count) is int and 0<=count<2**32
+                and (code is None or type(code) is int and 0<=code<2**32)):
+            result['thread_resume']=dict(previous_count=count,winerror=code)
+        else:result['thread_resume']=dict(details='UNAVAILABLE')
+        observation=data.get('process_observation')
+        if (type(observation) is dict and set(observation)=={'wait','exit_code'}
+                and type(observation['wait']) is int and observation['wait'] in (0,258)
+                and (observation['exit_code'] is None or type(observation['exit_code']) is int
+                     and 0<=observation['exit_code']<2**32)):
+            result['owned_process_at_resume']=dict(observation)
+    if kind is not None and kind['category']=='TOKEN_OPERATION':
+        # Existing numeric error and finite source phase only. Never emit the
+        # token, SID, ACL, error text, arbitrary type names or caller fields.
+        data=vars(error);phase=data.get('phase');code=data.get('winerror')
+        phases=frozenset(('NEW','OPEN_CURRENT_PRIMARY','QUERY_8','QUERY_1','QUERY_2','QUERY_3',
+            'DERIVE','LOOKUP_CHANGE_NOTIFY','QUERY_DEFAULT_DACL','QUERY_TOKEN_OWNER',
+            'ADMIT_DEFAULT_DACL_SUBSET','SET_OWNED_DERIVED_DEFAULT_DACL','SET_OWNED_DERIVED_TOKEN_OWNER'))
+        if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
+            result['restricted_token']=dict(phase=phase,winerror=code)
+        else:result['restricted_token']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='TOKEN_GROUP_PREDICATE':
+        data=vars(error);scope=data.get('group_scope');before=data.get('before');observed=data.get('observed')
+        if (type(scope) is str and scope in ('REQUESTED_DISABLED','UNCHANGED_GROUP')
+                and all(type(value) is int and 0<=value<2**32 for value in (before,observed))):
+            result['token_group']=dict(scope=scope,before=before,observed=observed)
+        else:result['token_group']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='PIPE_OPERATION':
+        data=vars(error);phase=data.get('phase');code=data.get('winerror')
+        phases=('NEW','CREATE_SECURITY_DESCRIPTOR','CREATE_ORIGINAL_PIPE','RELEASE_CREATION_SD',
+            'VERIFY_ORIGINAL_PIPE','READ_PIPE_SECURITY','CONNECT_COMPLETION_UNKNOWN','CLOSE')
+        if type(phase) is str and phase in phases and (code is None or type(code) is int and 0<=code<2**32):
+            result['initdb_pipe']=dict(phase=phase,winerror=code)
+        else:result['initdb_pipe']=dict(details='UNAVAILABLE')
+    if kind is not None and kind['category']=='OWNED_PROCESS_EXIT':
+        data=vars(error);code=data.get('code');capture=data.get('capture')
+        if type(code) is int and -(2**31)<=code<2**32:result['owned_exit_code']=code
+        allowed=('PASSWORD_INPUT_ERROR','POSTGRES_LOOKUP_ERROR','BKI_FILE_ERROR','CONFIG_SAMPLE_ERROR',
+            'ACCESS_DENIED','MISSING_FILE','LOAD_OR_EXEC_ERROR','LOCALE_ERROR','ADMIN_TOKEN_ERROR','INITDB_REPORTED_ERROR')
+        output_key='initdb_output'
+        if 'postgres_capture' in data:
+            from scripts.windows_portable.initdb_output_capture import POSTGRES_STARTUP_LABELS
+            capture=data['postgres_capture'];allowed=POSTGRES_STARTUP_LABELS;output_key='postgres_output'
+        if (type(capture) is dict and set(capture)=={'status','bytes_read','truncated','labels'}
+                and type(capture['status']) is str and capture['status'] in
+                    ('SUPPRESSED_AFTER_SECRET','EMPTY_OR_CLOSED','READ_UNAVAILABLE','CLASSIFIED')
+                and type(capture['bytes_read']) is int and 0<=capture['bytes_read']<=65536
+                and type(capture['truncated']) is bool and type(capture['labels']) is tuple
+                and len(capture['labels'])<=len(allowed)
+                and all(type(label) is str and label in allowed for label in capture['labels'])):
+            result[output_key]=dict(capture)
+        elif capture is not None:result[output_key]=dict(details='UNAVAILABLE')
     if kind is not None and kind['category'] in ('PGDATA_PREDICATE','PGDATA_CONSTRUCTION'):
         from scripts.windows_portable.pgdata_candidate import PGDATA_STAGES,PGDATA_CHECKS,PGDATA_CALLS,PGDATA_FIELDS
         data=vars(error);check=data.get('check');fields=data.get('changed_fields')

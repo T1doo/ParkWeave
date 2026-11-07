@@ -1,4 +1,4 @@
-"""Original catalog GET handler with synthetic transport/DOM; no browser or DB."""
+"""Original preparation entry with synthetic transport and DOM; no browser or DB."""
 import json
 from pathlib import Path
 import subprocess
@@ -19,11 +19,16 @@ const catalog=(services=[],reviewers=[])=>({scope,services,reviewers,required_sl
 const ready=()=>catalog([service],[{id:'SYNTHETIC_REVIEWER'}]);
 const queue=[],requests=[];let deniedClears=0;
 const context=vm.createContext({$,console,Map,Error,Object,Number,Array,
+ crypto:require('node:crypto'),loadPreparation:async id=>loaded.push(id),
  document:{querySelectorAll:()=>[]},objectionLock:()=>false,
  textElement:(tag,text)=>({tag,textContent:text}),
- entryFetch:async(path,options)=>{requests.push({path,method:options.method});return queue.shift()();},
+ entryFetch:async(path,options)=>{
+  requests.push({path,method:options.method,body:options.body&&JSON.parse(options.body)});
+  return queue.shift()();
+ },
  clearEntryWriteRequests:()=>deniedClears++,clearReceiptHistory:()=>{},
 });
+const loaded=[];
 for(const name of input.stubs)context[name]=()=>{};
 vm.runInContext(input.source,context);
 $('token').value='SYNTHETIC_IDENTITY_A';
@@ -41,8 +46,33 @@ const settled=()=>{assert.notEqual($('prep-catalog-view').attributes['aria-busy'
  }else if(input.mode==='empty-service'||input.mode==='empty-reviewer'||input.mode==='ready'){
   reply(input.mode==='empty-service'?catalog():input.mode==='empty-reviewer'?catalog([service]):ready());
   await $('prep-catalog').onclick();settled();
-  assert.match($('prep-catalog-status').textContent,input.mode==='empty-service'?/暂无可用服务/:input.mode==='empty-reviewer'?/暂无可选核对专员/:/填写本次目标/);
+  assert.match($('prep-catalog-status').textContent,input.mode==='empty-service'?/暂无可用服务/:input.mode==='empty-reviewer'?/暂无可选核对专员/:/核对本次目标/);
   assert.equal($('prep-create').hidden,input.mode!=='ready');
+  if(input.mode==='ready')assert.equal($('prep-service').value,'0');
+ }else if(input.mode==='service-version'){
+  const newer={...service,version:2};
+  reply(catalog([service,newer],[{id:'SYNTHETIC_REVIEWER'}]));
+  await $('prep-catalog').onclick();
+  const select=$('prep-service'),submit=()=>$('prep-create').onsubmit({preventDefault(){}});
+  assert.equal(select.value,'');
+  assert.deepEqual(select.children.map(option=>option.value),['','0','1']);
+  assert.equal(select.children[0].disabled,true);
+  assert.match(select.children[2].textContent,/v2$/);
+  await submit();
+  assert.equal(requests.length,1);
+  assert.match($('prep-error').textContent,/请选择当前目录中的服务与版本/);
+  select.value='1';$('prep-reviewer').value='SYNTHETIC_REVIEWER';$('prep-goal').value='本次目标';
+  reply({run_id:'new-run'});reply({state:'SUCCEEDED'});reply({preparation_id:'new-preparation'});
+  await submit();
+  assert.deepEqual(requests.slice(1),[
+   {path:'/api/runs',method:'POST',body:{goal:'本次目标'}},
+   {path:'/api/runs/new-run',method:'GET',body:undefined},
+   {path:'/api/preparations',method:'POST',body:{run_id:'new-run',service_id:service.service_id,service_version:2,reviewer_id:'SYNTHETIC_REVIEWER'}},
+  ]);
+  assert.deepEqual(loaded,['new-preparation']);
+  reply(ready());await $('prep-catalog').onclick();
+  assert.equal(select.value,'0');
+  assert.deepEqual(select.children.map(option=>option.value),['0']);
  }else if(input.mode==='failure-retry'){
   reply(ready());await $('prep-catalog').onclick();
   reply({},403);await $('prep-catalog').onclick();emptyView();settled();
@@ -67,14 +97,14 @@ const settled=()=>{assert.notEqual($('prep-catalog-view').attributes['aria-busy'
    releaseNew(response(ready()));await newer;assert.equal(state(),'READY');settled();
   }
  }
- assert.ok(requests.every(r=>r.path==='/api/preparation-catalog'&&r.method==='GET'));
- process.stdout.write(JSON.stringify({mode:input.mode,result:'PASS',transport:'synthetic',business_POSTs:0}));
+ if(input.mode!=='service-version')assert.ok(requests.every(r=>r.path==='/api/preparation-catalog'&&r.method==='GET'));
+ process.stdout.write(JSON.stringify({mode:input.mode,result:'PASS',transport:'synthetic',business_POSTs:requests.filter(r=>r.method==='POST').length}));
 })().catch(e=>{console.error(e.stack);process.exitCode=1;});
 """
 
 
 def source_parts():
-    page = (Path(__file__).resolve().parents[1] / "src/parkweave/web.html").read_text()
+    page = (Path(__file__).resolve().parents[1] / "src/parkweave/web.html").read_text(encoding="utf-8")
     functions = ("prepContext", "prepCurrent", "requirePrepCurrent", "prepCall", "clearPreparation", "prepError")
     lines = page.splitlines()
     source = "\n".join(line for line in lines if any(
@@ -82,15 +112,15 @@ def source_parts():
     start = page.index("function preparationClearRefusal(")
     source += "\n" + page[start:page.index("\nfunction clearPreparation(", start)]
     start = page.index("function prepCatalogStatus(") if "function prepCatalogStatus(" in page else page.index("$('prep-catalog').onclick=")
-    source += "\n" + page[start:page.index("\nasync function retryWrite(", start)]
+    source += "\n" + page[start:page.index("\nlet runtimeNavigationGeneration=", start)]
     declarations = "let prepGeneration=0,preparationId=null,preparationContext=null,preparationView=null,prepRole=null,prepCatalog=null,prepCommandPending=null,prepRecoveryHandle=null,prepRecoveryChecking=false;const prepRetries=new Map();\n"
     return declarations + source
 
 
-@pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
+@pytest.mark.parametrize("mode", ["empty-service", "empty-reviewer", "ready", "service-version", "loading", "failure-retry", "invalid", "late-navigation", "late-identity-aba", "protected-clear"])
 def test_catalog_feedback_on_original_get_handler(mode):
     stubs = "clearRuntimeNavigation clearPersonalTaskList mgClear clearCaseCancellation clearDeadline clearOpportunities clearFactBundle clearObjections clearRunAccess clearCaseFacts clearMaterialReuse clearMaterialDraft clearMaterialCorrections renderPrepCommandPending resetPreparationDraft clearReadiness clearPlanMaterialNavigation clearNotices clearLocalCase clearDispatch clearCaseResources clearReceipts invalidatePreparationRead failCurrentEntryRead".split()
     run = subprocess.run(["node", "-e", PROBE], input=json.dumps({"source": source_parts(), "stubs": stubs, "mode": mode}),
                          text=True, capture_output=True, timeout=10)
     assert run.returncode == 0, run.stderr
-    assert json.loads(run.stdout) == {"mode": mode, "result": "PASS", "transport": "synthetic", "business_POSTs": 0}
+    assert json.loads(run.stdout) == {"mode": mode, "result": "PASS", "transport": "synthetic", "business_POSTs": 2 if mode == "service-version" else 0}

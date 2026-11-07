@@ -38,8 +38,7 @@ class NativeFixedStoreSecurity:
     def __init__(self,mode,*,request,runtime,payload_source=None):
         need(type(mode) is ep.PlanMode and ((mode is ep.PlanMode.NEW and type(request) is ep.EndpointRequest)
              or (mode is ep.PlanMode.REOPEN and request is None)))
-        e.exact(runtime,('source_commit','manifest_sha256'))
-        e.digest(runtime['source_commit'],40);e.digest(runtime['manifest_sha256'])
+        e.runtime_identity(runtime)
         self.mode=mode;self.request=request;self.runtime=json.loads(e.canonical(runtime))
         self.lease=self.store=self.layout=self.target=self.plan=self.inputs=self.endpoint=None
         self.state=self._state_digest=self._credential=self._secrets=self._sessions=None
@@ -85,10 +84,16 @@ class NativeFixedStoreSecurity:
                 end=time.monotonic()+10 if deadline is None else deadline
                 from .native_trial_authority import budget
                 end=budget(self,end)
-                need(0<end-time.monotonic()<=30)
+                now=time.monotonic()
+                need(now<end<=now+30)
                 if self.store is not None:self.store.api.deadline=end
                 if self.target is not None:self.target.deadline=end
-                if self.layout is not None:self.layout.deadline=end
+                if self.layout is not None:
+                    self.layout.deadline=end
+                    # The layout owns a distinct SID/security probe. It is
+                    # consulted by _leaf_held during PGDATA verification and
+                    # must share this operation's clamped observation window.
+                    if self.layout.probe is not None:self.layout.probe.deadline=end
                 self._context(lease)
                 result=operation(end)
                 budget(self,end)
@@ -176,12 +181,12 @@ class NativeFixedStoreSecurity:
             return self.inputs
         return self._run(lease,configure,deadline=deadline)
 
-    def require_inputs(self,lease,inputs):
+    def require_inputs(self,lease,inputs,*,deadline=None):
         def check(_):
             need(type(inputs) is DatabaseInputs and inputs is self.inputs)
             need(inputs.data_directory==_path_held(lease,self.target))
             return ep._record_held(lease,self.plan,mode=self.mode)
-        return self._run(lease,check)
+        return self._run(lease,check,deadline=deadline)
 
     def _cache(self,state):
         need(e.canonical(state.config['runtime'])==e.canonical(self.runtime))
@@ -326,6 +331,11 @@ class NativeClusterPrerequisites:
 
     def initialize_protected(self,lease,inputs,specification,register,deadline):
         from .native_protected_bootstrap import initialize
+        # Configuration's final input check has a short observation window.
+        # Revalidate under this explicit initdb caller deadline before reusing
+        # its held resources. Do not retain that earlier window as a lifetime
+        # or start a new timeout here; _run clamps to the original trial end.
+        self.security.require_inputs(lease,inputs,deadline=deadline)
         return initialize(self.security,lease,inputs,specification,register,deadline)
 
     def require_system_crt(self,lease,deadline):
@@ -360,10 +370,33 @@ class NativeClusterPrerequisites:
             native_installation=self.security.runtime_installation)
         return payload.require_for_cluster(lease,deadline)
 
+    def server_process_backend(self,lease,inputs,command,deadline):
+        from .native_trial_authority import bound_state, inherit, need as trial_need
+        trial = bound_state(lease)
+        if trial is None:
+            return None
+        trial_need(bound_state(self.security) is trial
+                   and {'OWN_PRIVATE_PG_API_WORKER','OWN_DERIVED_TOKEN_OWNER',
+                        'OWN_DERIVED_TOKEN_DEFAULT_DACL'} <= set(trial.window.operations))
+        from .restricted_token_candidate import _RestrictedPrimaryCandidate, TokenProfile
+        from .windows_process_handles import WindowsJobProcess
+
+        def prepare(_):
+            need(inputs is self.security.inputs)
+            owner = self.security._hold(object.__new__(_RestrictedPrimaryCandidate))
+            inherit(self.security, owner)
+            _RestrictedPrimaryCandidate.__init__(owner, TokenProfile.CREATE_CANDIDATE)
+            owner.derive()
+            owner.prepare_default_dacl()
+            owner.prepare_owner()
+            return WindowsJobProcess(_postgres_authority=(self.security, lease, command, owner, deadline))
+
+        return self.security._run(lease,prepare,deadline=deadline)
+
     def server_ready(self,lease,inputs,adapter,token,deadline):
         need(inputs is self.security.inputs and self.security.endpoint is None)
         need(self.security.system_crt is not None)
-        self.security.system_crt.observe_group(adapter,token,deadline)
+        self.security.system_crt.observe_group(adapter,token,deadline,wait_for_modules=True)
         endpoint=NativeOwnedDatabaseEndpoint(adapter,token,crt_witness=self.security.system_crt)
         from .native_trial_authority import inherit
         inherit(self.security,endpoint)

@@ -94,7 +94,7 @@ def test_native_password_source_uses_original_dpapi_and_exact_four_account_scope
     class ControlledDPAPI:
         def unprotect(self,cipher,entropy):
             n=cipher.decode()
-            if entropy!=expected[n]:raise native.NativeFailure('ALLOCATION','ProtectionRefused',[],13)
+            if entropy!=expected[n]:raise native.NativeFailure('CALL','ProtectionRefused',[],13)
             return e.canonical(dict(schema=login.SAMPLE_SCHEMA,installation=installation,actor=login.actor_for(n,PreparationProfile.SAMPLE),bearer=values[n]))
     monkeypatch.setattr(native,'_NativeDPAPI',ControlledDPAPI)
     provider=object.__new__(login.NativePasswordLogin);provider.store=store;provider.config=cfg;provider.failed=False;provider.unknown_native=[]

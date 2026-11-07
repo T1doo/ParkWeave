@@ -15,6 +15,57 @@ from scripts.windows_portable.test_payload import pe
 from parkweave.windows_files import Security,Ace
 
 
+@pytest.mark.parametrize('modules_arrive',[True,False])
+def test_starting_server_waits_for_required_crt_within_existing_deadline(monkeypatch,modules_arrive):
+    witness=object.__new__(n.NativeSystemCRT)
+    witness.failed=False
+    clock=[10.0]
+    snapshots=[]
+    def sample(process):
+        assert process==7
+        snapshots.append(clock[0])
+        return {'crt':{'vcruntime140.dll':'system32'} if modules_arrive and len(snapshots)>1 else {},'modules':()}
+    witness._binding=lambda:None
+    witness._verify_files=lambda:None
+    witness._time=lambda:n.need(clock[0]<witness.deadline)
+    witness._loaded=sample
+    witness.rows={}
+    monkeypatch.setattr(n,'time',SimpleNamespace(monotonic=lambda:clock[0],sleep=lambda seconds:clock.__setitem__(0,clock[0]+seconds)))
+    if modules_arrive:
+        witness._observe_locked(7,lambda:None,('vcruntime140.dll',),10.05,wait_for_modules=True)
+        assert len(snapshots)==3
+        assert not witness.failed
+    else:
+        with pytest.raises(n.CRTRefused):
+            witness._observe_locked(7,lambda:None,('vcruntime140.dll',),10.05,wait_for_modules=True)
+        assert witness.failed and max(snapshots)<10.05
+
+
+@pytest.mark.parametrize('changes_identity',[False,True])
+def test_starting_server_requires_two_equal_snapshots_after_modules_finish_loading(monkeypatch,changes_identity):
+    witness=object.__new__(n.NativeSystemCRT)
+    witness.failed=False
+    witness.rows={}
+    witness._binding=lambda:None
+    witness._verify_files=lambda:None
+    witness._time=lambda:None
+    crt={'vcruntime140.dll':'system32'}
+    before={'crt':crt,'modules':((1,'system32/vcruntime140.dll'),)}
+    address=2 if changes_identity else 1
+    after={'crt':crt,'modules':((address,'system32/vcruntime140.dll'),(3,'system32/new.dll'))}
+    samples=iter((before,after,after))
+    witness._loaded=lambda process:next(samples)
+    monkeypatch.setattr(n,'time',SimpleNamespace(monotonic=lambda:10,sleep=lambda seconds:None))
+    if changes_identity:
+        with pytest.raises(n.CRTRefused):
+            witness._observe_locked(7,lambda:None,crt,11,wait_for_modules=True)
+        assert witness.failed
+        assert next(samples)==after
+    else:
+        witness._observe_locked(7,lambda:None,crt,11,wait_for_modules=True)
+        assert next(samples,None) is None
+
+
 def dll():
     raw=bytearray(pe());opt=0x98
     struct.pack_into('<I',raw,opt+56,0x2000)

@@ -5,7 +5,7 @@ async function page(name){
  const ref=process.env.PARKWEAVE_TEST_REF;if(ref)assert(/^[a-f0-9]{40}$/.test(ref));const html=ref?require('node:child_process').execFileSync('git',['show',ref+':src/parkweave/'+name],{encoding:'utf8',maxBuffer:8*1024*1024}):fs.readFileSync('src/parkweave/'+name,'utf8'),dom=new JSDOM(html,{url:'http://127.0.0.1/',runScripts:'outside-only'}),w=dom.window,d=w.document,queries=[],errors=[],requests=[];
  w.matchMedia=query=>{const listeners=[];const media={matches:false,media:query,addEventListener(type,listener){listeners.push(listener);},change(value){this.matches=value;for(const listener of listeners)listener({matches:value});}};queries.push(media);return media;};
  w.HTMLElement.prototype.scrollIntoView=function(){};w.fetch=(...args)=>{requests.push(args);throw Error('Unexpected network request');};w.addEventListener('error',event=>errors.push(String(event.error)));
- const compact=name!=='web.html',probe=compact?`window.probe={snapshot:value=>{current=value;selected=value.preparation.id;role='enterprise_operator';}};`:`window.probe={snapshot:value=>{preparationView=value;preparationId=value.preparation.id;}};`;
+ const compact=name!=='web.html',probe=compact?`window.probe={snapshot:value=>{current=value;selected=value.preparation.id;role='enterprise_operator';},receipt:confirmed=>{api=async()=>{if(!confirmed)throw Error('SYNTHETIC request refused');return {};};open=list=async()=>{};}};`:`window.probe={snapshot:value=>{preparationView=value;preparationId=value.preparation.id;}};`;
  w.eval(html.match(/<script>([\s\S]*?)<\/script>/)[1]+'\n'+probe);d.dispatchEvent(new w.Event('DOMContentLoaded'));await tick();const get=id=>d.getElementById(id);
  const snapshot={preparation:{id:'SYNTHETIC_CURRENT',case_id:'SYNTHETIC_CASE',state:'IN_PREPARATION'},current_materials:[{slot:'need_summary',version:1,text:'SYNTHETIC 当前授权材料',source_kind:'USER_STATEMENT',source_label:'合成本人说明',authenticity:'UNVERIFIED'}]};w.probe.snapshot(snapshot);
  if(compact){get('workspace').hidden=false;get('detail-card').hidden=false;get('detail').hidden=false;get('evidence-form').hidden=false;}else get('prep-detail').hidden=false;
@@ -40,6 +40,26 @@ async function main(){
   }
   await scenario(name+': all scenarios preserve no-request boundary',()=>{assert.equal(p.requests.length,0);assert.deepEqual(p.errors,[]);});
   await tick();await tick();p.dom.window.close();
+ }
+ for(const [confirmed,otherDraft] of [[true,false],[false,false],[true,true]]){
+  await scenario('compact save receipt and account switch '+confirmed+' / '+otherDraft,async()=>{
+   const p=await page('local_preparation_web.html'),{dom,w,d,get,fire}=p;
+   try{
+    w.probe.receipt(confirmed);
+    get('login-card').hidden=true;get('logout').hidden=false;
+    for(const id of ['material-text','source-label']){
+     const field=get(id);field.focus();field.value='SYNTHETIC saved '+id;fire(field,'input');
+    }
+    if(otherDraft){
+     const field=get('reason');field.focus();field.value='SYNTHETIC unsaved decision';fire(field,'input');
+    }
+    get('evidence-form').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+    await tick();await tick();
+    get('logout').click();
+    assert.equal(d.querySelector('.design-confirm-dialog').open,!confirmed||otherDraft);
+    assert.equal(get('login-card').hidden,!confirmed||otherDraft);
+   }finally{await tick();await tick();dom.window.close();}
+  });
  }
  console.log(JSON.stringify({kind:'jsdom-only',results,failures,browser_runs:0,pixel_engine:false},null,2));assert.equal(failures.length,0,'usability scenarios failed');
 }

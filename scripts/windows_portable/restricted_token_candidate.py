@@ -25,6 +25,12 @@ class TokenRefused(RuntimeError):
     pass
 
 
+class TokenGroupRefused(TokenRefused):
+    def __init__(self, group_scope, before, observed):
+        self.group_scope,self.before,self.observed=group_scope,before,observed
+        super().__init__('RESTRICTED_GROUP_ATTRIBUTES_REFUSED')
+
+
 class TokenProfile(Enum):
     DERIVE_ONLY = 0x000a
     CREATE_CANDIDATE = 0x008b
@@ -77,6 +83,30 @@ def _admit_default_dacl(raw, current_sid):
         _need(kind == 1 or sid in trusted)  # never preserve an unknown allow
         offset += size
     _need(offset <= len(raw))  # remaining free space belongs to the original ACL
+
+
+def _without_logon_grants(raw, current):
+    """Remove only grants to logon groups observed in this derived token.
+
+    Do not admit additional principals or edit the original token ACL. Unknown
+    grants and unsupported ACEs still fail the original closed-subset check.
+    """
+    _need(type(raw) is bytes and 8<=len(raw)<=65532)
+    revision,zero1,size,count,zero2=struct.unpack_from('<BBHHH',raw)
+    _need(revision in (2,4) and zero1==zero2==0 and size==len(raw) and count<=2048)
+    logon={sid for sid,attributes in current[2].items() if attributes&0xc0000000==0xc0000000}
+    kept=[];offset=8
+    for _ in range(count):
+        _need(offset+16<=len(raw))
+        kind,flags,extent=struct.unpack_from('<BBH',raw,offset)
+        _need(kind in (0,1) and flags&~0x0f==0 and extent>=16 and extent%4==0 and offset+extent<=len(raw))
+        ace=raw[offset:offset+extent];sid=ace[8:]
+        _need(len(sid)>=8 and sid[0]==1 and sid[1]<=15 and len(sid)==8+4*sid[1])
+        if not (kind==0 and sid in logon):kept.append(ace)
+        offset+=extent
+    result=struct.pack('<BBHHH',revision,0,8+sum(map(len,kept)),len(kept),0)+b''.join(kept)
+    _admit_default_dacl(result,current[1])
+    return result
 
 
 class TokenFailure(TokenRefused):
@@ -154,8 +184,20 @@ def _check(base, derived, disabled_sids, change_notify):
     _need(base[8] == derived[8] == 1 and base[1] == derived[1])
     _need(set(base[2]) == set(derived[2]))
     for sid, attributes in base[2].items():
-        expected = (attributes | 0x10) & ~0x6 if sid in disabled_sids else attributes
-        _need(derived[2][sid] == expected)
+        observed=derived[2][sid]
+        _need(type(attributes) is int and 0<=attributes<2**32
+              and type(observed) is int and 0<=observed<2**32)
+        if sid in disabled_sids:
+            # CreateRestrictedToken guarantees deny-only and clears both
+            # enabled bits; other attributes are ignored by that operation.
+            # Permit removal of existing flags, never new flags other than
+            # DENY_ONLY. Requiring every ignored bit to survive rejects valid
+            # restricted groups with OWNER/MANDATORY flags removed.
+            valid=observed&0x16==0x10 and observed&~(attributes|0x10)==0
+        else:valid=observed==attributes
+        if not valid:
+            raise TokenGroupRefused('REQUESTED_DISABLED' if sid in disabled_sids else 'UNCHANGED_GROUP',
+                                    attributes,observed)
     _need(set(derived[3]) <= set(base[3]))
     for luid, attributes in derived[3].items():
         # Documented lower bound: all non-change-notify privileges disabled.
@@ -322,9 +364,10 @@ class _RestrictedPrimaryCandidate:
             _need(current == self._restricted_snapshot)
             original = self._read_default_dacl()
             from .default_dacl_candidate import _NativeDefaultDaclBuilder
-            candidate = _NativeDefaultDaclBuilder().build(original, current[1])
+            restricted = _without_logon_grants(original,current)
+            candidate = _NativeDefaultDaclBuilder().build(restricted, current[1])
             self._phase = 'ADMIT_DEFAULT_DACL_SUBSET'
-            _admit_default_dacl(original, current[1])
+            _admit_default_dacl(candidate, current[1])
             _need(self._read_default_dacl() == original)
             _need(self._query(self._derived) == current)
             allocation = C.create_string_buffer(candidate, len(candidate))

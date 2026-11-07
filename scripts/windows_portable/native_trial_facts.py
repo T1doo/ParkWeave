@@ -7,6 +7,7 @@ native stop/restart bridge before a second-generation issuer can consume them.
 from dataclasses import dataclass
 import time
 import weakref
+from .source_identity import from_manifest
 
 from . import native_trial_authority as a
 from .fixed_directories import FixedDirectoryLease, _exclusive_operation
@@ -40,8 +41,7 @@ def subject(lease,*,cleanup=False):
     lease._verify();a.need(value.marker is not None)
     fs=lease.fs
     files=tuple((tuple(fs.identity(handle)),fs.api.descriptor(handle)) for handle in (fs.root,fs.lock,fs.journal))
-    observed=Subject(value.key,tuple(sorted(dict(source_commit=value.manifest['source_commit'],
-        manifest_sha256=value.window.manifest_sha256).items())),files,lease._verified_instance_uuid(),value.marker)
+    observed=Subject(value.key,tuple(sorted(from_manifest(value.manifest,value.window.manifest_sha256).items())),files,lease._verified_instance_uuid(),value.marker)
     if value.subject is None:value.subject=observed
     else:a.need(value.subject==observed)
     return observed
@@ -208,7 +208,8 @@ def completed_dpapi(lease,provider):
 
 
 def cross_identity_dpapi(lease,provider,cipher,entropy,deadline):
-    if a.bound_state(lease) is None:return
+    value=a.bound_state(lease)
+    if value is None:return
     from .native_preparation_sessions import NativePreparationSessionProvider,PreparationFile,_roundtrip_evidence
     from .native_dpapi_peer import LocalServiceDPAPIPeer
     from hashlib import sha256
@@ -219,6 +220,12 @@ def cross_identity_dpapi(lease,provider,cipher,entropy,deadline):
         and sha256(cipher).hexdigest()==frame[1] and entropy.hex()==frame[2])
     peer=LocalServiceDPAPIPeer(lease,cipher,entropy,deadline)
     evidence=peer.run()
+    if peer.environment_unavailable:
+        a.need(evidence is None and not peer.complete and not peer.failed
+               and all(not row['owned'] or row['closed'] for row in peer.handles))
+        blocker=dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)
+        if blocker not in value.environment_blockers:value.environment_blockers.append(blocker)
+        return  # No cross-identity fact. The scoped business trial may proceed.
     a.need(peer.complete and not peer.failed and all(not row['owned'] or row['closed'] for row in peer.handles))
     return _seal(lease,('dpapi_cross_os_identity_isolation',),peer,(provider,frame,evidence))
 

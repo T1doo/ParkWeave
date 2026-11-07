@@ -28,6 +28,12 @@ class NativeFailure(ProtectionRefused):
         self.outcome = 'UNKNOWN'
         super().__init__('NATIVE_DPAPI_UNKNOWN:'+phase)
 
+    @property
+    def invalid_data_call_refusal(self):
+        """A failed native call with ERROR_INVALID_DATA and confirmed cleanup."""
+        return (self.phase == 'CALL' and self.primary_type == 'ProtectionRefused'
+                and type(self.winerror) is int and self.winerror == 13 and not self.cleanup_types)
+
 
 class _InputBlob:
     """Own a real, bounded ctypes view over a mutable copy; erase once closed."""
@@ -108,12 +114,11 @@ class _NativeDPAPI:
                           None, None, CRYPTPROTECT_UI_FORBIDDEN, C.byref(output))
             if not ok:
                 winerror = C.get_last_error()  # before any cleanup/LocalSize call
+                raise ProtectionRefused('NATIVE_DPAPI_CALL_FAILED')
             owned_output = bool(ok and output.pbData)
             phase = 'ALLOCATION'
             if owned_output:
                 allocation_size = int(self._size(output.pbData))
-            if not ok:
-                raise ProtectionRefused('NATIVE_DPAPI_CALL_FAILED')
             if not output.pbData or not 0 < output.cbData <= output_limit:
                 raise ProtectionRefused('NATIVE_DPAPI_OUTPUT_REFUSED')
             # Never read/clear an unvalidated output extent. LocalSize failure

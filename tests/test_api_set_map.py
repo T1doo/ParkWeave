@@ -32,6 +32,51 @@ def namespace(rows):
     return bytes(raw)
 
 
+def test_real_namespace_dotted_hosts_and_kernel_entries_do_not_grant_loading():
+    mapping=a.parse_v6(namespace([
+        ('api-ms-test-l1-1-0',[('','kernel.appcore.dll')]),
+        ('ext-ms-kernel-l1-1-0',[('','win32kbase.sys')])]))
+    assert a.resolve_metadata(mapping,'api-ms-test-l1-1-0','client.exe')['host']=='kernel.appcore.dll'
+    result=a.resolve_metadata(mapping,'ext-ms-kernel-l1-1-0','client.exe')
+    assert result['status']=='NON_DLL_HOST_NOT_ACCEPTED' and result['host'] is None
+    assert not result['activation_allowed']
+    with pytest.raises(PayloadRefused):a.parse_v6(namespace([('api-ms-test-l1-1-0',[('','../bad.dll')])]))
+
+
+def test_v6_namespace_reads_documented_aliases_and_groups_without_resolving_them():
+    mapping=a.parse_v6(namespace([
+        ('api-win-core-samplefeature',[('','kernelbase.dll')]),
+        ('api-win-core-samplefeature~AdvancedOperations',[('','kernelbase.dll')]),
+        ('api-ms-test-l1-1-0',[('','default.dll')]),
+    ]))
+    assert mapping['namespace_count']==3
+    assert 'api-win-core-samplefeature~advancedoperations' in mapping['entries']
+    assert a.resolve_metadata(mapping,'api-ms-test-l1-1-0','client.exe')['host']=='default.dll'
+    for name in ('api-win-core-samplefeature','api-win-core-samplefeature~advancedoperations'):
+        with pytest.raises(PayloadRefused):a.resolve_metadata(mapping,name,'client.exe')
+    for name in ('api-win-core-samplefeature~../other','ext-ms-sample-l1-1-0~advanced','api-win-test~~advanced'):
+        with pytest.raises(PayloadRefused):a.parse_v6(namespace([(name,[])]))
+
+
+def test_live_namespace_checks_opaque_keys_without_resolving_them():
+    opaque = ('api-ms-test-l1-1-0~internal', [('', 'other.dll')])
+    supported = ('api-ms-test-l1-1-0', [('', 'default.dll')])
+    raw = namespace([opaque, supported])
+    with pytest.raises(PayloadRefused):
+        a.parse_v6(raw)
+    mapping = a.parse_v6(raw, allow_opaque_names=True)
+    assert a.resolve_metadata(mapping, supported[0], 'client.exe')['host'] == 'default.dll'
+    with pytest.raises(PayloadRefused):
+        a.resolve_metadata(mapping, opaque[0], 'client.exe')
+
+    tampered = bytearray(raw)
+    hashes = struct.unpack_from('<I', raw, 20)[0]
+    struct.pack_into('<I', tampered, hashes, 0)
+    for invalid in (bytes(tampered), namespace([opaque, opaque])):
+        with pytest.raises(PayloadRefused):
+            a.parse_v6(invalid, allow_opaque_names=True)
+
+
 def test_target_contract_exact_importer_default_absent_and_unmapped_are_distinct():
     raw=namespace([('api-ms-test-l1-1-0',[('', 'default.dll'),('client.exe','special.dll')]),
                    ('ext-ms-test-l1-1-0',[])])
@@ -133,8 +178,32 @@ def test_input_read_bounds_growth_and_refuses_path_replacement(tmp_path,monkeypa
     with monkeypatch.context() as patch:
         patch.setattr(a.os,'open',replace_then_open)
         with pytest.raises(PayloadRefused):a.read_bounded(path)
-    alias=tmp_path/'alias';alias.symlink_to(path)
+def test_ctime_method_difference_is_allowed_but_descriptor_change_is_refused(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    path=tmp_path/'metadata';path.write_bytes(b'{}');original=os.fstat
+    calls=[]
+    def observed(fd):
+        info=original(fd);calls.append(fd)
+        return SimpleNamespace(**{key:getattr(info,key) for key in ('st_mode','st_dev','st_ino','st_size','st_mtime_ns')},st_ctime_ns=1234)
+    monkeypatch.setattr(a.os,'fstat',observed)
+    assert a.read_bounded(path)==b'{}' and len(calls)==2
+    def changed(fd):
+        value=observed(fd);value.st_ctime_ns+=len(calls);return value
+    monkeypatch.setattr(a.os,'fstat',changed)
+    with pytest.raises(PayloadRefused):a.read_bounded(path)
+
+
+def test_input_read_refuses_symlink_when_platform_permits_creation(tmp_path):
+    path=tmp_path/'metadata';path.write_bytes(b'{}');alias=tmp_path/'alias'
+    try:alias.symlink_to(path)
+    except OSError as error:
+        if getattr(error,'winerror',None)==1314:pytest.skip('Windows user lacks symlink creation privilege; rejection not verified')
+        raise
     with pytest.raises(PayloadRefused):a.read_bounded(alias)
+
+
+def test_input_read_refuses_non_regular_files(tmp_path):
+    with pytest.raises(PayloadRefused):a.read_bounded(tmp_path)
     if hasattr(os,'mkfifo'):
         pipe=tmp_path/'pipe';os.mkfifo(pipe)
         with pytest.raises(PayloadRefused):a.read_bounded(pipe)
