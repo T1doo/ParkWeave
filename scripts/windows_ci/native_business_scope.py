@@ -16,9 +16,12 @@ class NativeBusinessScope:
         self.storage = self.adapter = None
         self.started = self.closed = False
         self.crt_preflight=None
+        self.webview_preflight=None
+        self.environment_blockers=[]
 
     def run(self, *, consume=lambda observation: None):
         value = a.state(self.cap)
+        self.environment_blockers=value.environment_blockers
         a.need(not self.started); self.started = True
         # Same source-issued trial, same account and original absolute clock.
         # This is NOT the standalone diagnostic's job/env gate reused as a grant.
@@ -33,6 +36,14 @@ class NativeBusinessScope:
             rows=[dict(file=row['file'],verification=row['verification'],root_matched=row.get('expected_root_matched'))
                 for row in cache_result['after']])
         a.need(code==0 and cache_result['status']=='ORIGINAL_STRICT_CHECKS_PASSED_NOT_PRODUCT_ACCEPTANCE')
+        if not a.configuration_probe(value):
+            from .crt_crl_preparation import PreparationRefused
+            from .webview_cryptnet_preflight import prepare
+            self.webview_preflight={'status':'STARTED'}
+            try:self.webview_preflight=prepare(self.cap)
+            except PreparationRefused as error:
+                self.webview_preflight={'status':'REFUSED','reason':error.reason}
+                raise
         # Imports/constructors with real OS actions are below source admission.
         from .native_acceptance_storage import OwnedNativeObjects
         from scripts.windows_portable.endpoint_plan import PlanMode
@@ -78,9 +89,13 @@ class NativeBusinessScope:
             consume(proof)
         result=self.adapter.run(consume=collect,desktop=desktop)
         result['crt_preflight']=self.crt_preflight
+        result['webview_preflight']=self.webview_preflight
         result['desktop_trial']=desktop.result()
         from scripts.windows_portable.native_acceptance_contract import coverage
-        result.update(observations=list(observed),coverage=coverage(observed))
+        result.update(observations=list(observed),coverage=coverage(observed),
+                      environment_blockers=list(self.environment_blockers))
+        if self.environment_blockers:
+            result['result']='NATIVE_BUSINESS_RESTART_OBSERVED_WITH_ENVIRONMENT_BLOCKER'
         return result
 
     def close(self, *, failed=False):

@@ -48,6 +48,11 @@ class Scope:
             from scripts.windows_portable import directories
             try:directories._decode(b'')  # Real fixed-source pure validation.
             except directories.LeaseRefused as cause:raise ControlFailure('ACQUIRE',cause,[]) from cause
+        if scenario=='iat-parser-site':
+            from scripts.windows_portable import api_set_map
+            from scripts.windows_portable.payload import PayloadRefused
+            try:api_set_map.parse_v6(b'SYNTHETIC_PRIVATE_DO_NOT_LOG')
+            except PayloadRefused as cause:raise ControlFailure('CONFIG',cause,[]) from cause
         if scenario in ('failure','both-nested','diagnostic-unavailable'):
             try:
                 subprocess.run([sys.executable,'-I','-B','-S','-c',
@@ -61,7 +66,10 @@ class Scope:
                     raise outer from inner
                 if scenario=='diagnostic-unavailable':inner.cleanup_errors=((private,),)
                 raise inner from cause
-        return dict(result='CONTROLLED_PROTOCOL_RESULT',activation_allowed=False,usable_product=False)
+        value=dict(result='CONTROLLED_PROTOCOL_RESULT',activation_allowed=False,usable_product=False)
+        if scenario=='environment-blocked':
+            value['environment_blockers']=[dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)]
+        return value
     def close(self,*,failed):
         events.append('scope-close-failed-'+str(failed))
         if scenario in ('cleanup-failure','both-nested'):
@@ -86,6 +94,25 @@ def test_actual_entry_normal_result_and_exit_preserved():
     assert events==['source','pins','imports','scope','business-protocol','scope-close-failed-False']
 
 
+def test_actual_entry_preserves_business_evidence_and_fails_with_environment_blocker():
+    process,report,events=run_entry('environment-blocked')
+    assert process.returncode==2
+    assert report['result']=='CONTROLLED_PROTOCOL_RESULT'
+    assert report['environment_blockers']==[dict(observation='dpapi_cross_os_identity_isolation',phase='SERVICE_LOGON',winerror=5)]
+    assert not report['activation_allowed'] and not report['usable_product']
+    assert events[-1]=='scope-close-failed-False'
+
+
+def test_actual_entry_reports_iat_parser_source_without_exposing_namespace_bytes():
+    process,report,_=run_entry('iat-parser-site')
+    assert process.returncode==2
+    assert report['primary']['control']['phase']=='CONFIG'
+    details=report['primary']['exception_details']
+    parser=next(row for row in details if row['type']=='PayloadRefused')
+    assert any(site['module']=='scripts.windows_portable.api_set_map' and site['function']=='parse_v6'
+               for site in parser['source_sites']['frames'])
+
+
 def test_actual_child_failure_retains_control_phase_type_and_unknown():
     process,report,events=run_entry('failure')
     assert process.returncode==2 and events[-2:]==['actual-child-exit-7','scope-close-failed-True']
@@ -96,6 +123,27 @@ def test_actual_child_failure_retains_control_phase_type_and_unknown():
     assert report['outer_cleanup']['returned_without_exception'] is True
     assert report['outer_cleanup']['controller_cleanup']=='SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED'
     assert report['usable_product'] is report['activation_allowed'] is False
+
+
+def test_readiness_refusal_reports_only_the_verified_validator_location():
+    from parkweave.runtime_readiness import validate_database
+    from parkweave.store import Denied
+    from scripts.windows_ci.native_failure_diagnostics import SourceSites
+
+    row = dict(name='parkweave', role='parkweave_app', login='parkweave_app',
+               oid=1, address='127.0.0.1', port=55431, postmaster='synthetic',
+               schema=32, safe=True)
+    assert validate_database(row, 'LOCAL') == row
+    try:
+        validate_database(dict(row, address='127.0.0.1/32'), 'LOCAL')
+    except Denied as cause:
+        report = entry._failure_diagnostic(ControlFailure('APPLICATION', cause, []), SourceSites(ROOT, 'a'*40))
+    else:
+        raise AssertionError('readiness must require the exact IPv4 address')
+    details = report['exception_details']
+    assert any(site['module']=='parkweave.runtime_readiness' and site['function']=='validate_database'
+               for item in details for site in item['source_sites']['frames'])
+    assert '127.0.0.1/32' not in json.dumps(report)
 
 
 def test_actual_entry_cleanup_failure_cannot_rewrite_success():

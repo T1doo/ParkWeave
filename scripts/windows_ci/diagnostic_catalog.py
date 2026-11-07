@@ -27,7 +27,10 @@ def _current(root, *, check=False):
     path = root/CATALOG
     snapshots = {path: cv.fingerprint(path)}
     with path.open('rb') as stream:
+        before = cv.descriptor_ctime(stream, snapshots[path])
         raw = stream.read(MAX_ALLOWLIST_BYTES+1)
+        if cv.descriptor_ctime(stream, snapshots[path]) != before:
+            raise cv.Refused('INPUT_CHANGED')
     if len(raw) > MAX_ALLOWLIST_BYTES:
         raise cv.Refused('CATALOG_REFUSED')
     # Only the known legacy schema is streamed. Reserve scratch references

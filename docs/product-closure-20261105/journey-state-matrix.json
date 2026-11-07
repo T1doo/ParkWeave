@@ -1,0 +1,1192 @@
+[
+  {
+    "journey": "目标与目录",
+    "current_html_ids": [
+      "prep-catalog",
+      "prep-create",
+      "prep-goal",
+      "prep-service"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_EXISTING_EXECUTOR_REVIEW",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在独立 Windows 窗口复验实际目录、选择服务版本、建单及资料准备。",
+    "reviewed_scope": {
+      "read": {
+        "entry": "#prep-catalog",
+        "route": "GET /api/preparation-catalog",
+        "guards": "认证当前身份并核对 PREPARE。服务限当前园区，专员须属当前企业和园区且具 READ 与 REVIEW_ASSIGNED。",
+        "visible_states": [
+          "LOADING",
+          "EMPTY",
+          "UNAVAILABLE",
+          "READY",
+          "DENIED",
+          "ERROR"
+        ],
+        "stale_response": "prepContext 和 requirePrepCurrent 拒绝旧身份或旧页面代次响应。",
+        "service_version_choice": "单服务版本默认选中。多版本目录必须明确选择，重新读取后按当前目录重建选项。"
+      },
+      "write": {
+        "entry": "#prep-create",
+        "routes": [
+          "POST /api/runs",
+          "GET /api/runs/{id}",
+          "POST /api/preparations"
+        ],
+        "guards": "仅在 Run SUCCEEDED 后提交资料准备。服务版本、本人 Run、当前 case.create 授权、专员范围与授权由服务端重验。相同路径与请求体复用原幂等键。 未选择目录中的服务版本时，在发出建单请求前拒绝。准备请求携带所选 service_id 与 service_version。"
+      },
+      "executor": {
+        "selector": "tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data",
+        "scope": "隔离数据库和普通 API、worker、Chromium。此次仅审阅执行器，独立 Windows 旅程仍待验。"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/preparation.py": "1317787fb36f3f7be79cfb9189ec7e882003253e95e6d88eeb1c9320f9783ce9",
+        "tests/test_demo_original_page_intake_browser.py": "e22195bd46eb55c7f173c635a35cfcc35945769be8eaf6c70e5609307cccfc44",
+        "tests/test_preparation_catalog_feedback.py": "d58541f214bfbccbbfeac56e6bb0bb961505923420ab34c087a6545510128c50"
+      },
+      "frontend_regression": {
+        "selector": "tests/test_preparation_catalog_feedback.py::test_catalog_feedback_on_original_get_handler[service-version]",
+        "scope": "原页面处理器、合成传输与 DOM。多版本无默认项，未选中时零 POST，选 v2 后准备请求携带正确版本，目录重读后清除旧选项。",
+        "evidence": "preparation-service-version-r30.xml",
+        "real_backend_execution": "NOT_RUN"
+      }
+    },
+    "implementation": {
+      "source_sha256": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+      "selection": "多个目录项要求显式选择；单项沿用默认。提交使用选中项目的 ID 和版本；重读或权限拒绝清除旧选择。",
+      "test": "tests/frontend_preparation_service_picker_dom.cjs",
+      "scope": "ORIGINAL_DOM_HANDLERS_STUB_TRANSPORT_ONLY",
+      "status": "PASS"
+    }
+  },
+  {
+    "journey": "方案与采用",
+    "current_html_ids": [
+      "plan-approval-panel",
+      "plan-approval-read",
+      "plan-approval-propose",
+      "plan-approval-approve",
+      "plan-approval-revoke",
+      "plan-approval-recover",
+      "plan-approval-result",
+      "plan-approval-error",
+      "plan-prepare",
+      "plan-source-conflict-panel",
+      "plan-source-conflict-read",
+      "plan-source-conflict-recover",
+      "plan-source-conflict-card",
+      "plan-source-conflict-status",
+      "plan-source-conflict-result",
+      "plan-source-conflict-note",
+      "plan-source-conflict-reason",
+      "plan-source-conflict-confirm",
+      "plan-source-conflict-edit",
+      "plan-source-conflict-keep",
+      "plan-source-conflict-continue",
+      "plan-source-conflict-merge",
+      "plan-source-conflict-accept",
+      "plan-source-conflict-defer",
+      "plan-source-conflict-history",
+      "plan-from-dispatch",
+      "plan-from-receipt",
+      "plan-material-loading",
+      "plan-material-loading-status",
+      "plan-material-cancel",
+      "plan-detail",
+      "plan-summary",
+      "plan-refresh",
+      "plan-required-goals",
+      "plan-preview-form",
+      "plan-preview-button",
+      "plan-preview-result",
+      "plan-create",
+      "plan-next-action",
+      "plan-steps",
+      "plan-reason-label",
+      "plan-reason",
+      "plan-P1",
+      "plan-P2",
+      "plan-P3",
+      "plan-P4",
+      "plan-materials",
+      "plan-dispatch",
+      "plan-handoff",
+      "plan-receipt",
+      "plan-handoff-status",
+      "plan-local-case",
+      "plan-back",
+      "plan-history",
+      "plan-error",
+      "plan-candidate-panel",
+      "plan-candidate-generate",
+      "plan-candidate-read",
+      "plan-candidate-recover",
+      "plan-candidate-choice",
+      "plan-candidate-result",
+      "plan-candidate-confirm",
+      "plan-candidate-status"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_PLANNING_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在授权独立窗口验证当前来源预览、明确采用、部分采用、重开及方案保留。LIVE 另走获授权真实端点。",
+    "reviewed_scope": {
+      "preview": {
+        "entries": [
+          "#service-plan-read",
+          "#plan-candidate-read"
+        ],
+        "routes": [
+          "GET /api/preparations/{preparation_id}/service-case-plan",
+          "GET /api/preparations/{preparation_id}/service-plan-candidates/{candidate_id}/preview"
+        ],
+        "boundary": "当前需求目标、来源版本和覆盖状态与候选分开。预览及已保存候选不产生执行授权。"
+      },
+      "candidate": {
+        "entry": "#plan-candidate-generate",
+        "route": "POST /api/preparations/{preparation_id}/service-plan-candidates",
+        "guards": "原事项权限、版本、来源摘要与请求键重验。服务器记录有效期。本地生产与离线替代响应不能作为 LIVE 证据。"
+      },
+      "adoption": {
+        "entries": [
+          "#service-plan-adopt",
+          "#plan-candidate-confirm",
+          "#service-plan-partial-confirm"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/service-case-plan",
+        "guards": "企业本人、当前需求与资料版本、当前确定性验证及候选哈希。部分采用要求显式确认，保留未覆盖目标。来源冲突和已有协同说明进入原阻断或受控修订。"
+      },
+      "unknown": {
+        "entry": "#plan-candidate-recover",
+        "route": "GET /api/preparations/{preparation_id}/service-plan-candidates/recovery",
+        "rule": "按原请求键只读核对。句柄过期、身份变化或不明结果不触发重写。"
+      },
+      "evidence": {
+        "scope": "56 个期限和离线选择用例。原生采用与持久化未运行。",
+        "result": "plan-journey-guards-r20.xml",
+        "real_executors": [
+          "tests/test_service_plan_candidates.py::test_candidate_identity_verification_and_original_adoption",
+          "tests/test_service_plan_candidates.py::test_original_key_candidate_and_adoption_recovery_after_material_change"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/service_case_steps.py": "e01f767a757ebcbb718b9de264fc4340d299cb588d3d1b3f653c2454a55285e2",
+        "src/parkweave/service_plan_candidates.py": "0db0e5767811df0ee52e60fc22a31b6005b94a1983fcdc3709d90ff7f653882b"
+      }
+    },
+    "preset_frontend_evidence": {
+      "scope": "PRESET_CASE_BROWSER_ONLY",
+      "manifest": "revision-demo-evidence-20261106.json",
+      "manifest_sha256": "03d403b5c925cbe4183960c49bd806174e4236f06b1471a856bad5b98788ab62",
+      "acceptance_ids": [
+        "AT-07"
+      ],
+      "observed": [
+        "原方案与修订方案的可视化比较"
+      ],
+      "remaining_real_acceptance": [
+        "真实服务编排、必需目标覆盖与不可行路径"
+      ]
+    }
+  },
+  {
+    "journey": "材料与核对",
+    "current_html_ids": [
+      "material-draft-panel",
+      "material-draft-read",
+      "material-draft-status",
+      "material-draft-content",
+      "material-draft-checklist",
+      "material-draft-form",
+      "material-draft-share",
+      "material-draft-recipient",
+      "material-draft-save",
+      "material-draft-error",
+      "material-file-panel",
+      "material-file-input",
+      "material-file-synthetic",
+      "material-file-read",
+      "material-file-status",
+      "material-file-output",
+      "material-file-text",
+      "material-file-source",
+      "material-file-use",
+      "material-version-panel",
+      "material-version-compare",
+      "material-version-status",
+      "material-version-output",
+      "prep-evidence",
+      "material-file-editing",
+      "material-review-panel",
+      "material-review-read",
+      "material-review-status",
+      "material-review-output",
+      "prep-decision",
+      "prep-confirm",
+      "material-pack-panel",
+      "material-pack-generate",
+      "material-pack-status",
+      "material-pack-output",
+      "material-pack-text",
+      "material-pack-copy",
+      "material-pack-download",
+      "material-reuse-panel",
+      "material-reuse-read",
+      "material-reuse-status",
+      "material-reuse-form",
+      "material-reuse-source",
+      "material-reuse-preview",
+      "material-reuse-selected",
+      "material-reuse-purpose",
+      "material-reuse-reason",
+      "material-reuse-confirm",
+      "material-reuse-retry",
+      "material-reuse-history",
+      "material-reuse-error",
+      "material-corrections-panel",
+      "material-corrections-summary",
+      "material-corrections-current",
+      "material-corrections-history",
+      "material-corrections-error",
+      "material-package-panel",
+      "material-package-read",
+      "material-package-recover",
+      "material-package-status",
+      "material-package-result",
+      "material-package-note",
+      "material-package-reason",
+      "material-package-confirm",
+      "material-package-keep",
+      "material-package-merge"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_PARSER_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "用独立 Windows 的当前企业与获派专员验证导入、明确保存、补正、审核、确认、编辑失效和重开。",
+    "reviewed_scope": {
+      "candidate": {
+        "entry": "#material-file-use",
+        "route": "POST /api/preparations/{preparation_id}/material-file-candidate",
+        "boundary": "仅用户选择的合成 UTF-8 文件。TXT、Markdown、CSV、JSON，上限 8192 字节，候选正文上限 4000 UTF-16 单元。解析候选不写入材料，不推断事实或真实性。"
+      },
+      "owner": {
+        "entries": [
+          "#prep-evidence",
+          "#prep-confirm",
+          "#prep-reopen"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/commands",
+        "actions": [
+          "ADD_EVIDENCE",
+          "CONFIRM",
+          "REOPEN"
+        ],
+        "guards": "当前身份、授权、事项版本、Case 可写及当前核对摘要。追加材料产生版本，清除旧审核有效性。"
+      },
+      "reviewer": {
+        "entries": [
+          "#prep-correction",
+          "#prep-review"
+        ],
+        "route": "POST /api/preparations/{preparation_id}/commands",
+        "actions": [
+          "REQUEST_CHANGES",
+          "REVIEW"
+        ],
+        "guards": "当前获派专员，必需材料槽和已完成的纠正，现有来源及事实门。"
+      },
+      "unknown": {
+        "entry": "#prep-recovery-read",
+        "rule": "按原证据请求标识核对结果，原历史回读不等于当前审核。"
+      },
+      "evidence": {
+        "scope": "实际本地文件解析代码，未运行数据库或 API 用例。",
+        "result": "material-parser-guards-r18.xml",
+        "real_executors": [
+          "tests/test_material_file_import.py::test_candidate_fills_original_command_then_review_confirmation_and_key_recovery",
+          "tests/test_material_corrections.py::test_two_fresh_enterprises_correct_real_sources_without_copying_cases_or_grants",
+          "tests/test_preparation.py::test_api_full_manual_preparation_confirm_and_reopen"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/preparation.py": "1317787fb36f3f7be79cfb9189ec7e882003253e95e6d88eeb1c9320f9783ce9",
+        "src/parkweave/material_file_import.py": "ed1d65cbcc9548896fad83375e7ed25ae25faf06fb233c3cf3fb451322397d22"
+      }
+    }
+  },
+  {
+    "journey": "资源与组合",
+    "current_html_ids": [
+      "resource-catalog",
+      "resource-catalog-status",
+      "resource-catalog-view",
+      "resource-form",
+      "resource-select",
+      "resource-start",
+      "resource-end",
+      "resource-quantity",
+      "resource-ttl",
+      "resource-purpose",
+      "resource-preview",
+      "resource-hold",
+      "resource-search-from",
+      "resource-search-until",
+      "resource-alternatives",
+      "resource-alternative-results",
+      "resource-preview-result",
+      "resource-current",
+      "resource-mine",
+      "resource-hold-items",
+      "combination-selection",
+      "combination-confirm",
+      "combination-mine",
+      "combination-feedback",
+      "combination-items",
+      "resource-error",
+      "resource-plan-approval-read-panel",
+      "resource-plan-approval-read",
+      "resource-plan-approval-status",
+      "resource-plan-approval-result",
+      "resource-plan-approval-original",
+      "resource-execution-preview-panel",
+      "resource-execution-preview-run",
+      "resource-execution-preview-read",
+      "resource-execution-preview-recover",
+      "resource-execution-preview-release",
+      "resource-execution-preview-result",
+      "resource-execution-preview-error",
+      "resource-plan-binding",
+      "resource-binding-choice",
+      "resource-binding-read",
+      "resource-binding-result",
+      "resource-binding-confirm-form",
+      "resource-binding-confirm-reason",
+      "resource-binding-confirm",
+      "resource-binding-confirm-status",
+      "resource-binding-error"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在授权独立 Windows 环境核对占位、冲突、释放、确认及关闭重开。",
+    "reviewed_scope": {
+      "catalog": {
+        "entry": "#resource-catalog",
+        "route": "GET /api/synthetic-resources",
+        "guards": "当前企业身份及 READ 授权，按园区和企业资源授权过滤。资源管理身份使用独立维护路径。"
+      },
+      "preview": {
+        "entries": [
+          "#resource-preview",
+          "#resource-alternatives"
+        ],
+        "routes": [
+          "POST /api/synthetic-resources/{resource_id}/preview",
+          "POST /api/synthetic-resources/{resource_id}/alternative-times"
+        ],
+        "boundary": "预检、建议与填写候选时段均不生成占位。资源、时段、数量或当前身份改变后旧结果不可操作。"
+      },
+      "hold": {
+        "entry": "#resource-hold",
+        "route": "POST /api/synthetic-resources/{resource_id}/holds",
+        "guards": "企业 EXECUTE 与当前 HOLD 授权，资源规则版本、时段、容量、期限及原请求键。确认或释放各有原动作。"
+      },
+      "group": {
+        "entries": [
+          "#combination-confirm",
+          "#bundle-confirm"
+        ],
+        "routes": [
+          "POST /api/resource-combinations",
+          "POST /api/resource-bundles"
+        ],
+        "guards": "锁定本人当前有效占位，重验每个成员规则和容量后才原子提交。单项、组合及材料资源包分开记录。"
+      },
+      "unknown": {
+        "entry": "#bundle-recover",
+        "route": "GET /api/resource-bundles/recovery/{request_key}",
+        "rule": "按原请求只读核对，不自动再次确认。合成占位和确认的回执不代表现实预约或履约。"
+      },
+      "evidence": {
+        "scope": "21 项 Node VM 用例使用 DOM 和传输替代件。仅核对建议、输入变化、拒绝和未知结果边界。",
+        "result": "resource-journey-guards-r19.xml",
+        "real_executors": [
+          "tests/test_resource_bundles_browser.py::test_actual_confirm_read_cancel_and_three_widths",
+          "tests/test_resource_bundles_browser.py::test_owned_api_process_restart_reads_committed_bundle_without_post",
+          "tests/test_resource_response_binding_browser.py::test_invalid_resource_binding_retains_original_key_until_explicit_retry"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/resource_holds.py": "f819ab66e660851e567e80fa0250da0af3921df3aba5bba9fd4eff3233c083f1",
+        "src/parkweave/resource_combinations.py": "c50c253551469215ef31837f0b13af34efc9bb3afc2f129b56b762f40518322b",
+        "src/parkweave/resource_bundles.py": "0a9264dd79ae04fa102684cefe8fc014eea0b7e14933667cb18ff382b9677862"
+      }
+    },
+    "preset_frontend_evidence": {
+      "scope": "PRESET_CASE_BROWSER_ONLY",
+      "manifest": "revision-demo-evidence-20261106.json",
+      "manifest_sha256": "03d403b5c925cbe4183960c49bd806174e4236f06b1471a856bad5b98788ab62",
+      "acceptance_ids": [
+        "AT-09"
+      ],
+      "observed": [
+        "调整后资源复验和确认入口"
+      ],
+      "remaining_real_acceptance": [
+        "真实组合事务原子性、资源占用与失败回滚"
+      ]
+    }
+  },
+  {
+    "journey": "派单与接单",
+    "current_html_ids": [
+      "dispatch-list",
+      "dispatch-list-status",
+      "dispatch-items",
+      "dispatch-prepare",
+      "dispatch-detail",
+      "dispatch-summary",
+      "dispatch-refresh",
+      "dispatch-retry",
+      "dispatch-accept-recover",
+      "dispatch-accept-release",
+      "dispatch-accept-status",
+      "dispatch-handoff-recover",
+      "dispatch-handoff-status",
+      "dispatch-current",
+      "dispatch-offer",
+      "dispatch-executor",
+      "dispatch-offer-reason",
+      "dispatch-offer-button",
+      "dispatch-decision",
+      "dispatch-decision-reason",
+      "dispatch-accept",
+      "dispatch-decline",
+      "dispatch-withdraw",
+      "dispatch-receipt",
+      "dispatch-history",
+      "dispatch-error",
+      "dispatch-execution-preview-panel",
+      "dispatch-execution-preview-decision",
+      "dispatch-execution-preview-run",
+      "dispatch-execution-preview-read",
+      "dispatch-execution-preview-recover",
+      "dispatch-execution-preview-release",
+      "dispatch-execution-preview-result",
+      "dispatch-execution-preview-error"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "RENDERER_REVIEWED; server authorization and real lifecycle NOT_RUN",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "STATIC_ENTRY_INVENTORY_ONLY",
+    "real_backend_execution": "NOT_RUN",
+    "next": "actual API-backed offer/accept/decline/history/recovery journey still required",
+    "handler": "renderDispatch / dispatchPendingUI / dispatchAcceptRead in src/parkweave/web.html",
+    "role_projection": {
+      "park_specialist": "catalog ready/can_reassign controls offer; withdraw current offer; never executor accept",
+      "service_executor": "current OFFERED permits own decision; stale dependency disables accept; actor_ref must be valid to inspect recovery handles",
+      "cancelled_or_reconciling": "write forms hidden; history retained"
+    },
+    "browser_evidence": "dispatch-renderer-evidence.json"
+  },
+  {
+    "journey": "回执与确认",
+    "current_html_ids": [
+      "receipt-list",
+      "receipt-list-status",
+      "receipt-items",
+      "receipt-prepare",
+      "receipt-create",
+      "receipt-executor",
+      "receipt-detail",
+      "receipt-summary",
+      "receipt-run-access",
+      "receipt-refresh",
+      "receipt-submit-status",
+      "receipt-submit-recover",
+      "receipt-submit-release",
+      "receipt-current",
+      "receipt-local-execution",
+      "receipt-local-execution-status",
+      "receipt-local-execution-form",
+      "receipt-local-execution-reason",
+      "receipt-local-execution-button",
+      "receipt-local-execution-retry",
+      "receipt-local-execution-record",
+      "receipt-local-execution-error",
+      "receipt-submit",
+      "receipt-manual-status",
+      "receipt-text",
+      "receipt-source",
+      "receipt-submit-button",
+      "receipt-decisions",
+      "receipt-reason",
+      "receipt-ack",
+      "receipt-correct",
+      "receipt-reopen",
+      "receipt-history",
+      "receipt-error",
+      "receipt-execution-preview-panel",
+      "receipt-execution-preview-decision",
+      "receipt-execution-preview-run",
+      "receipt-execution-preview-read",
+      "receipt-execution-preview-recover",
+      "receipt-execution-preview-release",
+      "receipt-execution-preview-result",
+      "receipt-execution-preview-error",
+      "receipt-history-panel",
+      "receipt-history-preparation",
+      "receipt-history-key",
+      "receipt-history-read",
+      "receipt-history-error",
+      "receipt-history-result"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在独立 Windows 实际链路复验提交、待企业核对、纠正、确认、重开和冷恢复。",
+    "reviewed_scope": {
+      "read": {
+        "entries": [
+          "#receipt-list",
+          "#receipt-refresh"
+        ],
+        "routes": [
+          "GET /api/executor-receipts",
+          "GET /api/executor-receipts/{step_id}"
+        ],
+        "current_object": "当前回执步骤、资料事项、Case、Run、执行者、步骤及资料版本。依赖已变、历史代次和取消核对保持只读。"
+      },
+      "executor": {
+        "entry": "#receipt-submit",
+        "route": "POST /api/executor-receipts/{step_id}/commands",
+        "action": "SUBMIT",
+        "from": [
+          "AWAITING_RECEIPT",
+          "CHANGES_REQUESTED"
+        ],
+        "to": "RECEIPT_RECORDED",
+        "guard": "仅当前获派执行者，当前步骤和版本，Case 可写，来源及内容非空。须由适配器生成的步骤不允许人工替代。"
+      },
+      "owner": {
+        "entries": [
+          "#receipt-ack",
+          "#receipt-correct",
+          "#receipt-reopen"
+        ],
+        "route": "POST /api/executor-receipts/{step_id}/commands",
+        "guard": "本人企业、EXECUTE 授权、当前资料依赖、步骤版本及当前回执 SHA。",
+        "transitions": {
+          "ACKNOWLEDGE": "RECEIPT_RECORDED -> LOCAL_ACKNOWLEDGED",
+          "REQUEST_CHANGES": "RECEIPT_RECORDED -> CHANGES_REQUESTED",
+          "REOPEN": "RECEIPT_RECORDED 或 LOCAL_ACKNOWLEDGED -> AWAITING_RECEIPT"
+        }
+      },
+      "unknown": {
+        "entry": "#receipt-submit-recover",
+        "route": "GET /api/executor-receipts/{step_id}/submit-recovery",
+        "rule": "只保留原提交坐标，身份或步骤变化使旧响应失效。未知结果按原键只读核对，不自动再次提交。"
+      },
+      "evidence": {
+        "scope": "48 个 Node VM 断言用例使用 DOM、传输和存储替代件。仅核对前端协议。",
+        "result": "receipt-journey-guards-r18-fixed.xml",
+        "real_executors": [
+          "tests/test_executor_receipts.py::test_full_append_correction_acknowledge_reopen_history_persistence",
+          "tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts"
+        ]
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/executor_receipts.py": "1aab01dd611ce4a7abb0960e9ecb7cefc7a9ff514109997b63d380c0a170b85f",
+        "tests/pending_receipt_handoff_offline.js": "32e060abeac8f3e9fd87cc6a693a294c3d70173c0cc95c679c781cdc468f38e3"
+      }
+    },
+    "preset_frontend_evidence": {
+      "scope": "PRESET_CASE_BROWSER_ONLY",
+      "manifest": "revision-demo-evidence-20261106.json",
+      "manifest_sha256": "03d403b5c925cbe4183960c49bd806174e4236f06b1471a856bad5b98788ab62",
+      "acceptance_ids": [
+        "AT-15"
+      ],
+      "observed": [
+        "退回、再次提交、重开、归档与历史回看"
+      ],
+      "remaining_real_acceptance": [
+        "真实履约证据、服务端拒绝与关闭重开"
+      ]
+    }
+  },
+  {
+    "journey": "概览与进度",
+    "current_html_ids": [
+      "prep-summary"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "独立 Windows 以真实事项验证当前责任、阻塞原因和原导航入口。",
+    "reviewed_scope": {
+      "read": {
+        "entries": [
+          "#case-worklist-read",
+          "#prep-summary",
+          "#plan-next-action"
+        ],
+        "route": "GET /api/cases/worklist",
+        "guards": "当前企业 PREPARE 授权，只读分页，Case、Run 和资料事项分别取当前记录。"
+      },
+      "next_action": "根据当前步骤与阻塞状态指向原入口。没有 assignment 时保持解释性阻断。",
+      "evidence": {
+        "file": "progress-readiness-guards-r22.xml",
+        "scope": "离线列表及原入口隔离。真实执行器 tests/test_case_worklist_offline.py::test_real_asgi_queue_response_renders_in_original_page_code"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/case_worklist.py": "78f493d65f200c7931dcc773a1c2b257a4767c22a88160b53f31e30d4c1ba680"
+      }
+    }
+  },
+  {
+    "journey": "事实准备度变化",
+    "current_html_ids": [
+      "simulation-rule-panel",
+      "simulation-rule-read",
+      "simulation-rule-status",
+      "simulation-rule-result",
+      "readiness-panel",
+      "readiness-summary",
+      "readiness-assess",
+      "readiness-checklist",
+      "readiness-conditions",
+      "readiness-sources",
+      "readiness-history",
+      "readiness-error",
+      "case-fact-panel",
+      "case-fact-read",
+      "case-fact-status",
+      "case-fact-questions",
+      "case-fact-declare-form",
+      "case-fact-declare-purpose",
+      "case-fact-declare-reason",
+      "case-fact-declare",
+      "case-fact-confirm-form",
+      "case-fact-fields",
+      "case-fact-purpose",
+      "case-fact-confirm-reason",
+      "case-fact-confirm",
+      "case-fact-retry",
+      "case-fact-source-entry",
+      "case-fact-source-form",
+      "case-fact-source-field",
+      "case-fact-source-value",
+      "case-fact-source-ref",
+      "case-fact-source-version",
+      "case-fact-source-excerpt",
+      "case-fact-source-from",
+      "case-fact-source-until",
+      "case-fact-source-purpose",
+      "case-fact-source-save",
+      "case-fact-history",
+      "case-fact-error",
+      "opportunity-panel"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在获授权真实后端验证来源缺失、过期、冲突、撤权与旧结论只读保留。",
+    "reviewed_scope": {
+      "facts": {
+        "entries": [
+          "#case-fact-read",
+          "#case-fact-declare",
+          "#case-fact-confirm"
+        ],
+        "routes": [
+          "GET /api/preparations/{preparation_id}/fact-clarifications",
+          "POST /api/preparations/{preparation_id}/fact-clarifications/declare",
+          "POST /api/preparations/{preparation_id}/fact-clarifications/confirm"
+        ],
+        "guards": "按原角色、目的、来源和版本核对后显式写入。"
+      },
+      "readiness": {
+        "entry": "#readiness-assess",
+        "route": "/api/preparations/{preparation_id}/readiness",
+        "boundary": "保存的本地准备度和有限合成规则结果不等于政策批准。缺证据保持 UNKNOWN。"
+      },
+      "evidence": {
+        "file": "progress-readiness-guards-r22.xml",
+        "scope": "独立 Kleene 真值表对照原计算函数。真实执行器 tests/test_readiness.py::test_review_correction_false_fill_unknown_manual_true_stale_and_refresh"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/case_fact_clarifications.py": "6ac092c2a292f973532d9571782236728878cb67fa9d41a8ef039cf7424557bc",
+        "src/parkweave/readiness.py": "983c8237030dc68d2b4e817f3fa388a7acb7cf4aa8b843782186a73d95a53440",
+        "src/parkweave/synthetic_rule_readiness.py": "50ebdf13e4e97779d1840e2c1628e0b3e16dcaae4bde2861f7fabad2e2d08cc9"
+      }
+    },
+    "preset_frontend_evidence": {
+      "scope": "PRESET_CASE_BROWSER_ONLY",
+      "manifest": "revision-demo-evidence-20261106.json",
+      "manifest_sha256": "03d403b5c925cbe4183960c49bd806174e4236f06b1471a856bad5b98788ab62",
+      "acceptance_ids": [
+        "AT-25",
+        "AT-26"
+      ],
+      "observed": [
+        "变更后区分重算、重验和保留项",
+        "保留旧方案、回执与归档历史"
+      ],
+      "remaining_real_acceptance": [
+        "真实依赖传播、未知时扩大重验与独立判定",
+        "人工锁冲突、未解冲突发布阻断与历史事实核验"
+      ]
+    }
+  },
+  {
+    "journey": "模板与重新使用",
+    "current_html_ids": [
+      "cold-entry",
+      "cold-directory-read",
+      "cold-recover",
+      "cold-status",
+      "cold-form",
+      "cold-instance",
+      "cold-binding",
+      "cold-goal",
+      "cold-goals",
+      "cold-extra",
+      "cold-need",
+      "cold-outline",
+      "cold-reason",
+      "cold-prepare-confirm",
+      "cold-prepare",
+      "cold-current",
+      "cold-saved-input",
+      "cold-input-history",
+      "cold-observations",
+      "cold-stage",
+      "cold-stage-prepare",
+      "cold-command",
+      "cold-send-confirm",
+      "cold-stage-send",
+      "cold-open",
+      "cold-new",
+      "template-input-entry",
+      "template-input-catalog",
+      "template-input-recover",
+      "template-input-status",
+      "template-input-form",
+      "template-input-release",
+      "template-input-binding",
+      "template-input-goal",
+      "template-input-reviewer",
+      "template-input-need",
+      "template-input-need-source",
+      "template-input-outline",
+      "template-input-outline-source",
+      "template-input-reason",
+      "template-input-confirm",
+      "template-input-create",
+      "template-input-current",
+      "template-input-observation",
+      "template-input-read",
+      "template-input-material-confirm",
+      "template-input-resume",
+      "template-input-open"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_OFFLINE_HANDLER_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "在授权独立 Windows 窗口以新诉求重跑模板、过期、撤权、版本变化、关闭与重开。",
+    "reviewed_scope": {
+      "release": {
+        "entry": "#template-input-catalog",
+        "route": "GET /api/template-consumer/catalog",
+        "guards": "当前身份读取可信发布版本。实例或来源变化后重新读取。"
+      },
+      "new_input": {
+        "entries": [
+          "#template-input-create",
+          "#template-input-resume"
+        ],
+        "routes": [
+          "POST /api/template-consumer/instances",
+          "POST /api/template-consumer/instances/{instance_id}/resume"
+        ],
+        "guards": "新目标和带来源的新材料。明确确认、当前模板版本、当前事项关系和幂等键。不同目标不继承旧批准。"
+      },
+      "staged": {
+        "entries": [
+          "#cold-prepare",
+          "#cold-stage-prepare",
+          "#cold-stage-send"
+        ],
+        "routes": [
+          "POST /api/service-instance-cold-inputs",
+          "POST /api/service-instance-cold-inputs/prepare-stage"
+        ],
+        "boundary": "准备新输入和组装阶段请求分离，提交仍由用户确认并经原业务端点处理。"
+      },
+      "unknown": {
+        "entries": [
+          "#template-input-recover",
+          "#cold-recover"
+        ],
+        "routes": [
+          "GET /api/template-consumer/creation-recovery",
+          "GET /api/service-instance-cold-inputs/recovery"
+        ],
+        "rule": "仅按原标识及绑定摘要核对，不自动重写。"
+      },
+      "evidence": {
+        "scope": "31 个 Node VM 原页面迁移和模板规划协议用例。数据库和原生窗口未运行。",
+        "result": "template-journey-guards-r21.xml",
+        "real_executor": "tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "src/parkweave/template_consumer.py": "0d8b1c66be414a1f42dc26493b80117f532490d7f0298518e2f9d91d593da052",
+        "src/parkweave/service_instance_consumer.py": "8f0bbd5d2834cd86328e182580c83ef721184b58e5409898fe43b8e0cabcff50"
+      },
+      "windows_tcp_fixture_recheck": {
+        "scope": "仅显式启用的隔离模板消费入口，SQL 返回无掩码地址，原数据库名称和回环地址门保留。",
+        "handler_regression": {
+          "report": "template-offline-r32.xml",
+          "passed": 31,
+          "skipped": 1
+        },
+        "database_suite": {
+          "report": "template-tcp-r32.xml",
+          "passed_without_database": 1,
+          "skipped_no_native_fixture_dsn": 38
+        },
+        "actual_windows_tcp_template_flow": "NOT_RUN"
+      }
+    }
+  },
+  {
+    "journey": "历史与导出",
+    "current_html_ids": [
+      "record-directory-read",
+      "record-directory-status",
+      "record-directory-items",
+      "record-directory-next",
+      "prep-history"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "独立 Windows 核对来源变化时拒绝旧导出、下载内容与重开读回。",
+    "reviewed_scope": {
+      "history": {
+        "entries": [
+          "#record-directory-read",
+          "#record-directory-next",
+          "#prep-history"
+        ],
+        "routes": [
+          "GET /api/runs",
+          "GET /api/runs/{run_id}"
+        ],
+        "guards": "分页和历史记录按当前访问权，只读。晚到的旧身份响应不填充当前视图。"
+      },
+      "export": {
+        "entries": [
+          "#case-record-pack-download",
+          "#material-pack-download"
+        ],
+        "boundary": "当前快照、权限、来源与版本复验后生成本地 TXT。浏览器下载不提交业务写入。"
+      },
+      "evidence": {
+        "file": "record-directory-guards-r22.xml",
+        "scope": "11 项目录错误、晚响应与明确重试检查。下载、授权及重开执行器 tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart"
+      },
+      "sha256": {
+        "src/parkweave/web.html": "b44337f9806d3f212ba7264ec4e9d2ab0664bf9e13a09941b04f3d12bf2d34e1",
+        "src/parkweave/api.py": "611ef6c0f3e05d0a1e58b4d54daad004dce735e4e7d8c5c936d6cf9dd2efb71b",
+        "tests/test_case_record_pack.py": "5d5ad36e5ea7eb2dfc8861be9eeef066048ebc7ab717170c490481590fae85dd"
+      }
+    },
+    "preset_frontend_evidence": {
+      "scope": "PRESET_CASE_BROWSER_ONLY",
+      "manifest": "revision-demo-evidence-20261106.json",
+      "manifest_sha256": "03d403b5c925cbe4183960c49bd806174e4236f06b1471a856bad5b98788ab62",
+      "acceptance_ids": [
+        "AT-15",
+        "AT-35"
+      ],
+      "observed": [
+        "退回、再次提交、重开、归档与历史回看",
+        "预设案例可操作至再次归档，本地刷新后恢复"
+      ],
+      "remaining_real_acceptance": [
+        "真实履约证据、服务端拒绝与关闭重开",
+        "真实四角色办理及不同输入的第二事项"
+      ]
+    }
+  },
+  {
+    "journey": "身份切换",
+    "current_html_ids": [
+      "token"
+    ],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_PARTIAL_JOURNEY",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "SOURCE_BINDING_AND_LOCAL_TRANSPORT_REGRESSION",
+    "real_backend_execution": "NOT_RUN",
+    "next": "用真实独立 Windows 登录、退出、冷重开，逐一验证四角色身份隔离和未决请求恢复。",
+    "reviewed_scope": {
+      "login": {
+        "entry": "#local-workspace-login",
+        "route": "POST /api/local/session",
+        "guards": "原回环来源检查，原受保护账户验证。Windows 提供者核对 DPAPI 解密、安装、actor 和 bearer 指纹，并在数据库重验当前授权。"
+      },
+      "logout": {
+        "entries": [
+          "#local-workspace-logout",
+          "#token"
+        ],
+        "rule": "令牌仅在当前页面内存，清除令牌和角色并触发原身份失效事件。未决请求保持只读核对边界，不能自动重发。"
+      },
+      "evidence": {
+        "scope": "4 项本地传输、页面组装或离线 JS 回归。1 项 Linux 安装检查跳过。未真实发放 Windows 会话。",
+        "result": "identity-journey-guards-r21-fixed.xml"
+      },
+      "sha256": {
+        "src/parkweave/local_workspace.py": "ef8d150c1cdb0d13d11a650d680181301fe4f5e596ebcb6fe79ea5dfbcc37833",
+        "src/parkweave/local_workspace_login.js": "d4929a4dbd2a6f40407e5fe46fb23409ab066eea64357bd8cb432e5d9fa6d7e7",
+        "scripts/windows_portable/native_web_login.py": "6869204bd7445d32b64b262246d20928583d41a839343168a972110fbc3bec1c",
+        "tests/test_local_workspace_entry.py": "f72a6cd1ccf8e990bfbcdcf83f278850c7d80f1df2fb37245d0f3b9e144357bb"
+      },
+      "current_source_recheck": {
+        "observed_changes": "原生登录仅将 DPAPI 的确切 invalid-data CALL 失败视为拒绝，其他未知结果锁住原提供者。成功解密仍核对安装、身份和令牌指纹，再由数据库重验当前授权。",
+        "evidence": "identity-desktop-bindings-r30.xml",
+        "scope": "源码审阅及共享回归组 32 通过、2 跳过。Linux 专用安装与需原生测试所有者 DSN 的用例跳过，原生登录和窗口尚未执行。"
+      },
+      "native_trial_recheck": {
+        "scope": "共享 MATERIAL 账号标签。当前证据覆盖实际挂载路由的下拉项与两角色试验命令，Windows UIA 和真实账号解锁待验。",
+        "local_report": "native-login-r36.xml",
+        "native_report": "WindowsRun69Result.json"
+      },
+      "windows_locale_regression": {
+        "scope": "实际挂载路由在模拟 Windows ANSI 默认文本编码下返回 UTF-8 HTML 与脚本。使用合成身份入口，不证明原生解锁。",
+        "report": "workspace-utf8-r41.xml"
+      }
+    }
+  },
+  {
+    "journey": "精简端与宿主",
+    "current_html_ids": [],
+    "source": "src/parkweave/web.html",
+    "role_and_allowed_action_review": "SOURCE_REVIEWED_AUTHORIZED_TRIAL_SCOPE",
+    "states_required": [
+      "UNREAD",
+      "LOADING",
+      "EMPTY",
+      "ERROR",
+      "DENIED",
+      "STALE",
+      "SUBMITTING",
+      "UNKNOWN",
+      "SUPPORTED_SUCCESS"
+    ],
+    "evidence_scope": "AUTHORIZED_TRIAL_EXECUTOR_SOURCE_ONLY",
+    "real_backend_execution": "NOT_RUN",
+    "next": "原生运行成功后逐项核对 UIA、实际截图、独立后端停止与重开证据，再单独验证普通产品入口及完整四角色。",
+    "reviewed_scope": {
+      "executor": "scripts/windows_ci/native_desktop_trial.py::NativeDesktopTrial",
+      "source_window": "scripts/windows_ci/native_business_scope.py::NativeBusinessScope.run",
+      "roles": [
+        "enterprise_operator",
+        "park_specialist"
+      ],
+      "expected": "窗口 UIA 驱动提交、材料两版本、补正、核对、确认、显式重开与再次确认。仅用 GET 验证版本 10 和动作序列。关闭原窗口，重开真实后端和新窗口，核对同一事项持久读回。",
+      "actual_product_entry": "TRIAL_VIEWER_ATTACHMENT_ONLY",
+      "remaining": "普通 EXE 新建及重开入口、执行者和资源管理员的完整旅程仍需验收。",
+      "sha256": {
+        "scripts/windows_ci/native_desktop_trial.py": "59468db89354edda8f8cdb4e32521c86c9f06f03b6898e83c3fb8bc111c918bb",
+        "scripts/windows_ci/native_business_scope.py": "e9a83077431c87a61598fb6f792c7390f9240b1b7830fefd1b5a9803df1632b8",
+        "scripts/windows_portable/native_business_adapter.py": "6e6a9714e9648d5f8d30894a7236d90ca59246ec9a28d846b05f4a25e6682511"
+      },
+      "current_source_recheck": {
+        "observed_changes": "适配器继续核对原绝对截止时间。试验结果单列环境阻塞并保持失败退出，跨身份保护结果仍缺。未扩大参与角色和宿主入口。",
+        "evidence": "identity-desktop-bindings-r30.xml",
+        "scope": "源码审阅及共享回归组 32 通过、2 跳过。Linux 专用安装与需原生测试所有者 DSN 的用例跳过，原生登录和窗口尚未执行。"
+      },
+      "native_trial_recheck": {
+        "scope": "第 69 次原生试验在真实两角色 API 资料准备后取得宿主 OPEN 回执，停在首次 UIA 登录。r36 调整登录下拉标签与失败子阶段，窗口读回和正常关闭仍待验。",
+        "local_report": "native-login-r36.xml",
+        "native_report": "WindowsRun69Result.json"
+      },
+      "latest_native_execution": {
+        "scope": "AUTHORIZED_TWO_ROLE_NATIVE_TRIAL_PARTIAL",
+        "run_number": 101,
+        "source_commit": "44cb7db72e3f08abbe806915328dfc66f185e2ff",
+        "report": "WindowsRun101Result.json",
+        "report_sha256": "94a4ed3930e39e26bbade8b637696c6a8c982202b8147715a8cabe17a8173631",
+        "observed": "原生窗口及服务端均确认首份材料保存后的版本 2。",
+        "remaining": "专员登录切换、后续窗口内办理、正常关闭后冷重开及四角色整例。",
+        "subsequent_run_103": "CANCELLED",
+        "executor_source_bindings": {
+          "scripts/windows_ci/native_desktop_trial.py": {
+            "run_101_git_blob_sha256": "565f3ab443be9ae02dc8cad396d7d9b0a30b3293f5bd92e2b42cde4003fe0aef",
+            "current_worktree_sha256": "776d500189ca719d0c35d1def2d38352464b3a1cca660222cc3ed945f6f6eff2",
+            "current_matches_run_after_lf_normalization": true
+          },
+          "scripts/windows_ci/native_business_scope.py": {
+            "run_101_git_blob_sha256": "8bc051c42982c34157bfab4064a17a9d0b2d01687949b1279c7bfade280a707c",
+            "current_worktree_sha256": "fa94a323afb893d73ab4c7c67d8a68efe41ea12d86fb1573986407b68465b1a8",
+            "current_matches_run_after_lf_normalization": true
+          },
+          "scripts/windows_portable/native_business_adapter.py": {
+            "run_101_git_blob_sha256": "d0434ca5e34339e3ac1f7bac7f3bfc7d0a5d46ea47000d7fd18e8a41437c4580",
+            "current_worktree_sha256": "6e6a9714e9648d5f8d30894a7236d90ca59246ec9a28d846b05f4a25e6682511",
+            "current_matches_run_after_lf_normalization": true
+          }
+        }
+      }
+    }
+  }
+]

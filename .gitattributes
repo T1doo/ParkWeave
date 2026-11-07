@@ -2,6 +2,8 @@
 * text=auto
 # Native role integrity verifies raw Git bytes, including on CRLF hosts.
 /src/parkweave/roles.sql text eol=lf
+# Native migration/storage pins also bind exact original SQL bytes.
+/src/parkweave/*.sql text eol=lf
 scripts/windows_ci/native_business_window.json text eol=lf
 .github/workflows/native-business-trial-once.yml text eol=lf
 # Acceptance fingerprints bind raw test bytes to Git blobs on every platform.
@@ -13,3 +15,8 @@ docs/sources/V1/*.md -text
 /scripts/windows_portable/build.py -text
 /scripts/windows_portable/payload.py -text
 /scripts/windows_portable/runtime-assets.json -text
+
+# Desktop ABI inputs are pinned against exact Git source bytes.
+/scripts/windows_desktop/*.h text eol=lf
+/scripts/windows_desktop/*.cpp text eol=lf
+/scripts/windows_desktop/build.py text eol=lf

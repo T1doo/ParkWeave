@@ -255,11 +255,15 @@ class _OwnedInitdbPipe:
         self.phase = 'READ_PIPE_SECURITY'
         self._api(self._adv.GetKernelObjectSecurity(self._handle, 5, buffer,
                                                    C.sizeof(buffer), C.byref(used)))
-        _need(20 <= used.value <= C.sizeof(buffer))
-        raw = bytes(buffer[:used.value])
-        _private_descriptor(raw, sid)  # all relative components bounded first
+        # NPFS can return a valid self-relative descriptor with LengthNeeded=0
+        # even on success (reproduced on local Windows 11).
+        # Bound every relative component in our fixed buffer BEFORE allowing
+        # native pointer traversal, then use its independently verified length.
+        _private_descriptor(bytes(buffer), sid)
         _need(self._adv.IsValidSecurityDescriptor(buffer))  # no extended error
-        _need(self._adv.GetSecurityDescriptorLength(buffer) == used.value)
+        length=self._adv.GetSecurityDescriptorLength(buffer)
+        _need(20 <= length <= C.sizeof(buffer) and used.value in (0,length))
+        _private_descriptor(bytes(buffer[:length]), sid)
 
     def close(self):
         with self._lock:

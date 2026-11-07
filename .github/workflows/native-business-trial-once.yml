@@ -2,7 +2,7 @@ name: ParkWeave source-bound native business trial preparation
 
 on:
   push:
-    branches: [dev/local-product-runtime-20261028]
+    branches: [dev/local-product-runtime-20261028, codex/windows-closure-20261105]
     paths:
       - scripts/windows_ci/native_business_window.json
       - .github/workflows/native-business-trial-once.yml
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   candidate-build:
     if: ${{ false && github.event_name == 'push' && github.repository == 'T1doo/ParkWeave' && github.event.repository.private == false }}
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     timeout-minutes: 6
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
@@ -30,7 +30,8 @@ jobs:
         id: build
         env:
           NATIVE_PUBLIC: ${{ github.event.repository.private == false }}
-        run: python3 -I -B -S scripts/windows_ci/native_candidate_build.py
+        shell: pwsh
+        run: python -I -B -S scripts/windows_ci/native_candidate_launch.py
       - name: Same-run candidate only, no Release or external upload
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

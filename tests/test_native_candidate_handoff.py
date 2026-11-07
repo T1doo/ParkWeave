@@ -11,7 +11,7 @@ import pytest
 
 from scripts.windows_ci import native_candidate_build as builder,native_business_window as window
 from scripts.windows_portable import native_trial_authority as a,payload
-from scripts.windows_portable.native_dpapi_peer import LocalServiceDPAPIPeer
+from scripts.windows_portable.native_dpapi_peer import LocalServiceDPAPIPeer, LocalServicePeerFailure
 
 
 def test_null_builder_record_refuses_before_temp_git_network(monkeypatch,tmp_path,capsys):
@@ -38,6 +38,70 @@ def test_peer_requeries_actual_effective_token_instead_of_old_token_object():
     assert dict(peer._effective(identity))[1]==b'B'
     with pytest.raises(a.TrialRefused):peer._effective(identity)
     assert calls==[(999,8,True),(999,8,True)]
+
+
+def test_peer_reports_redacted_original_logon_refusal_without_impersonation(monkeypatch):
+    import ctypes as C
+    import threading
+    from scripts.windows_ci.native_failure_diagnostics import detail
+
+    peer=object.__new__(LocalServiceDPAPIPeer)
+    peer.handles=[]
+    peer.impersonation_attempted=False
+    peer.denied_without_token=False
+    peer._time=lambda:None
+    peer._no_thread_token=lambda:None
+    peer._duplicate_thread=lambda:99
+    peer.thread_id=lambda handle:threading.get_native_id()
+    peer.logon=lambda *args:0
+    peer.impersonate=lambda *args:pytest.fail('unverified token used')
+    monkeypatch.setattr(C,'get_last_error',lambda:1385,raising=False)
+    peer._worker()
+
+    assert type(peer.worker_error) is LocalServicePeerFailure
+    assert peer.worker_error.__traceback__ is None
+    assert detail(peer.worker_error,'TrialRefused')['local_service_dpapi']=={
+        'phase':'SERVICE_LOGON','winerror':1385,'dpapi_phase':None}
+    assert not peer.handles[0]['owned'] and not peer.impersonation_attempted
+    invalid=LocalServicePeerFailure('PRIVATE_UNEXPECTED_TEXT',-1,'PRIVATE_NATIVE_TEXT')
+    assert detail(invalid,'TrialRefused')['local_service_dpapi']=={'details':'UNAVAILABLE'}
+
+
+@pytest.mark.parametrize('fault',[None,'impersonated','unknown_output','revert_error','other_error'])
+def test_peer_can_report_environment_denial_only_after_known_clean_refusal(monkeypatch,fault):
+    from scripts.windows_portable import native_dpapi_peer as module
+    import ctypes as C
+
+    peer=object.__new__(LocalServiceDPAPIPeer)
+    peer.lease,peer.deadline=object(),time.monotonic()+1
+    peer.started=peer.failed=peer.complete=False
+    peer.cipher,peer.entropy=b'synthetic',b'public test bytes'
+    peer.worker_error=LocalServicePeerFailure('SERVICE_LOGON',87 if fault=='other_error' else 5)
+    peer.revert_error=LocalServicePeerFailure('REVERT',5) if fault=='revert_error' else None
+    peer.observation=None
+    peer.denied_without_token=True
+    peer.impersonation_attempted=fault=='impersonated'
+    peer.reverted=False
+    peer.handles=[dict(owned=False,output=C.c_void_p(12 if fault=='unknown_output' else None))]
+    peer.thread_handle=99
+    peer._no_thread_token=lambda:None
+    peer._output=lambda *args:81
+    peer._snapshot=lambda token:('original',token)
+    peer.open_primary=object()
+    peer.current_process=lambda:80
+    peer.thread_id=lambda handle:91
+    peer.wait=lambda *args:0
+    closed=[]
+    peer._close_owned=lambda:closed.append(True)
+    fake_thread=SimpleNamespace(native_id=91,start=lambda:None,join=lambda timeout:None,is_alive=lambda:False)
+    monkeypatch.setattr(module,'threading',SimpleNamespace(Thread=lambda **kwargs:fake_thread))
+    if fault is None:
+        assert peer.run() is None
+        assert peer.environment_unavailable and not peer.complete and not peer.failed
+        assert peer.cipher is peer.entropy is None and closed==[True]
+    else:
+        with pytest.raises(BaseExceptionGroup):peer.run()
+        assert peer.failed and not peer.complete and not closed
 
 
 def zip_fixture(*,symlink=False,extra=False):

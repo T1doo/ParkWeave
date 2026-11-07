@@ -6,6 +6,7 @@
 #define INITGUID
 #include <windows.h>
 #include <uiautomation.h>
+#include <uiautomationcoreapi.h>
 #include <wincodec.h>
 #include <bcrypt.h>
 #include <objbase.h>
@@ -23,7 +24,8 @@
 
 static void need(bool b){if(!b)throw std::runtime_error("OWN_UI_UNKNOWN");}
 static std::string phase="OPEN",failureCode="NOT_RECORDED";
-static void ok(HRESULT r){if(FAILED(r)){char value[9];sprintf(value,"%08x",unsigned(r));failureCode=value;}need(SUCCEEDED(r));}
+struct UIAError{HRESULT code;};
+static void ok(HRESULT r){if(FAILED(r)){char value[9];sprintf(value,"%08x",unsigned(r));failureCode=value;throw UIAError{r};}}
 template<class T>struct Ref{T* p=nullptr;Ref()=default;Ref(const Ref&)=delete;Ref& operator=(const Ref&)=delete;Ref(Ref&& other)noexcept:p(other.p){other.p=nullptr;}~Ref(){if(p)p->Release();}T** put(){need(!p);return &p;}T* operator->(){need(p);return p;}};
 static ULONGLONG deadline=0,cleanupDeadline=0;static void guard(){need(GetTickCount64()<deadline);}
 static std::string readLine(HANDLE h){std::string s;char c;DWORD n;while(ReadFile(h,&c,1,&n,nullptr)&&n){if(c=='\n')return s;need(s.size()<32768&&c!='\r');s+=c;}throw std::runtime_error("PIPE_UNKNOWN");}
@@ -36,6 +38,8 @@ static HANDLE job=nullptr,process=nullptr,hostInput=nullptr,hostOutput=nullptr;
 static bool childCreated=false,resumeAttempted=false,suspendedCleanupAttempted=false;
 static HWND hwnd=nullptr;static DWORD hostPID=0;static ULONGLONG hostBirth=0;static bool ambiguousWindow=false;
 static std::atomic<bool> ack{false},pipeUnknown{false},heartbeatStop{false};
+static std::atomic<bool> startupDone{false};
+static std::string startupFailure;
 static std::thread heartbeat,reader;static std::mutex writing;
 static std::string nonce;static IUIAutomation* automation=nullptr;
 struct OwnedHandle{HANDLE value;bool attempted=false,closed=false;};
@@ -67,29 +71,162 @@ static void start(const std::wstring& exe,HANDLE profile,unsigned port){
  char parentBirth[17];sprintf(parentBirth,"%016llx",(unsigned long long)birth(GetCurrentProcess()));
  writeLine(hostInput,"PWUI1\tSTART\t"+std::to_string(port)+"\t"+std::to_string((ULONG_PTR)profile)+"\t"+std::to_string(GetCurrentProcessId())+"\t"+parentBirth+"\t"+nonce);
  heartbeat=std::thread([]{try{while(!heartbeatStop){std::this_thread::sleep_for(std::chrono::milliseconds(500));if(!heartbeatStop){std::lock_guard<std::mutex> lock(writing);writeLine(hostInput,"PWUI1\tALIVE\t"+nonce);}}}catch(...){pipeUnknown=true;}});
- reader=std::thread([]{try{need(readLine(hostOutput)=="PWUI1\tVIEW_RELEASED\t"+nonce);ack=true;heartbeatStop=true;if(heartbeat.joinable())heartbeat.join();std::lock_guard<std::mutex> lock(writing);closeKnown(hostInput);}catch(...){pipeUnknown=true;}});
+ reader=std::thread([]{try{
+  auto first=readLine(hostOutput);
+  if(first!="PWUI1\tVIEW_READY\t"+nonce){
+   auto prefix="PWUI1\tVIEW_FAILED\t"+nonce+"\t";
+   need(first.rfind(prefix,0)==0);
+   startupFailure=first.substr(prefix.size());
+   auto details=split(startupFailure);
+   auto hexCode=[](const std::string& code){return code.size()==8&&code.find_first_not_of("0123456789abcdef")==std::string::npos;};
+   need(!details.empty()&&hexCode(details[0]));
+   auto stage=std::stoul(details[0],nullptr,16);need(stage>=1&&stage<=27);
+   if(stage>=20&&stage<=24)need(details.size()==3&&details[1].size()==1&&details[1][0]>='0'&&details[1][0]<='7'&&hexCode(details[2]));
+   else need(details.size()==1);
+   startupDone=true;return;
+  }
+  startupDone=true;
+  need(readLine(hostOutput)=="PWUI1\tVIEW_RELEASED\t"+nonce);ack=true;heartbeatStop=true;if(heartbeat.joinable())heartbeat.join();std::lock_guard<std::mutex> lock(writing);closeKnown(hostInput);
+ }catch(...){pipeUnknown=true;}});
  while(!hwnd){identity();EnumWindows(findWindow,0);need(!ambiguousWindow);if(!hwnd)Sleep(100);}identity();
+ phase="OPEN_WAIT_VIEW";
+ auto startupEnd=std::min(deadline,GetTickCount64()+45000);
+ while(!startupDone){identity();need(!pipeUnknown&&GetTickCount64()<startupEnd);Sleep(100);}
+ if(!startupFailure.empty()){phase="OPEN_VIEW_FAILED";failureCode=startupFailure;need(false);}
+ identity();need(!pipeUnknown);
  ok(CoCreateInstance(CLSID_CUIAutomation,nullptr,CLSCTX_INPROC_SERVER,IID_IUIAutomation,(void**)&automation));
 }
 static Ref<IUIAutomationElement> root(){identity();Ref<IUIAutomationElement> value;ok(automation->ElementFromHandle(hwnd,value.put()));return value;}
 static std::wstring name(IUIAutomationElement* element){BSTR s=nullptr;ok(element->get_CurrentName(&s));std::wstring value=s?s:L"";SysFreeString(s);need(value.size()<=8192);return value;}
-static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false){
- auto base=root();Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> values;ok(base->FindAll(TreeScope_Descendants,condition.p,values.put()));int count=0;ok(values->get_Length(&count));need(count<4000);IUIAutomationElement* match=nullptr;
- for(int i=0;i<count;i++){Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));BOOL off=TRUE,enabled=FALSE;CONTROLTYPEID kind=0;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));ok(e->get_CurrentControlType(&kind));if(off||!enabled||kind!=type)continue;auto text=name(e.p);if(prefix?text.rfind(wanted,0)==0:text==wanted){need(!match);match=e.p;match->AddRef();}}
- return match;
+static std::wstring automationId(IUIAutomationElement* element){
+ BSTR value=nullptr;ok(element->get_CurrentAutomationId(&value));
+ std::wstring id=value?value:L"";SysFreeString(value);need(id.size()<=8192);return id;
 }
-static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false){auto end=std::min(deadline,GetTickCount64()+15000);while(true){identity();need(GetTickCount64()<end);auto e=find(wanted,type,prefix);if(e)return e;Sleep(100);}}
-static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
-static void click(const std::wstring& selector,bool prefix){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix);Ref<IUIAutomationInvokePattern> p;ok(e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put()));ok(p->Invoke());}
-static void select(const std::wstring& selector,const std::wstring& option){
- Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId);Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
- Ref<IUIAutomationCondition> condition;ok(automation->CreateTrueCondition(condition.put()));Ref<IUIAutomationElementArray> items;ok(e->FindAll(TreeScope_Descendants,condition.p,items.put()));int count=0;ok(items->get_Length(&count));need(count>0&&count<32);Ref<IUIAutomationElement> chosen;
- for(int i=0;i<count;i++){Ref<IUIAutomationElement> item;ok(items->GetElement(i,item.put()));if(name(item.p)==option){need(!chosen.p);chosen.p=item.p;chosen.p->AddRef();}}
- need(chosen.p);Ref<IUIAutomationSelectionItemPattern> pattern;ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));ok(pattern->Select());BOOL selected=FALSE;ok(pattern->get_CurrentIsSelected(&selected));need(selected);ok(expand->Collapse());
+static IUIAutomationElement* find(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool includeOffscreen=false,bool byId=false){
+ auto base=root();
+ VARIANT kind{};kind.vt=VT_I4;kind.lVal=type;
+ Ref<IUIAutomationCondition> typeFilter,nameFilter,combined;
+ ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,typeFilter.put()));
+ if(!prefix){
+  VARIANT label{};label.vt=VT_BSTR;label.bstrVal=SysAllocStringLen(wanted.data(),UINT(wanted.size()));need(label.bstrVal);
+  HRESULT result=automation->CreatePropertyCondition(byId?UIA_AutomationIdPropertyId:UIA_NamePropertyId,label,nameFilter.put());
+  SysFreeString(label.bstrVal);ok(result);
+  ok(automation->CreateAndCondition(typeFilter.p,nameFilter.p,combined.put()));
+ }
+ Ref<IUIAutomationElementArray> values;
+ ok(base->FindAll(TreeScope_Descendants,prefix?typeFilter.p:combined.p,values.put()));
+ int count=0;ok(values->get_Length(&count));need(count>=0&&count<4000);
+ Ref<IUIAutomationElement> match;
+ for(int i=0;i<count;i++){
+  Ref<IUIAutomationElement> e;ok(values->GetElement(i,e.put()));
+  auto text=byId?automationId(e.p):name(e.p);if(prefix?text.rfind(wanted,0)!=0:text!=wanted)continue;
+  BOOL off=TRUE,enabled=FALSE;ok(e->get_CurrentIsOffscreen(&off));ok(e->get_CurrentIsEnabled(&enabled));
+  if((off&&!includeOffscreen)||!enabled)continue;
+  need(!match.p);match.p=e.p;e.p=nullptr;
+ }
+ auto result=match.p;match.p=nullptr;return result;
+}
+static IUIAutomationElement* await(const std::wstring& wanted,CONTROLTYPEID type,bool prefix=false,bool scroll=false,ULONGLONG end=0,bool byId=false){
+ if(!end)end=std::min(deadline,GetTickCount64()+15000);
+ bool scrolled=false;
+ const auto originalPhase=phase;
+ while(true){
+  identity();need(GetTickCount64()<end);
+  Ref<IUIAutomationElement> target;
+  try{
+   auto visible=find(wanted,type,prefix,false,byId);
+   if(visible){phase=originalPhase;failureCode="NOT_RECORDED";return visible;}
+   if(scroll&&!scrolled)target.p=find(wanted,type,prefix,true,byId);
+  }catch(const UIAError& error){
+   if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
+   Sleep(100);continue;
+  }
+  if(target.p){
+    phase="SCROLL_CONTROL";
+    Ref<IUIAutomationScrollItemPattern> item;
+    ok(target->GetCurrentPatternAs(UIA_ScrollItemPatternId,IID_IUIAutomationScrollItemPattern,(void**)item.put()));
+    ok(item->ScrollIntoView());scrolled=true;phase="SCROLL_VISIBLE";
+  }
+  Sleep(100);
+ }
+}
+static void set(const std::wstring& selector,std::wstring& value){Ref<IUIAutomationElement> e;e.p=await(selector,UIA_EditControlTypeId,false,true);Ref<IUIAutomationValuePattern> p;ok(e->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)p.put()));BOOL ro=TRUE;ok(p->get_CurrentIsReadOnly(&ro));need(!ro);BSTR data=SysAllocStringLen(value.data(),UINT(value.size()));need(data);HRESULT result=p->SetValue(data);SecureZeroMemory(data,SysStringLen(data)*sizeof(wchar_t));SysFreeString(data);SecureZeroMemory(value.data(),value.size()*sizeof(wchar_t));ok(result);}
+static void click(const std::wstring& selector,bool prefix){
+ auto end=std::min(deadline,GetTickCount64()+15000);
+ while(true){
+  phase="CLICK_FIND";Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ButtonControlTypeId,prefix,true,end);
+  phase="CLICK_PATTERN";Ref<IUIAutomationInvokePattern> p;
+  HRESULT result=e->GetCurrentPatternAs(UIA_InvokePatternId,IID_IUIAutomationInvokePattern,(void**)p.put());
+  if(result==UIA_E_ELEMENTNOTAVAILABLE&&GetTickCount64()<end){Sleep(100);continue;}
+  ok(result);identity();need(GetTickCount64()<end);
+  phase="CLICK_INVOKE";ok(p->Invoke());return;
+ }
+}
+static bool currentValueIs(IUIAutomationElement* element,const std::wstring& option){
+ Ref<IUIAutomationValuePattern> pattern;
+ HRESULT result=element->GetCurrentPatternAs(UIA_ValuePatternId,IID_IUIAutomationValuePattern,(void**)pattern.put());
+ if(FAILED(result)||!pattern.p)return false;
+ BSTR value=nullptr;result=pattern->get_CurrentValue(&value);
+ bool exact=SUCCEEDED(result)&&value&&std::wstring(value,SysStringLen(value))==option;
+ SysFreeString(value);return exact;
+}
+static void select(const std::wstring& selector,const std::wstring& option,bool byId=false){
+ phase=byId?"SELECT_ID_CONTROL":"SELECT_CONTROL";
+ Ref<IUIAutomationElement> e;e.p=await(selector,UIA_ComboBoxControlTypeId,false,true,0,byId);
+ if(byId&&currentValueIs(e.p,option))return;
+ phase="SELECT_EXPAND";
+ Ref<IUIAutomationExpandCollapsePattern> expand;ok(e->GetCurrentPatternAs(UIA_ExpandCollapsePatternId,IID_IUIAutomationExpandCollapsePattern,(void**)expand.put()));ok(expand->Expand());
+ phase="SELECT_OPTIONS";
+ VARIANT label{};label.vt=VT_BSTR;label.bstrVal=SysAllocStringLen(option.data(),UINT(option.size()));need(label.bstrVal);
+ Ref<IUIAutomationCondition> exactName;
+ HRESULT filter=automation->CreatePropertyCondition(UIA_NamePropertyId,label,exactName.put());
+ SysFreeString(label.bstrVal);ok(filter);
+ VARIANT kind{};kind.vt=VT_I4;
+ Ref<IUIAutomationCondition> listItem,menuItem,itemType,condition;
+ kind.lVal=UIA_ListItemControlTypeId;ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,listItem.put()));
+ kind.lVal=UIA_MenuItemControlTypeId;ok(automation->CreatePropertyCondition(UIA_ControlTypePropertyId,kind,menuItem.put()));
+ ok(automation->CreateOrCondition(listItem.p,menuItem.p,itemType.put()));
+ ok(automation->CreateAndCondition(exactName.p,itemType.p,condition.put()));
+ auto optionEnd=std::min(deadline,GetTickCount64()+15000);
+ while(true){
+  identity();need(GetTickCount64()<optionEnd);
+  Ref<IUIAutomationElementArray> items;ok(e->FindAll(TreeScope_Descendants,condition.p,items.put()));
+  int count=0;ok(items->get_Length(&count));need(count>=0&&count<=1);
+  if(count==0){Sleep(100);continue;}
+  Ref<IUIAutomationElement> chosen;ok(items->GetElement(0,chosen.put()));
+  phase="SELECT_ITEM_NAME";need(name(chosen.p)==option);
+  Ref<IUIAutomationSelectionItemPattern> pattern;
+  ok(chosen->GetCurrentPatternAs(UIA_SelectionItemPatternId,IID_IUIAutomationSelectionItemPattern,(void**)pattern.put()));
+  BOOL selected=FALSE;
+  if(byId)ok(pattern->get_CurrentIsSelected(&selected));
+  if(!selected){
+   phase="SELECT_ITEM_READY";
+   BOOL enabled=FALSE;ok(chosen->get_CurrentIsEnabled(&enabled));
+   if(!enabled){Sleep(100);continue;}
+   identity();need(GetTickCount64()<optionEnd);
+   phase="SELECT_ITEM_ACTION";ok(pattern->Select());
+   phase="SELECT_CONFIRM";ok(pattern->get_CurrentIsSelected(&selected));need(selected);
+  }
+  phase="SELECT_CONFIRM";
+  ExpandCollapseState state;ok(expand->get_CurrentExpandCollapseState(&state));
+  if(state==ExpandCollapseState_Expanded||state==ExpandCollapseState_PartiallyExpanded)ok(expand->Collapse());
+  return;
+ }
 }
 static std::wstring referenceAt(unsigned revision){
  need(revision>=1&&revision<=64);auto end=std::min(deadline,GetTickCount64()+15000);std::wstring suffix=L" · 版本 "+std::to_wstring(revision);
- while(true){identity();need(GetTickCount64()<end);Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true);if(e.p){auto value=name(e.p);if(value.size()>=suffix.size()&&value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0)return value;}Sleep(50);}
+ while(true){
+  identity();need(GetTickCount64()<end);
+  try{
+   // Saving can scroll the version header out of view. This is a read-only
+   // receipt in the original window, so its visibility is not required.
+   Ref<IUIAutomationElement> e;e.p=find(L"事项 ",UIA_TextControlTypeId,true,true);
+   if(e.p){auto value=name(e.p);if(value.size()>=suffix.size()&&value.compare(value.size()-suffix.size(),suffix.size(),suffix)==0)return value;}
+  }catch(const UIAError& error){
+   if(error.code!=UIA_E_ELEMENTNOTAVAILABLE)throw;
+  }
+  Sleep(50);
+ }
 }
 static void visible(const std::wstring& selector,CONTROLTYPEID type){Ref<IUIAutomationElement> e;e.p=await(selector,type);RECT r{};ok(e->get_CurrentBoundingRectangle(&r));RECT area{};need(GetWindowRect(hwnd,&area)&&r.right>r.left&&r.bottom>r.top&&r.left>=area.left&&r.top>=area.top&&r.right<=area.right&&r.bottom<=area.bottom);}
 static void screenshot(const std::wstring& path,unsigned width,unsigned height){
@@ -123,6 +260,7 @@ int main(){
    else if(f[0]=="CLICK"){need(f.size()==2);click(wide(f[1]),false);}
    else if(f[0]=="ITEM"){need(f.size()==2);click(wide(f[1]),true);}
    else if(f[0]=="SELECT"){need(f.size()==3);select(wide(f[1]),wide(f[2]));}
+   else if(f[0]=="SELECT_MATERIAL"){need(f.size()==2);select(L"slot",wide(f[1]),true);}
    else if(f[0]=="REFERENCE"){need(f.size()==2);writeLine(GetStdHandle(STD_OUTPUT_HANDLE),"UI1\tOK\t"+hex(referenceAt(std::stoul(f[1]))));continue;}
    else if(f[0]=="WAIT"){need(f.size()==3);Ref<IUIAutomationElement> e;e.p=await(wide(f[1]),std::stoi(f[2]));}
    else if(f[0]=="CAPTURE"){need(f.size()==4);screenshot(wide(f[1]),std::stoul(f[2]),std::stoul(f[3]));RECT client{};need(GetClientRect(hwnd,&client));writeLine(GetStdHandle(STD_OUTPUT_HANDLE),"UI1\tOK\t"+std::to_string(client.right)+"\t"+std::to_string(client.bottom)+"\t"+std::to_string(GetDpiForWindow(hwnd))+"\t"+std::to_string(hostPID)+"\t"+std::to_string(hostBirth));continue;}

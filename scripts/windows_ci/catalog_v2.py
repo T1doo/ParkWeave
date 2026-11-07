@@ -102,7 +102,18 @@ def fingerprint(path):
 
 
 def stamp(info):
-    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+    # On Windows 3.12 the pathname and descriptor APIs can report different
+    # meanings for ctime. Compare birth time across APIs, then check ctime
+    # separately across reads of the same descriptor.
+    timestamp = info.st_birthtime_ns if os.name == 'nt' else info.st_ctime_ns
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, timestamp)
+
+
+def descriptor_ctime(stream, expected):
+    info = os.fstat(stream.fileno())
+    if stamp(info) != expected:
+        raise Refused('INPUT_CHANGED')
+    return info.st_ctime_ns
 
 
 def source_paths(root):
@@ -124,10 +135,9 @@ def source_ids(root, name, snapshots, io):
     if fingerprint(path) != snapshots[path]:
         raise Refused('INPUT_CHANGED')
     with path.open('rb') as stream:
-        if stamp(os.fstat(stream.fileno())) != snapshots[path]:
-            raise Refused('INPUT_CHANGED')
+        before = descriptor_ctime(stream, snapshots[path])
         raw = stream.read(min(MAX_SOURCE_FILE_BYTES, MAX_SOURCE_TOTAL_BYTES-io[0])+1)
-        if stamp(os.fstat(stream.fileno())) != snapshots[path]:
+        if descriptor_ctime(stream, snapshots[path]) != before:
             raise Refused('INPUT_CHANGED')
     io[0] += len(raw)
     if len(raw) > MAX_SOURCE_FILE_BYTES or io[0] > MAX_SOURCE_TOTAL_BYTES:
@@ -212,9 +222,10 @@ def scan(root, requests=(), *, retained_references=None, reserve=256, _index_inp
     if _index_input is None:
         snapshots[index_path] = fingerprint(index_path)
         with index_path.open('rb') as stream:
-            if stamp(os.fstat(stream.fileno())) != snapshots[index_path]:
-                raise Refused('INPUT_CHANGED')
+            before = descriptor_ctime(stream, snapshots[index_path])
             raw = stream.read(MAX_INDEX_BYTES+1)
+            if descriptor_ctime(stream, snapshots[index_path]) != before:
+                raise Refused('INPUT_CHANGED')
     else:
         # Maintenance check transfers its already bounded index read, avoiding
         # a second input scan. The same final snapshot fences still apply.
@@ -254,8 +265,7 @@ def scan(root, requests=(), *, retained_references=None, reserve=256, _index_inp
         domain_ids = domain_files = size = 0
         hasher = hashlib.sha256()
         with path.open('rb') as stream:
-            if stamp(os.fstat(stream.fileno())) != snapshots[path]:
-                raise Refused('INPUT_CHANGED')
+            before = descriptor_ctime(stream, snapshots[path])
             while True:
                 line = stream.readline(MAX_LINE_BYTES+1)
                 if not line:
@@ -291,7 +301,7 @@ def scan(root, requests=(), *, retained_references=None, reserve=256, _index_inp
                         wanted[value] = True
                 else:
                     raise Refused('ROW_REFUSED')
-            if stamp(os.fstat(stream.fileno())) != snapshots[path]:
+            if descriptor_ctime(stream, snapshots[path]) != before:
                 raise Refused('INPUT_CHANGED')
         if (next(expected_ids, None) is not None or next(expected_files, None) is not None or
                 size != record['bytes'] or domain_ids != record['ids'] or domain_files != record['files'] or

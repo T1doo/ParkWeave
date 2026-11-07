@@ -204,7 +204,7 @@ class TemplateConsumer:
         if options.get('dbname') not in self.config.allowed_database_names:
             raise Denied('database is outside the explicit fixture allowlist')
         with self.store.connect() as c:
-            row = c.execute('SELECT current_database() AS database_name,inet_server_addr()::text AS address').fetchone()
+            row = c.execute('SELECT current_database() AS database_name,host(inet_server_addr()) AS address').fetchone()
             if row['database_name'] != options['dbname'] or row['database_name'] not in self.config.allowed_database_names or not re.fullmatch(DB_PATTERN, row['database_name']) or row['address'] not in (None, '127.0.0.1', '::1'):
                 raise Denied('actual PostgreSQL database is not the approved isolated fixture')
             return row['database_name']

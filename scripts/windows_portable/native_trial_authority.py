@@ -10,6 +10,7 @@ import os
 import threading
 import time
 import weakref
+from .source_identity import from_manifest, matches_manifest
 
 
 class TrialRefused(RuntimeError): pass
@@ -48,6 +49,7 @@ class _State:
     closed: bool = False
     generations: list = field(default_factory=list)
     facts: list = field(default_factory=list)
+    environment_blockers: list = field(default_factory=list)
     restart_ready: bool = False
     compositions: tuple = ()
 
@@ -121,7 +123,7 @@ def bind_compositions(cap,first,second,enrollment):
              and type(c.directories) is FixedPrivateDirectories and c.directories.base==str(value.parent)
              and c.directories.journal_format is FixedFormat.INSTANCE_V2
              and type(native) is NativeFixedStoreSecurity and native.mode is mode
-             and native.runtime==dict(source_commit=value.manifest['source_commit'],manifest_sha256=value.window.manifest_sha256)
+             and native.runtime==from_manifest(value.manifest,value.window.manifest_sha256)
              and type(native.payload_source) is RuntimeSource and native.payload_source.root==str(value.payload)
              and native.payload_source.manifest==value.manifest_raw and native.lease is None and native.processes is None
              and type(p.cluster) is NativeProtectedClusterProcesses and type(p.cluster.prerequisites) is NativeClusterPrerequisites
@@ -266,10 +268,10 @@ def allow_loader(prerequisite, lease, deadline):
     value = bound_state(lease)
     if value is None: return False
     budget(lease, deadline)
-    need(prerequisite.lease is lease and prerequisite.source_commit == value.manifest['source_commit']
+    need(prerequisite.lease is lease and matches_manifest(value.manifest,prerequisite.runtime_identity())
          and prerequisite.manifest_sha256 == value.window.manifest_sha256)
     prerequisite.native_installation._issued_binding(lease,
-        dict(source_commit=prerequisite.source_commit,manifest_sha256=prerequisite.manifest_sha256))
+        prerequisite.runtime_identity())
     return True  # Explicit trial operation permission, NEVER loader acceptance.
 
 

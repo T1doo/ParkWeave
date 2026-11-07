@@ -25,7 +25,7 @@ PTH = b'python312.zip\n.\n../../vendor\n../../launcher\n../../app/src\n../../app
 # Frozen runtime sources only: no tests, builder, or general CI command surface.
 RUNTIME_SOURCES = tuple('scripts/windows_portable/' + name for name in (
     '__init__.py', 'application_readiness.py', 'cluster_processes.py', 'controller.py',
-    'credential_envelope.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
+    'credential_envelope.py', 'source_identity.py', 'directories.py', 'endpoint_plan.py', 'fixed_directories.py',
     'fixed_journal.py', 'fixed_secret_store.py', 'fixed_store_security.py', 'fixed_windows_journal.py',
     'initialize.py', 'instance_processes.py', 'isolated_pipe.py', 'payload.py', 'polling_database.py',
     'processes.py', 'runtime_payload.py', 'windows_directory_handles.py', 'windows_endpoint.py',
@@ -188,18 +188,26 @@ def verify_wheel(asset, members, version):
         require(any(compatible(tag) and tag[1] != 'none' for tag in tags), 'WHEEL_NATIVE_ABI')
 
 
-def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
-    require(len(source) == 40 and all(c in '0123456789abcdef' for c in source), 'FULL_SOURCE_SHA')
+def assemble(repo, source, assets, lock_path, *, desktop_assets=None, source_snapshot=None):
+    snapshot=None
     def git(*args):
-        return subprocess.check_output(['git', *args], cwd=repo)
-    require(git('rev-parse', '--verify', source + '^{commit}').decode().strip() == source, 'SOURCE_COMMIT_REQUIRED')
+        # Archive checkout conversion must not change bytes pinned by git show.
+        return subprocess.check_output(['git','-c','core.autocrlf=false', *args], cwd=repo)
+    if source_snapshot is None:
+        require(len(source)==40 and all(c in '0123456789abcdef' for c in source),'FULL_SOURCE_SHA')
+        require(git('rev-parse','--verify',source+'^{commit}').decode().strip()==source,'SOURCE_COMMIT_REQUIRED')
+    else:
+        from .source_snapshot import load_snapshot
+        snapshot=load_snapshot(source_snapshot,source)
+    def source_bytes(name):
+        return snapshot[name] if snapshot is not None else git('show',source+':'+name)
     for name, path in (('build.py', Path(__file__)), ('payload.py', Path(payload_module.__file__))):
-        require(git('show', source + ':scripts/windows_portable/' + name) == path.read_bytes(), 'BUILDER_SOURCE_DRIFT')
+        require(source_bytes('scripts/windows_portable/'+name) == path.read_bytes(), 'BUILDER_SOURCE_DRIFT')
     lock_raw = lock_path.read_bytes(); lock = json.loads(lock_raw)
-    require(git('show', source + ':scripts/windows_portable/runtime-assets.json') == lock_raw, 'ASSET_LOCK_SOURCE_DRIFT')
+    require(source_bytes('scripts/windows_portable/runtime-assets.json') == lock_raw, 'ASSET_LOCK_SOURCE_DRIFT')
     require(lock['schema'] == 'parkweave-windows-runtime-assets/1', 'ASSET_LOCK_SCHEMA')
     version, stem = python_layout(lock['assets'])
-    verify_application_python(git('show', source + ':pyproject.toml'), version)
+    verify_application_python(source_bytes('pyproject.toml'), version)
     files = {}; asset_report = []
     def put(name, data):
         safe_name(name)
@@ -267,8 +275,16 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
         asset_report.append({k: asset[k] for k in ('file', 'kind', 'version', 'url', 'bytes', 'sha256', 'license_files')})
     require('runtime/python/' + stem + '._pth' in files, 'EMBEDDED_PTH_MISSING')
     files['runtime/python/' + stem + '._pth'] = PTH.replace(b'python312', stem.encode('ascii'))
-    archive = git('archive', '--format=tar', source, '--', 'src/parkweave', 'scripts/windows',
-                  *RUNTIME_SOURCES, *LAUNCHER_SOURCES)
+    source_paths=('src/parkweave','scripts/windows',*RUNTIME_SOURCES,*LAUNCHER_SOURCES)
+    if snapshot is None:
+        archive=git('archive','--format=tar',source,'--',*source_paths)
+    else:
+        buffer=BytesIO()
+        with tarfile.open(fileobj=buffer,mode='w') as tar:
+            for name,data in sorted(snapshot.items()):
+                if not any(name==prefix or name.startswith(prefix+'/') for prefix in source_paths):continue
+                info=tarfile.TarInfo(name);info.size=len(data);tar.addfile(info,BytesIO(data))
+        archive=buffer.getvalue()
     with tarfile.open(fileobj=BytesIO(archive)) as tar:
         for item in tar:
             if item.isdir(): continue
@@ -290,19 +306,21 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
         require({p.name for p in desktop_assets.iterdir()}==names,'DESKTOP_ASSET_SET')
         record=json.loads((desktop_assets/'desktop-build.json').read_bytes())
         require(record['schema']=='parkweave-desktop-build/1'
-            and record['host_source_sha256']==sha256(git('show',source+':scripts/windows_desktop/host.cpp')).hexdigest()
-            and record['build_script_sha256']==sha256(git('show',source+':scripts/windows_desktop/build.py')).hexdigest()
+            and record['host_source_sha256']==sha256(source_bytes('scripts/windows_desktop/host.cpp')).hexdigest()
+            and record['build_script_sha256']==sha256(source_bytes('scripts/windows_desktop/build.py')).hexdigest()
             and record['python_sha256']==sha256(files['runtime/python/python.exe']).hexdigest()
+            and record.get('startup_policy_sha256')==sha256(source_bytes('scripts/windows_desktop/startup_policy.h')).hexdigest()
+            and record.get('icon_sha256')==sha256(source_bytes('src/parkweave/assets/parkweave.ico')).hexdigest()
             and record['sdk_sha256']=='5ea526bbd728adda0da4d31219267e96460494a427e4894c4e09d9f320f4b9aa'
             and record['native_windows_execution'] is False
             and record['compiler_archive_and_binary_verified'] is True
-            and record['compatibility_header_sha256']==sha256(git('show',source+':scripts/windows_desktop/EventToken.h')).hexdigest()
-            and record['namespace_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/namespace_guard.h')).hexdigest()
-            and record['settings_policy_sha256']==sha256(git('show',source+':scripts/windows_desktop/webview_settings.h')).hexdigest()
+            and record['compatibility_header_sha256']==sha256(source_bytes('scripts/windows_desktop/EventToken.h')).hexdigest()
+            and record['namespace_policy_sha256']==sha256(source_bytes('scripts/windows_desktop/namespace_guard.h')).hexdigest()
+            and record['settings_policy_sha256']==sha256(source_bytes('scripts/windows_desktop/webview_settings.h')).hexdigest()
             and record['bootstrap_files']==file_manifest(files),'DESKTOP_SOURCE_OR_SCOPE')
         if record.get('ui_driver') is not None:
             driver=record['ui_driver']
-            require(type(driver) is dict and driver['source_sha256']==sha256(git('show',source+':scripts/windows_desktop/trial_ui_driver.cpp')).hexdigest()
+            require(type(driver) is dict and driver['source_sha256']==sha256(source_bytes('scripts/windows_desktop/trial_ui_driver.cpp')).hexdigest()
                 and driver['native_execution'] is False and driver['scope']=='CI_ONLY_UIA_PRIVATE_PIPE_DRIVER_NOT_A_PRODUCT_ENTRY'
                 and type(driver['bytes']) is int and 0<driver['bytes']<=4*1024*1024
                 and re.fullmatch('[a-f0-9]{64}',driver['sha256']) is not None,'UI_DRIVER_SOURCE_OR_SCOPE')
@@ -319,7 +337,8 @@ def assemble(repo, source, assets, lock_path, *, desktop_assets=None):
     # A static candidate can expose unresolved imports, but it cannot be
     # labelled closed or executed. Native startup retains the original gates.
     put('static-dll-audit.json', (json.dumps(closure, indent=2) + '\n').encode())
-    manifest = dict(schema=SCHEMA, status='INITIALIZATION_NOT_ENABLED', source_commit=source,
+    manifest = dict(schema=SCHEMA, status='INITIALIZATION_NOT_ENABLED', source_commit=source if snapshot is None else None,
+        source_snapshot_sha256=source if snapshot is not None else None,
         usable_product=False, native_initialization='OWNER_MUTATION_PAUSED',
         static_loading=closure['status'], windows_execution='NOT_RUN',
         desktop_host='WIN32_WEBVIEW2_NOT_NATIVE_ACCEPTED' if desktop_assets is not None else 'NOT_INCLUDED',
@@ -344,9 +363,10 @@ def main():
     p.add_argument('--source', required=True); p.add_argument('--assets', required=True, type=Path)
     p.add_argument('--lock', required=True, type=Path); p.add_argument('--output', required=True, type=Path)
     p.add_argument('--desktop-assets',type=Path)
+    p.add_argument('--source-snapshot',type=Path,help='Frozen source ZIP; --source must be its SHA256, not a Git commit')
     a = p.parse_args(); repo = Path(__file__).resolve().parents[2]
     files, manifest = assemble(repo, a.source, a.assets.absolute(), a.lock,
-        desktop_assets=a.desktop_assets.absolute() if a.desktop_assets is not None else None)
+        desktop_assets=a.desktop_assets.absolute() if a.desktop_assets is not None else None,source_snapshot=a.source_snapshot)
     print(json.dumps(dict(status='ASSEMBLED_BLOCKED_CANDIDATE', usable_product=False,
         static_loading=manifest['static_loading'], **write_zip(a.output, files, manifest))))
 

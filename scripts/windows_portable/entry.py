@@ -35,6 +35,7 @@ def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,databas
     from scripts.windows_portable.native_runtime_staging import RuntimeSource
     from scripts.windows_portable.local_preparation_identity import PreparationProfile
     import secrets
+    from scripts.windows_portable.source_identity import from_manifest
     require(type(mode) is PlanMode and type(sample_collaboration) is bool,'EXPLICIT_NATIVE_MODE')
     request=EndpointRequest(database_port,api_port) if mode is PlanMode.NEW else None
     pins={}
@@ -44,8 +45,7 @@ def native_invocation(payload_root,manifest,instance,mode,*,manifest_raw,databas
         row=manifest['files'][relative]
         pins[name+'_sha256']=row['sha256'];pins[name+'_size']=row['bytes']
     return compose_native_local_preparation(base=str(instance.parent),mode=mode,request=request,
-        runtime=dict(source_commit=manifest['source_commit'],
-            manifest_sha256=sha256(manifest_raw).hexdigest()),
+        runtime=from_manifest(manifest,sha256(manifest_raw).hexdigest()),
         payload_source=RuntimeSource(str(payload_root),manifest_raw),
         enrollment=enrollment,
         profile=PreparationProfile.SAMPLE if sample_collaboration else PreparationProfile.MATERIAL,
@@ -142,7 +142,7 @@ def main(argv=None, *, read=None, use_workspace=None, enroll=None):
         if action in ('status','new'):
             gate = readiness(root)
             if action == 'status' or gate['status'] != 'READY':
-                print(json.dumps(dict(payload='INTEGRITY_VERIFIED',source_commit=manifest['source_commit'],
+                print(json.dumps(dict(payload='INTEGRITY_VERIFIED',source_commit=manifest['source_commit'],source_snapshot_sha256=manifest.get('source_snapshot_sha256'),
                     requested_action=action,initialization='NOT_STARTED' if gate['status']=='READY' else 'BLOCKED',
                     readiness=gate,usable_product=False,native_factory='IMPLEMENTED_NOT_NATIVE_ACCEPTED'),ensure_ascii=False))
                 return 0 if action=='status' and gate['status']=='READY' else 2

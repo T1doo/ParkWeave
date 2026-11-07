@@ -333,8 +333,7 @@ class _NativeFixedSecretStore(s.IsolatedFixedSecretStore):
         self.api.binds(lease)
         self.lease=lease;key=self.api.key
         self.binding=e.InstanceBinding(key[0],self.api.user,key[1],key[2],key[3]);self.binding.record()
-        e.exact(runtime,('source_commit','manifest_sha256'))
-        e.digest(runtime['source_commit'],40);e.digest(runtime['manifest_sha256'])
+        e.runtime_identity(runtime)
         self.runtime=e.canonical(runtime)
         self.protection=_CurrentUserProtection(self.api)
         self._config_format=e.ConfigFormat.PGDATA_SCHEMA4

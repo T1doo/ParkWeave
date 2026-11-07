@@ -27,15 +27,39 @@ def test_original_html_ids_and_business_javascript_are_preserved():
         path = 'src/parkweave/' + name
         before = subprocess.check_output(['git', 'show', BASE + ':' + path], cwd=ROOT, text=True)
         after = (ROOT / path).read_text()
-        assert IDs(before).ids == IDs(after).ids
+        expected_ids = IDs(before).ids
+        if name == 'web.html':
+            expected_ids['prep-service'] = 1
+        assert expected_ids == IDs(after).ids
         original = before.split('<script>')[1].split('</script>')[0].strip()
         current = after.split('<script>')[1].split('// Frontend-day presentation.')[0].strip()
         if name == 'web.html':
+            # G2 permits only the explicit current catalog version selection.
+            current = current.replace("$('prep-service').replaceChildren();$('prep-reviewer').replaceChildren();",
+                                      "$('prep-reviewer').replaceChildren();")
+            picker = """  const servicePicker=$('prep-service');
+  if(x.services.length>1){const prompt=textElement('option','请选择服务与版本');prompt.value='';prompt.disabled=true;servicePicker.append(prompt);}
+  for(const [index,service] of x.services.entries()){const option=textElement('option',service.name+' · v'+service.version);option.value=String(index);servicePicker.append(option);}
+  servicePicker.value=x.services.length===1?'0':'';
+"""
+            current = current.replace(picker, '')
+            current = current.replace('请核对本次目标、服务版本和核对专员', '请在下方填写本次目标并选择核对专员')
+            current = current.replace("const selection=$('prep-service').value;const s=prepCatalog.services.find((_,index)=>String(index)===selection);if(!s)throw Error('请选择当前目录中的服务与版本');const context=prepContext(),reviewer=$('prep-reviewer').value;",
+                                      "const context=prepContext(),s=prepCatalog.services[0],reviewer=$('prep-reviewer').value;")
+            # Display-only DTO fields avoid guessing title/state from rendered text.
+            # The original click handler, request and authorization checks stay exact.
+            current = current.replace('button.dataset.preparationId=p.id;button.dataset.preparationGoal=p.goal;button.dataset.preparationState=p.state;', '')
             current = current.replace('bundleControls();parkDesignRefresh();}', 'bundleControls();}')
             # New explicit-owner candidates retain every original seal/binding
             # assertion while extending only the exact producer/version pairing.
             current = current.replace('!parkObservationProducerValid(consumption)', "consumption?.verification_basis?.validator_version!=='LOCAL_SYNTHETIC_DEMO_V2'||!localDemoProducerValid(consumption.producer,'LOCAL_SYNTHETIC_DEMO_V2')")
             current = current.replace('parkSelectionProducerCaption(source.candidate.producer)', "'原候选来自离线合成规划输出；原provider未启用，原采用仍由企业明确确认。'")
+        else:
+            # A confirmed original write rebases only the submitted form's UI draft.
+            for form in ('submit-case','evidence-form','decision-form'):
+                notification=f"$('{form}').dispatchEvent(new Event('parkweave:write-confirmed',{{bubbles:true}}));"
+                assert current.count(notification)==1
+                current=current.replace(notification,'')
         assert original == current, 'business handler or original request contract changed'
 
 

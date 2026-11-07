@@ -1,0 +1,307 @@
+{
+  "result": "NOT_EXECUTED_OR_UNKNOWN",
+  "primary_type": "ControlFailure",
+  "cleanup_type": null,
+  "failure_stage": "BUSINESS",
+  "primary": {
+    "type": "ControlFailure",
+    "control": {
+      "outcome": "UNKNOWN",
+      "phase": "CLUSTER",
+      "cause_count": 3,
+      "cleanup_count": 2,
+      "causes": [
+        "DataRefused",
+        "DataConstructionFailure",
+        "ClusterStartFailure"
+      ],
+      "cleanup": [
+        {
+          "phase": "FINAL_STATE",
+          "types": [
+            "LeaseRefused"
+          ]
+        },
+        {
+          "phase": "UNKNOWN_STATE",
+          "types": [
+            "LeaseRefused",
+            "LeaseRefused"
+          ]
+        }
+      ],
+      "operation": "CREATE"
+    },
+    "nested_controls": [],
+    "nested_controls_truncated": false,
+    "cause_details": [
+      0,
+      1,
+      2
+    ],
+    "cleanup_details": [
+      {
+        "phase": "FINAL_STATE",
+        "errors": [
+          3
+        ]
+      },
+      {
+        "phase": "UNKNOWN_STATE",
+        "errors": [
+          3,
+          4
+        ]
+      }
+    ],
+    "exception_details": [
+      {
+        "type": "DataRefused",
+        "category": "PGDATA_PREDICATE",
+        "pgdata": {
+          "check": "NATIVE_COMPLETION",
+          "changed_fields": []
+        },
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "6aff1499a2174b61cdc515eaceb5a3ad4712e3e2",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_create_target_held",
+              "line": 211
+            },
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_NewDataTarget._create_native",
+              "line": 496
+            },
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_NewDataTarget._pin_command_path",
+              "line": 420
+            },
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_NewDataTarget._open",
+              "line": 392
+            },
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_need",
+              "line": 54
+            }
+          ],
+          "examined_nodes": 5,
+          "truncated": false
+        }
+      },
+      {
+        "type": "DataConstructionFailure",
+        "category": "PGDATA_CONSTRUCTION",
+        "pgdata": {
+          "check": "NATIVE_COMPLETION",
+          "changed_fields": [],
+          "stage": "PIN_COMMAND_PATH",
+          "native": {
+            "call": "NT_CREATE",
+            "returned": true,
+            "code": 3221225539,
+            "iosb_status": 0,
+            "information": 0,
+            "handle_output": "EMPTY"
+          },
+          "cleanup": {
+            "captured_at": "PGDATA_FAILURE_BEFORE_CONTROLLER_RELEASE",
+            "target_close_confirmed": true,
+            "remaining_unattempted_handle_count": 0,
+            "close_error_record_count": 0,
+            "lease_poisoned": true,
+            "nt_create_unknown": false,
+            "query_unknown": false,
+            "lease_active": true,
+            "memory_phase": "CLUSTER",
+            "memory_handoff": "OWNED",
+            "initialized": false,
+            "first_generation": true,
+            "persistent_journal_reobserved": false
+          }
+        },
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "6aff1499a2174b61cdc515eaceb5a3ad4712e3e2",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeClusterPrerequisites.configuration",
+              "line": 319
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity.configuration",
+              "line": 176
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity._run",
+              "line": 99
+            },
+            {
+              "module": "scripts.windows_portable.fixed_directories",
+              "function": "_guard_operation.<locals>.decorate.<locals>.guarded",
+              "line": 95
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity._run.<locals>.held",
+              "line": 92
+            },
+            {
+              "module": "scripts.windows_portable.native_instance_security",
+              "function": "NativeFixedStoreSecurity.configuration.<locals>.configure",
+              "line": 167
+            },
+            {
+              "module": "scripts.windows_portable.fixed_directories",
+              "function": "_guard_operation.<locals>.decorate.<locals>.guarded",
+              "line": 95
+            },
+            {
+              "module": "scripts.windows_portable.pgdata_candidate",
+              "function": "_create_target_held",
+              "line": 214
+            }
+          ],
+          "examined_nodes": 11,
+          "truncated": false
+        }
+      },
+      {
+        "type": "ClusterStartFailure",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "6aff1499a2174b61cdc515eaceb5a3ad4712e3e2",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.controller",
+              "function": "Controller._run",
+              "line": 222
+            }
+          ],
+          "examined_nodes": 5,
+          "truncated": false
+        }
+      },
+      {
+        "type": "LeaseRefused",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "MATCHED",
+          "source_commit": "6aff1499a2174b61cdc515eaceb5a3ad4712e3e2",
+          "frames": [
+            {
+              "module": "scripts.windows_portable.fixed_directories",
+              "function": "_guard_operation.<locals>.decorate.<locals>.guarded",
+              "line": 95
+            },
+            {
+              "module": "scripts.windows_portable.fixed_directories",
+              "function": "FixedDirectoryLease._verify",
+              "line": 146
+            }
+          ],
+          "examined_nodes": 8,
+          "truncated": true
+        }
+      },
+      {
+        "type": "LeaseRefused",
+        "category": "RECORDED_TYPE",
+        "source_sites": {
+          "status": "SITE_LIMIT",
+          "frames": [],
+          "truncated": true
+        }
+      }
+    ],
+    "details_truncated": true
+  },
+  "cleanup": null,
+  "crt_preflight": {
+    "status": "ORIGINAL_STRICT_CHECKS_PASSED_NOT_PRODUCT_ACCEPTANCE",
+    "seconds": 0.141,
+    "retrieval": {
+      "crl_sha256": "24e60769c036323f4559aeb1ec51a2a6afbe31007ba6281914177780be8bceb8",
+      "bytes": 830,
+      "policy": {
+        "this_update_utc": "2026-10-28T21:04:31Z",
+        "next_update_utc": "2027-01-27T09:24:31Z",
+        "this_update_filetime": 134376950710000000,
+        "next_update_filetime": 134455154710000000,
+        "checked_at_utc": "2026-11-05T12:17:19.560398Z",
+        "entry_count": 0,
+        "leaf_listed": false,
+        "leaf_entry": null,
+        "revocation_acceptance": "NOT_DECIDED_REQUIRES_FRESH_ORIGINAL_CACHE_ONLY_VERIFIER"
+      },
+      "native_signature_requested": true,
+      "automatic_authentication": "INHIBITED",
+      "redirects": "NATIVE_OPAQUE_MAY_FOLLOW",
+      "final_url": "NOT_OBSERVED",
+      "cache_effect": "MAY_HAVE_WRITTEN_TEMPORARY_ACCOUNT_CRYPTNET_CACHE",
+      "last_sync_filetime": "134383546395583786",
+      "native_timeout_ms": 15000,
+      "requested_byte_limit": 16777216,
+      "cleanup": "OWNED_CONTEXTS_CLOSED"
+    },
+    "failure": null,
+    "original_file_cleanup": [
+      {
+        "index": 3,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 2,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 1,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      },
+      {
+        "index": 0,
+        "status": "OWNED_FILE_HANDLES_CLOSED"
+      }
+    ],
+    "rows": [
+      {
+        "file": "msvcp140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      },
+      {
+        "file": "vcruntime140.dll",
+        "verification": "STRICT_SHARED_SIGNATURE_CHECK_PASSED",
+        "root_matched": true
+      }
+    ]
+  },
+  "desktop": {
+    "state": "NOT_STARTED",
+    "phase": "NOT_STARTED",
+    "sessions": [],
+    "captures_completed": 0,
+    "normal_product_entry": "NOT_ACCEPTED",
+    "usable_product": false
+  },
+  "pgdata_probe": null,
+  "outer_cleanup": {
+    "scope": "SCOPE_CLOSE",
+    "returned_without_exception": true,
+    "controller_cleanup": "SEE_CONTROL_SUMMARIES_OR_NOT_OBSERVED"
+  },
+  "activation_allowed": false,
+  "usable_product": false,
+  "native_acceptance": "NOT_ACCEPTED"
+}

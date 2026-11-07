@@ -59,8 +59,9 @@ def _need(value, reason='ORIGINAL_NATIVE_ACCEPTANCE_REQUIRED'):
 
 
 def _deadline(deadline):
+    now = time.monotonic()
     _need(type(deadline) in (int, float) and math.isfinite(deadline)
-          and 0 < deadline-time.monotonic() <= 30, 'NATIVE_ACCEPTANCE_DEADLINE')
+          and now < deadline <= now + 30, 'NATIVE_ACCEPTANCE_DEADLINE')
 
 
 def observe_business_restart(proof, invocation, deadline):

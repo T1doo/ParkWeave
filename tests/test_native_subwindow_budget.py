@@ -1,6 +1,7 @@
 """Deadline composition with real POSIX leases and controlled native seams.
 No Windows constructor, signature verification, trial or acceptance is run.
 """
+import math
 import time
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -15,6 +16,32 @@ from scripts.windows_portable.native_acceptance_issuer import AcceptanceRefused
 
 
 class BeforeNativeIO(RuntimeError):pass
+
+
+@pytest.mark.parametrize('boundary',['exact','above','expired'])
+def test_absolute_30_second_bound_is_stable_when_subtraction_rounds_up(monkeypatch,boundary):
+    from scripts.windows_portable import native_acceptance_issuer as issuer,native_database_endpoint as endpoint
+    from scripts.windows_portable.controller import CandidateRefused
+
+    now=100.002
+    upper=now+30
+    assert upper-now>30
+    deadline={'exact':upper,'above':math.nextafter(upper,math.inf),'expired':now}[boundary]
+    clock=SimpleNamespace(monotonic=lambda:now)
+    for module in (security,issuer,endpoint):monkeypatch.setattr(module,'time',clock)
+    monkeypatch.setattr(security,'_under_lease',lambda lease,operation:operation())
+    owner=object.__new__(security.NativeFixedStoreSecurity)
+    owner.store=owner.target=owner.layout=None
+    owner.failed=False
+    owner._context=lambda lease:None
+    if boundary=='exact':
+        assert owner._run(object(),lambda end:end,deadline=deadline)==deadline
+        issuer._deadline(deadline)
+        assert endpoint.remaining(deadline)==30
+    else:
+        with pytest.raises(CandidateRefused):owner._run(object(),lambda end:end,deadline=deadline)
+        with pytest.raises(AcceptanceRefused):issuer._deadline(deadline)
+        with pytest.raises(CandidateRefused):endpoint.remaining(deadline)
 
 
 @pytest.mark.parametrize('reused',[False,True])

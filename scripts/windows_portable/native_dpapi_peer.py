@@ -12,11 +12,22 @@ import threading
 import time
 
 from . import native_trial_authority as a
+from .dpapi_native_candidate import NativeFailure
 from .restricted_token_candidate import _parse,_dacl_bytes
 
 P=C.c_void_p;D=C.c_uint32;B=C.c_int32
 _retained=[]
 OPERATION='TEMP_LOCAL_SERVICE_DPAPI_PEER'
+PEER_PHASES=('PRIMARY','THREAD','SERVICE_LOGON','SERVICE_IDENTITY','IMPERSONATE',
+             'DPAPI_CONTROL_PROTECT','DPAPI_CONTROL_UNPROTECT','DPAPI_CROSS_IDENTITY',
+             'REVERT','WAIT_WORKER','FINAL_VERIFY')
+
+
+class LocalServicePeerFailure(a.TrialRefused):
+    """Redacted phase and error code from the original peer operation."""
+    def __init__(self,phase,winerror=None,dpapi_phase=None):
+        self.phase,self.winerror,self.dpapi_phase=phase,winerror,dpapi_phase
+        super().__init__('LOCAL_SERVICE_DPAPI_PEER_REFUSED')
 
 
 def bind(lib,name,result,args):
@@ -34,6 +45,8 @@ class LocalServiceDPAPIPeer:
         self.cipher,self.entropy=cipher,entropy
         self.failed=False;self.complete=False;self.started=False;self.handles=[];self.thread=None
         self.thread_handle=None;self.worker_error=None;self.observation=None
+        self.revert_error=None;self.phase='PRIMARY'
+        self.denied_without_token=False;self.environment_unavailable=False
         self.impersonation_attempted=False;self.reverted=False
         _retained.append(self)  # Before construction or thread ownership can fail.
         self.k=C.WinDLL('kernel32.dll',use_last_error=True,winmode=0x800)
@@ -58,7 +71,12 @@ class LocalServiceDPAPIPeer:
         output=P();row=dict(output=output,owned=False,attempted=False,closed=False)
         self.handles.append(row)  # Original output storage before its call.
         ok=call(*args,C.byref(output));row['owned']=bool(ok and output.value)
-        a.need(ok and row['owned']);return output.value
+        if not ok:
+            code=C.get_last_error()
+            if self.phase=='SERVICE_LOGON' and call is self.logon and code==5 and output.value is None:
+                self.denied_without_token=True
+            raise LocalServicePeerFailure(self.phase,code)
+        a.need(row['owned']);return output.value
 
     def _snapshot(self,token):
         result=[]
@@ -103,39 +121,61 @@ class LocalServiceDPAPIPeer:
     def _worker(self):
         # Only this frozen method can be the thread entry, never a callback.
         try:
+            self.phase='THREAD'
             self._time();self._no_thread_token()
             self.thread_handle=self._duplicate_thread()
             a.need(self.thread_id(self.thread_handle)==threading.get_native_id())
+            self.phase='SERVICE_LOGON'
             service=self._output(self.logon,'LocalService','NT AUTHORITY',None,5,0)
+            self.phase='SERVICE_IDENTITY'
             identity=self._snapshot(service)
             from .native_protected_objects import sid_bytes
             a.need(dict(identity)[1]==sid_bytes('S-1-5-19') and dict(identity)[8]==1
                 and dict(self.primary_before)[1]!=dict(identity)[1])
             self._time();self.impersonation_attempted=True
-            a.need(self.impersonate(service))
+            self.phase='IMPERSONATE'
+            if not self.impersonate(service):raise LocalServicePeerFailure(self.phase,C.get_last_error())
             effective=self._effective(identity)
-            from .dpapi_native_candidate import _NativeDPAPI,NativeFailure
+            from .dpapi_native_candidate import _NativeDPAPI
             self.control_crypto=_NativeDPAPI();self.refusal_crypto=_NativeDPAPI()
             control=b'ParkWeave LocalService DPAPI positive control v1'
             self._effective(identity)
+            self.phase='DPAPI_CONTROL_PROTECT'
             protected=self.control_crypto.protect(control,self.entropy)
+            self.phase='DPAPI_CONTROL_UNPROTECT'
             self._effective(identity);a.need(self.control_crypto.unprotect(protected,self.entropy)==control)
+            self.phase='DPAPI_CROSS_IDENTITY'
             self._effective(identity)
             try:self.refusal_crypto.unprotect(self.cipher,self.entropy)
             except NativeFailure as error:
-                a.need(error.winerror==13 and error.primary_type=='ProtectionRefused'
-                    and error.phase=='ALLOCATION' and not error.cleanup_types and not self.refusal_crypto.unknown)
+                if not error.invalid_data_call_refusal or self.refusal_crypto.unknown:
+                    raise LocalServicePeerFailure(self.phase,error.winerror,error.phase) from None
             else:a.need(False)
             self._effective(identity)
             self.observation=(self.thread_id(self.thread_handle),identity,effective,
                 sha256(protected).hexdigest(),sha256(self.cipher).hexdigest(),sha256(self.entropy).hexdigest())
-        except BaseException as error:self.worker_error=type(error).__name__
+        except BaseException as error:
+            # Copy only scalars, never an original exception/traceback across
+            # the worker boundary. They can reference credential buffers.
+            if type(error) is NativeFailure:
+                self.worker_error=LocalServicePeerFailure(self.phase,error.winerror,error.phase)
+            elif type(error) is LocalServicePeerFailure:
+                self.worker_error=LocalServicePeerFailure(error.phase,error.winerror,error.dpapi_phase)
+            else:self.worker_error=LocalServicePeerFailure(self.phase)
+            if self.denied_without_token:
+                try:self._no_thread_token()
+                except BaseException:
+                    self.denied_without_token=False
+                    self.worker_error=LocalServicePeerFailure('THREAD')
         finally:
             if self.impersonation_attempted:
                 try:
                     # Always attempt exactly one reversion even if work expired.
-                    a.need(self.revert());self.reverted=True;self._no_thread_token()
-                except BaseException as error:self.worker_error=type(error).__name__
+                    if not self.revert():raise LocalServicePeerFailure('REVERT',C.get_last_error())
+                    self.reverted=True;self._no_thread_token()
+                except BaseException as error:
+                    code=error.winerror if type(error) is LocalServicePeerFailure else None
+                    self.revert_error=LocalServicePeerFailure('REVERT',code)
 
     def run(self):
         try:
@@ -145,14 +185,24 @@ class LocalServiceDPAPIPeer:
             self.primary_before=self._snapshot(primary)
             self.thread=threading.Thread(target=self._worker,name='ParkWeave-LocalService-DPAPI',daemon=True)
             self.thread.start();self.thread.join(max(0,self.deadline-time.monotonic()))
-            self._time();a.need(not self.thread.is_alive() and self.thread_handle and not self.worker_error
-                and self.reverted and self.observation is not None
+            if self.thread.is_alive():raise LocalServicePeerFailure('WAIT_WORKER')
+            errors=[error for error in (self.worker_error,self.revert_error) if error is not None]
+            denied=(self.denied_without_token and len(errors)==1
+                    and errors[0].phase=='SERVICE_LOGON' and errors[0].winerror==5
+                    and not self.impersonation_attempted and not self.reverted and self.observation is None
+                    and all(row['owned'] or row['output'].value is None for row in self.handles))
+            if errors and not denied:raise BaseExceptionGroup('LOCAL_SERVICE_DPAPI_PEER_REFUSED',errors)
+            self.phase='FINAL_VERIFY'
+            self._time();a.need(not self.thread.is_alive() and self.thread_handle
+                and (denied or self.reverted and self.observation is not None)
                 and self.thread_id(self.thread_handle)==self.thread.native_id)
             left=self.deadline-time.monotonic();a.need(left>0)
             a.need(self.wait(self.thread_handle,int(left*1000))==0)
             self._no_thread_token();a.need(self._snapshot(primary)==self.primary_before)
             a.budget(self.lease,self.deadline)
-            self._close_owned();self.complete=True
+            self._close_owned()
+            self.complete=not denied
+            self.environment_unavailable=denied
             self.cipher=self.entropy=None  # No secret data in the emitted record.
             return self.observation
         except BaseException:

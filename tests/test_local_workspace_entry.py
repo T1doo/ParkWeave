@@ -2,9 +2,9 @@
 from pathlib import Path
 import subprocess
 import sys
+import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from scripts import local_product as product
 from parkweave.local_workspace import full_workspace_page, mount_workspace
 
 
@@ -31,7 +31,10 @@ def test_mounted_workspace_reuses_login_and_keeps_original_script(tmp_path):
         assert calls==[('enterprise','PUBLIC_TEST')]
 
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux local product only')
 def test_linux_password_installation_serves_same_workspace_adapter(tmp_path):
+    from scripts import local_product as product
+
     with TestClient(product.application(tmp_path,{},58764),base_url='http://127.0.0.1:58764') as client:
         assert 'id="local-workspace-login"' in client.get('/workspace').text
         script=client.get('/local-workspace-login.js')
@@ -44,6 +47,23 @@ def test_account_labels_are_not_executable_html():
     assert '<script>not executable</script>' not in page
     assert '&lt;script&gt;not executable&lt;/script&gt;' in page
     assert 'value="x&quot;&lt;&gt;"' in page
+
+
+def test_workspace_routes_serve_utf8_assets_under_windows_ansi_defaults(monkeypatch):
+    read_text = Path.read_text
+
+    def read_with_windows_default(path, encoding=None, *args, **kwargs):
+        return read_text(path, encoding or 'cp1252', *args, **kwargs)
+
+    monkeypatch.setattr(Path, 'read_text', read_with_windows_default)
+    app = mount_workspace(FastAPI(), lambda *_: None, 58763, [('enterprise', '企业')])
+    with TestClient(app, base_url='http://127.0.0.1:58763') as client:
+        for url, expected in (('/', '进入本地工作台'), ('/materials', '进入本地工作台'),
+                              ('/workspace', '进入服务与协同工作台'),
+                              ('/local-workspace-login.js', '原待核对'),
+                              ('/local-command-pending.js', '核对')):
+            response = client.get(url)
+            assert response.status_code == 200 and expected in response.text
 
 
 def test_password_adapter_unknown_and_late_response_contract():

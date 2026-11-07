@@ -1,4 +1,5 @@
-"""Startup observations share one deadline; native acceptance remains closed."""
+"""Bound readiness observations, physical recheck and one-shot activation."""
+from contextlib import contextmanager
 from dataclasses import dataclass,field
 import socket
 import time
@@ -41,10 +42,27 @@ class ReadyApplication:
 _issued=weakref.WeakKeyDictionary()
 
 
+@contextmanager
+def _connected_api(application, remaining):
+    while True:
+        application.adapter.require_endpoint_support(application.api)
+        timeout=remaining()
+        with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
+            connection.settimeout(timeout)
+            try:
+                connection.connect(('127.0.0.1',application.port))
+            except (ConnectionRefusedError,TimeoutError):
+                # This attempt has sent no HTTP bytes or credentials.
+                pass
+            else:
+                yield connection
+                return
+        time.sleep(min(.05,remaining()))
+
+
 def _get(application, bearer, nonce, deadline):
     """One direct IPv4 loopback GET. Whole response shares the absolute clock."""
     port=application.port
-    application.adapter.require_endpoint_support(application.api)
     if type(port) is not int or not 1<=port<=65535: raise CandidateRefused('explicit local API port required')
     data=(f'GET /api/runtime/readiness HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {bearer}\r\n'
           f'X-ParkWeave-Readiness-Challenge: {nonce}\r\nConnection: close\r\n\r\n').encode('ascii')
@@ -52,8 +70,7 @@ def _get(application, bearer, nonce, deadline):
         left=deadline-time.monotonic()
         if left<=0: raise CandidateRefused('application readiness deadline')
         return min(.3,left)
-    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as connection:
-        connection.settimeout(remaining());connection.connect(('127.0.0.1',port))
+    with _connected_api(application,remaining) as connection:
         application.adapter.verify_api_connection(application.api,connection)
         connection.settimeout(remaining());connection.sendall(data)
         raw=bytearray();header=None;length=None
@@ -102,7 +119,8 @@ def require_application_ready(lease, inputs, application, probe, registered):
             or type(probe) is not ExistingActorProbe):
         raise CandidateRefused('exact registered API and worker required')
     nonce=runtime.challenge(application.challenge);expected_actor=probe.expected()
-    deadline=time.monotonic()+5
+    from .native_trial_authority import budget
+    deadline=budget(lease,time.monotonic()+5)
     lease._verify()
     identities=tuple(application.adapter.live_identity(token) for token in (application.api,application.worker))
     application.adapter.require_endpoint_support(application.api)  # Missing witness: no DB probe or HTTP call.
@@ -122,27 +140,42 @@ def require_application_ready(lease, inputs, application, probe, registered):
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
     lease._verify()
-    if time.monotonic()>=deadline: raise CandidateRefused('application readiness deadline')
-    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,deadline)
+    now=time.monotonic()
+    if now>=deadline: raise CandidateRefused('application readiness deadline')
+    # Both live probes must finish within their original deadline. The
+    # physical database recheck that follows has its own bounded native I/O.
+    recheck_end=budget(lease,now+10)
+    receipt=ReadyApplication();_issued[receipt]=(application,lease,identities,recheck_end,None)
     return receipt  # Worker is still blocked before its first claim.
 
 
 def check_before_running(receipt):
     if type(receipt) is not ReadyApplication or receipt not in _issued:
         raise CandidateRefused('current readiness required before RUNNING')
-    application,lease,identities,deadline=_issued[receipt]
-    if time.monotonic()>=deadline or lease.status()!='APPLICATION':
-        raise CandidateRefused('application readiness deadline or phase changed')
+    application,lease,identities,recheck_end,activation_end=_issued[receipt]
+    if activation_end is not None:
+        raise CandidateRefused('worker activation is already armed')
+    if time.monotonic()>=recheck_end:
+        raise CandidateRefused('application recheck deadline')
+    if lease.status()!='APPLICATION':
+        raise CandidateRefused('application phase changed before RUNNING')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
+    now=time.monotonic()
+    if now>=recheck_end:raise CandidateRefused('application recheck deadline')
+    from .native_trial_authority import budget
+    # Arm once, while the observations are fresh. The durable RUNNING write
+    # and the GO helper share this phase budget under the original source end.
+    activation_end=budget(lease,now+5)
+    _issued[receipt]=(application,lease,identities,recheck_end,activation_end)
 
 
 def activate_application(receipt):
     if type(receipt) is not ReadyApplication or receipt not in _issued:
         raise CandidateRefused('current unconsumed readiness required')
-    application,lease,identities,deadline=_issued.pop(receipt)  # Never replay unknown GO.
-    if time.monotonic()>=deadline or lease.status()!='RUNNING':
-        raise CandidateRefused('durable RUNNING within readiness clock required')
+    application,lease,identities,_,deadline=_issued.pop(receipt)  # Never replay unknown GO.
+    if deadline is None or time.monotonic()>=deadline or lease.status()!='RUNNING':
+        raise CandidateRefused('durable RUNNING within armed activation clock required')
     if tuple(application.adapter.live_identity(t) for t in (application.api,application.worker))!=identities:
         raise CandidateRefused('application creation identity changed')
     application.adapter.worker_go(application.worker,application.challenge,deadline)

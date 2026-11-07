@@ -24,6 +24,14 @@ class ProcessRefused(RuntimeError):
     pass
 
 
+class OwnedProcessExited(ProcessRefused):
+    def __init__(self,code):
+        if type(code) is not int or not -(2**31)<=code<2**32:
+            raise ProcessRefused('OWNED_EXIT_CODE_UNKNOWN')
+        self.code,self.capture=code,None
+        super().__init__('OWNED_PROCESS_EXITED_BEFORE_LIVE_CHECK')
+
+
 @dataclass(frozen=True, repr=False)
 class Command:
     relative_executable: str
@@ -514,9 +522,16 @@ class PrivateProcessAdapter:
         return self._live_identity(self._group(token))
 
     def _live_identity(self, group):
-        if (self.unknown or group.creating or group.stopped or not group.started
-                or self.backend.observe(group,time.monotonic()) is not None):
+        if self.unknown or group.creating or group.stopped or not group.started:
             raise ProcessRefused('OWNED_LIVE_IDENTITY_REQUIRED')
+        code=self.backend.observe(group,time.monotonic())
+        if code is not None:
+            error=OwnedProcessExited(code)
+            from .restricted_initdb_candidate import _RestrictedInitdbBackend
+            from .windows_process_handles import WindowsJobProcess
+            if type(self.backend) in (_RestrictedInitdbBackend,WindowsJobProcess):
+                self.backend.collect_exit_diagnostic(group,error)
+            raise error
         r=group.resources
         if 'pid' not in r or 'birth' not in r: raise ProcessRefused('OWNED_BIRTH_REQUIRED')
         return (r['pid'],r['birth'],group.command.sha256)  # Observations, not authority.

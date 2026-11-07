@@ -110,7 +110,12 @@ try {
             $alias=TextAt (U32 ($v+4)) (U32 ($v+8))
             $hostName=TextAt (U32 ($v+12)) (U32 ($v+16))
             if ($aliases.ContainsKey($alias) -or ($alias -and $alias -notmatch '^[a-z0-9_-]+(\.[a-z0-9_-]+)*$') -or
-                ($hostName -and $hostName -notmatch '^[a-z0-9_-]+\.dll$')) {throw 'APISET_VALUE_REFUSED'}
+                ($hostName -and $hostName -notmatch '^[a-z0-9_-]+(\.[a-z0-9_-]+)*\.(dll|sys|exe|drv)$')) {
+                $failure=[IO.InvalidDataException]::new('APISET_VALUE_REFUSED')
+                $failure.Data['contract']=$key;$failure.Data['alias']=$alias;$failure.Data['host']=$hostName
+                $failure.Data['duplicate_alias']=$aliases.ContainsKey($alias)
+                throw $failure
+            }
             $aliases[$alias]=$true;$values+=[ordered]@{flags=$valueFlags;alias=$alias;host=$hostName}
         }
         if ($requested.ContainsKey($key)) {

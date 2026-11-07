@@ -22,6 +22,10 @@ ENVIRONMENT = 'PARKWEAVE_NATIVE_LOGIN'
 SCHEMA = 'parkweave-native-password-login/1'
 MAX_CONFIG = 14000
 ACCOUNTS = ENTERPRISES + REVIEWERS
+MATERIAL_LABELS = tuple(
+    (name, ('企业' if name in ENTERPRISES else '专员') + ' ' + name[-1].upper())
+    for name in ACCOUNTS
+)
 SAMPLE_ACCOUNTS=('fixture-a','prep-specialist-fixture-a',EXECUTOR,RESOURCE_ADMIN)
 SAMPLE_SCHEMA='parkweave-native-password-login/2'
 
@@ -158,8 +162,7 @@ class NativePasswordLogin:
             # A failed password never reuses a poisoned DPAPI call object.
             raw = native.unprotect(base64.b64decode(row['ciphertext'], validate=True), extra)
         except NativeFailure as error:
-            if (not error.cleanup_types and error.phase == 'ALLOCATION' and
-                    error.primary_type == 'ProtectionRefused' and error.winerror == 13):
+            if error.invalid_data_call_refusal:
                 raise Denied('protected local login unavailable') from None
             self.failed = True; self.unknown_native.append(native)
             raise RuntimeError('native login outcome unknown; restart requires original runtime verification') from None
@@ -198,5 +201,4 @@ def configured_app():
             sample_workspace=NativeSampleWorkspace(store,login.config['sample']))
     from .native_sample import ENVIRONMENT as SAMPLE_ENV
     need(SAMPLE_ENV not in os.environ)
-    labels = tuple((name, ('企业' if name in ENTERPRISES else '专员')+' '+name[-1].upper()) for name in ACCOUNTS)
-    return mount_workspace(create_app(store), login.unlock, login.config['port'], labels)
+    return mount_workspace(create_app(store), login.unlock, login.config['port'], MATERIAL_LABELS)

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="0.393" timestamp="2026-11-06T03:55:46.931064+08:00" hostname="LAPTOP-USISIS19"><testcase classname="tests.test_frontend_day_preservation" name="test_original_html_ids_and_business_javascript_are_preserved" time="0.064"><failure message="AssertionError: assert Counter({'tok...al-items': 1}) == Counter({'tok...al-items': 1})&#10;  &#10;  Omitting 756 identical items, use -vv to show&#10;  Right contains 1 more item:&#10;  {'prep-service': 1}&#10;  Use -v to get more diff">def test_original_html_ids_and_business_javascript_are_preserved():
+        for name in ('web.html', 'local_preparation_web.html'):
+            path = 'src/parkweave/' + name
+            before = subprocess.check_output(['git', 'show', BASE + ':' + path], cwd=ROOT, text=True)
+            after = (ROOT / path).read_text()
+&gt;           assert IDs(before).ids == IDs(after).ids
+E           AssertionError: assert Counter({'tok...al-items': 1}) == Counter({'tok...al-items': 1})
+E             
+E             Omitting 756 identical items, use -vv to show
+E             Right contains 1 more item:
+E             {'prep-service': 1}
+E             Use -v to get more diff
+
+tests\test_frontend_day_preservation.py:30: AssertionError</failure></testcase><testcase classname="tests.test_frontend_day_preservation" name="test_exact_login_and_four_role_assembly_still_bind_once" time="0.039" /></testsuite></testsuites>

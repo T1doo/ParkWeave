@@ -43,6 +43,12 @@ def need(condition):
         raise EnvelopeRefused()
 
 
+def runtime_identity(value):
+    from .source_identity import validate
+    try:return validate(value)
+    except ValueError:raise EnvelopeRefused() from None
+
+
 def integer(value, maximum):
     need(type(value) is int and 0 < value <= maximum)
 
@@ -145,8 +151,7 @@ def validate_payload(binding, purpose, payload, *, config_format=ConfigFormat.SC
         need(type(db['data_identity']) is list)
         data_id = identity(tuple(db['data_identity']))
         need(data_id[0] == binding.root[0] and data_id not in seen)
-        runtime = payload['runtime']; exact(runtime, ('source_commit', 'manifest_sha256'))
-        digest(runtime['source_commit'], 40); digest(runtime['manifest_sha256'])
+        runtime = payload['runtime']; runtime_identity(runtime)
         if config_format is ConfigFormat.PGDATA_SCHEMA4:
             profile = payload['pgdata']
             exact(profile, ('profile','instance_id','sid','parent_identity','root_identity',

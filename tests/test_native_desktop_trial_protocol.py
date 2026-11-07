@@ -1,4 +1,4 @@
-"""Real POSIX child pipes + desktop protocol seams; never Windows evidence."""
+"""Real child pipes and desktop protocol seams; no native WebView evidence."""
 import ctypes as C
 import queue
 import subprocess
@@ -45,26 +45,63 @@ def dispose(session):
     if session in ui._retained:ui._retained.remove(session)
 
 
-def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys,time;sys.stdin.readline();print('UI1\\tUNKNOWN\\tSET\\t80004005',flush=True);time.sleep(30)")
+@pytest.mark.parametrize('command,phase,code',[
+    ('SET','SET','80004005'), ('CLICK','CLICK_INVOKE','80040201'),
+    ('SELECT_MATERIAL','SELECT_ITEM_ACTION','80040201'),
+])
+def test_real_child_unknown_never_resends_write_or_releases_profile(monkeypatch,command,phase,code):
+    line=f'UI1\tUNKNOWN\t{phase}\t{code}\n'.encode('ascii')
+    program=f'import sys,time;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush();time.sleep(30)'
+    session,close=child_session(monkeypatch,program)
     try:
-        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('SET',ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT'))
+        fields={
+            'SET':(ui.encoded('密码'),ui.encoded('SYNTHETIC_INPUT')),
+            'CLICK':(ui.encoded('提交本地诉求'),),
+            'SELECT_MATERIAL':(ui.encoded('材料目录'),),
+        }[command]
+        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call(command,*fields)
         assert session.unknown and session.abort_attempted and session.proc.poll() is not None
-        assert session.failure_details==dict(operation='SET',hresult='80004005')
-        with pytest.raises(Exception):session.call('SET','again')
+        assert session.failure_details==dict(operation=phase,hresult=code)
+        with pytest.raises(Exception):session.call(command,*fields)
         session.profile.close.assert_not_called();close.assert_not_called()
         assert not session.closed and session.duplicate.value==123 and session in ui._retained
     finally:dispose(session)
 
 
 def test_real_child_close_ack_exit_eof_then_profile_close_once(monkeypatch):
-    session,close=child_session(monkeypatch,"import sys;assert sys.stdin.readline()=='CLOSE\\n';print('UI1\\tOK\\tCLOSED_ORIGINAL_HOST_AND_UI_JOB_ZERO',flush=True)")
+    session,close=child_session(monkeypatch,"import sys;assert sys.stdin.readline()=='CLOSE\\n';sys.stdout.buffer.write(b'UI1\\tOK\\tCLOSED_ORIGINAL_HOST_AND_UI_JOB_ZERO\\n');sys.stdout.buffer.flush()")
     try:
         session.finish()
         assert session.closed and not session.unknown and session.duplicate.value is None
         session.profile.close.assert_called_once();close.assert_called_once_with(123)
         with pytest.raises(Exception):session.finish()
         assert close.call_count==1 and session not in ui._retained
+    finally:dispose(session)
+
+
+@pytest.mark.parametrize('stage',['00000007','0000000d','00000012','00000013'])
+def test_host_stage_refusal_stays_distinct_from_ui_hresult(monkeypatch,stage):
+    line=f'UI1\tUNKNOWN\tOPEN_VIEW_FAILED\t{stage}\n'.encode('ascii')
+    program=f'import sys;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush()'
+    session,close=child_session(monkeypatch,program)
+    try:
+        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('OPEN')
+        assert session.failure_details==dict(operation='OPEN_VIEW_FAILED',host_stage=stage)
+        assert session.unknown and not session.closed
+        close.assert_not_called()
+    finally:dispose(session)
+
+
+def test_chain_refusal_records_only_bounded_certificate_position_and_status(monkeypatch):
+    line=b'UI1\tUNKNOWN\tOPEN_VIEW_FAILED\t00000018\t2\t80092013\n'
+    program=f'import sys;sys.stdin.readline();sys.stdout.buffer.write({line!r});sys.stdout.buffer.flush()'
+    session,close=child_session(monkeypatch,program)
+    try:
+        with pytest.raises(RuntimeError,match='UNKNOWN_NO_RETRY'):session.call('OPEN')
+        assert session.failure_details==dict(operation='OPEN_VIEW_FAILED',host_stage='00000018',
+                                             chain_index=2,provider_status='80092013')
+        assert session.unknown and not session.closed
+        close.assert_not_called()
     finally:dispose(session)
 
 
@@ -110,3 +147,54 @@ def test_ui_command_sequence_waits_exact_revision_and_only_client_read_verifies(
     assert 'if(trialView)return 0' in host and 'TRIAL_ONLY' in host
     import json
     assert json.loads(Path('scripts/windows_ci/native_business_window.json').read_text()) is None
+
+
+def test_material_entry_targets_fixed_field_and_verifies_saved_revision():
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.reference=Mock()
+    session=Mock()
+    trial.evidence(session,'材料目录','SYNTHETIC_TEXT','SYNTHETIC_SOURCE',5)
+    assert session.call.call_args_list[0].args==('SELECT_MATERIAL',ui.encoded('材料目录'))
+    assert session.call.call_args_list[-1].args==('CLICK',ui.encoded('保存本次材料'))
+    trial.reference.assert_called_once_with(session,5)
+
+
+@pytest.mark.parametrize('revision,history,expected', [
+    (2, ['CREATE','ADD_EVIDENCE'], 'PERSISTED_REVISION_2'),
+    (1, ['CREATE'], 'REVISION_2_NOT_OBSERVED'),
+    (2, ['CREATE','OTHER'], 'REVISION_2_NOT_OBSERVED'),
+])
+def test_first_material_verification_reads_only_the_original_item(revision,history,expected):
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.goal='SYNTHETIC_GOAL'
+    item='00000000-0000-4000-8000-000000000001'
+    case='00000000-0000-4000-8000-000000000002'
+    read=Mock(return_value={
+        'preparation':dict(id=item,case_id=case,goal=trial.goal,revision=revision),
+        'history':[dict(action=action) for action in history],
+    })
+    workspace=SimpleNamespace(enterprise=SimpleNamespace(_request=read))
+    trial.observe_first_material(workspace,f'事项 {item} · Case {case} · 版本 1')
+    read.assert_called_once_with('GET','/api/preparations/'+item)
+    assert trial.first_material_observation==expected
+
+
+@pytest.mark.parametrize('specialist,account,label', [
+    (False,'fixture-a','企业 A'), (True,'prep-specialist-fixture-a','专员 A'),
+])
+def test_trial_selects_the_exact_native_material_account_rendered_at_root(specialist,account,label):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from parkweave.local_workspace import mount_workspace
+    from scripts.windows_portable.native_web_login import MATERIAL_LABELS
+
+    app=mount_workspace(FastAPI(),Mock(),12345,MATERIAL_LABELS)
+    result=TestClient(app,base_url='http://127.0.0.1:12345').get('/')
+    assert result.status_code==200
+    assert f'<option value="{account}">{label}</option>' in result.text
+    assert '<select id="role" aria-label="账号">' in result.text
+    trial=object.__new__(ui.NativeDesktopTrial)
+    trial.passwords={account:'SYNTHETIC_INPUT'}
+    session=Mock()
+    trial.login(session,specialist)
+    assert session.call.call_args_list[0].args==('SELECT',ui.encoded('账号'),ui.encoded(label))

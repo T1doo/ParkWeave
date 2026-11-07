@@ -59,7 +59,7 @@ def test_password_context_is_separate_and_native_constructor_refuses_cloud(fixtu
     class ControlledDPAPI:
         def unprotect(self,cipher,extra):
             name=cipher.decode()
-            if extra!=keys[name]:raise dpapi.NativeFailure('ALLOCATION','ProtectionRefused',[],13)
+            if extra!=keys[name]:raise dpapi.NativeFailure('CALL','ProtectionRefused',[],13)
             return e.canonical(dict(schema=login.SCHEMA,installation=installation,actor=login.actor_for(name),bearer=tokens[name]))
     monkeypatch.setattr(dpapi,'_NativeDPAPI',ControlledDPAPI)
     provider=object.__new__(login.NativePasswordLogin)

@@ -51,17 +51,20 @@ class NativeCachedCRL(OwnedCRLValidator):
     def acquire(self,source):
         need(original_constraints(source.owner) is source and source.request is None,'ORIGINAL_SOURCE_REQUIRED')
         leaf,issuer=bind_inputs(source.der[0],source.der[1],CDP,self.guard)
+        return self._acquire(leaf,issuer,source.der[1],CDP,MAX_BYTES)
+
+    def _acquire(self,leaf,issuer,issuer_der,cdp,max_bytes):
         primary=None;result=None
         try:
-            buffer=C.create_string_buffer(source.der[1]);self.buffers.append(buffer)
-            signer=self.call(self.create_cert,1,buffer,len(source.der[1]))
+            buffer=C.create_string_buffer(issuer_der);self.buffers.append(buffer)
+            signer=self.call(self.create_cert,1,buffer,len(issuer_der))
             need(bool(signer),'ISSUER_CONTEXT_CREATE_REFUSED');self.owned.append((signer,self.free_cert,'CERT'))
             row=signer.contents
-            need(row.der and row.length==len(source.der[1]) and C.string_at(row.der,row.length)==source.der[1],
+            need(row.der and row.length==len(issuer_der) and C.string_at(row.der,row.length)==issuer_der,
                 'ISSUER_CONTEXT_BYTES_DIFFER')
             output=P();sync=FileTime();aux=RetrieveAux();aux.size=C.sizeof(aux)
-            aux.last_sync=C.addressof(sync);aux.max_bytes=MAX_BYTES
-            url=C.create_unicode_buffer(CDP)
+            aux.last_sync=C.addressof(sync);aux.max_bytes=max_bytes
+            url=C.create_unicode_buffer(cdp)
             # Optional allocated-response/error outputs remain NULL; no hidden
             # allocations with a second cleanup API are requested.
             self.buffers.append((output,sync,aux,url,signer))
@@ -84,7 +87,7 @@ class NativeCachedCRL(OwnedCRLValidator):
             self.http_status=int(aux.http_status) or None
             need(good and output.value,'NATIVE_RETRIEVAL_REFUSED')
             self.guard();row=context.contents
-            need(row.der and 0<row.length<=MAX_BYTES,'RETRIEVED_CRL_BOUNDS')
+            need(row.der and 0<row.length<=max_bytes,'RETRIEVED_CRL_BOUNDS')
             raw=C.string_at(row.der,row.length)
             # The API's signature flag is not treated as our full policy check,
             # nor as a promise cache writes waited for these later checks.
@@ -95,7 +98,7 @@ class NativeCachedCRL(OwnedCRLValidator):
                 redirects='NATIVE_OPAQUE_MAY_FOLLOW',final_url='NOT_OBSERVED',
                 cache_effect='MAY_HAVE_WRITTEN_TEMPORARY_ACCOUNT_CRYPTNET_CACHE',
                 last_sync_filetime=str((sync.high<<32)|sync.low),native_timeout_ms=timeout,
-                requested_byte_limit=MAX_BYTES)
+                requested_byte_limit=max_bytes)
         except PreparationRefused as error:primary=error
         except BaseException:primary=PreparationRefused('NATIVE_RETRIEVAL_INTERNAL_FAILURE')
         try:self.close()

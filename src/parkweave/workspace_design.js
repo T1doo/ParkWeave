@@ -17,16 +17,21 @@
   const readableTime = value => value ? String(value).replace('T', ' ').replace(/Z$/, '') : '未提供';
 
   function serviceWorkspace() {
-    setText(document.querySelector('.primary-entry-heading .subtitle'), '填写目标、期望时间和必要条件，再查看可选服务与专员。');
+    const heading=document.querySelector('.primary-entry-heading');
+    if(heading)$('service').prepend(heading);
+    setText(heading?.querySelector('.subtitle'),'先说明本次需要的协助，再核对服务与资料。');
+    const hint=make('p','要办什么 · 期望时间 · 必须满足的条件','v3-goal-hint');hint.id='workspace-goal-hint';
+    const goal=$('prep-goal');goal.before(hint);goal.placeholder='输入本次目标…';
+    goal.setAttribute('aria-describedby',[goal.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
     fieldName('prep-goal', '本次目标');
     fieldName('existing-preparation-id', '资料事项编号');
     const paths = document.querySelector('.atelier-paths');
-    setText(paths?.querySelector('h2'), '事项导航');
+    setText(paths?.querySelector('h2'), '本页定位');
     const names = ['目标与条件', '服务方案', '材料与来源'];
     paths?.querySelectorAll('a').forEach((link, index) => {
       link.replaceChildren(document.createTextNode(names[index] || link.textContent));
     });
-    setText(document.querySelector('.atelier-utilities > .atelier-section-heading h2'), '其他入口与记录');
+    setText(document.querySelector('.atelier-utilities > .atelier-section-heading h2'), '工具与记录');
     const info = document.querySelector('.atelier-continuation .atelier-inline-help');
     if (info) setText(info.querySelector('summary'), '只读权限说明');
   }
@@ -51,7 +56,8 @@
     const label = make('label','资源');
     label.htmlFor='resource-select';
     heading.append(label,infoButton);
-    picker.append(heading,$('resource-select'));
+    const selectedName=make('p','','v3-selected-resource-name');selectedName.hidden=true;
+    picker.append(heading,$('resource-select'),selectedName);
     originalLabel.remove();
     const constraints = make('div', '', 'v2-constraints');
     constraints.hidden = true;
@@ -83,9 +89,9 @@
     if (preview) previewActions.append(preview);
     const quantity=$('resource-quantity').closest('label');
     quantity.classList.add('v2-resource-quantity');
-    quantity.after(previewActions);
+    const quantityRow=make('div','','v3-quantity-row');quantity.before(quantityRow);quantityRow.append(quantity,previewActions);
     const result=$('resource-preview-result');
-    if(result) previewActions.after(result);
+    if(result) quantityRow.after(result);
     if(result){
       const evidence=make('details','','v2-precheck-evidence'),caption=make('summary','预检依据与范围');
       evidence.append(caption);evidence.hidden=true;result.after(evidence);
@@ -149,23 +155,21 @@
     function refreshConstraints() {
       const card = selectedCard(), valid = !!card && !form.hidden;
       infoButton.disabled = !valid;
-      constraints.hidden = !valid;
+      constraints.hidden = !valid;selectedName.hidden=!valid;
       details.hidden = !view.querySelector('.resource-catalog-card');
       if (!valid) {
-        constraints.replaceChildren();
+        constraints.replaceChildren();selectedName.textContent='';
         previous = '';
         return;
       }
-      const fields = [
-        ['容量', card.dataset.resourceCapacity],
-        ['前后缓冲', card.dataset.resourceBuffer ? card.dataset.resourceBuffer + ' 秒' : '未提供'],
-        ['开放开始（UTC）', readableTime(card.dataset.resourceOpenFrom)],
-        ['开放结束（UTC）', readableTime(card.dataset.resourceOpenUntil)]
-      ];
+      setText(selectedName,card.dataset.resourceName);
+      const option=$('resource-select').selectedOptions[0];if(option&&option.textContent!==card.dataset.resourceName)option.textContent=card.dataset.resourceName;
+      const buffer=Number(card.dataset.resourceBuffer),bufferText=Number.isFinite(buffer)&&buffer>=0?buffer+' 秒'+(buffer%60===0?' / '+buffer/60+' 分钟':''):'未提供';
+      const fields=[['目录容量',card.dataset.resourceCapacity],['缓冲时间',bufferText],['开放区间（UTC）',readableTime(card.dataset.resourceOpenFrom)+' — '+readableTime(card.dataset.resourceOpenUntil)]];
       const signature = JSON.stringify(fields);
       if (signature !== previous) {
         previous = signature;
-        constraints.replaceChildren(parkFieldList(fields));
+        const caption=make('div','','v3-constraint-caption');caption.append(make('strong','目录约束'),make('span','非当前剩余可用量'));constraints.replaceChildren(caption,parkFieldList(fields));
       }
     }
     $('resource-select').addEventListener('change', refreshConstraints);
@@ -177,10 +181,12 @@
     // The existing summary always distinguishes a form draft from selected holds.
     const summary = $('park-resource-summary');
     const decorateSummary = () => {
+      const draftTitle=summary?.querySelector('.resource-input-summary h4');setText(draftTitle,'正在填写（未计入组合）');
+      if(typeof combinationSelection!=='undefined')setText(summary?.querySelector('.resource-summary-details>h4'),'已选占位组合 '+combinationSelection.size+' 项');
       const row = summary?.querySelector('.resource-input-summary .workspace-facts > div');
       const value = row?.querySelector('dd');
       if (value && !value.querySelector('button')) {
-        const name = make('button', value.textContent, 'v2-resource-name');
+        const name = make('button', '查看当前所选资源', 'v2-resource-name');
         name.type = 'button';
         name.setAttribute('aria-label', '查看资源完整名称与来源：' + value.textContent);
         name.onclick = openDetails;
@@ -189,6 +195,7 @@
     };
     if (summary) new MutationObserver(decorateSummary).observe(summary, {childList:true, subtree:true});
     decorateSummary();
+    for(const button of form.querySelectorAll('.design-date-trigger')){button.setAttribute('aria-label',button.textContent);setText(button,button.closest('label')?.querySelector('#resource-start')?'开始日期面板':'结束日期面板');}
   }
 
   function collaborationWorkspace() {
@@ -212,6 +219,14 @@
     categories.setAttribute('aria-label', '协同记录分类');
     const filter = root.querySelector('.design-list-filters');
     if (filter) filter.after(categories); else root.querySelector('header').after(categories);
+    root.querySelector('header').after(categories);
+    const readingSurface=make('div','','v4-collaboration-surface');
+    categories.after(readingSurface);
+    if(filter)readingSurface.append(filter);
+    for(const item of definitions)readingSurface.append(item.panel);
+    const shortcuts=root.querySelector('.design-collaboration-tabs');
+    if(shortcuts){shortcuts.classList.add('v3-locate');shortcuts.prepend(make('span','定位入口'));root.querySelector('header').append(shortcuts);}
+    const actionSlot=make('div','','v3-category-actions');filter?.querySelector(':scope > p')?.before(actionSlot);
     let active = 'preparation';
     let lastReadCategory=null, serial=0;
     const reading=new Map();
@@ -243,7 +258,7 @@
           };
         }
       }
-      toolbar.append(actions); panel.prepend(toolbar);
+      toolbar.append(actions); panel.prepend(toolbar);item.actions=actions;item.toolbar=toolbar;
       if (item.hint && item.lists.some(id => $(id))) {
         const empty = make('div', item.hint, 'v2-empty');
         item.empty = empty; toolbar.after(empty);
@@ -255,6 +270,7 @@
         item.panel.classList.toggle('v2-category-hidden', item.key !== key);
         item.tab.setAttribute('aria-selected', String(item.key === key));
         item.tab.tabIndex = item.key === key ? 0 : -1;
+        if(item.actions)(item.key===key?actionSlot:item.toolbar).append(item.actions);
       }
       if (focus) definitions.find(item => item.key === key)?.tab.focus();
       refreshHints();
@@ -283,16 +299,11 @@
       }
     }
     const refinePreparationRows=()=>{
-      const labels=typeof prepLabels!=='undefined'?Object.values(prepLabels):[];
       for(const button of $('prep-items')?.querySelectorAll(':scope > button')||[]){
-        if(button.querySelector('.v2-record-title'))continue;
-        const text=[...button.childNodes].find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent.trim());
-        if(!text)continue;
-        const state=labels.find(value=>text.textContent.endsWith(' · '+value));
-        if(!state)continue;
-        const title=make('span',text.textContent.slice(0,-(' · '+state).length),'v2-record-title');
-        const status=make('span',state,'collaboration-record-status v2-record-state');
-        text.replaceWith(title,status);
+        if(button.querySelector('.v2-record-title')||!button.hasAttribute('data-preparation-goal'))continue;
+        const text=[...button.childNodes].find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent.trim());if(!text)continue;
+        const state=typeof prepLabels!=='undefined'?(prepLabels[button.dataset.preparationState]||'状态待核对'):'状态待核对';
+        const title=make('span',button.dataset.preparationGoal,'v2-record-title'),status=make('span',state,'collaboration-record-status v2-record-state'),open=make('span','查看 ›','v3-row-open');open.setAttribute('aria-hidden','true');text.replaceWith(title,status,open);
       }
     };
     new MutationObserver(refinePreparationRows).observe($('prep-items'),{childList:true,subtree:true});
@@ -323,7 +334,11 @@
     detail.prepend(summary, navigation);
     summary.after(identifiers);
     const readState = make('div', '', 'v2-read-state');
-    navigation.after(readState); readState.append(read, refresh);
+    const recoveryActions=make('div','','v3-recovery-actions'),recoveryReason=make('p','','v3-recovery-reason');recoveryReason.id='workspace-refresh-reason';recoveryReason.hidden=true;
+    recoveryActions.append(refresh);for(const id of ['prep-command-retry','prep-recovery-read','prep-recovery-release']){const button=$(id);if(button&&!button.form)recoveryActions.append(button);}
+    refresh.setAttribute('aria-describedby',[refresh.getAttribute('aria-describedby'),recoveryReason.id].filter(Boolean).join(' '));setText(refresh,'刷新当前资料');
+    navigation.after(readState); readState.append(read,recoveryActions,recoveryReason);
+    for(const id of ['prep-command-feedback','prep-recovery-status']){const node=$(id);if(node)readState.append(node);}
     const materials = $('prep-materials'), filter = materials.previousElementSibling;
     readState.after(...[filter?.classList.contains('design-filter')?filter:null,materials].filter(Boolean));
     if(filter?.classList.contains('design-filter')){
@@ -341,10 +356,23 @@
         const kind=note.textContent.split(' · ')[0],names={USER_STATEMENT:'企业自述',DOCUMENT_EXCERPT:'文档摘录'};
         if(names[kind])note.textContent=names[kind]+note.textContent.slice(kind.length);
       }
-      for(const button of materials.querySelectorAll('.design-preview-trigger'))setText(button,'阅读材料');
+      const records=typeof preparationView!=='undefined'?preparationView?.current_materials:null;
+      const rows=[...materials.querySelectorAll(':scope > article')];
+      if(records?.length===rows.length)rows.forEach((row,index)=>{const item=records[index],heading=row.querySelector(':scope > strong');if(!heading||row.querySelector(':scope > p')?.textContent!==item.text)return;
+        const names={need_summary:'诉求摘要',material_outline:'材料目录'},name=names[item.slot];if(name&&Number.isInteger(item.version)&&!heading.querySelector('.v3-material-version'))heading.replaceChildren(make('span',name),document.createTextNode(' '),make('span','材料版本 '+item.version,'v3-material-version'));
+      });
+      for(const button of materials.querySelectorAll('.design-preview-trigger'))setText(button,'查看全文与来源');
       for(const summary of materials.querySelectorAll('.design-material-menu>summary'))setText(summary,'材料操作');
     };
     new MutationObserver(refineMaterialText).observe(materials,{childList:true,subtree:true});
+    // The original menu handler focuses this exact metadata node. Reveal it
+    // before that handler runs; keep its current-version and clipboard guards.
+    materials.addEventListener('click',event=>{
+      const action=event.target.closest('button');
+      if(action?.closest('.design-material-menu')&&action.textContent==='查看来源与版本'){
+        action.closest('article')?.querySelector('.design-file-meta')?.classList.add('v3-meta-visible');
+      }
+    },true);
     const more = make('details', '', 'v2-secondary-tools');
     more.append(make('summary','关联资源与办理工具'));
     const toolIds = ['ordinary-runtime-entry','handling-deadline-panel','simulation-rule-panel','case-time-panel','case-fact-panel','fact-bundle-panel','material-reuse-panel','opportunity-panel'];
@@ -392,10 +420,10 @@
       }
       if (recordId!==p.id) { recordId=p.id; show('materials'); }
       const state=typeof prepLabels!=='undefined'?(prepLabels[p.state]||'状态待核对'):'状态待核对';
-      const meta='资料事项 · '+state+' · 版本 '+p.revision+' · 合成资料';
+      const meta='资料事项版本 '+p.revision+' · '+state+' · 合成资料';
       identifiers.hidden=false;
-      if(identifiers.querySelector('dl')?.textContent!==['资料事项编号',p.id,'所属事项 Case',p.case_id,'技术运行 Run',p.run_id,'资料版本',p.revision].join('')){
-        identifiers.replaceChildren(identifierTitle,parkFieldList([['资料事项编号',p.id],['所属事项 Case',p.case_id],['技术运行 Run',p.run_id],['资料版本',p.revision]]));
+      if(identifiers.querySelector('dl')?.textContent!==['资料事项编号',p.id,'所属事项 Case',p.case_id,'技术运行 Run',p.run_id,'资料事项版本',p.revision].join('')){
+        identifiers.replaceChildren(identifierTitle,parkFieldList([['资料事项编号',p.id],['所属事项 Case',p.case_id],['技术运行 Run',p.run_id],['资料事项版本',p.revision]]));
       }
       if (summary.querySelector('.workspace-case-goal')?.textContent===p.goal && summary.querySelector('.workspace-case-meta')?.textContent===meta) return;
       const goal=make('span',p.goal,'workspace-case-goal'); goal.setAttribute('role','heading'); goal.setAttribute('aria-level','2');
@@ -403,6 +431,30 @@
     }
     new MutationObserver(projectSummary).observe(summary,{childList:true});
     new MutationObserver(projectSummary).observe(detail,{attributes:true,attributeFilter:['hidden']});
+    const refreshRecovery=()=>{
+      const raw=read.textContent;
+      const command=typeof prepCommandPending!=='undefined'?prepCommandPending:null;
+      const fact=typeof caseFactPending!=='undefined'?caseFactPending:null;
+      const reuse=typeof materialReusePending!=='undefined'?materialReusePending:null;
+      const writing=typeof activeEntryWriteFlow!=='undefined'&&!!activeEntryWriteFlow;
+      const allowed=typeof entryReadAllowed==='function'?entryReadAllowed('prep-refresh'):true;
+      const blocked=refresh.matches(':disabled')||!allowed;
+      readState.dataset.refresh=blocked?'blocked':'available';refresh.setAttribute('aria-disabled',String(blocked));readState.dataset.state=read.dataset.state||'UNREAD';
+      let reason='';
+      if(command?.state==='UNKNOWN')reason=$('prep-command-feedback').textContent;
+      else if(command?.state==='SUBMITTING')reason='材料操作正在提交，原处理器暂不允许刷新。请等待原结果。';
+      else if(fact?.stage==='SUBMITTING')reason='事实操作正在提交，原处理器暂不允许刷新。请等待原结果。';
+      else if(reuse?.stage==='SUBMITTING')reason='材料复用正在提交，原处理器暂不允许刷新。请等待原结果。';
+      else if(writing)reason='原写请求正在执行，刷新受原请求守卫限制。请等待该操作的结果。';
+      else if(!allowed)reason='原请求尚待核对，当前守卫不允许独立刷新。请继续使用原操作的恢复入口。';
+      else if(refresh.matches(':disabled'))reason='刷新被原处理器限制，当前没有可直接采用的原因说明；请保留原状态与请求。';
+      setText(recoveryReason,reason);if(recoveryReason.hidden!==!reason)recoveryReason.hidden=!reason;const duplicate=$('prep-command-feedback');if(duplicate)duplicate.classList.toggle('v3-duplicate-recovery',!!reason&&duplicate.textContent===reason);
+      const prefix=raw.startsWith('当前读取已失效：')?'当前读取已失效：':raw.includes('；')?raw.slice(0,raw.indexOf('；')+1):'';
+      if(prefix&&!read.querySelector('.v3-read-title')){const title=make('strong',prefix,'v3-read-title'),body=make('span','','v3-read-body');const rest=raw.slice(prefix.length),suggestion='请刷新当前资料；',at=rest.indexOf(suggestion);if(at>=0)body.append(document.createTextNode(rest.slice(0,at)),make('span',suggestion,'v3-refresh-suggestion'),document.createTextNode(rest.slice(at+suggestion.length)));else body.textContent=rest;read.replaceChildren(title,body);}
+    };
+    for(const node of [read,$('prep-command-feedback'),$('prep-recovery-status')])if(node)new MutationObserver(refreshRecovery).observe(node,{childList:true,subtree:true,characterData:true});
+    new MutationObserver(refreshRecovery).observe(refresh,{attributes:true,attributeFilter:['disabled']});
+    new MutationObserver(refreshRecovery).observe(detail,{attributes:true,attributeFilter:['hidden']});
     const deduplicateReadError=()=>{
       const visible=!detail.hidden&&read.dataset.state==='INVALID';
       for(const node of [$('page-feedback'),$('prep-error')]){
@@ -415,7 +467,7 @@
     new MutationObserver(deduplicateReadError).observe(detail,{attributes:true,attributeFilter:['hidden']});
     new MutationObserver(()=>show(active)).observe(detail,{attributes:true,attributeFilter:['class']});
     $('token')?.addEventListener('input',()=>{recordId=null;show('materials');});
-    show(active); projectSummary();refineMaterialText();deduplicateReadError();
+    show(active); projectSummary();refineMaterialText();deduplicateReadError();refreshRecovery();
   }
 
   function detailWorkspace() {
@@ -471,7 +523,7 @@
       for (const original of buttons) {
         const direct=[...original.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent).join('').trim();
         const proxy=make('button',original.querySelector('.v2-record-title')?.textContent||direct||original.querySelector('strong')?.textContent||'查看事项');proxy.type='button';proxy.disabled=original.disabled;
-        const selected=contextId&&(original.dataset.listRecordId===contextId||original.querySelector('.record-reference')?.textContent.includes(contextId));
+        const selected=contextId&&(original.dataset.listRecordId===contextId||original.dataset.preparationId===contextId);
         if (selected) proxy.setAttribute('aria-current','true');
         const status=original.querySelector('.collaboration-record-status');if(status)proxy.append(make('small',status.textContent));
         proxy.onclick=()=>{if(original.isConnected&&!original.disabled)original.click();};list.append(proxy);
@@ -486,13 +538,39 @@
     synchronize();
   }
 
+  function compactShell() {
+    const panel=document.querySelector('.app-sidebar .session-panel'),token=$('token');
+    if(!panel||!token||!panel.contains(token))return;
+    const disclosure=make('details','','v4-session-disclosure'),title=make('summary','合成会话');
+    const label=token.closest('label');
+    disclosure.append(title);panel.prepend(disclosure);
+    if(label)disclosure.append(label);
+    // Only fold the credential input and static explanation. Status and recovery
+    // nodes stay in their original panel, outside the disclosure.
+    for(const note of [...panel.children])if(note.tagName==='SMALL')disclosure.append(note);
+    const jump=make('button','跳到当前事项','v4-current-item');jump.type='button';
+    jump.onclick=()=>{const target=document.querySelector('.v2-detail-stack:not([hidden]) .workspace-detail:not([hidden]) .workspace-case-goal,.v2-detail-stack:not([hidden]) .workspace-detail:not([hidden]) h2:not([hidden])');if(target){target.tabIndex=-1;target.focus();target.scrollIntoView({block:'start'});}};
+    panel.append(jump);
+    const compact=matchMedia('(max-width:768px), (max-height:700px)');
+    const sync=()=>{if(!compact.matches)disclosure.open=true;else if(!disclosure.contains(document.activeElement))disclosure.open=false;};
+    compact.addEventListener('change',sync);sync();
+  }
+  function appearance() {
+    let effect='glass';try{effect=localStorage.getItem('parkweave.appearance.effects')==='low'?'low':'glass';}catch{}
+    document.body.dataset.effects=effect;document.body.dataset.backdrop=globalThis.CSS?.supports?.('backdrop-filter','blur(1px)')?'supported':'unsupported';
+    const panel=document.querySelector('.appearance-panel');if(!panel)return;
+    const label=make('label','显示效果'),select=make('select');select.setAttribute('aria-label','显示效果');
+    for(const [value,text] of [['glass','标准磨砂'],['low','低效果（实色）']]){const option=make('option',text);option.value=value;select.append(option);}select.value=effect;label.append(select);panel.append(label);
+    select.onchange=()=>{document.body.dataset.effects=select.value;try{localStorage.setItem('parkweave.appearance.effects',select.value);}catch{}};
+  }
   function install() {
     if (!$('service') || document.body.dataset.workspaceDesign==='2') return;
     document.body.dataset.workspaceDesign='2';
     setText(document.querySelector('#park-theme option[value="ink"]'),'浅蓝');
-    serviceWorkspace();resourceWorkspace();
+    appearance();serviceWorkspace();resourceWorkspace();
     collaborationWorkspace();
     detailWorkspace();
+    compactShell();
   }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true});
   else install();

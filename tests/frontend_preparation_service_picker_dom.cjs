@@ -1,0 +1,40 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {JSDOM}=require('jsdom');
+const html=fs.readFileSync('src/parkweave/web.html','utf8');
+const start=html.indexOf('function prepCatalogStatus(');
+const end=html.indexOf('let runtimeNavigationGeneration=',start);
+assert(start>=0&&end>start);
+(async()=>{
+ const {window:w}=new JSDOM(html,{url:'http://127.0.0.1/',runScripts:'outside-only'});
+ const get=id=>w.document.getElementById(id);
+ const entries=[{service_id:'sample-a',version:1,name:'服务甲'},{service_id:'sample-b',version:7,name:'服务乙'}].map(s=>({...s,source:{kind:'SYNTHETIC',statement:'合成来源'}}));
+ const requests=[];
+ let catalog={scope:'SYNTHETIC_LOCAL_PREPARATION_ONLY',services:entries,reviewers:[{id:'reviewer-a'}]};
+ let denied=false;
+ w.prepCall=async(path,method,body)=>{
+  requests.push({path,method,body});
+  if(path==='/api/preparation-catalog'){if(denied)throw Object.assign(Error('synthetic denial'),{status:403});return catalog;}
+  if(path==='/api/runs')return {run_id:'run-a'};
+  if(path==='/api/runs/run-a')return {state:'SUCCEEDED'};
+  if(path==='/api/preparations')return {preparation_id:'prep-a'};
+  throw Error(path);
+ };
+ w.eval(`const $=id=>document.getElementById(id);let prepCatalog=null,prepRole=null;const prepRetries=new Map();const prepContext=()=>({});const prepCurrent=()=>true;const requirePrepCurrent=()=>{};const clearPreparation=()=>{prepCatalog=null;$('prep-service').replaceChildren();$('prep-create').hidden=true;};const prepError=e=>window.lastError=e.message;const loadPreparation=async id=>window.loadedPreparation=id;function textElement(tag,text){const el=document.createElement(tag);el.textContent=text;return el;}\n${html.slice(start,end)}`);
+ const submit=()=>get('prep-create').onsubmit({preventDefault(){}});
+ await get('prep-catalog').onclick();
+ assert.equal(get('prep-service').value,'');
+ assert.equal(get('prep-service').checkValidity(),false);
+ assert.deepEqual([...get('prep-service').options].slice(1).map(o=>o.textContent),['服务甲 · v1','服务乙 · v7']);
+ await submit();assert.equal(requests.filter(r=>r.method==='POST').length,0);
+ get('prep-service').value='1';get('prep-goal').value='合成目标';
+ await submit();
+ assert.equal(w.loadedPreparation,'prep-a');
+ const mutation=requests.find(r=>r.path==='/api/preparations');
+ assert.equal(mutation.body.service_id,'sample-b');assert.equal(mutation.body.service_version,7);
+ await get('prep-catalog').onclick();assert.equal(get('prep-service').value,'');
+ catalog={...catalog,services:[entries[0]]};await get('prep-catalog').onclick();assert.equal(get('prep-service').value,'0');
+ denied=true;await get('prep-catalog').onclick();assert.equal(get('prep-service').options.length,0);assert.equal(get('prep-create').hidden,true);assert.equal(get('prep-catalog-status').dataset.state,'DENIED');
+ console.log(JSON.stringify({scope:'ORIGINAL_DOM_HANDLERS_STUB_TRANSPORT_ONLY',passed:['multiple requires explicit selection','chosen exact service version sent','reread clears selection','single service remains default','denied clears selector and hides form']}));
+ w.close();
+})().catch(error=>{console.error(error);process.exitCode=1;});

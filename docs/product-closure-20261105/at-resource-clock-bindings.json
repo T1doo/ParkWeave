@@ -1,0 +1,297 @@
+{
+  "scope": "REVIEWED_SOURCE_AND_PYTEST_COLLECTION_WITH_LIMITED_CLOCK_EXECUTION",
+  "collection_exit_code": 0,
+  "unique_selectors": 22,
+  "collected_nodeids": 88,
+  "clock_unit_result": "54 passed in development Python and r5 private packaged Python",
+  "clock_evidence": "private-runtime-clock-tests-r5.json",
+  "external_test_harness": "pytest loaded from developer test tools; product module and dependencies from private runtime",
+  "database_execution": "NOT_RUN",
+  "original_formal_statuses_unchanged": true,
+  "source_files": {
+    "src/parkweave/resource_combinations.py": "c50c253551469215ef31837f0b13af34efc9bb3afc2f129b56b762f40518322b",
+    "src/parkweave/resource_holds.py": "f819ab66e660851e567e80fa0250da0af3921df3aba5bba9fd4eff3233c083f1",
+    "src/parkweave/handling_deadline.py": "89ae679b175170db19a355501a3eb20cec57f8a8949a01dbd60f64cee3d2dab7",
+    "tests/conftest.py": "37d385ce8c325353d9664c41048c137fd52b4c113b60c3a80335f9f97076802e"
+  },
+  "cases": [
+    {
+      "id": "AT-09",
+      "covers": "合成双资源全成/全不成、取消释放、第二成员无效及中途写失败回滚",
+      "missing": "Windows 原生事务实际执行；前端冲突后的重新选方案旅程",
+      "whole_status": "NOT_RUN",
+      "scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "bindings": [
+        {
+          "selector": "tests/test_resource_combinations.py::test_atomic_pair_persistence_order_equivalent_replay_and_whole_cancel",
+          "nodeids": [
+            "tests/test_resource_combinations.py::test_atomic_pair_persistence_order_equivalent_replay_and_whole_cancel"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4"
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation",
+          "nodeids": [
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[capacity]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[disabled]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[expired]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[grant]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[released]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[single_confirmed]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[version]",
+            "tests/test_resource_combinations.py::test_second_resource_invalid_has_no_partial_confirmation[window]"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4"
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_failure_after_first_mutation_rolls_back_all",
+          "nodeids": [
+            "tests/test_resource_combinations.py::test_failure_after_first_mutation_rolls_back_all[receipt]",
+            "tests/test_resource_combinations.py::test_failure_after_first_mutation_rolls_back_all[second_update]"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4"
+        }
+      ]
+    },
+    {
+      "id": "AT-10",
+      "covers": "并发容量、同键去重、同键异参冲突、不同键提交一次",
+      "missing": "本轮真实数据库并发与 EXE 路径未执行；最后名额确认需目标环境完整场景",
+      "whole_status": "NOT_RUN",
+      "scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "bindings": [
+        {
+          "selector": "tests/test_resource_holds.py::test_overcapacity_and_concurrent_distinct_keys_never_overbook",
+          "nodeids": [
+            "tests/test_resource_holds.py::test_overcapacity_and_concurrent_distinct_keys_never_overbook"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5"
+        },
+        {
+          "selector": "tests/test_resource_holds.py::test_same_key_concurrent_once_conflicts_and_UTC_normalization",
+          "nodeids": [
+            "tests/test_resource_holds.py::test_same_key_concurrent_once_conflicts_and_UTC_normalization"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5"
+        },
+        {
+          "selector": "tests/test_resource_confirm.py::test_same_hold_distinct_confirmation_keys_commit_once",
+          "nodeids": [
+            "tests/test_resource_confirm.py::test_same_hold_distinct_confirmation_keys_commit_once"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719"
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_concurrent_same_key_reverse_order_and_distinct_key_commit_once",
+          "nodeids": [
+            "tests/test_resource_combinations.py::test_concurrent_same_key_reverse_order_and_distinct_key_commit_once"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4"
+        }
+      ]
+    },
+    {
+      "id": "AT-11",
+      "covers": "提交时重验版本及占位有效期，锁等待后用当前时钟拒绝过期",
+      "missing": "陈旧业务批准的完整状态链未纳入这组绑定；本轮真实数据库未执行",
+      "whole_status": "NOT_RUN",
+      "scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "bindings": [
+        {
+          "selector": "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt",
+          "nodeids": [
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[capacity]",
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[disabled]",
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[expired]",
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[released]",
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[revision]",
+            "tests/test_resource_confirm.py::test_current_rules_and_hold_deadline_refuse_without_receipt[window]"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719"
+        },
+        {
+          "selector": "tests/test_resource_confirm.py::test_confirm_uses_clock_after_lock_wait_and_never_revives_expired_hold",
+          "nodeids": [
+            "tests/test_resource_confirm.py::test_confirm_uses_clock_after_lock_wait_and_never_revives_expired_hold"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "1e78b85c53086e0547b737e5013ab7dcbecc36e3ab5d251dbecdf98aef560719"
+        },
+        {
+          "selector": "tests/test_resource_combinations.py::test_second_lock_wait_expiry_and_stable_order",
+          "nodeids": [
+            "tests/test_resource_combinations.py::test_second_lock_wait_expiry_and_stable_order"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "e1b69b53067bb0c6cc94a1eeb929eef337267d9587a239a9f0b85464fdd98ca4"
+        }
+      ]
+    },
+    {
+      "id": "AT-29",
+      "covers": "UTC/业务时区、半开工作时段、显式合成日历、DST、无效/过期来源返回未知；停表写接口拒绝",
+      "missing": "合法停表授权与实现不存在，不能宣称完整停表支持；真实数据库和 EXE 期限显示未验",
+      "whole_status": "NOT_RUN",
+      "scope": "SUPPLEMENTAL_ENGINEERING_SUBSET_NOT_WHOLE_ACCEPTANCE",
+      "bindings": [
+        {
+          "selector": "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles[2026-10-09T12:00:00+08:00-3600-2026-10-09T14:00:00+08:00-15300]",
+            "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles[2026-10-09T16:30:00+08:00-3600-2026-10-12T09:30:00+08:00-2700]",
+            "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles[2026-10-09T17:00:00+08:00-3600-2026-10-12T10:00:00+08:00-900]",
+            "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles[2026-10-11T08:00:00+08:00-1800-2026-10-12T09:30:00+08:00-900]",
+            "tests/test_handling_deadline.py::test_manual_working_time_half_open_boundary_oracles[2026-10-12T09:00:00+08:00-10800-2026-10-12T12:00:00+08:00-900]"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_explicit_synthetic_holiday_without_guessing_real_holidays",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_explicit_synthetic_holiday_without_guessing_real_holidays"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[bool-target]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[calendar-hash]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[calendar-ref]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[closed-with-window]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[duplicate-day]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[expired]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[extra]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[float-target]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[fractional-window]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[future-source]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[invalid-time]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-calendar]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-day]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-pauses]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-policy]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-source]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[missing-timezone]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[naive-validity]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[non-contiguous-day]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[org]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[overlap]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[oversize-target]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[pause]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[reverse-window]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[service]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[source-hash]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[source-ref]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[timezone-ref]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[timezone-unknown]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[too-short]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[unsupported-pause]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[version]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[working-without-window]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[wrong-date]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[wrong-kind]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[wrong-offset]",
+            "tests/test_handling_deadline.py::test_invalid_missing_or_unauthorized_sources_never_get_deadline[zero-target]"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_dst_nonexistent_ambiguous_supplied_offset_unknown",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_dst_nonexistent_ambiguous_supplied_offset_unknown[2026-03-08-02:30:00-04:00:00-NONEXISTENT_LOCAL_TIME]",
+            "tests/test_handling_deadline.py::test_dst_nonexistent_ambiguous_supplied_offset_unknown[2026-11-01-01:30:00-04:00:00-AMBIGUOUS_LOCAL_TIME]"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_dst_crossing_utc_elapsed_seconds_not_wall_clock_hours",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_dst_crossing_utc_elapsed_seconds_not_wall_clock_hours"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated[deadline-outlives-source]",
+            "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated[naive-start]",
+            "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated[observation-outside]",
+            "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated[reversed]",
+            "tests/test_handling_deadline.py::test_source_time_and_calendar_coverage_not_extrapolated[start-before]"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_extreme_dates_and_invalid_source_encoding_unknown",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_extreme_dates_and_invalid_source_encoding_unknown[calendar-overflow]",
+            "tests/test_handling_deadline.py::test_extreme_dates_and_invalid_source_encoding_unknown[instant-overflow]",
+            "tests/test_handling_deadline.py::test_extreme_dates_and_invalid_source_encoding_unknown[source-surrogate]"
+          ],
+          "execution_this_round": "PASS_SYNTHETIC_CLOCK_UNIT_ONLY",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer",
+          "nodeids": [
+            "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer[0-0-201]",
+            "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer[300-0-409]",
+            "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer[300-10-201]",
+            "tests/test_resource_holds.py::test_half_open_intervals_and_both_sides_buffer[300-5-409]"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "432478d5408d04d38ed5c54da453a9e4fa250ffd42824a744e4fb607b52eebf5"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_actual_http_pg_exact_source_utc_readonly_concurrent_cold_store",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_actual_http_pg_exact_source_utc_readonly_concurrent_cold_store"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_source_missing_invalid_and_pause_declarations_unknown",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_source_missing_invalid_and_pause_declarations_unknown"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect[DELETE]",
+            "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect[PATCH]",
+            "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect[POST]",
+            "tests/test_handling_deadline.py::test_pause_clock_writes_have_no_interface_or_business_effect[PUT]"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        },
+        {
+          "selector": "tests/test_handling_deadline.py::test_original_changes_request_and_technical_pause_cannot_stop_clock",
+          "nodeids": [
+            "tests/test_handling_deadline.py::test_original_changes_request_and_technical_pause_cannot_stop_clock"
+          ],
+          "execution_this_round": "NOT_RUN",
+          "source_sha256": "65e2cb4276b24b2350997ba0391c4076ddf94ea73230db2f3cf42171a8d15610"
+        }
+      ]
+    }
+  ]
+}
